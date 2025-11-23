@@ -82,13 +82,8 @@ def get_intraday_data_for_country(country, start_date, end_date, client, data_ty
         try:
             if data_type == 'generation':
                 data = client.query_generation(country, start=start, end=end)
-            elif data_type == 'total_generation':
-                # Sum ALL generation columns to get total production
-                data = client.query_generation(country, start=start, end=end)
-                if not data.empty:
-                    if isinstance(data, pd.DataFrame):
-                        data = data.sum(axis=1)
-                        data.name = 'Total Generation'
+            elif data_type == 'load':
+                data = client.query_load(country, start=start, end=end)
             else:
                 return pd.DataFrame()
 
@@ -101,18 +96,15 @@ def get_intraday_data_for_country(country, start_date, end_date, client, data_ty
             elif str(data.index.tz) != 'Europe/Brussels':
                 data.index = data.index.tz_convert('Europe/Brussels')
 
-            time.sleep(0.3)  # Increased rate limiting protection
+            time.sleep(0.2)  # Rate limiting
             return data
 
         except Exception as e:
             if attempt < max_retries - 1:
-                # Longer exponential backoff: 1s, 3s, 7s
-                wait_time = (2 ** attempt)
-                print(f"    {country} error (attempt {attempt + 1}/{max_retries}), waiting {wait_time}s...")
+                wait_time = 0.5 * (2 ** attempt)
                 time.sleep(wait_time)
             else:
-                # Final attempt failed
-                time.sleep(1)
+                time.sleep(0.5)
                 return pd.DataFrame()
 
     return pd.DataFrame()
