@@ -18,7 +18,7 @@ jobs:
           
       - name: Install dependencies
         run: |
-          pip install entsoe-py pandas matplotlib numpy
+          pip install entsoe-py pandas matplotlib numpy scipy
           
       - name: Run wind analysis
         env:
