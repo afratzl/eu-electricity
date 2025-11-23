@@ -186,18 +186,17 @@ def aggregate_eu_data(countries, start_date, end_date, client, source_keywords, 
                     if interpolated is not None:
                         all_interpolated_data.append(interpolated)
                         successful_countries.append(country)
-
-            elif data_type == 'load':
-                if isinstance(country_data, pd.Series):
-                    country_series = country_data
-                elif isinstance(country_data, pd.DataFrame) and len(country_data.columns) == 1:
-                    country_series = country_data.iloc[:, 0]
+            
+            elif data_type == 'total_generation':
+                # Sum ALL generation columns to get total production
+                if isinstance(country_data, pd.DataFrame):
+                    country_total = country_data.sum(axis=1)
                 else:
-                    country_series = country_data.sum(axis=1)
-
-                country_series.name = country
-                interpolated = interpolate_country_data(country_series, country, mark_extrapolated=mark_extrapolated)
-
+                    country_total = country_data
+                
+                country_total.name = country
+                interpolated = interpolate_country_data(country_total, country, mark_extrapolated=mark_extrapolated)
+                
                 if interpolated is not None:
                     all_interpolated_data.append(interpolated)
                     successful_countries.append(country)
@@ -275,6 +274,18 @@ def load_intraday_data(source_type, api_key):
                 period_df['energy_percentage'] = np.clip(
                     (period_df['energy_production'] / period_df['total_load']) * 100, 0, 100
                 )
+                
+                # TODO: CRITICAL BUG TO FIX
+                # Current calculation: energy_percentage = (production / load) * 100
+                # Problem: For "All Renewables" + "All Non-Renewables", sum can exceed 100%
+                #          because production != load (exports, losses, etc.)
+                # 
+                # Correct approach: 
+                #   1. Query TOTAL EU GENERATION (not load)
+                #   2. Calculate: energy_percentage = (production / total_generation) * 100
+                #   3. Then renewable % + non-renewable % will always sum to 100%
+                #
+                # For now, percentages represent "% of demand" not "% of production"
 
                 period_df['date'] = period_df['timestamp'].dt.strftime('%Y-%m-%d')
                 period_df['time'] = period_df['timestamp'].dt.strftime('%H:%M')
@@ -314,28 +325,28 @@ def load_intraday_data(source_type, api_key):
 
 
 def create_projected_data(actual_df, actual_energy_countries, week_ago_energy_countries,
-                          actual_load_countries, week_ago_load_countries, period_name='today'):
+                          actual_total_countries, week_ago_total_countries, period_name='today'):
     """
-    Create projected values (EXACT from working script)
+    Create projected values by filling missing country data with week_ago averages
     """
     print(f"  Creating projected data for {period_name}...")
 
     week_ago_energy_list = set(week_ago_energy_countries.columns)
     today_energy_list = set(actual_energy_countries.columns)
 
-    week_ago_load_list = set(week_ago_load_countries.columns)
-    today_load_list = set(actual_load_countries.columns)
+    week_ago_total_list = set(week_ago_total_countries.columns)
+    today_total_list = set(actual_total_countries.columns)
 
     completely_missing_energy = week_ago_energy_list - today_energy_list
-    completely_missing_load = week_ago_load_list - today_load_list
+    completely_missing_total = week_ago_total_list - today_total_list
 
     week_ago_energy_with_time = week_ago_energy_countries.copy()
     week_ago_energy_with_time['time'] = week_ago_energy_with_time.index.strftime('%H:%M')
     week_ago_energy_avg = week_ago_energy_with_time.groupby('time').mean(numeric_only=True)
 
-    week_ago_load_with_time = week_ago_load_countries.copy()
-    week_ago_load_with_time['time'] = week_ago_load_with_time.index.strftime('%H:%M')
-    week_ago_load_avg = week_ago_load_with_time.groupby('time').mean(numeric_only=True)
+    week_ago_total_with_time = week_ago_total_countries.copy()
+    week_ago_total_with_time['time'] = week_ago_total_with_time.index.strftime('%H:%M')
+    week_ago_total_avg = week_ago_total_with_time.groupby('time').mean(numeric_only=True)
 
     projected_df = actual_df.copy()
     missing_by_time = {}
@@ -346,7 +357,7 @@ def create_projected_data(actual_df, actual_energy_countries, week_ago_energy_co
 
         missing_countries = []
         projected_energy_total = 0
-        projected_load_total = 0
+        projected_generation_total = 0
         has_missing_data = False
 
         if timestamp in actual_energy_countries.index:
@@ -374,38 +385,38 @@ def create_projected_data(actual_df, actual_energy_countries, week_ago_energy_co
                 if not pd.isna(proj_val):
                     projected_energy_total += proj_val
 
-        if timestamp in actual_load_countries.index:
-            actual_load_row = actual_load_countries.loc[timestamp]
+        if timestamp in actual_total_countries.index:
+            actual_total_row = actual_total_countries.loc[timestamp]
 
-            for country in today_load_list:
-                actual_val = actual_load_row[country]
+            for country in today_total_list:
+                actual_val = actual_total_row[country]
 
                 if pd.isna(actual_val) or actual_val < 1:
                     has_missing_data = True
-                    if time_str in week_ago_load_avg.index and country in week_ago_load_avg.columns:
-                        proj_val = week_ago_load_avg.loc[time_str, country]
+                    if time_str in week_ago_total_avg.index and country in week_ago_total_avg.columns:
+                        proj_val = week_ago_total_avg.loc[time_str, country]
                         if not pd.isna(proj_val):
-                            projected_load_total += proj_val
+                            projected_generation_total += proj_val
                 else:
-                    projected_load_total += actual_val
+                    projected_generation_total += actual_val
 
-        for country in completely_missing_load:
+        for country in completely_missing_total:
             has_missing_data = True
-            if time_str in week_ago_load_avg.index and country in week_ago_load_avg.columns:
-                proj_val = week_ago_load_avg.loc[time_str, country]
+            if time_str in week_ago_total_avg.index and country in week_ago_total_avg.columns:
+                proj_val = week_ago_total_avg.loc[time_str, country]
                 if not pd.isna(proj_val):
-                    projected_load_total += proj_val
+                    projected_generation_total += proj_val
 
         if has_missing_data:
             if missing_countries:
                 missing_by_time[time_str] = sorted(set(missing_countries))
 
             projected_df.iloc[i, projected_df.columns.get_loc('energy_production')] = projected_energy_total
-            projected_df.iloc[i, projected_df.columns.get_loc('total_load')] = projected_load_total
+            projected_df.iloc[i, projected_df.columns.get_loc('total_generation')] = projected_generation_total
 
-            if projected_load_total > 0:
+            if projected_generation_total > 0:
                 projected_df.iloc[i, projected_df.columns.get_loc('energy_percentage')] = np.clip(
-                    (projected_energy_total / projected_load_total) * 100, 0, 100
+                    (projected_energy_total / projected_generation_total) * 100, 0, 100
                 )
 
     if missing_by_time:
@@ -433,10 +444,10 @@ def calculate_daily_statistics(data_dict):
             continue
 
         if period_name in ['today', 'yesterday', 'today_projected', 'yesterday_projected']:
-            time_indexed = df.groupby('time')[['energy_production', 'total_load', 'energy_percentage']].mean()
+            time_indexed = df.groupby('time')[['energy_production', 'total_generation', 'energy_percentage']].mean()
 
             aligned_energy = time_indexed['energy_production'].reindex(standard_times)
-            aligned_load = time_indexed['total_load'].reindex(standard_times)
+            aligned_generation = time_indexed['total_generation'].reindex(standard_times)
             aligned_percentage = time_indexed['energy_percentage'].reindex(standard_times)
 
             if period_name in ['today', 'today_projected']:
@@ -451,19 +462,19 @@ def calculate_daily_statistics(data_dict):
                     cutoff_idx = len([t for t in standard_times if t <= cutoff_time_str])
 
                 aligned_energy.iloc[:cutoff_idx] = aligned_energy.iloc[:cutoff_idx].interpolate()
-                aligned_load.iloc[:cutoff_idx] = aligned_load.iloc[:cutoff_idx].interpolate()
+                aligned_generation.iloc[:cutoff_idx] = aligned_generation.iloc[:cutoff_idx].interpolate()
                 aligned_percentage.iloc[:cutoff_idx] = aligned_percentage.iloc[:cutoff_idx].interpolate()
 
                 aligned_energy.iloc[cutoff_idx:] = np.nan
-                aligned_load.iloc[cutoff_idx:] = np.nan
+                aligned_generation.iloc[cutoff_idx:] = np.nan
                 aligned_percentage.iloc[cutoff_idx:] = np.nan
             else:
                 aligned_energy = aligned_energy.interpolate()
-                aligned_load = aligned_load.interpolate()
+                aligned_generation = aligned_generation.interpolate()
                 aligned_percentage = aligned_percentage.interpolate()
 
             aligned_energy = aligned_energy.fillna(0.1)
-            aligned_load = aligned_load.fillna(method='ffill').fillna(method='bfill').fillna(50000)
+            aligned_generation = aligned_generation.fillna(method='ffill').fillna(method='bfill').fillna(50000)
             aligned_percentage = aligned_percentage.fillna(0)
 
             stats[period_name] = {
