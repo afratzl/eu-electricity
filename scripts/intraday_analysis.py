@@ -525,7 +525,7 @@ def create_time_axis():
 
 def plot_analysis(stats_data, source_type, output_file):
     """
-    Create plots - EXACT structure from working script (2 subplots side by side)
+    Create plots - Separate plots stacked vertically with larger fonts
     """
     if not stats_data:
         print("No data for plotting")
@@ -533,8 +533,9 @@ def plot_analysis(stats_data, source_type, output_file):
 
     print("\nCreating plots...")
 
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(20, 9))
-
+    # Create 2 separate figures for better mobile viewing
+    source_name = DISPLAY_NAMES[source_type]
+    
     colors = {
         'today': '#FF4444',
         'yesterday': '#FF8800',
@@ -566,66 +567,16 @@ def plot_analysis(stats_data, source_type, output_file):
     }
 
     time_labels = create_time_axis()
-
-    source_name = DISPLAY_NAMES[source_type]
-    
-    ax1.set_title(f'EU {source_name} Energy Production\n15-minute Resolution',
-                  fontsize=18, fontweight='bold')
-    ax1.set_ylabel('Energy Production (MW)', fontsize=16, fontweight='bold')
-    ax1.set_xlabel('Time of Day (Brussels)', fontsize=14)
-
-    max_energy = 0
-
     plot_order = ['week_ago', 'year_ago', 'two_years_ago', 'yesterday', 'today', 
                   'yesterday_projected', 'today_projected']
 
-    for period_name in plot_order:
-        if period_name not in stats_data:
-            continue
-            
-        data = stats_data[period_name]
-        if 'energy_mean' not in data or len(data['energy_mean']) == 0:
-            continue
-
-        color = colors.get(period_name, 'gray')
-        linestyle = linestyles.get(period_name, '-')
-        label = labels.get(period_name, period_name)
-
-        x_values = np.arange(len(data['energy_mean']))
-        y_values = data['energy_mean'].copy()
-
-        max_energy = max(max_energy, np.nanmax(y_values))
-
-        if period_name in ['today', 'today_projected']:
-            mask = ~np.isnan(y_values)
-            if np.any(mask):
-                x_values = x_values[mask]
-                y_values = y_values[mask]
-            else:
-                continue
-
-        ax1.plot(x_values, y_values, color=color, linestyle=linestyle, linewidth=3, label=label)
-
-        if period_name in ['week_ago', 'year_ago', 'two_years_ago'] and 'energy_std' in data:
-            std_values = data['energy_std']
-            if period_name == 'today':
-                std_values = std_values[mask] if np.any(mask) else std_values
-
-            upper_bound = y_values + std_values[:len(x_values)]
-            lower_bound = y_values - std_values[:len(x_values)]
-            max_energy = max(max_energy, np.nanmax(upper_bound))
-
-            ax1.fill_between(x_values, lower_bound, upper_bound, color=color, alpha=0.2)
-
-    ax1.grid(True, alpha=0.3)
-    ax1.tick_params(axis='both', labelsize=14)
-    ax1.set_xlim(0, len(time_labels))
-    ax1.set_ylim(0, max_energy * 1.05)
-
-    ax2.set_title(f'{source_name} as Percentage of Total EU Load\n15-minute Resolution',
-                  fontsize=18, fontweight='bold')
-    ax2.set_xlabel('Time of Day (Brussels)', fontsize=14)
-    ax2.set_ylabel('Percentage (%)', fontsize=16, fontweight='bold')
+    # FIGURE 1: Percentage (top plot for mobile)
+    fig1, ax1 = plt.subplots(1, 1, figsize=(20, 10))
+    
+    ax1.set_title(f'EU {source_name} as Percentage of Total EU Production',
+                  fontsize=24, fontweight='bold', pad=20)
+    ax1.set_xlabel('Time of Day (Brussels)', fontsize=20, fontweight='bold')
+    ax1.set_ylabel('Percentage (%)', fontsize=20, fontweight='bold')
 
     max_percentage = 0
 
@@ -654,7 +605,7 @@ def plot_analysis(stats_data, source_type, output_file):
             else:
                 continue
 
-        ax2.plot(x_values, y_values, color=color, linestyle=linestyle, linewidth=3, label=label)
+        ax1.plot(x_values, y_values, color=color, linestyle=linestyle, linewidth=4, label=label)
 
         if period_name in ['week_ago', 'year_ago', 'two_years_ago'] and 'percentage_std' in data:
             std_values = data['percentage_std']
@@ -665,33 +616,101 @@ def plot_analysis(stats_data, source_type, output_file):
             lower_bound = y_values - std_values[:len(x_values)]
             max_percentage = max(max_percentage, np.nanmax(upper_bound))
 
-            ax2.fill_between(x_values, lower_bound, upper_bound, color=color, alpha=0.2)
+            ax1.fill_between(x_values, lower_bound, upper_bound, color=color, alpha=0.2)
 
-    ax2.grid(True, alpha=0.3)
-    ax2.tick_params(axis='both', labelsize=14)
-    ax2.set_xlim(0, len(time_labels))
-
+    ax1.grid(True, alpha=0.3, linewidth=1.5)
+    ax1.tick_params(axis='both', labelsize=18, width=2, length=8)
+    ax1.set_xlim(0, len(time_labels))
+    
     if max_percentage > 0:
-        ax2.set_ylim(0, max_percentage * 1.05)
+        ax1.set_ylim(0, max_percentage * 1.05)
     else:
-        ax2.set_ylim(0, 50)
+        ax1.set_ylim(0, 50)
 
     tick_positions = np.arange(0, len(time_labels), 8)
-    for ax in [ax1, ax2]:
-        ax.set_xticks(tick_positions)
-        ax.set_xticklabels([time_labels[i] for i in tick_positions], rotation=45)
+    ax1.set_xticks(tick_positions)
+    ax1.set_xticklabels([time_labels[i] for i in tick_positions], rotation=45, ha='right')
 
     handles1, labels1 = ax1.get_legend_handles_labels()
-    fig.legend(handles1, labels1, loc='lower center', bbox_to_anchor=(0.5, -0.02),
-               ncol=3, fontsize=12, frameon=False, columnspacing=1.5)
+    ax1.legend(handles1, labels1, loc='upper left', fontsize=16, frameon=True, 
+               fancybox=True, shadow=True)
 
-    plt.tight_layout(rect=[0, 0.08, 1, 0.98])
-
-    plt.savefig(output_file, dpi=150, bbox_inches='tight')
-    print(f"Saved plot to {output_file}")
+    plt.tight_layout()
+    
+    percentage_file = output_file.replace('_analysis.png', '_percentage.png')
+    plt.savefig(percentage_file, dpi=150, bbox_inches='tight')
+    print(f"Saved percentage plot to {percentage_file}")
     plt.close()
 
-    return output_file
+    # FIGURE 2: Absolute values (bottom plot for mobile)
+    fig2, ax2 = plt.subplots(1, 1, figsize=(20, 10))
+    
+    ax2.set_title(f'EU {source_name} Energy Production',
+                  fontsize=24, fontweight='bold', pad=20)
+    ax2.set_ylabel('Energy Production (MW)', fontsize=20, fontweight='bold')
+    ax2.set_xlabel('Time of Day (Brussels)', fontsize=20, fontweight='bold')
+
+    max_energy = 0
+
+    for period_name in plot_order:
+        if period_name not in stats_data:
+            continue
+            
+        data = stats_data[period_name]
+        if 'energy_mean' not in data or len(data['energy_mean']) == 0:
+            continue
+
+        color = colors.get(period_name, 'gray')
+        linestyle = linestyles.get(period_name, '-')
+        label = labels.get(period_name, period_name)
+
+        x_values = np.arange(len(data['energy_mean']))
+        y_values = data['energy_mean'].copy()
+
+        max_energy = max(max_energy, np.nanmax(y_values))
+
+        if period_name in ['today', 'today_projected']:
+            mask = ~np.isnan(y_values)
+            if np.any(mask):
+                x_values = x_values[mask]
+                y_values = y_values[mask]
+            else:
+                continue
+
+        ax2.plot(x_values, y_values, color=color, linestyle=linestyle, linewidth=4, label=label)
+
+        if period_name in ['week_ago', 'year_ago', 'two_years_ago'] and 'energy_std' in data:
+            std_values = data['energy_std']
+            if period_name == 'today':
+                std_values = std_values[mask] if np.any(mask) else std_values
+
+            upper_bound = y_values + std_values[:len(x_values)]
+            lower_bound = y_values - std_values[:len(x_values)]
+            max_energy = max(max_energy, np.nanmax(upper_bound))
+
+            ax2.fill_between(x_values, lower_bound, upper_bound, color=color, alpha=0.2)
+
+    ax2.grid(True, alpha=0.3, linewidth=1.5)
+    ax2.tick_params(axis='both', labelsize=18, width=2, length=8)
+    ax2.set_xlim(0, len(time_labels))
+    ax2.set_ylim(0, max_energy * 1.05)
+
+    tick_positions = np.arange(0, len(time_labels), 8)
+    ax2.set_xticks(tick_positions)
+    ax2.set_xticklabels([time_labels[i] for i in tick_positions], rotation=45, ha='right')
+
+    handles2, labels2 = ax2.get_legend_handles_labels()
+    ax2.legend(handles2, labels2, loc='upper left', fontsize=16, frameon=True,
+               fancybox=True, shadow=True)
+
+    plt.tight_layout()
+
+    absolute_file = output_file.replace('_analysis.png', '_absolute.png')
+    plt.savefig(absolute_file, dpi=150, bbox_inches='tight')
+    print(f"Saved absolute plot to {absolute_file}")
+    plt.close()
+
+    return percentage_file, absolute_file
 
 
 def main():
@@ -726,16 +745,18 @@ def main():
         # Calculate statistics
         stats_data = calculate_daily_statistics(raw_data)
         
-        # Create plot
-        output_file = f'plots/{args.source.replace("-", "_")}_analysis.png'
-        plot_analysis(stats_data, args.source, output_file)
+        # Create plots (now returns 2 files)
+        percentage_file, absolute_file = plot_analysis(stats_data, args.source, 
+                                                       f'plots/{args.source.replace("-", "_")}_analysis.png')
         
         # Create timestamp file
         timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S UTC')
         with open('plots/last_update.html', 'w') as f:
             f.write(f'<p>Last updated: {timestamp}</p>')
         
-        print(f"\n✓ COMPLETE! Plot saved to {output_file}")
+        print(f"\n✓ COMPLETE!")
+        print(f"  Percentage plot: {percentage_file}")
+        print(f"  Absolute plot: {absolute_file}")
         
     except Exception as e:
         print(f"✗ Error: {e}")
