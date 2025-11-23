@@ -227,6 +227,55 @@ body {
     margin-bottom: 2rem;
 }
 
+/* === CHART SELECTOR (Dropdown) === */
+.chart-selector {
+    background-color: white;
+    border-radius: 8px;
+    padding: 2rem;
+    margin: 2rem 0;
+    border: 2px solid #3498db;
+    box-shadow: 0 2px 8px rgba(52, 152, 219, 0.1);
+}
+
+.chart-selector label {
+    display: block;
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: #2c3e50;
+    margin-bottom: 1rem;
+}
+
+.chart-selector select {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    font-size: 1rem;
+    border: 2px solid #e0e0e0;
+    border-radius: 4px;
+    background-color: white;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.chart-selector select:hover {
+    border-color: #3498db;
+}
+
+.chart-selector select:focus {
+    outline: none;
+    border-color: #3498db;
+    box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+}
+
+.chart-selector optgroup {
+    font-weight: 600;
+    color: #2c3e50;
+    font-style: normal;
+}
+
+.chart-selector option {
+    padding: 0.5rem;
+}
+
 /* === INSIGHTS BOX === */
 .insights-box,
 .technical-note {
