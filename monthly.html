@@ -26,18 +26,33 @@
         </header>
 
         <div class="info-box">
-            <p><strong>Select an energy source below</strong> to view its monthly production trends</p>
-            <p><strong>Left Charts:</strong> Absolute production in TWh | <strong>Right Charts:</strong> Percentage of total generation</p>
+            <p><strong>Select an energy source below</strong> to view its 10-year monthly production trends</p>
+            <p><strong>Left Charts:</strong> Absolute production in TWh (Terawatt-hours) | <strong>Right Charts:</strong> Percentage of total EU generation</p>
+            <p><strong>Data Period:</strong> 2015-2025 (current year shows partial data)</p>
         </div>
 
         <!-- DROPDOWN SELECTOR -->
         <div class="chart-selector">
             <label for="monthly-select">Choose Energy Source:</label>
             <select id="monthly-select" onchange="showMonthlyChart(this.value)">
-                <option value="solar" selected>Solar Energy</option>
-                <option value="wind">Wind Energy</option>
-                <option value="hydro">Hydro Energy</option>
-                <option value="renewable">Total Renewable Energy</option>
+                <optgroup label="🌞 Renewable Sources">
+                    <option value="solar" selected>Solar</option>
+                    <option value="wind">Wind Total</option>
+                    <option value="hydro">Hydro</option>
+                    <option value="biomass">Biomass</option>
+                    <option value="geothermal">Geothermal</option>
+                </optgroup>
+                <optgroup label="⚡ Non-Renewable Sources">
+                    <option value="gas">Gas</option>
+                    <option value="coal">Coal</option>
+                    <option value="nuclear">Nuclear</option>
+                    <option value="oil">Oil</option>
+                    <option value="waste">Waste</option>
+                </optgroup>
+                <optgroup label="📊 Totals">
+                    <option value="all-renewables">All Renewables</option>
+                    <option value="all-non-renewables">All Non-Renewables</option>
+                </optgroup>
             </select>
         </div>
 
@@ -85,14 +100,94 @@
                     'Variations across years reflect drought conditions and water availability'
                 ]
             },
-            'renewable': {
-                image: 'plots/eu_monthly_total_renewable_combined_10years.png',
+            'biomass': {
+                image: 'plots/eu_monthly_biomass_combined_10years.png',
+                title: 'Biomass Energy Production',
+                insights: [
+                    'Relatively stable throughout the year',
+                    'Provides dispatchable renewable energy',
+                    'Slight seasonal variation with higher use in winter',
+                    'Important for balancing variable renewables'
+                ]
+            },
+            'geothermal': {
+                image: 'plots/eu_monthly_geothermal_combined_10years.png',
+                title: 'Geothermal Energy Production',
+                insights: [
+                    'Very stable baseload renewable energy',
+                    'Limited geographical availability',
+                    'Concentrated in Iceland, Italy, and Turkey',
+                    'Minimal seasonal variation'
+                ]
+            },
+            'gas': {
+                image: 'plots/eu_monthly_gas_combined_10years.png',
+                title: 'Gas Energy Production',
+                insights: [
+                    'Acts as flexible backup during energy transition',
+                    'Seasonal peaks in winter for heating demand',
+                    'Fluctuations reflect energy crisis and gas price volatility',
+                    'Gradually declining as renewables expand'
+                ]
+            },
+            'coal': {
+                image: 'plots/eu_monthly_coal_combined_10years.png',
+                title: 'Coal Energy Production',
+                insights: [
+                    'Sharp decline over the decade (>50% reduction)',
+                    'Phase-out accelerating across EU countries',
+                    'Still used for winter peak demand in some regions',
+                    'Being replaced primarily by renewables and gas'
+                ]
+            },
+            'nuclear': {
+                image: 'plots/eu_monthly_nuclear_combined_10years.png',
+                title: 'Nuclear Energy Production',
+                insights: [
+                    'Provides stable baseload power',
+                    'Relatively constant throughout the year',
+                    'Ongoing debate about role in energy transition',
+                    'Some countries expanding, others phasing out'
+                ]
+            },
+            'oil': {
+                image: 'plots/eu_monthly_oil_combined_10years.png',
+                title: 'Oil Energy Production',
+                insights: [
+                    'Very small share of electricity generation',
+                    'Mainly used for backup and peak demand',
+                    'Declining use in power sector',
+                    'More relevant for transport and heating sectors'
+                ]
+            },
+            'waste': {
+                image: 'plots/eu_monthly_waste_combined_10years.png',
+                title: 'Waste Energy Production',
+                insights: [
+                    'Waste-to-energy provides stable generation',
+                    'Part of circular economy initiatives',
+                    'Slight seasonal variation',
+                    'Growing as waste management infrastructure expands'
+                ]
+            },
+            'all-renewables': {
+                image: 'plots/eu_monthly_all_renewables_combined_10years.png',
                 title: 'Total Renewable Energy Production',
                 insights: [
                     'Combined renewables benefit from complementary seasonal patterns',
                     'Steady increase in both absolute production and percentage of total generation',
                     'Renewable percentage has grown significantly across all months',
                     'Many months now approaching or exceeding 50% renewable generation'
+                ]
+            },
+            'all-non-renewables': {
+                image: 'plots/eu_monthly_all_non-renewables_combined_10years.png',
+                title: 'Total Non-Renewable Energy Production',
+                insights: [
+                    'Declining trend as renewables expand',
+                    'Still provides majority of generation but share decreasing',
+                    'Seasonal peaks reflect heating demand',
+                    'Transition away accelerating'
                 ]
             }
         };
@@ -107,7 +202,7 @@
             display.innerHTML = `
                 <h2>${chart.title}</h2>
                 <img src="${chart.image}" alt="${chart.title}" class="chart-img">
-                <p class="chart-caption">Showing strong seasonal variation with year-over-year trends</p>
+                <p class="chart-caption">10-year monthly comparison showing seasonal patterns and long-term trends</p>
             `;
 
             // Update insights
