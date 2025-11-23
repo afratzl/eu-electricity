@@ -240,7 +240,7 @@ def create_all_charts(all_data):
         total_data = all_data['Total Generation']['year_data']
 
         # PLOT 1: Percentage
-        fig1, ax1 = plt.subplots(figsize=(12, 10))
+        fig1, ax1 = plt.subplots(figsize=(10, 8))
 
         for i, year in enumerate(years_available):
             if year not in year_data:
@@ -286,9 +286,9 @@ def create_all_charts(all_data):
         ax1.tick_params(axis='both', labelsize=24)
         ax1.grid(True, alpha=0.3, linewidth=1.5)
 
-        # Legend below - 5 columns
+        # Legend below - 5 columns, no frame
         ax1.legend(loc='upper center', bbox_to_anchor=(0.5, -0.15), 
-                  ncol=5, fontsize=22, frameon=True, fancybox=True, shadow=True)
+                  ncol=5, fontsize=22, frameon=False)
 
         plt.tight_layout()
 
@@ -298,7 +298,7 @@ def create_all_charts(all_data):
         plt.close()
 
         # PLOT 2: Absolute
-        fig2, ax2 = plt.subplots(figsize=(12, 10))
+        fig2, ax2 = plt.subplots(figsize=(10, 8))
 
         for i, year in enumerate(years_available):
             if year not in year_data:
@@ -334,9 +334,9 @@ def create_all_charts(all_data):
         ax2.tick_params(axis='both', labelsize=24)
         ax2.grid(True, alpha=0.3, linewidth=1.5)
 
-        # Legend below - 5 columns
+        # Legend below - 5 columns, no frame
         ax2.legend(loc='upper center', bbox_to_anchor=(0.5, -0.15),
-                  ncol=5, fontsize=22, frameon=True, fancybox=True, shadow=True)
+                  ncol=5, fontsize=22, frameon=False)
 
         plt.tight_layout()
 
