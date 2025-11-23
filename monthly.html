@@ -104,10 +104,8 @@
             // Clean chart ID for filename
             const cleanId = chartId.replace(/-/g, '_');
             
-            // Update chart display with both plots stacked vertically (NO section headers)
+            // Update chart display with both plots stacked vertically (NO HTML TITLES)
             display.innerHTML = `
-                <h2>${sourceName} Energy Production</h2>
-                
                 <div style="margin-bottom: 40px;">
                     <img src="plots/eu_monthly_${cleanId}_percentage_10years.png" 
                          alt="${sourceName} Percentage" 
