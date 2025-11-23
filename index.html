@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="refresh" content="3600"> <!-- Auto-refresh every hour -->
+    <title>EU Wind Energy Analysis</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+            margin-bottom: 10px;
+        }
+        .timestamp {
+            text-align: center;
+            color: #7f8c8d;
+            margin-bottom: 30px;
+            font-style: italic;
+        }
+        .plot-container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        img {
+            width: 100%;
+            height: auto;
+            border-radius: 4px;
+        }
+        .footer {
+            text-align: center;
+            color: #95a5a6;
+            margin-top: 40px;
+            padding: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🌬️ EU Wind Energy Analysis</h1>
+    <div class="timestamp" id="update-time">
+        Loading...
+    </div>
+    
+    <div class="plot-container">
+        <h2>Total Wind Energy Production</h2>
+        <img src="plots/wind_analysis.png" alt="Wind Analysis" id="plot-img">
+    </div>
+    
+    <div class="footer">
+        <p>Data from ENTSO-E Transparency Platform</p>
+        <p>Updated automatically every hour</p>
+        <p><a href="https://github.com/YOUR-USERNAME/eu-wind-analysis">View on GitHub</a></p>
+    </div>
+
+    <script>
+        // Load timestamp
+        fetch('plots/last_update.html')
+            .then(response => response.text())
+            .then(html => {
+                document.getElementById('update-time').innerHTML = html;
+            })
+            .catch(error => {
+                document.getElementById('update-time').innerHTML = '<p>Timestamp unavailable</p>';
+            });
+        
+        // Force image refresh to bypass cache
+        document.getElementById('plot-img').src = 'plots/wind_analysis.png?' + new Date().getTime();
+    </script>
+</body>
+</html>
