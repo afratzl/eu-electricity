@@ -1,12 +1,3 @@
-<style>
-        .chart-subtitle {
-            text-align: center;
-            color: #7f8c8d;
-            font-size: 1.05em;
-            margin-top: -10px;
-            margin-bottom: 30px;
-        }
-    </style>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -84,66 +75,55 @@
         const charts = {
             'period-2015-2019': {
                 image: 'plots/eu_monthly_energy_sources_mean_2015_2019_combined.png',
-                title: 'All Energy Sources: 2015-2019',
-                description: 'Baseline period showing the starting point of Europe\'s energy transition.'
+                title: 'All Energy Sources: 2015-2019'
             },
             'period-2020-2024': {
                 image: 'plots/eu_monthly_energy_sources_mean_2020_2024_combined.png',
-                title: 'All Energy Sources: 2020-2024',
-                description: 'Acceleration period with significant renewable growth and fossil fuel reduction.'
+                title: 'All Energy Sources: 2020-2024'
             },
             'period-2025-2029': {
                 image: 'plots/eu_monthly_energy_sources_mean_2025_2029_combined.png',
-                title: 'All Energy Sources: 2025-2029',
-                description: 'Current period (partial data) showing continued renewable expansion.'
+                title: 'All Energy Sources: 2025-2029'
             },
             'ren-vs-nonren-2015-2019': {
                 image: 'plots/eu_monthly_renewable_vs_nonrenewable_mean_2015_2019_combined.png',
-                title: 'Renewable vs Non-Renewable: 2015-2019',
-                description: 'Starting period with non-renewables dominating the energy mix.'
+                title: 'Renewable vs Non-Renewable: 2015-2019'
             },
             'ren-vs-nonren-2020-2024': {
                 image: 'plots/eu_monthly_renewable_vs_nonrenewable_mean_2020_2024_combined.png',
-                title: 'Renewable vs Non-Renewable: 2020-2024',
-                description: 'Crossover period with renewables rapidly catching up to non-renewables.'
+                title: 'Renewable vs Non-Renewable: 2020-2024'
             },
             'ren-vs-nonren-2025-2029': {
                 image: 'plots/eu_monthly_renewable_vs_nonrenewable_mean_2025_2029_combined.png',
-                title: 'Renewable vs Non-Renewable: 2025-2029',
-                description: 'Current period showing renewables approaching or exceeding 50% in many months.'
+                title: 'Renewable vs Non-Renewable: 2025-2029'
             },
             'annual-renewable': {
                 image: 'plots/eu_annual_renewable_trends_combined.png',
-                title: 'Annual Renewable Energy Trends',
-                description: 'Solar and wind showing exponential growth, while hydro remains relatively stable.'
+                title: 'Annual Renewable Energy Trends'
             },
             'annual-nonrenewable': {
                 image: 'plots/eu_annual_non_renewable_trends_combined.png',
-                title: 'Annual Non-Renewable Energy Trends',
-                description: 'Coal declining sharply, gas fluctuating with market conditions, nuclear relatively stable.'
+                title: 'Annual Non-Renewable Energy Trends'
             },
             'transition': {
                 image: 'plots/eu_annual_renewable_vs_non_renewable_combined.png',
-                title: 'The Energy Transition',
-                description: 'The big picture: renewables rising, non-renewables falling - Europe\'s energy transition in action.'
+                title: 'The Energy Transition'
             },
             'yoy': {
                 image: 'plots/eu_annual_yoy_change_vs_2015.png',
-                title: 'Year-over-Year Change vs 2015 Baseline',
-                description: 'Percentage change from 2015 baseline showing dramatic renewable growth and fossil fuel decline.'
+                title: 'Year-over-Year Change vs 2015 Baseline'
             }
         };
 
-        // Show chart function
+        // Show chart function - NO descriptions/captions
         function showChart(chartId) {
             const chart = charts[chartId];
             const display = document.getElementById('chart-display');
 
-            // Update chart display
+            // Update chart display - clean, no caption
             display.innerHTML = `
                 <h2>${chart.title}</h2>
                 <img src="${chart.image}" alt="${chart.title}" class="chart-img">
-                <p class="chart-caption">${chart.description}</p>
             `;
 
             // Scroll to chart
@@ -155,5 +135,15 @@
             showChart('transition');
         });
     </script>
+
+    <style>
+        .chart-subtitle {
+            text-align: center;
+            color: #7f8c8d;
+            font-size: 1.05em;
+            margin-top: -10px;
+            margin-bottom: 30px;
+        }
+    </style>
 </body>
 </html>
