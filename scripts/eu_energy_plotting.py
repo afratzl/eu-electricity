@@ -237,7 +237,7 @@ def create_all_charts(all_data):
         year_data = all_data[source_name]['year_data']
         total_data = all_data['Total Generation']['year_data']
 
-        # PLOT 1: Percentage (NO TITLE)
+        # PLOT 1: Percentage (WITH TITLE)
         fig1, ax1 = plt.subplots(figsize=(12, 10))
 
         for i, year in enumerate(years_available):
@@ -271,7 +271,8 @@ def create_all_charts(all_data):
                 ax1.plot(months, percentages, marker='o', color=color, 
                         linewidth=4.5, markersize=9, label=str(year))
 
-        # NO TITLE - removed set_title
+        ax1.set_title(f'{source_name} % of Total Generation', 
+                     fontsize=26, fontweight='bold', pad=20)
         ax1.set_xlabel('Month', fontsize=22, fontweight='bold', labelpad=15)
         ax1.set_ylabel('Percentage (%)', fontsize=22, fontweight='bold', labelpad=15)
         
@@ -293,7 +294,7 @@ def create_all_charts(all_data):
         print(f"  ✓ Saved: {percentage_filename}")
         plt.close()
 
-        # PLOT 2: Absolute (NO TITLE)
+        # PLOT 2: Absolute (WITH TITLE)
         fig2, ax2 = plt.subplots(figsize=(12, 10))
 
         for i, year in enumerate(years_available):
@@ -317,7 +318,8 @@ def create_all_charts(all_data):
             ax2.plot(months, values_twh, marker='o', color=color,
                     linewidth=4.5, markersize=9, label=str(year))
 
-        # NO TITLE - removed set_title
+        ax2.set_title(f'{source_name} Production (TWh)', 
+                     fontsize=26, fontweight='bold', pad=20)
         ax2.set_xlabel('Month', fontsize=22, fontweight='bold', labelpad=15)
         ax2.set_ylabel('Energy (TWh)', fontsize=22, fontweight='bold', labelpad=15)
         
@@ -977,7 +979,7 @@ def main():
     print("EU ENERGY PLOTTER - MOBILE OPTIMIZED + ALL CHARTS")
     print("=" * 60)
     print("\nFEATURES:")
-    print("  ✓ Individual source plots (NO titles in images)")
+    print("  ✓ Individual source plots (titles IN the PNG)")
     print("  ✓ Monthly mean by period charts")
     print("  ✓ Renewable vs non-renewable by period")
     print("  ✓ Annual trend charts")
