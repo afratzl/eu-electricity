@@ -115,14 +115,13 @@
             }
         };
 
-        // Show chart function - NO descriptions/captions
+        // Show chart function - NO HTML titles (titles are in the PNG)
         function showChart(chartId) {
             const chart = charts[chartId];
             const display = document.getElementById('chart-display');
 
-            // Update chart display - clean, no caption
+            // Update chart display - just the image, no HTML title
             display.innerHTML = `
-                <h2>${chart.title}</h2>
                 <img src="${chart.image}" alt="${chart.title}" class="chart-img">
             `;
 
