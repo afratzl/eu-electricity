@@ -756,6 +756,28 @@ def main():
         # Calculate statistics
         stats_data = calculate_daily_statistics(raw_data)
         
+        # Save yesterday's summary statistics to JSON
+        if 'yesterday' in raw_data:
+            yesterday_df = raw_data['yesterday']
+            avg_percentage = yesterday_df['energy_percentage'].mean()
+            avg_production = yesterday_df['energy_production'].mean() / 1000  # Convert to GW
+            
+            # Save to individual JSON file
+            import json
+            stats_output = {
+                'source': args.source,
+                'display_name': DISPLAY_NAMES[args.source],
+                'yesterday_percentage': round(avg_percentage, 1),
+                'yesterday_production_gw': round(avg_production, 1),
+                'timestamp': datetime.now().strftime('%Y-%m-%d %H:%M:%S UTC')
+            }
+            
+            os.makedirs('plots/stats', exist_ok=True)
+            with open(f'plots/stats/{args.source.replace("-", "_")}.json', 'w') as f:
+                json.dump(stats_output, f, indent=2)
+            
+            print(f"  Saved stats: {avg_percentage:.1f}% average yesterday")
+        
         # Create plots (now returns 2 files)
         percentage_file, absolute_file = plot_analysis(stats_data, args.source, 
                                                        f'plots/{args.source.replace("-", "_")}_analysis.png')
