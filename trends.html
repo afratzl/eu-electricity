@@ -25,111 +25,226 @@
             <p class="subtitle">Long-term trends and energy transition data (2015-2025)</p>
         </header>
 
-        <!-- PERIOD COMPARISONS SECTION -->
-        <section class="trends-section">
-            <h2 class="section-title">Period Comparisons</h2>
-            <p class="section-description">Monthly mean production by 5-year periods, showing evolution of the energy mix</p>
+        <div class="info-box">
+            <p><strong>Select a chart below</strong> to explore different aspects of EU energy production</p>
+        </div>
 
-            <div class="chart-container">
-                <h3>All Energy Sources: 2015-2019</h3>
-                <img src="plots/eu_monthly_energy_sources_mean_2015_2019_combined.png" 
-                     alt="Energy Sources 2015-2019" 
-                     class="chart-img">
-                <p class="chart-caption">Baseline period showing the starting point of Europe's energy transition</p>
-            </div>
+        <!-- DROPDOWN SELECTOR -->
+        <div class="chart-selector">
+            <label for="chart-select">Choose Analysis:</label>
+            <select id="chart-select" onchange="showChart(this.value)">
+                <optgroup label="📊 Monthly Trends (10-Year Comparison)">
+                    <option value="solar">Solar Production</option>
+                    <option value="wind">Wind Production</option>
+                    <option value="hydro">Hydro Production</option>
+                    <option value="renewable">Total Renewable Production</option>
+                </optgroup>
+                
+                <optgroup label="📈 Period Comparisons">
+                    <option value="period-2015-2019">All Sources: 2015-2019</option>
+                    <option value="period-2020-2024">All Sources: 2020-2024</option>
+                    <option value="period-2025-2029">All Sources: 2025-2029</option>
+                    <option value="ren-vs-nonren-2015-2019">Renewable vs Non-Renewable: 2015-2019</option>
+                    <option value="ren-vs-nonren-2020-2024">Renewable vs Non-Renewable: 2020-2024</option>
+                    <option value="ren-vs-nonren-2025-2029">Renewable vs Non-Renewable: 2025-2029</option>
+                </optgroup>
+                
+                <optgroup label="📉 Annual Evolution">
+                    <option value="annual-renewable">Annual Renewable Trends</option>
+                    <option value="annual-nonrenewable">Annual Non-Renewable Trends</option>
+                    <option value="transition" selected>Energy Transition Overview</option>
+                    <option value="yoy">Year-over-Year Change vs 2015</option>
+                </optgroup>
+            </select>
+        </div>
 
-            <div class="chart-container">
-                <h3>All Energy Sources: 2020-2024</h3>
-                <img src="plots/eu_monthly_energy_sources_mean_2020_2024_combined.png" 
-                     alt="Energy Sources 2020-2024" 
-                     class="chart-img">
-                <p class="chart-caption">Acceleration period with significant renewable growth and fossil fuel reduction</p>
-            </div>
+        <!-- DYNAMIC CHART DISPLAY -->
+        <div id="chart-display" class="chart-container">
+            <!-- Chart will be loaded here by JavaScript -->
+        </div>
 
-            <div class="chart-container">
-                <h3>All Energy Sources: 2025-2029</h3>
-                <img src="plots/eu_monthly_energy_sources_mean_2025_2029_combined.png" 
-                     alt="Energy Sources 2025-2029" 
-                     class="chart-img">
-                <p class="chart-caption">Current period (partial data) showing continued renewable expansion</p>
-            </div>
-
-            <div class="chart-container">
-                <h3>Renewable vs Non-Renewable: 2015-2019</h3>
-                <img src="plots/eu_monthly_renewable_vs_nonrenewable_mean_2015_2019_combined.png" 
-                     alt="Renewable vs Non-Renewable 2015-2019" 
-                     class="chart-img">
-                <p class="chart-caption">Starting period with non-renewables dominating the energy mix</p>
-            </div>
-
-            <div class="chart-container">
-                <h3>Renewable vs Non-Renewable: 2020-2024</h3>
-                <img src="plots/eu_monthly_renewable_vs_nonrenewable_mean_2020_2024_combined.png" 
-                     alt="Renewable vs Non-Renewable 2020-2024" 
-                     class="chart-img">
-                <p class="chart-caption">Crossover period with renewables rapidly catching up to non-renewables</p>
-            </div>
-
-            <div class="chart-container">
-                <h3>Renewable vs Non-Renewable: 2025-2029</h3>
-                <img src="plots/eu_monthly_renewable_vs_nonrenewable_mean_2025_2029_combined.png" 
-                     alt="Renewable vs Non-Renewable 2025-2029" 
-                     class="chart-img">
-                <p class="chart-caption">Current period showing renewables approaching or exceeding 50% in many months</p>
-            </div>
-        </section>
-
-        <!-- ANNUAL EVOLUTION SECTION -->
-        <section class="trends-section">
-            <h2 class="section-title">Annual Evolution</h2>
-            <p class="section-description">Year-by-year trends showing the transformation of Europe's energy system</p>
-
-            <div class="chart-container">
-                <h3>Annual Renewable Energy Trends</h3>
-                <img src="plots/eu_annual_renewable_trends_combined.png" 
-                     alt="Annual Renewable Trends" 
-                     class="chart-img">
-                <p class="chart-caption">Solar and wind showing exponential growth, while hydro remains relatively stable</p>
-            </div>
-
-            <div class="chart-container">
-                <h3>Annual Non-Renewable Energy Trends</h3>
-                <img src="plots/eu_annual_non_renewable_trends_combined.png" 
-                     alt="Annual Non-Renewable Trends" 
-                     class="chart-img">
-                <p class="chart-caption">Coal declining sharply, gas fluctuating with market conditions, nuclear relatively stable</p>
-            </div>
-
-            <div class="chart-container">
-                <h3>The Energy Transition</h3>
-                <img src="plots/eu_annual_renewable_vs_non_renewable_combined.png" 
-                     alt="Energy Transition" 
-                     class="chart-img">
-                <p class="chart-caption">The big picture: renewables rising, non-renewables falling - Europe's energy transition in action</p>
-            </div>
-
-            <div class="chart-container">
-                <h3>Year-over-Year Change vs 2015 Baseline</h3>
-                <img src="plots/eu_annual_yoy_change_vs_2015.png" 
-                     alt="YoY Change vs 2015" 
-                     class="chart-img">
-                <p class="chart-caption">Percentage change from 2015 baseline showing dramatic renewable growth and fossil fuel decline</p>
-            </div>
-        </section>
-
-        <!-- KEY FINDINGS -->
-        <div class="insights-box">
-            <h3>Key Findings</h3>
-            <ul>
-                <li><strong>Renewable Growth:</strong> Solar and wind have more than doubled since 2015</li>
-                <li><strong>Coal Phase-Out:</strong> Coal generation has declined by over 50% in the past decade</li>
-                <li><strong>Seasonal Patterns:</strong> Wind and solar complement each other seasonally</li>
-                <li><strong>Energy Transition:</strong> Renewables now approach or exceed 50% in many periods</li>
-                <li><strong>Nuclear Stability:</strong> Nuclear remains a significant baseload contributor</li>
-                <li><strong>Gas Fluctuation:</strong> Natural gas acts as a flexible backup during transition</li>
-            </ul>
+        <!-- INSIGHTS BOX (updates based on selected chart) -->
+        <div id="insights-box" class="insights-box">
+            <!-- Insights will be loaded here by JavaScript -->
         </div>
     </div>
+
+    <script>
+        // Chart configurations
+        const charts = {
+            'solar': {
+                image: 'plots/eu_monthly_solar_combined_10years.png',
+                title: 'Solar Energy Production',
+                description: 'Monthly solar production showing strong seasonal variation with peak production in summer months and steady year-over-year growth.',
+                insights: [
+                    'Solar production shows 3-4x variation between summer and winter',
+                    'Consistent year-over-year growth in both absolute production and percentage of total',
+                    'Peak months (May-August) show dramatic increases over the decade'
+                ]
+            },
+            'wind': {
+                image: 'plots/eu_monthly_wind_total_combined_10years.png',
+                title: 'Wind Energy Production',
+                description: 'Monthly wind production with peak output typically in winter months and significant year-to-year growth.',
+                insights: [
+                    'Counter-seasonal to solar - higher output in winter months',
+                    'More variable than solar due to weather patterns',
+                    'Offshore wind expansion driving recent growth'
+                ]
+            },
+            'hydro': {
+                image: 'plots/eu_monthly_hydro_combined_10years.png',
+                title: 'Hydro Energy Production',
+                description: 'Seasonal patterns influenced by precipitation and snowmelt, with variations across years.',
+                insights: [
+                    'Most stable renewable source',
+                    'Spring peaks due to snowmelt',
+                    'Susceptible to drought conditions in recent years'
+                ]
+            },
+            'renewable': {
+                image: 'plots/eu_monthly_total_renewable_combined_10years.png',
+                title: 'Total Renewable Energy Production',
+                description: 'Combined renewable energy showing steady increase in both absolute production and percentage of total generation.',
+                insights: [
+                    'Renewables complement each other seasonally',
+                    'Consistent upward trend across all months',
+                    'Now approaching or exceeding 50% in many months'
+                ]
+            },
+            'period-2015-2019': {
+                image: 'plots/eu_monthly_energy_sources_mean_2015_2019_combined.png',
+                title: 'All Energy Sources: 2015-2019',
+                description: 'Baseline period showing the starting point of Europe\'s energy transition.',
+                insights: [
+                    'Fossil fuels still dominated the mix',
+                    'Nuclear provided stable baseload',
+                    'Renewables growing but still secondary'
+                ]
+            },
+            'period-2020-2024': {
+                image: 'plots/eu_monthly_energy_sources_mean_2020_2024_combined.png',
+                title: 'All Energy Sources: 2020-2024',
+                description: 'Acceleration period with significant renewable growth and fossil fuel reduction.',
+                insights: [
+                    'Dramatic solar and wind expansion',
+                    'Coal declining sharply',
+                    'Gas fluctuating with energy crisis'
+                ]
+            },
+            'period-2025-2029': {
+                image: 'plots/eu_monthly_energy_sources_mean_2025_2029_combined.png',
+                title: 'All Energy Sources: 2025-2029',
+                description: 'Current period (partial data) showing continued renewable expansion.',
+                insights: [
+                    'Renewables continuing strong growth',
+                    'Coal phase-out progressing',
+                    'Grid flexibility becoming critical'
+                ]
+            },
+            'ren-vs-nonren-2015-2019': {
+                image: 'plots/eu_monthly_renewable_vs_nonrenewable_mean_2015_2019_combined.png',
+                title: 'Renewable vs Non-Renewable: 2015-2019',
+                description: 'Starting period with non-renewables dominating the energy mix.',
+                insights: [
+                    'Non-renewables 2-3x higher than renewables',
+                    'Seasonal variation less pronounced',
+                    'Foundation period for transition'
+                ]
+            },
+            'ren-vs-nonren-2020-2024': {
+                image: 'plots/eu_monthly_renewable_vs_nonrenewable_mean_2020_2024_combined.png',
+                title: 'Renewable vs Non-Renewable: 2020-2024',
+                description: 'Crossover period with renewables rapidly catching up to non-renewables.',
+                insights: [
+                    'Gap narrowing significantly',
+                    'Some months renewables exceed non-renewables',
+                    'Tipping point approaching'
+                ]
+            },
+            'ren-vs-nonren-2025-2029': {
+                image: 'plots/eu_monthly_renewable_vs_nonrenewable_mean_2025_2029_combined.png',
+                title: 'Renewable vs Non-Renewable: 2025-2029',
+                description: 'Current period showing renewables approaching or exceeding 50% in many months.',
+                insights: [
+                    'Renewables often exceed non-renewables',
+                    'Energy transition accelerating',
+                    'New grid challenges emerging'
+                ]
+            },
+            'annual-renewable': {
+                image: 'plots/eu_annual_renewable_trends_combined.png',
+                title: 'Annual Renewable Energy Trends',
+                description: 'Solar and wind showing exponential growth, while hydro remains relatively stable.',
+                insights: [
+                    'Solar has more than tripled since 2015',
+                    'Wind doubled in the same period',
+                    'Hydro provides stable baseline'
+                ]
+            },
+            'annual-nonrenewable': {
+                image: 'plots/eu_annual_non_renewable_trends_combined.png',
+                title: 'Annual Non-Renewable Energy Trends',
+                description: 'Coal declining sharply, gas fluctuating with market conditions, nuclear relatively stable.',
+                insights: [
+                    'Coal down 50%+ since 2015',
+                    'Gas serving as transition fuel',
+                    'Nuclear debate ongoing in EU'
+                ]
+            },
+            'transition': {
+                image: 'plots/eu_annual_renewable_vs_non_renewable_combined.png',
+                title: 'The Energy Transition',
+                description: 'The big picture: renewables rising, non-renewables falling - Europe\'s energy transition in action.',
+                insights: [
+                    'Historic crossover approaching/achieved',
+                    'Fastest energy transition in history',
+                    'Path to climate neutrality visible'
+                ]
+            },
+            'yoy': {
+                image: 'plots/eu_annual_yoy_change_vs_2015.png',
+                title: 'Year-over-Year Change vs 2015 Baseline',
+                description: 'Percentage change from 2015 baseline showing dramatic renewable growth and fossil fuel decline.',
+                insights: [
+                    'Solar: +200-300% growth',
+                    'Wind: +100-150% growth',
+                    'Coal: -50% decline',
+                    'Total renewables doubling'
+                ]
+            }
+        };
+
+        // Show chart function
+        function showChart(chartId) {
+            const chart = charts[chartId];
+            const display = document.getElementById('chart-display');
+            const insights = document.getElementById('insights-box');
+
+            // Update chart display
+            display.innerHTML = `
+                <h2>${chart.title}</h2>
+                <img src="${chart.image}" alt="${chart.title}" class="chart-img">
+                <p class="chart-caption">${chart.description}</p>
+            `;
+
+            // Update insights
+            insights.innerHTML = `
+                <h3>Key Insights</h3>
+                <ul>
+                    ${chart.insights.map(insight => `<li>${insight}</li>`).join('')}
+                </ul>
+            `;
+
+            // Scroll to chart
+            display.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+
+        // Load default chart on page load
+        window.addEventListener('DOMContentLoaded', () => {
+            showChart('transition');
+        });
+    </script>
 
     <footer>
         <p>Built with data from <a href="https://transparency.entsoe.eu/" target="_blank">ENTSO-E</a> | 
