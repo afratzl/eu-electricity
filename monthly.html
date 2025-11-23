@@ -27,7 +27,6 @@
 
         <div class="info-box">
             <p><strong>Select an energy source below</strong> to view its 10-year monthly production trends</p>
-            <p><strong>Left Charts:</strong> Absolute production in TWh (Terawatt-hours) | <strong>Right Charts:</strong> Percentage of total EU generation</p>
             <p><strong>Data Period:</strong> 2015-2025 (current year shows partial data)</p>
         </div>
 
@@ -85,7 +84,7 @@
             'all-non-renewables': 'All Non-Renewables'
         };
 
-        // Show monthly chart function - now displays both plots vertically
+        // Show monthly chart function - displays both plots vertically without section headers
         function showMonthlyChart(chartId) {
             const sourceName = monthlyCharts[chartId];
             const display = document.getElementById('monthly-chart-display');
@@ -93,13 +92,12 @@
             // Clean chart ID for filename
             const cleanId = chartId.replace(/-/g, '_');
             
-            // Update chart display with both plots stacked vertically
+            // Update chart display with both plots stacked vertically (NO section headers)
             display.innerHTML = `
                 <h2>${sourceName} Energy Production</h2>
                 <p class="chart-subtitle">10-year monthly comparison (2015-2025)</p>
                 
                 <div style="margin-bottom: 40px;">
-                    <h3 style="text-align: center; margin-bottom: 20px;">Percentage of Total EU Generation</h3>
                     <img src="plots/eu_monthly_${cleanId}_percentage_10years.png" 
                          alt="${sourceName} Percentage" 
                          class="chart-img"
@@ -107,7 +105,6 @@
                 </div>
                 
                 <div style="margin-bottom: 40px;">
-                    <h3 style="text-align: center; margin-bottom: 20px;">Absolute Production (TWh)</h3>
                     <img src="plots/eu_monthly_${cleanId}_absolute_10years.png" 
                          alt="${sourceName} Absolute Production" 
                          class="chart-img"
