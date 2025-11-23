@@ -217,8 +217,21 @@ def create_all_charts(all_data):
                                               '#B22222'])  # Fire brick
     year_colors = [mcolors.rgb2hex(cmap(i / (n_years - 1))) for i in range(n_years)]
 
-    # COMBINED CHARTS: Solar, Wind, Hydro (Absolute + Percentage side-by-side)
-    sources_to_plot = ['Solar', 'Wind Total', 'Hydro']
+    # COMBINED CHARTS: All major energy sources (Absolute + Percentage side-by-side)
+    sources_to_plot = [
+        'Solar', 
+        'Wind Total', 
+        'Hydro',
+        'Biomass',
+        'Geothermal',
+        'Gas',
+        'Coal',
+        'Nuclear',
+        'Oil',
+        'Waste',
+        'All Renewables',
+        'All Non-Renewables'
+    ]
 
     # First pass: calculate max values for consistent y-axis ranges
     max_abs_value = 0
@@ -319,82 +332,6 @@ def create_all_charts(all_data):
         maximize_figure()
 
         filename = f'plots/eu_monthly_{source_name.lower().replace(" ", "_")}_combined_10years.png'
-        plt.savefig(filename, dpi=300, bbox_inches='tight')
-        print(f"  Chart saved as: {filename}")
-
-    # COMBINED CHART: Total Renewables (Absolute + Percentage)
-    print("\n" + "=" * 60)
-    print("CREATING TOTAL RENEWABLE CHART (COMBINED)")
-    print("=" * 60)
-
-    if 'All Renewables' in all_data and 'Total Generation' in all_data:
-        print("\nCreating combined Total Renewable chart...")
-
-        renewables_data = all_data['All Renewables']['year_data']
-        total_data = all_data['Total Generation']['year_data']
-
-        fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(fig_width, fig_height))
-        created_figures.append(fig)
-
-        for i, year in enumerate(years_available):
-            if year not in renewables_data or year not in total_data:
-                continue
-
-            renewables_monthly = renewables_data[year]
-            total_monthly = total_data[year]
-
-            current_date = datetime.now()
-            current_year = current_date.year
-
-            if year == current_year:
-                months_to_show = range(1, current_date.month + 1)
-            else:
-                months_to_show = range(1, 13)
-
-            months = [month_names[month - 1] for month in months_to_show]
-            values_gwh = [renewables_monthly.get(month, 0) for month in months_to_show]  # Keep GWh
-            values_twh = [val / 1000 for val in values_gwh]  # Convert to TWh
-
-            color = year_colors[i % len(year_colors)]
-            ax1.plot(months, values_twh, marker='o', color=color, linewidth=3, markersize=9, label=str(year))
-
-            percentages = []
-            for i_month, month in enumerate(months_to_show):
-                renewables_val = values_gwh[i_month]  # Use GWh for percentage
-                total_val = total_monthly.get(month, 0)
-                if total_val > 0:
-                    percentage = (renewables_val / total_val) * 100
-                    percentages.append(percentage)
-                else:
-                    percentages.append(0)
-
-            ax2.plot(months, percentages, marker='o', color=color, linewidth=3, markersize=9, label=str(year))
-
-        ax1.set_title('Total Renewable Production (TWh)', fontsize=18, fontweight='bold')
-        ax1.set_xlabel('Month', fontsize=16)
-        ax1.set_ylabel('Energy (TWh)', fontsize=16)
-        ax1.set_ylim(bottom=0)
-        ax1.tick_params(axis='both', labelsize=14)
-        ax1.grid(True, linestyle='--', alpha=0.7)
-
-        ax2.set_title('Renewables % of Total Generation', fontsize=18, fontweight='bold')
-        ax2.set_xlabel('Month', fontsize=16)
-        ax2.set_ylabel('Percentage (%)', fontsize=16)
-        ax2.set_ylim(0, 100)
-        ax2.tick_params(axis='both', labelsize=14)
-        ax2.grid(True, linestyle='--', alpha=0.7)
-
-        handles, labels = ax1.get_legend_handles_labels()
-        fig.legend(handles, labels, loc='lower center', bbox_to_anchor=(0.5, 0.01), ncol=len(years_available),
-                   fontsize=12, frameon=False)
-
-        fig.suptitle('Monthly Total Renewable Energy Across EU (10-Year Comparison)',
-                     fontsize=20, fontweight='bold', y=0.97)
-
-        plt.tight_layout(rect=[0, 0.05, 1, 0.96])
-        maximize_figure()
-
-        filename = 'plots/eu_monthly_total_renewable_combined_10years.png'
         plt.savefig(filename, dpi=300, bbox_inches='tight')
         print(f"  Chart saved as: {filename}")
 
