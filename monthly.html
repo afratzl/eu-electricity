@@ -71,66 +71,48 @@
     <script>
         // Monthly chart configurations
         const monthlyCharts = {
-            'solar': {
-                image: 'plots/eu_monthly_solar_combined_10years.png',
-                title: 'Solar Energy Production'
-            },
-            'wind': {
-                image: 'plots/eu_monthly_wind_combined_10years.png',
-                title: 'Wind Energy Production'
-            },
-            'hydro': {
-                image: 'plots/eu_monthly_hydro_combined_10years.png',
-                title: 'Hydro Energy Production'
-            },
-            'biomass': {
-                image: 'plots/eu_monthly_biomass_combined_10years.png',
-                title: 'Biomass Energy Production'
-            },
-            'geothermal': {
-                image: 'plots/eu_monthly_geothermal_combined_10years.png',
-                title: 'Geothermal Energy Production'
-            },
-            'gas': {
-                image: 'plots/eu_monthly_gas_combined_10years.png',
-                title: 'Gas Energy Production'
-            },
-            'coal': {
-                image: 'plots/eu_monthly_coal_combined_10years.png',
-                title: 'Coal Energy Production'
-            },
-            'nuclear': {
-                image: 'plots/eu_monthly_nuclear_combined_10years.png',
-                title: 'Nuclear Energy Production'
-            },
-            'oil': {
-                image: 'plots/eu_monthly_oil_combined_10years.png',
-                title: 'Oil Energy Production'
-            },
-            'waste': {
-                image: 'plots/eu_monthly_waste_combined_10years.png',
-                title: 'Waste Energy Production'
-            },
-            'all-renewables': {
-                image: 'plots/eu_monthly_all_renewables_combined_10years.png',
-                title: 'Total Renewable Energy Production'
-            },
-            'all-non-renewables': {
-                image: 'plots/eu_monthly_all_non-renewables_combined_10years.png',
-                title: 'Total Non-Renewable Energy Production'
-            }
+            'solar': 'Solar',
+            'wind': 'Wind',
+            'hydro': 'Hydro',
+            'biomass': 'Biomass',
+            'geothermal': 'Geothermal',
+            'gas': 'Gas',
+            'coal': 'Coal',
+            'nuclear': 'Nuclear',
+            'oil': 'Oil',
+            'waste': 'Waste',
+            'all-renewables': 'All Renewables',
+            'all-non-renewables': 'All Non-Renewables'
         };
 
-        // Show monthly chart function
+        // Show monthly chart function - now displays both plots vertically
         function showMonthlyChart(chartId) {
-            const chart = monthlyCharts[chartId];
+            const sourceName = monthlyCharts[chartId];
             const display = document.getElementById('monthly-chart-display');
-
-            // Update chart display
+            
+            // Clean chart ID for filename
+            const cleanId = chartId.replace(/-/g, '_');
+            
+            // Update chart display with both plots stacked vertically
             display.innerHTML = `
-                <h2>${chart.title}</h2>
-                <img src="${chart.image}" alt="${chart.title}" class="chart-img">
-                <p class="chart-caption">10-year monthly comparison showing seasonal patterns and long-term trends</p>
+                <h2>${sourceName} Energy Production</h2>
+                <p class="chart-subtitle">10-year monthly comparison (2015-2025)</p>
+                
+                <div style="margin-bottom: 40px;">
+                    <h3 style="text-align: center; margin-bottom: 20px;">Percentage of Total EU Generation</h3>
+                    <img src="plots/eu_monthly_${cleanId}_percentage_10years.png" 
+                         alt="${sourceName} Percentage" 
+                         class="chart-img"
+                         onerror="this.src='plots/eu_monthly_${cleanId}_combined_10years.png'; this.onerror=null;">
+                </div>
+                
+                <div style="margin-bottom: 40px;">
+                    <h3 style="text-align: center; margin-bottom: 20px;">Absolute Production (TWh)</h3>
+                    <img src="plots/eu_monthly_${cleanId}_absolute_10years.png" 
+                         alt="${sourceName} Absolute Production" 
+                         class="chart-img"
+                         onerror="this.style.display='none';">
+                </div>
             `;
 
             // Scroll to chart
@@ -148,5 +130,15 @@
            Source code on <a href="https://github.com/afratzl/eu-energy-analysis" target="_blank">GitHub</a> | 
            Built by <a href="https://www.linkedin.com/in/alexfratzl/" target="_blank">Alex Fratzl</a> with Claude Sonnet</p>
     </footer>
+
+    <style>
+        .chart-subtitle {
+            text-align: center;
+            color: #7f8c8d;
+            font-size: 1.1em;
+            margin-bottom: 30px;
+        }
+    </style>
+
 </body>
 </html>
