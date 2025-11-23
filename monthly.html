@@ -32,25 +32,28 @@
 
         <!-- DROPDOWN SELECTOR -->
         <div class="chart-selector">
-            <label for="monthly-select">Choose Energy Source:</label>
+            <label for="monthly-select">
+                <span id="color-indicator" style="display: inline-block; width: 16px; height: 16px; border-radius: 50%; background-color: #FFD700; margin-right: 8px; vertical-align: middle; border: 2px solid #333;"></span>
+                Choose Energy Source:
+            </label>
             <select id="monthly-select" onchange="showMonthlyChart(this.value)">
                 <optgroup label="🌞 Renewable Sources">
-                    <option value="solar" selected data-color="#FFD700">● Solar</option>
-                    <option value="wind" data-color="#228B22">● Wind</option>
-                    <option value="hydro" data-color="#1E90FF">● Hydro</option>
-                    <option value="biomass" data-color="#9ACD32">● Biomass</option>
-                    <option value="geothermal" data-color="#708090">● Geothermal</option>
+                    <option value="solar" selected data-color="#FFD700">Solar</option>
+                    <option value="wind" data-color="#228B22">Wind</option>
+                    <option value="hydro" data-color="#1E90FF">Hydro</option>
+                    <option value="biomass" data-color="#9ACD32">Biomass</option>
+                    <option value="geothermal" data-color="#708090">Geothermal</option>
                 </optgroup>
                 <optgroup label="⚡ Non-Renewable Sources">
-                    <option value="gas" data-color="#FF1493">● Gas</option>
-                    <option value="coal" data-color="#8B008B">● Coal</option>
-                    <option value="nuclear" data-color="#8B4513">● Nuclear</option>
-                    <option value="oil" data-color="#191970">● Oil</option>
-                    <option value="waste" data-color="#808000">● Waste</option>
+                    <option value="gas" data-color="#FF1493">Gas</option>
+                    <option value="coal" data-color="#8B008B">Coal</option>
+                    <option value="nuclear" data-color="#8B4513">Nuclear</option>
+                    <option value="oil" data-color="#191970">Oil</option>
+                    <option value="waste" data-color="#808000">Waste</option>
                 </optgroup>
                 <optgroup label="📊 Totals">
-                    <option value="all-renewables" data-color="#00CED1">● All Renewables</option>
-                    <option value="all-non-renewables" data-color="#000000">● All Non-Renewables</option>
+                    <option value="all-renewables" data-color="#00CED1">All Renewables</option>
+                    <option value="all-non-renewables" data-color="#000000">All Non-Renewables</option>
                 </optgroup>
             </select>
         </div>
@@ -88,6 +91,15 @@
         function showMonthlyChart(chartId) {
             const sourceName = monthlyCharts[chartId];
             const display = document.getElementById('monthly-chart-display');
+            
+            // Update color indicator
+            const select = document.getElementById('monthly-select');
+            const selectedOption = select.options[select.selectedIndex];
+            const color = selectedOption.getAttribute('data-color');
+            const indicator = document.getElementById('color-indicator');
+            if (indicator && color) {
+                indicator.style.backgroundColor = color;
+            }
             
             // Clean chart ID for filename
             const cleanId = chartId.replace(/-/g, '_');
@@ -134,20 +146,6 @@
             font-size: 1.1em;
             margin-bottom: 30px;
         }
-        
-        /* Color-coded dropdown options */
-        select option[value="solar"] { color: #FFD700; font-weight: bold; }
-        select option[value="wind"] { color: #228B22; font-weight: bold; }
-        select option[value="hydro"] { color: #1E90FF; font-weight: bold; }
-        select option[value="biomass"] { color: #9ACD32; font-weight: bold; }
-        select option[value="geothermal"] { color: #708090; font-weight: bold; }
-        select option[value="gas"] { color: #FF1493; font-weight: bold; }
-        select option[value="coal"] { color: #8B008B; font-weight: bold; }
-        select option[value="nuclear"] { color: #8B4513; font-weight: bold; }
-        select option[value="oil"] { color: #191970; font-weight: bold; }
-        select option[value="waste"] { color: #808000; font-weight: bold; }
-        select option[value="all-renewables"] { color: #00CED1; font-weight: bold; }
-        select option[value="all-non-renewables"] { color: #000000; font-weight: bold; }
     </style>
 
 </body>
