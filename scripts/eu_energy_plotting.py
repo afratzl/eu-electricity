@@ -327,13 +327,16 @@ def create_all_charts(all_data):
             print(f"  ⚠ Skipping {source_name}")
             continue
 
-        print(f"\nCreating combined chart for {source_name} (Absolute + Percentage)...")
+        print(f"\nCreating charts for {source_name}...")
 
         year_data = all_data[source_name]['year_data']
         total_data = all_data['Total Generation']['year_data']
 
-        fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(fig_width, fig_height))
-        created_figures.append(fig)
+        # Create TWO separate figures for better mobile viewing
+        
+        # FIGURE 1: Percentage Plot
+        fig1, ax1 = plt.subplots(1, 1, figsize=(fig_width, fig_height * 0.7))
+        created_figures.append(fig1)
 
         for i, year in enumerate(years_available):
             if year not in year_data:
@@ -350,17 +353,13 @@ def create_all_charts(all_data):
                 months_to_show = range(1, 13)
 
             months = [month_names[month - 1] for month in months_to_show]
-            values_gwh = [monthly_data.get(month, 0) for month in months_to_show]  # Keep GWh for percentages
-            values_twh = [val / 1000 for val in values_gwh]  # Convert to TWh for display
-
-            color = year_colors[i % len(year_colors)]
-            ax1.plot(months, values_twh, marker='o', color=color, linewidth=3, markersize=9, label=str(year))
+            values_gwh = [monthly_data.get(month, 0) for month in months_to_show]
 
             if year in total_data:
                 total_monthly = total_data[year]
                 percentages = []
                 for i_month, month in enumerate(months_to_show):
-                    source_val = values_gwh[i_month]  # Use GWh for percentage calculation
+                    source_val = values_gwh[i_month]
                     total_val = total_monthly.get(month, 0)
                     if total_val > 0:
                         percentage = (source_val / total_val) * 100
@@ -368,47 +367,73 @@ def create_all_charts(all_data):
                     else:
                         percentages.append(0)
 
-                ax2.plot(months, percentages, marker='o', color=color, linewidth=3, markersize=9, label=str(year))
+                color = year_colors[i % len(year_colors)]
+                ax1.plot(months, percentages, marker='o', color=color, linewidth=3, markersize=9, label=str(year))
 
-        ax1.set_title(f'{source_name} Production (TWh)', fontsize=18, fontweight='bold')
-        ax1.set_xlabel('Month', fontsize=16)
-        ax1.set_ylabel('Energy (TWh)', fontsize=16)
+        ax1.set_title(f'{source_name} % of Total Generation', fontsize=22, fontweight='bold', pad=20)
+        ax1.set_xlabel('Month', fontsize=18, fontweight='bold')
+        ax1.set_ylabel('Percentage (%)', fontsize=18, fontweight='bold')
         
-        # Use appropriate y-axis limit based on source type
         if source_name in total_sources:
-            ax1.set_ylim(0, max_abs_totals)
+            ax1.set_ylim(0, max_pct_totals)
         else:
-            ax1.set_ylim(0, max_abs_individual)
+            ax1.set_ylim(0, max_pct_individual)
             
-        ax1.tick_params(axis='both', labelsize=14)
-        ax1.grid(True, linestyle='--', alpha=0.7)
+        ax1.tick_params(axis='both', labelsize=16, width=2, length=8)
+        ax1.grid(True, linestyle='--', alpha=0.7, linewidth=1.5)
 
-        ax2.set_title(f'{source_name} % of Total Generation', fontsize=18, fontweight='bold')
-        ax2.set_xlabel('Month', fontsize=16)
-        ax2.set_ylabel('Percentage (%)', fontsize=16)
+        ax1.legend(loc='upper left', ncol=len(years_available)//2 + 1, fontsize=13, frameon=True, fancybox=True, shadow=True)
+
+        plt.tight_layout()
+
+        percentage_filename = f'plots/eu_monthly_{source_name.lower().replace(" ", "_")}_percentage_10years.png'
+        plt.savefig(percentage_filename, dpi=300, bbox_inches='tight')
+        print(f"  Percentage chart saved as: {percentage_filename}")
+
+        # FIGURE 2: Absolute Values Plot
+        fig2, ax2 = plt.subplots(1, 1, figsize=(fig_width, fig_height * 0.7))
+        created_figures.append(fig2)
+
+        for i, year in enumerate(years_available):
+            if year not in year_data:
+                continue
+
+            monthly_data = year_data[year]
+
+            current_date = datetime.now()
+            current_year = current_date.year
+
+            if year == current_year:
+                months_to_show = range(1, current_date.month + 1)
+            else:
+                months_to_show = range(1, 13)
+
+            months = [month_names[month - 1] for month in months_to_show]
+            values_gwh = [monthly_data.get(month, 0) for month in months_to_show]
+            values_twh = [val / 1000 for val in values_gwh]
+
+            color = year_colors[i % len(year_colors)]
+            ax2.plot(months, values_twh, marker='o', color=color, linewidth=3, markersize=9, label=str(year))
+
+        ax2.set_title(f'{source_name} Production (TWh)', fontsize=22, fontweight='bold', pad=20)
+        ax2.set_xlabel('Month', fontsize=18, fontweight='bold')
+        ax2.set_ylabel('Energy (TWh)', fontsize=18, fontweight='bold')
         
-        # Use appropriate y-axis limit based on source type
         if source_name in total_sources:
-            ax2.set_ylim(0, max_pct_totals)
+            ax2.set_ylim(0, max_abs_totals)
         else:
-            ax2.set_ylim(0, max_pct_individual)
+            ax2.set_ylim(0, max_abs_individual)
             
-        ax2.tick_params(axis='both', labelsize=14)
-        ax2.grid(True, linestyle='--', alpha=0.7)
+        ax2.tick_params(axis='both', labelsize=16, width=2, length=8)
+        ax2.grid(True, linestyle='--', alpha=0.7, linewidth=1.5)
 
-        handles, labels = ax1.get_legend_handles_labels()
-        fig.legend(handles, labels, loc='lower center', bbox_to_anchor=(0.5, 0.01), ncol=len(years_available),
-                   fontsize=12, frameon=False)
+        ax2.legend(loc='upper left', ncol=len(years_available)//2 + 1, fontsize=13, frameon=True, fancybox=True, shadow=True)
 
-        fig.suptitle(f'Monthly {source_name} Energy Production Across EU (10-Year Comparison)',
-                     fontsize=20, fontweight='bold', y=0.97)
+        plt.tight_layout()
 
-        plt.tight_layout(rect=[0, 0.05, 1, 0.96])
-        maximize_figure()
-
-        filename = f'plots/eu_monthly_{source_name.lower().replace(" ", "_")}_combined_10years.png'
-        plt.savefig(filename, dpi=300, bbox_inches='tight')
-        print(f"  Chart saved as: {filename}")
+        absolute_filename = f'plots/eu_monthly_{source_name.lower().replace(" ", "_")}_absolute_10years.png'
+        plt.savefig(absolute_filename, dpi=300, bbox_inches='tight')
+        print(f"  Absolute chart saved as: {absolute_filename}")
 
     # Monthly Mean Charts by Period (COMBINED: Absolute + Percentage)
     print("\n" + "=" * 60)
