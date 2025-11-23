@@ -245,7 +245,7 @@ def create_all_charts(all_data):
         print(f"  ✓ All Non-Renewables calculated")
 
     # COMBINED CHARTS: All major energy sources (Absolute + Percentage side-by-side)
-    sources_to_plot = [
+    individual_sources = [
         'Solar', 
         'Wind', 
         'Hydro',
@@ -255,16 +255,24 @@ def create_all_charts(all_data):
         'Coal',
         'Nuclear',
         'Oil',
-        'Waste',
+        'Waste'
+    ]
+    
+    total_sources = [
         'All Renewables',
         'All Non-Renewables'
     ]
+    
+    sources_to_plot = individual_sources + total_sources
 
-    # First pass: calculate max values for consistent y-axis ranges
-    max_abs_value = 0
-    max_pct_value = 0
+    # First pass: calculate max values separately for individual sources and totals
+    max_abs_individual = 0
+    max_pct_individual = 0
+    max_abs_totals = 0
+    max_pct_totals = 0
 
-    for source_name in sources_to_plot:
+    # Calculate max for individual sources
+    for source_name in individual_sources:
         if source_name in all_data and 'Total Generation' in all_data:
             year_data = all_data[source_name]['year_data']
             total_data = all_data['Total Generation']['year_data']
@@ -274,17 +282,45 @@ def create_all_charts(all_data):
                     monthly_data = year_data[year]
                     for month in range(1, 13):
                         val = monthly_data.get(month, 0)
-                        max_abs_value = max(max_abs_value, val / 1000)  # Compare in TWh for display
+                        max_abs_individual = max(max_abs_individual, val / 1000)
 
                         if year in total_data:
                             total_val = total_data[year].get(month, 0)
                             if total_val > 0:
                                 pct = (val / total_val) * 100
-                                max_pct_value = max(max_pct_value, pct)
+                                max_pct_individual = max(max_pct_individual, pct)
 
-    # Add 10% margin
-    max_abs_value *= 1.1
-    max_pct_value *= 1.1
+    # Calculate max for totals
+    for source_name in total_sources:
+        if source_name in all_data and 'Total Generation' in all_data:
+            year_data = all_data[source_name]['year_data']
+            total_data = all_data['Total Generation']['year_data']
+
+            for year in years_available:
+                if year in year_data:
+                    monthly_data = year_data[year]
+                    for month in range(1, 13):
+                        val = monthly_data.get(month, 0)
+                        max_abs_totals = max(max_abs_totals, val / 1000)
+
+                        if year in total_data:
+                            total_val = total_data[year].get(month, 0)
+                            if total_val > 0:
+                                pct = (val / total_val) * 100
+                                max_pct_totals = max(max_pct_totals, pct)
+
+    # Set reasonable limits with margin
+    # For individual sources: cap at suggested values or calculated max, whichever is higher
+    max_abs_individual = max(100, max_abs_individual * 1.1)  # At least 100 TWh
+    max_pct_individual = max(35, max_pct_individual * 1.1)   # At least 35%
+    
+    # For totals: use calculated max with margin
+    max_abs_totals = max_abs_totals * 1.1
+    max_pct_totals = max_pct_totals * 1.1
+    
+    print(f"\nY-axis limits:")
+    print(f"  Individual sources: {max_abs_individual:.1f} TWh, {max_pct_individual:.1f}%")
+    print(f"  Totals: {max_abs_totals:.1f} TWh, {max_pct_totals:.1f}%")
 
     for source_name in sources_to_plot:
         if source_name not in all_data or 'Total Generation' not in all_data:
@@ -337,14 +373,26 @@ def create_all_charts(all_data):
         ax1.set_title(f'{source_name} Production (TWh)', fontsize=18, fontweight='bold')
         ax1.set_xlabel('Month', fontsize=16)
         ax1.set_ylabel('Energy (TWh)', fontsize=16)
-        ax1.set_ylim(0, max_abs_value)
+        
+        # Use appropriate y-axis limit based on source type
+        if source_name in total_sources:
+            ax1.set_ylim(0, max_abs_totals)
+        else:
+            ax1.set_ylim(0, max_abs_individual)
+            
         ax1.tick_params(axis='both', labelsize=14)
         ax1.grid(True, linestyle='--', alpha=0.7)
 
         ax2.set_title(f'{source_name} % of Total Generation', fontsize=18, fontweight='bold')
         ax2.set_xlabel('Month', fontsize=16)
         ax2.set_ylabel('Percentage (%)', fontsize=16)
-        ax2.set_ylim(0, max_pct_value)
+        
+        # Use appropriate y-axis limit based on source type
+        if source_name in total_sources:
+            ax2.set_ylim(0, max_pct_totals)
+        else:
+            ax2.set_ylim(0, max_pct_individual)
+            
         ax2.tick_params(axis='both', labelsize=14)
         ax2.grid(True, linestyle='--', alpha=0.7)
 
@@ -1034,6 +1082,7 @@ def main():
     print("  ✓ ENTSO-E colors")
     print("  ✓ Wind renamed from 'Wind Total' to 'Wind'")
     print("  ✓ All Non-Renewables calculated before chart creation")
+    print("  ✓ Normalized y-axes: individual sources vs totals")
     print("=" * 60)
 
     # Verify environment variables are set
