@@ -225,8 +225,8 @@ def create_all_charts(all_data):
                         linewidth=6, markersize=13, label=str(year))
 
         # Title with bold source name and smaller subtitle
-        fig1.suptitle(source_name, fontsize=34, fontweight='bold', y=0.98)
-        ax1.set_title('% of EU Production', fontsize=26, fontweight='normal', pad=10)
+        fig1.suptitle(source_name, fontsize=34, fontweight='bold', x=0.5, y=0.98, ha="center")
+        ax1.set_title('Percentage of EU Production', fontsize=26, fontweight='normal', pad=10)
         ax1.set_xlabel('Month', fontsize=28, fontweight='bold', labelpad=15)
         ax1.set_ylabel('Percentage (%)', fontsize=28, fontweight='bold', labelpad=15)
         
@@ -275,7 +275,7 @@ def create_all_charts(all_data):
                     linewidth=6, markersize=13, label=str(year))
 
         # Title with bold source name and smaller subtitle
-        fig2.suptitle(source_name, fontsize=34, fontweight='bold', y=0.98)
+        fig2.suptitle(source_name, fontsize=34, fontweight='bold', x=0.5, y=0.98, ha="center")
         ax2.set_title('Absolute Production', fontsize=26, fontweight='normal', pad=10)
         ax2.set_xlabel('Month', fontsize=28, fontweight='bold', labelpad=15)
         ax2.set_ylabel('Energy (TWh)', fontsize=28, fontweight='bold', labelpad=15)
@@ -411,26 +411,28 @@ def create_all_charts(all_data):
                 ax2.plot(months, values_twh, marker='o', color=color,
                          linewidth=6, markersize=13, label=source_name)
 
-            ax1.set_title('% of EU Production', fontsize=28, fontweight='normal')
-            ax1.set_xlabel('Month', fontsize=24)
-            ax1.set_ylabel('Percentage (%)', fontsize=24)
+            ax1.set_title('Percentage of EU Production', fontsize=28, fontweight='normal')
+            ax1.set_xlabel('Month', fontsize=24, fontweight='bold')
+            ax1.set_ylabel('Percentage (%)', fontsize=24, fontweight='bold')
             ax1.set_ylim(0, max_pct_all_periods)
             ax1.tick_params(axis='both', labelsize=20)
             ax1.grid(True, linestyle='--', alpha=0.7)
 
             ax2.set_title('Absolute Production', fontsize=28, fontweight='normal')
-            ax2.set_xlabel('Month', fontsize=24)
-            ax2.set_ylabel('Energy (TWh)', fontsize=24)
+            ax2.set_xlabel('Month', fontsize=24, fontweight='bold')
+            ax2.set_ylabel('Energy (TWh)', fontsize=24, fontweight='bold')
             ax2.set_ylim(0, max_abs_all_periods)
             ax2.tick_params(axis='both', labelsize=20)
             ax2.grid(True, linestyle='--', alpha=0.7)
 
-            handles, labels = ax1.get_legend_handles_labels()
-            fig.legend(handles, labels, loc='lower center', bbox_to_anchor=(0.5, -0.02), ncol=5,
+            # Double legend - one per subplot
+            ax1.legend(loc='upper center', bbox_to_anchor=(0.5, -0.15), ncol=5,
+                       fontsize=18, frameon=False)
+            ax2.legend(loc='upper center', bbox_to_anchor=(0.5, -0.15), ncol=5,
                        fontsize=18, frameon=False)
 
             fig.suptitle(f'All Energy Sources: {period["name"]}',
-                         fontsize=30, fontweight='bold', y=0.995)
+                         fontsize=30, fontweight='bold', x=0.5, y=0.995, ha="center")
 
             plt.tight_layout(rect=[0, 0.02, 1, 0.985])
 
@@ -535,26 +537,28 @@ def create_all_charts(all_data):
                 ax2.plot(month_names_abbr, values_twh, marker='o', color=color,
                          linewidth=6, markersize=13, label=category_name)
 
-            ax1.set_title('% of EU Production', fontsize=28, fontweight='normal')
-            ax1.set_xlabel('Month', fontsize=24)
-            ax1.set_ylabel('Percentage (%)', fontsize=24)
+            ax1.set_title('Percentage of EU Production', fontsize=28, fontweight='normal')
+            ax1.set_xlabel('Month', fontsize=24, fontweight='bold')
+            ax1.set_ylabel('Percentage (%)', fontsize=24, fontweight='bold')
             ax1.set_ylim(0, 100)
             ax1.tick_params(axis='both', labelsize=20)
             ax1.grid(True, linestyle='--', alpha=0.7)
 
             ax2.set_title('Absolute Production', fontsize=28, fontweight='normal')
-            ax2.set_xlabel('Month', fontsize=24)
-            ax2.set_ylabel('Energy (TWh)', fontsize=24)
+            ax2.set_xlabel('Month', fontsize=24, fontweight='bold')
+            ax2.set_ylabel('Energy (TWh)', fontsize=24, fontweight='bold')
             ax2.set_ylim(0, max_abs_renewable_periods)
             ax2.tick_params(axis='both', labelsize=20)
             ax2.grid(True, linestyle='--', alpha=0.7)
 
-            handles, labels = ax1.get_legend_handles_labels()
-            fig.legend(handles, labels, loc='lower center', bbox_to_anchor=(0.5, -0.02), ncol=2,
+            # Double legend - one per subplot
+            ax1.legend(loc='upper center', bbox_to_anchor=(0.5, -0.15), ncol=2,
+                       fontsize=22, frameon=False)
+            ax2.legend(loc='upper center', bbox_to_anchor=(0.5, -0.15), ncol=2,
                        fontsize=22, frameon=False)
 
             fig.suptitle(f'Renewables vs Non-Renewables: {period["name"]}',
-                         fontsize=30, fontweight='bold', y=0.995)
+                         fontsize=30, fontweight='bold', x=0.5, y=0.995, ha="center")
 
             plt.tight_layout(rect=[0, 0.02, 1, 0.985])
 
@@ -660,26 +664,28 @@ def create_all_charts(all_data):
                 lines_plotted += 1
 
         if lines_plotted > 0:
-            ax1.set_title('% of EU Production', fontsize=28, fontweight='normal')
-            ax1.set_xlabel('Year', fontsize=24)
-            ax1.set_ylabel('Percentage (%)', fontsize=24)
+            ax1.set_title('Percentage of EU Production', fontsize=28, fontweight='normal')
+            ax1.set_xlabel('Year', fontsize=24, fontweight='bold')
+            ax1.set_ylabel('Percentage (%)', fontsize=24, fontweight='bold')
             ax1.set_ylim(0, max_annual_pct)
             ax1.tick_params(axis='both', labelsize=20)
             ax1.grid(True, linestyle='--', alpha=0.7)
 
             ax2.set_title('Absolute Production', fontsize=28, fontweight='normal')
-            ax2.set_xlabel('Year', fontsize=24)
-            ax2.set_ylabel('Energy Production (TWh)', fontsize=24)
+            ax2.set_xlabel('Year', fontsize=24, fontweight='bold')
+            ax2.set_ylabel('Energy (TWh)', fontsize=24, fontweight='bold')
             ax2.set_ylim(0, max_annual_twh)
             ax2.tick_params(axis='both', labelsize=20)
             ax2.grid(True, linestyle='--', alpha=0.7)
 
-            handles, labels = ax1.get_legend_handles_labels()
-            fig.legend(handles, labels, loc='lower center', bbox_to_anchor=(0.5, -0.02), ncol=len(available_renewables),
+            # Double legend - one per subplot
+            ax1.legend(loc='upper center', bbox_to_anchor=(0.5, -0.15), ncol=len(available_renewables),
+                       fontsize=18, frameon=False)
+            ax2.legend(loc='upper center', bbox_to_anchor=(0.5, -0.15), ncol=len(available_renewables),
                        fontsize=18, frameon=False)
 
             fig.suptitle('Annual Renewable Trends',
-                         fontsize=30, fontweight='bold', y=0.995)
+                         fontsize=30, fontweight='bold', x=0.5, y=0.995, ha="center")
 
             plt.tight_layout(rect=[0, 0.02, 1, 0.985])
 
@@ -729,26 +735,28 @@ def create_all_charts(all_data):
                 lines_plotted += 1
 
         if lines_plotted > 0:
-            ax1.set_title('% of EU Production', fontsize=28, fontweight='normal')
-            ax1.set_xlabel('Year', fontsize=24)
-            ax1.set_ylabel('Percentage (%)', fontsize=24)
+            ax1.set_title('Percentage of EU Production', fontsize=28, fontweight='normal')
+            ax1.set_xlabel('Year', fontsize=24, fontweight='bold')
+            ax1.set_ylabel('Percentage (%)', fontsize=24, fontweight='bold')
             ax1.set_ylim(0, max_annual_pct)
             ax1.tick_params(axis='both', labelsize=20)
             ax1.grid(True, linestyle='--', alpha=0.7)
 
             ax2.set_title('Absolute Production', fontsize=28, fontweight='normal')
-            ax2.set_xlabel('Year', fontsize=24)
-            ax2.set_ylabel('Energy Production (TWh)', fontsize=24)
+            ax2.set_xlabel('Year', fontsize=24, fontweight='bold')
+            ax2.set_ylabel('Energy (TWh)', fontsize=24, fontweight='bold')
             ax2.set_ylim(0, max_annual_twh)
             ax2.tick_params(axis='both', labelsize=20)
             ax2.grid(True, linestyle='--', alpha=0.7)
 
-            handles, labels = ax1.get_legend_handles_labels()
-            fig.legend(handles, labels, loc='lower center', bbox_to_anchor=(0.5, -0.02),
+            # Double legend - one per subplot
+            ax1.legend(loc='upper center', bbox_to_anchor=(0.5, -0.15),
+                       ncol=len(available_non_renewables), fontsize=18, frameon=False)
+            ax2.legend(loc='upper center', bbox_to_anchor=(0.5, -0.15),
                        ncol=len(available_non_renewables), fontsize=18, frameon=False)
 
             fig.suptitle('Annual Non-Renewable Trends',
-                         fontsize=30, fontweight='bold', y=0.995)
+                         fontsize=30, fontweight='bold', x=0.5, y=0.995, ha="center")
 
             plt.tight_layout(rect=[0, 0.02, 1, 0.985])
 
@@ -798,26 +806,28 @@ def create_all_charts(all_data):
                 lines_plotted += 1
 
         if lines_plotted > 0:
-            ax1.set_title('% of EU Production', fontsize=28, fontweight='normal')
-            ax1.set_xlabel('Year', fontsize=24)
-            ax1.set_ylabel('Percentage (%)', fontsize=24)
+            ax1.set_title('Percentage of EU Production', fontsize=28, fontweight='normal')
+            ax1.set_xlabel('Year', fontsize=24, fontweight='bold')
+            ax1.set_ylabel('Percentage (%)', fontsize=24, fontweight='bold')
             ax1.set_ylim(0, 100)
             ax1.tick_params(axis='both', labelsize=20)
             ax1.grid(True, linestyle='--', alpha=0.7)
 
             ax2.set_title('Absolute Production', fontsize=28, fontweight='normal')
-            ax2.set_xlabel('Year', fontsize=24)
-            ax2.set_ylabel('Energy Production (TWh)', fontsize=24)
+            ax2.set_xlabel('Year', fontsize=24, fontweight='bold')
+            ax2.set_ylabel('Energy (TWh)', fontsize=24, fontweight='bold')
             ax2.set_ylim(bottom=0)
             ax2.tick_params(axis='both', labelsize=20)
             ax2.grid(True, linestyle='--', alpha=0.7)
 
-            handles, labels = ax1.get_legend_handles_labels()
-            fig.legend(handles, labels, loc='lower center', bbox_to_anchor=(0.5, -0.02), ncol=2,
+            # Double legend - one per subplot
+            ax1.legend(loc='upper center', bbox_to_anchor=(0.5, -0.15), ncol=2,
+                       fontsize=22, frameon=False)
+            ax2.legend(loc='upper center', bbox_to_anchor=(0.5, -0.15), ncol=2,
                        fontsize=22, frameon=False)
 
             fig.suptitle('Renewables vs Non-Renewables',
-                         fontsize=30, fontweight='bold', y=0.995)
+                         fontsize=30, fontweight='bold', x=0.5, y=0.995, ha="center")
 
             plt.tight_layout(rect=[0, 0.02, 1, 0.985])
 
@@ -903,31 +913,29 @@ def create_all_charts(all_data):
                 y_max_limit = 100
 
             ax1.set_title('All Energy Sources', fontsize=28, fontweight='normal')
-            ax1.set_xlabel('Year', fontsize=24)
-            ax1.set_ylabel('% Change from 2015', fontsize=24)
+            ax1.set_xlabel('Year', fontsize=24, fontweight='bold')
+            ax1.set_ylabel('% Change from 2015', fontsize=24, fontweight='bold')
             ax1.set_ylim(y_min_limit, y_max_limit)
             ax1.axhline(y=0, color='black', linestyle='--', linewidth=1, alpha=0.5)
             ax1.tick_params(axis='both', labelsize=20)
             ax1.grid(True, linestyle='--', alpha=0.7)
 
             ax2.set_title('Renewables vs Non-Renewables', fontsize=28, fontweight='normal')
-            ax2.set_xlabel('Year', fontsize=24)
-            ax2.set_ylabel('% Change from 2015', fontsize=24)
+            ax2.set_xlabel('Year', fontsize=24, fontweight='bold')
+            ax2.set_ylabel('% Change from 2015', fontsize=24, fontweight='bold')
             ax2.set_ylim(y_min_limit, y_max_limit)
             ax2.axhline(y=0, color='black', linestyle='--', linewidth=1, alpha=0.5)
             ax2.tick_params(axis='both', labelsize=20)
             ax2.grid(True, linestyle='--', alpha=0.7)
 
-            handles1, labels1 = ax1.get_legend_handles_labels()
-            handles2, labels2 = ax2.get_legend_handles_labels()
-
-            all_handles = handles1 + handles2
-            all_labels = labels1 + labels2
-            fig.legend(all_handles, all_labels, loc='lower center', bbox_to_anchor=(0.5, -0.02),
-                       ncol=6, fontsize=17, frameon=False)
+            # Double legend - one per subplot
+            ax1.legend(loc='upper center', bbox_to_anchor=(0.5, -0.15), ncol=5,
+                       fontsize=16, frameon=False)
+            ax2.legend(loc='upper center', bbox_to_anchor=(0.5, -0.15), ncol=2,
+                       fontsize=22, frameon=False)
 
             fig.suptitle('Year-over-Year Change vs 2015',
-                         fontsize=30, fontweight='bold', y=0.995)
+                         fontsize=30, fontweight='bold', x=0.5, y=0.995, ha="center")
 
             plt.tight_layout(rect=[0, 0.02, 1, 0.985])
 
