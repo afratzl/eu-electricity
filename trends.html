@@ -34,20 +34,20 @@
         <div class="chart-selector">
             <label for="chart-select">Choose Analysis:</label>
             <select id="chart-select" onchange="showChart(this.value)">
-                <optgroup label="📈 Period Comparisons (5-Year Averages)">
-                    <option value="period-2015-2019">All Sources: 2015-2019</option>
-                    <option value="period-2020-2024">All Sources: 2020-2024</option>
-                    <option value="period-2025-2029">All Sources: 2025-2029</option>
-                    <option value="ren-vs-nonren-2015-2019">Renewable vs Non-Renewable: 2015-2019</option>
-                    <option value="ren-vs-nonren-2020-2024">Renewable vs Non-Renewable: 2020-2024</option>
-                    <option value="ren-vs-nonren-2025-2029">Renewable vs Non-Renewable: 2025-2029</option>
+                <optgroup label="📈 Period Comparisons">
+                    <option value="period-2015-2019">All: 2015-2019</option>
+                    <option value="period-2020-2024">All: 2020-2024</option>
+                    <option value="period-2025-2029">All: 2025-2029</option>
+                    <option value="ren-vs-nonren-2015-2019">Ren vs Non-Ren: 2015-2019</option>
+                    <option value="ren-vs-nonren-2020-2024">Ren vs Non-Ren: 2020-2024</option>
+                    <option value="ren-vs-nonren-2025-2029">Ren vs Non-Ren: 2025-2029</option>
                 </optgroup>
                 
-                <optgroup label="📉 Annual Evolution">
-                    <option value="annual-renewable">Annual Renewable Trends</option>
-                    <option value="annual-nonrenewable">Annual Non-Renewable Trends</option>
-                    <option value="transition" selected>Renewables vs Non-Renewables</option>
-                    <option value="yoy">Year-over-Year Change vs 2015</option>
+                <optgroup label="📉 Annual Trends">
+                    <option value="annual-renewable">Renewables</option>
+                    <option value="annual-nonrenewable">Non-Renewables</option>
+                    <option value="transition" selected>Ren vs Non-Ren</option>
+                    <option value="yoy">YoY vs 2015</option>
                 </optgroup>
             </select>
         </div>
