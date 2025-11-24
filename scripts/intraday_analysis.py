@@ -573,9 +573,9 @@ def plot_analysis(stats_data, source_type, output_file):
     time_labels = create_time_axis()
     source_name = DISPLAY_NAMES[source_type]
     
-    # PLOT 1 (TOP): PERCENTAGE - UPDATED TITLE
-    ax1.set_title(f'{source_name}\n% of Total Generation',
-                  fontsize=34, fontweight='bold', pad=20)
+    # PLOT 1 (TOP): PERCENTAGE
+    fig.suptitle(source_name, fontsize=34, fontweight='bold', y=0.98)
+    ax1.set_title('% of EU Production', fontsize=26, fontweight='normal', pad=10)
     ax1.set_xlabel('Time of Day (Brussels)', fontsize=28, fontweight='bold', labelpad=15)
     ax1.set_ylabel('Percentage (%)', fontsize=28, fontweight='bold', labelpad=15)
 
@@ -632,9 +632,8 @@ def plot_analysis(stats_data, source_type, output_file):
     else:
         ax1.set_ylim(0, 50)
 
-    # PLOT 2 (BOTTOM): ABSOLUTE VALUES - UPDATED TITLE
-    ax2.set_title(f'{source_name}\nProduction (MW)',
-                  fontsize=34, fontweight='bold', pad=20)
+    # PLOT 2 (BOTTOM): ABSOLUTE VALUES
+    ax2.set_title('Absolute Production', fontsize=26, fontweight='normal', pad=10)
     ax2.set_xlabel('Time of Day (Brussels)', fontsize=28, fontweight='bold', labelpad=15)
     ax2.set_ylabel('Energy Production (MW)', fontsize=28, fontweight='bold', labelpad=15)
 
