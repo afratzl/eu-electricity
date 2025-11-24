@@ -582,8 +582,8 @@ def plot_analysis(stats_data, source_type, output_file):
     source_name = DISPLAY_NAMES[source_type]
     
     # PLOT 1 (TOP): PERCENTAGE
-    fig.suptitle(source_name, fontsize=34, fontweight='bold', y=0.98)
-    ax1.set_title('% of EU Production', fontsize=26, fontweight='normal', pad=10)
+    fig.suptitle(source_name, fontsize=34, fontweight='bold', x=0.5, y=0.98, ha="center")
+    ax1.set_title('Percentage of EU Production', fontsize=26, fontweight='normal', pad=10)
     ax1.set_xlabel('Time of Day (Brussels)', fontsize=28, fontweight='bold', labelpad=15)
     ax1.set_ylabel('Percentage (%)', fontsize=28, fontweight='bold', labelpad=15)
 
