@@ -143,6 +143,28 @@
             margin-top: -10px;
             margin-bottom: 30px;
         }
+        
+        /* Responsive image sizing */
+        .chart-img {
+            width: 100%;
+            height: auto;
+        }
+        
+        /* Desktop: Scale down to 80% */
+        @media (min-width: 1024px) {
+            .chart-img {
+                width: 80%;
+                margin: 0 auto;
+                display: block;
+            }
+        }
+        
+        /* Large desktop: Scale down to 70% */
+        @media (min-width: 1440px) {
+            .chart-img {
+                width: 70%;
+            }
+        }
     </style>
 </body>
 </html>
