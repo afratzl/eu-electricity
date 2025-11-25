@@ -329,6 +329,7 @@ def apply_projections_and_corrections(data_matrix):
     """
     Phase 2: Apply 10% threshold and correct aggregates/total_gen using atomic sources
     Uses weekly hourly averages (e.g., average of all 15:00 times from past week)
+    Returns BOTH actual (uncorrected) and projected (corrected) versions for today/yesterday
     """
     print("\n" + "=" * 80)
     print("PHASE 2: PROJECTION & CORRECTION")
@@ -339,18 +340,20 @@ def apply_projections_and_corrections(data_matrix):
     # Process TODAY
     if 'today' in data_matrix['total_generation'] and 'week_ago' in data_matrix['total_generation']:
         print("\n🔧 Processing TODAY...")
-        corrected_data['today'] = apply_corrections_for_period(
-            data_matrix, 'today', 'week_ago'
-        )
-        corrected_data['today_projected'] = corrected_data['today']  # Same data after correction
+        result = apply_corrections_for_period(data_matrix, 'today', 'week_ago')
+        
+        # Store both actual and corrected
+        corrected_data['today'] = result['actual']  # Actual (solid line)
+        corrected_data['today_projected'] = result['corrected']  # Projected (dashed line)
     
     # Process YESTERDAY
     if 'yesterday' in data_matrix['total_generation'] and 'week_ago' in data_matrix['total_generation']:
         print("\n🔧 Processing YESTERDAY...")
-        corrected_data['yesterday'] = apply_corrections_for_period(
-            data_matrix, 'yesterday', 'week_ago'
-        )
-        corrected_data['yesterday_projected'] = corrected_data['yesterday']  # Same data after correction
+        result = apply_corrections_for_period(data_matrix, 'yesterday', 'week_ago')
+        
+        # Store both actual and corrected
+        corrected_data['yesterday'] = result['actual']  # Actual (solid line)
+        corrected_data['yesterday_projected'] = result['corrected']  # Projected (dashed line)
     
     # Historical periods (no projection needed)
     for period in ['week_ago', 'year_ago', 'two_years_ago']:
@@ -366,6 +369,7 @@ def apply_corrections_for_period(data_matrix, target_period, reference_period):
     """
     Apply component-level corrections for a specific period
     Uses weekly hourly averages for threshold comparison
+    Returns BOTH actual (uncorrected) and corrected versions
     """
     print(f"  Analyzing {target_period} against {reference_period}...")
     
@@ -398,12 +402,14 @@ def apply_corrections_for_period(data_matrix, target_period, reference_period):
     if target_total_gen is None:
         return {}
     
-    # Build corrected data for each source
+    # Build BOTH corrected and actual (uncorrected) data
     corrected_sources = {}
+    actual_sources = {}  # NEW: Store uncorrected versions
     correction_log = []
     
     for source in ATOMIC_SOURCES + AGGREGATE_SOURCES:
         corrected_sources[source] = {}
+        actual_sources[source] = {}
     
     # Process each timestamp
     for timestamp in target_total_gen.index:
@@ -422,9 +428,13 @@ def apply_corrections_for_period(data_matrix, target_period, reference_period):
             # Initialize this timestamp for this source
             if timestamp not in corrected_sources[source]:
                 corrected_sources[source][timestamp] = {}
+                actual_sources[source][timestamp] = {}
             
             for country in source_row.index:
                 actual_val = source_row[country]
+                
+                # Store actual (uncorrected) value
+                actual_sources[source][timestamp][country] = actual_val if not pd.isna(actual_val) else 0
                 
                 # Default: use actual value
                 corrected_val = actual_val if not pd.isna(actual_val) else 0
@@ -469,33 +479,54 @@ def apply_corrections_for_period(data_matrix, target_period, reference_period):
         components = AGGREGATE_DEFINITIONS[agg_source]
         
         for timestamp in target_total_gen.index:
-            total = 0
+            # Corrected aggregate
+            total_corrected = 0
             for component in components:
                 if timestamp in corrected_sources[component]:
-                    total += sum(corrected_sources[component][timestamp].values())
+                    total_corrected += sum(corrected_sources[component][timestamp].values())
+            corrected_sources[agg_source][timestamp] = {'EU': total_corrected}
             
-            if timestamp not in corrected_sources[agg_source]:
-                corrected_sources[agg_source][timestamp] = {}
-            corrected_sources[agg_source][timestamp]['EU'] = total
+            # Actual (uncorrected) aggregate
+            total_actual = 0
+            for component in components:
+                if timestamp in actual_sources[component]:
+                    total_actual += sum(actual_sources[component][timestamp].values())
+            actual_sources[agg_source][timestamp] = {'EU': total_actual}
     
-    # Build corrected total generation from all atomic sources
+    # Build corrected and actual total generation
     corrected_total_gen = {}
+    actual_total_gen = {}
     for timestamp in target_total_gen.index:
-        total = 0
+        # Corrected total
+        total_corrected = 0
         for source in ATOMIC_SOURCES:
             if timestamp in corrected_sources[source]:
-                total += sum(corrected_sources[source][timestamp].values())
-        corrected_total_gen[timestamp] = total
+                total_corrected += sum(corrected_sources[source][timestamp].values())
+        corrected_total_gen[timestamp] = total_corrected
+        
+        # Actual total
+        total_actual = 0
+        for source in ATOMIC_SOURCES:
+            if timestamp in actual_sources[source]:
+                total_actual += sum(actual_sources[source][timestamp].values())
+        actual_total_gen[timestamp] = total_actual
     
-    # Convert to output format
+    # Return BOTH versions
     result = {
-        'atomic_sources': corrected_sources,
-        'total_generation': corrected_total_gen
+        'corrected': {
+            'atomic_sources': corrected_sources,
+            'total_generation': corrected_total_gen
+        },
+        'actual': {
+            'atomic_sources': actual_sources,
+            'total_generation': actual_total_gen
+        }
     }
     
     # Add aggregates at top level for easy access
     for agg_source in AGGREGATE_SOURCES:
-        result[agg_source] = corrected_sources[agg_source]
+        result['corrected'][agg_source] = corrected_sources[agg_source]
+        result['actual'][agg_source] = actual_sources[agg_source]
     
     return result
 
@@ -573,6 +604,8 @@ def convert_corrected_data_to_plot_format(source_type, corrected_data):
     """
     Convert corrected data structure to format expected by plotting functions
     Returns: dict with period -> DataFrame mapping
+    
+    Now handles properly structured data with 'today', 'today_projected', etc.
     """
     plot_data = {}
     
@@ -896,17 +929,26 @@ def generate_plot_for_source(source_type, corrected_data, output_file):
 def main():
     """
     Main function - orchestrates the 3 phases
-    Generates ALL 12 plots from single data collection
+    Generates ALL 12 plots by default, or single plot if --source specified
     """
-    parser = argparse.ArgumentParser(description='EU Energy Intraday Analysis v2 - Batch Mode')
-    # No --source argument needed - we generate all plots in one run
+    parser = argparse.ArgumentParser(description='EU Energy Intraday Analysis v2')
+    parser.add_argument('--source', 
+                       choices=ATOMIC_SOURCES + AGGREGATE_SOURCES,
+                       help='Optional: Generate only this source (default: all sources)')
     
     args = parser.parse_args()
     
-    print("\n" + "=" * 80)
-    print("EU ENERGY INTRADAY ANALYSIS - BATCH MODE")
-    print("Generating all 12 source plots from single data collection")
-    print("=" * 80)
+    if args.source:
+        # Single source mode (for testing or backward compatibility)
+        print("\n" + "=" * 80)
+        print(f"{DISPLAY_NAMES[args.source].upper()} INTRADAY ANALYSIS")
+        print("=" * 80)
+    else:
+        # Batch mode (default)
+        print("\n" + "=" * 80)
+        print("EU ENERGY INTRADAY ANALYSIS - BATCH MODE")
+        print("Generating all 12 source plots from single data collection")
+        print("=" * 80)
     
     # Get API key
     api_key = os.environ.get('ENTSOE_API_KEY')
@@ -921,16 +963,26 @@ def main():
         # Phase 2: Apply projections and corrections ONCE
         corrected_data = apply_projections_and_corrections(data_matrix)
         
-        # Phase 3: Generate ALL 12 plots from corrected data
-        print("\n" + "=" * 80)
-        print("PHASE 3: GENERATING ALL 12 PLOTS")
-        print("=" * 80)
-        
-        all_sources = ATOMIC_SOURCES + AGGREGATE_SOURCES
-        for i, source in enumerate(all_sources, 1):
-            print(f"\n[{i}/{len(all_sources)}] Processing {DISPLAY_NAMES[source]}...")
-            output_file = f'plots/{source.replace("-", "_")}_analysis.png'
-            generate_plot_for_source(source, corrected_data, output_file)
+        # Phase 3: Generate plots
+        if args.source:
+            # Single plot mode
+            print("\n" + "=" * 80)
+            print(f"PHASE 3: GENERATING {DISPLAY_NAMES[args.source].upper()} PLOT")
+            print("=" * 80)
+            output_file = f'plots/{args.source.replace("-", "_")}_analysis.png'
+            generate_plot_for_source(args.source, corrected_data, output_file)
+            print(f"\n✓ Plot saved to {output_file}")
+        else:
+            # Batch mode - generate all plots
+            print("\n" + "=" * 80)
+            print("PHASE 3: GENERATING ALL 12 PLOTS")
+            print("=" * 80)
+            
+            all_sources = ATOMIC_SOURCES + AGGREGATE_SOURCES
+            for i, source in enumerate(all_sources, 1):
+                print(f"\n[{i}/{len(all_sources)}] Processing {DISPLAY_NAMES[source]}...")
+                output_file = f'plots/{source.replace("-", "_")}_analysis.png'
+                generate_plot_for_source(source, corrected_data, output_file)
         
         # Create timestamp file
         timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S UTC')
@@ -938,9 +990,12 @@ def main():
             f.write(f'<p>Last updated: {timestamp}</p>')
         
         print(f"\n" + "=" * 80)
-        print(f"✓ COMPLETE! All {len(all_sources)} plots generated successfully")
-        print(f"   - 10 atomic sources (Solar, Wind, Hydro, Biomass, Geothermal, Gas, Coal, Nuclear, Oil, Waste)")
-        print(f"   - 2 aggregates (All Renewables, All Non-Renewables)")
+        if args.source:
+            print(f"✓ COMPLETE! {DISPLAY_NAMES[args.source]} plot generated")
+        else:
+            print(f"✓ COMPLETE! All 12 plots generated successfully")
+            print(f"   - 10 atomic sources")
+            print(f"   - 2 aggregates")
         print("=" * 80)
         
     except Exception as e:
