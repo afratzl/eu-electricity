@@ -57,16 +57,6 @@
             </div>
         </div>
 
-        <!-- Yesterday's Energy Mix (MOVED TO TOP) -->
-        <section class="yesterday-mix-section">
-            <h2>Yesterday's EU Energy Mix</h2>
-            <p class="section-subtitle" id="yesterday-date">Loading...</p>
-            
-            <div id="yesterday-summary" class="energy-summary">
-                <div class="loading-message">Loading yesterday's data...</div>
-            </div>
-        </section>
-
         <!-- Energy Mix Summary Table -->
         <section class="summary-table-section">
             <h2>Energy Mix Summary</h2>
@@ -159,7 +149,6 @@
             fetch('plots/last_update.html')
                 .then(response => response.text())
                 .then(html => {
-                    // Extract just the timestamp text
                     const parser = new DOMParser();
                     const doc = parser.parseFromString(html, 'text/html');
                     const timestamp = doc.body.textContent.replace('Last updated: ', '');
@@ -168,73 +157,6 @@
                 .catch(error => {
                     document.getElementById('last-update-time').textContent = 'unavailable';
                 });
-        }
-
-        // Load yesterday's summary
-        function loadYesterdaySummary() {
-            fetch('plots/yesterday_summary.json')
-                .then(response => response.json())
-                .then(data => {
-                    displayYesterdaySummary(data);
-                })
-                .catch(error => {
-                    console.error('Error loading yesterday summary:', error);
-                    document.getElementById('yesterday-summary').innerHTML = 
-                        '<div class="error-message">Data not yet available. Check back after first hourly update.</div>';
-                });
-        }
-
-        // Display yesterday's summary with visual bars
-        function displayYesterdaySummary(data) {
-            // Update date
-            document.getElementById('yesterday-date').textContent = 
-                `${data.date} | Total Renewables: ${data.total_renewable_pct}% | Non-Renewables: ${data.total_non_renewable_pct}%`;
-            
-            // Build HTML for summary table
-            let html = '<div class="energy-mix-container">';
-            
-            // Renewables column
-            html += '<div class="energy-column">';
-            html += '<h3 class="column-title renewable-title">Renewables</h3>';
-            html += '<div class="source-list">';
-            
-            data.renewables.forEach(source => {
-                const barWidth = Math.round(source.percentage * 2); // Scale for visual
-                html += `
-                    <div class="source-row">
-                        <div class="source-name">${source.name}</div>
-                        <div class="source-value">${source.percentage}%</div>
-                        <div class="source-bar-container">
-                            <div class="source-bar renewable-bar" style="width: ${barWidth}%"></div>
-                        </div>
-                    </div>
-                `;
-            });
-            
-            html += '</div></div>';
-            
-            // Non-renewables column
-            html += '<div class="energy-column">';
-            html += '<h3 class="column-title non-renewable-title">Non-Renewables</h3>';
-            html += '<div class="source-list">';
-            
-            data.non_renewables.forEach(source => {
-                const barWidth = Math.round(source.percentage * 2); // Scale for visual
-                html += `
-                    <div class="source-row">
-                        <div class="source-name">${source.name}</div>
-                        <div class="source-value">${source.percentage}%</div>
-                        <div class="source-bar-container">
-                            <div class="source-bar non-renewable-bar" style="width: ${barWidth}%"></div>
-                        </div>
-                    </div>
-                `;
-            });
-            
-            html += '</div></div>';
-            html += '</div>';
-            
-            document.getElementById('yesterday-summary').innerHTML = html;
         }
 
         // Load and display summary table
@@ -336,7 +258,6 @@
         // Load on page load
         window.addEventListener('DOMContentLoaded', () => {
             loadTimestamp();
-            loadYesterdaySummary();
             loadSummaryTable();
             
             // Restore user's preference
@@ -514,12 +435,12 @@
             font-weight: bold;
         }
 
-        /* Yesterday's Energy Mix Styles */
-        .yesterday-mix-section {
+        /* Summary Table Styles */
+        .summary-table-section {
             margin: 60px 0;
         }
 
-        .yesterday-mix-section h2 {
+        .summary-table-section h2 {
             text-align: center;
             color: #2c3e50;
             margin-bottom: 10px;
@@ -530,117 +451,6 @@
             color: #7f8c8d;
             margin-bottom: 30px;
             font-size: 1.05em;
-        }
-
-        .energy-summary {
-            background: white;
-            border-radius: 12px;
-            padding: 30px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-        }
-
-        .loading-message, .error-message {
-            text-align: center;
-            padding: 40px;
-            color: #7f8c8d;
-            font-size: 1.1em;
-        }
-
-        .error-message {
-            color: #e74c3c;
-        }
-
-        .energy-mix-container {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 40px;
-        }
-
-        .energy-column {
-            min-width: 0;
-        }
-
-        .column-title {
-            font-size: 1.4em;
-            margin-bottom: 20px;
-            padding-bottom: 10px;
-            border-bottom: 3px solid;
-        }
-
-        .renewable-title {
-            color: #27ae60;
-            border-color: #27ae60;
-        }
-
-        .non-renewable-title {
-            color: #e74c3c;
-            border-color: #e74c3c;
-        }
-
-        .source-list {
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-        }
-
-        .source-row {
-            display: grid;
-            grid-template-columns: 120px 60px 1fr;
-            gap: 10px;
-            align-items: center;
-            padding: 8px;
-            border-radius: 6px;
-            transition: background 0.2s;
-        }
-
-        .source-row:hover {
-            background: #f8f9fa;
-        }
-
-        .source-name {
-            font-weight: 600;
-            color: #2c3e50;
-        }
-
-        .source-value {
-            text-align: right;
-            font-weight: bold;
-            color: #34495e;
-            font-size: 1.05em;
-        }
-
-        .source-bar-container {
-            background: #ecf0f1;
-            height: 24px;
-            border-radius: 12px;
-            overflow: hidden;
-            position: relative;
-        }
-
-        .source-bar {
-            height: 100%;
-            border-radius: 12px;
-            transition: width 0.3s ease;
-            min-width: 2px;
-        }
-
-        .renewable-bar {
-            background: linear-gradient(90deg, #27ae60, #2ecc71);
-        }
-
-        .non-renewable-bar {
-            background: linear-gradient(90deg, #e74c3c, #c0392b);
-        }
-
-        /* Summary Table Styles */
-        .summary-table-section {
-            margin: 60px 0;
-        }
-
-        .summary-table-section h2 {
-            text-align: center;
-            color: #2c3e50;
-            margin-bottom: 10px;
         }
 
         .table-controls {
@@ -751,6 +561,17 @@
             border-radius: 0 0 12px 12px;
         }
 
+        .loading-message, .error-message {
+            text-align: center;
+            padding: 40px;
+            color: #7f8c8d;
+            font-size: 1.1em;
+        }
+
+        .error-message {
+            color: #e74c3c;
+        }
+
         @media (max-width: 768px) {
             .hero-section h1 {
                 font-size: 1.8em;
@@ -762,17 +583,6 @@
             
             .overview-grid {
                 grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-            }
-
-            .energy-mix-container {
-                grid-template-columns: 1fr;
-                gap: 30px;
-            }
-
-            .source-row {
-                grid-template-columns: 100px 50px 1fr;
-                gap: 8px;
-                font-size: 0.95em;
             }
 
             .summary-table {
