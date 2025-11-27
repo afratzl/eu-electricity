@@ -1015,6 +1015,141 @@ def create_all_charts(all_data):
     print("=" * 60)
 
 
+def update_summary_table_historical_data(all_data):
+    """
+    Update Google Sheets "Summary Table Data" with YTD 2025 and 2020-2024 average data
+    This fills in the columns that the intraday script leaves empty
+    """
+    print("\n" + "=" * 60)
+    print("UPDATING SUMMARY TABLE (HISTORICAL DATA)")
+    print("=" * 60)
+    
+    try:
+        google_creds_json = os.environ.get('GOOGLE_CREDENTIALS_JSON')
+        if not google_creds_json:
+            print("⚠ GOOGLE_CREDENTIALS_JSON not set - skipping update")
+            return
+        
+        creds_dict = json.loads(google_creds_json)
+        scope = ['https://www.googleapis.com/auth/spreadsheets', 'https://www.googleapis.com/auth/drive']
+        credentials = Credentials.from_service_account_info(creds_dict, scopes=scope)
+        gc = gspread.authorize(credentials)
+        
+        spreadsheet = gc.open('EU Energy Production Data')
+        print("✓ Connected to spreadsheet")
+        
+        # Get the Summary Table Data worksheet
+        try:
+            worksheet = spreadsheet.worksheet('Summary Table Data')
+            print("✓ Found 'Summary Table Data' worksheet")
+        except gspread.WorksheetNotFound:
+            print("⚠ 'Summary Table Data' worksheet not found - run intraday analysis first")
+            return
+        
+        # Get current date info
+        current_date = datetime.now()
+        current_year = current_date.year
+        current_month = current_date.month
+        
+        # Calculate YTD 2025 and 2020-2024 averages for each source
+        source_mapping = {
+            'Solar': 'Solar',
+            'Wind': 'Wind',
+            'Hydro': 'Hydro',
+            'Biomass': 'Biomass',
+            'Geothermal': 'Geothermal',
+            'Gas': 'Gas',
+            'Coal': 'Coal',
+            'Nuclear': 'Nuclear',
+            'Oil': 'Oil',
+            'Waste': 'Waste',
+            'All Renewables': 'All Renewables',
+            'All Non-Renewables': 'All Non-Renewables'
+        }
+        
+        # Prepare updates
+        updates = []
+        
+        for row_idx, (display_name, data_key) in enumerate(source_mapping.items(), start=2):
+            if data_key not in all_data:
+                continue
+            
+            year_data = all_data[data_key]['year_data']
+            
+            # Calculate YTD 2025
+            ytd_2025_gwh = 0
+            if 2025 in year_data:
+                for month in range(1, current_month + 1):
+                    ytd_2025_gwh += year_data[2025].get(month, 0)
+            
+            # Calculate 2020-2024 average (annual)
+            period_totals = []
+            for year in range(2020, 2025):
+                if year in year_data:
+                    year_total = sum(year_data[year].values())
+                    period_totals.append(year_total)
+            
+            avg_2020_2024_gwh = sum(period_totals) / len(period_totals) if period_totals else 0
+            
+            # Calculate total generation for percentages
+            if 'Total Generation' in all_data:
+                total_year_data = all_data['Total Generation']['year_data']
+                
+                # YTD 2025 percentage
+                ytd_2025_total = 0
+                if 2025 in total_year_data:
+                    for month in range(1, current_month + 1):
+                        ytd_2025_total += total_year_data[2025].get(month, 0)
+                
+                ytd_2025_pct = (ytd_2025_gwh / ytd_2025_total * 100) if ytd_2025_total > 0 else 0
+                
+                # 2020-2024 average percentage
+                period_total_gen = []
+                for year in range(2020, 2025):
+                    if year in total_year_data:
+                        year_total_gen = sum(total_year_data[year].values())
+                        period_total_gen.append(year_total_gen)
+                
+                avg_total_gen = sum(period_total_gen) / len(period_total_gen) if period_total_gen else 0
+                avg_2020_2024_pct = (avg_2020_2024_gwh / avg_total_gen * 100) if avg_total_gen > 0 else 0
+            else:
+                ytd_2025_pct = 0
+                avg_2020_2024_pct = 0
+            
+            # Add to updates list (columns F, G, H, I)
+            updates.append({
+                'range': f'F{row_idx}:I{row_idx}',
+                'values': [[
+                    f"{ytd_2025_gwh:.1f}",
+                    f"{ytd_2025_pct:.2f}",
+                    f"{avg_2020_2024_gwh:.1f}",
+                    f"{avg_2020_2024_pct:.2f}"
+                ]]
+            })
+        
+        # Batch update all rows at once
+        if updates:
+            for update in updates:
+                worksheet.update(update['range'], update['values'])
+            
+            print(f"✓ Updated {len(updates)} sources with YTD 2025 and 2020-2024 data")
+            
+            # Update timestamp in last column
+            timestamp = current_date.strftime('%Y-%m-%d %H:%M UTC')
+            # Update column J for all data rows
+            for row_idx in range(2, len(source_mapping) + 2):
+                worksheet.update(f'J{row_idx}', [[timestamp]])
+            
+            print(f"   Worksheet: {spreadsheet.url}")
+        else:
+            print("⚠ No data to update")
+    
+    except Exception as e:
+        print(f"✗ Error updating summary table: {e}")
+        import traceback
+        traceback.print_exc()
+
+
 def main():
     """
     Main function
@@ -1044,6 +1179,9 @@ def main():
         return
 
     create_all_charts(all_data)
+    
+    # Update summary table with historical data
+    update_summary_table_historical_data(all_data)
 
     print("\n" + "=" * 60)
     print("COMPLETE!")
