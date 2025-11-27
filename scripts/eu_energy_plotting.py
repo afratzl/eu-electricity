@@ -399,7 +399,7 @@ def create_all_charts(all_data):
 
             fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(12, 20))
             # Increase vertical spacing between subplots for better readability
-            fig.subplots_adjust(hspace=0.8)
+            fig.subplots_adjust(hspace=1.0)
 
             for source_name in available_sources:
                 color = ENTSOE_COLORS.get(source_name, 'black')
@@ -418,7 +418,7 @@ def create_all_charts(all_data):
                     ha='center', fontsize=34, fontweight='bold')
             
             # Subtitle for top plot
-            ax1.set_title('Percentage of EU Production', fontsize=26, fontweight='normal', pad=35)
+            ax1.set_title('Percentage of EU Production', fontsize=26, fontweight='normal', pad=60)
             ax1.set_xlabel('Month', fontsize=28, fontweight='bold', labelpad=15)
             ax1.set_ylabel('Electricity production (%)', fontsize=28, fontweight='bold', labelpad=15)
             ax1.set_ylim(0, max_pct_all_periods)
@@ -426,11 +426,11 @@ def create_all_charts(all_data):
             ax1.grid(True, linestyle='--', alpha=0.7)
 
             # Bold main title above bottom subplot  
-            fig.text(0.5, 0.47, f'All Electricity Sources: {period["name"]}', 
+            fig.text(0.5, 0.44, f'All Electricity Sources: {period["name"]}', 
                     ha='center', fontsize=34, fontweight='bold')
             
             # Subtitle for bottom plot
-            ax2.set_title('Absolute Production', fontsize=26, fontweight='normal', pad=35)
+            ax2.set_title('Absolute Production', fontsize=26, fontweight='normal', pad=60)
             ax2.set_xlabel('Month', fontsize=28, fontweight='bold', labelpad=15)
             ax2.set_ylabel('Electricity production (TWh)', fontsize=28, fontweight='bold', labelpad=15)
             ax2.set_ylim(0, max_abs_all_periods)
@@ -438,9 +438,9 @@ def create_all_charts(all_data):
             ax2.grid(True, linestyle='--', alpha=0.7)
 
             # Double legend - one per subplot, positioned lower for more space
-            ax1.legend(loc='upper center', bbox_to_anchor=(0.5, -0.25), ncol=5,
+            ax1.legend(loc='upper center', bbox_to_anchor=(0.5, -0.15), ncol=5,
                        fontsize=20, frameon=False)
-            ax2.legend(loc='upper center', bbox_to_anchor=(0.5, -0.25), ncol=5,
+            ax2.legend(loc='upper center', bbox_to_anchor=(0.5, -0.15), ncol=5,
                        fontsize=20, frameon=False)
 
             # No main suptitle needed since we repeat title on each subplot
@@ -536,7 +536,7 @@ def create_all_charts(all_data):
 
             fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(12, 20))
             # Increase vertical spacing between subplots for better readability
-            fig.subplots_adjust(hspace=0.8)
+            fig.subplots_adjust(hspace=1.0)
 
             for category_name in ['All Renewables', 'All Non-Renewables']:
                 color = ENTSOE_COLORS[category_name]
@@ -555,7 +555,7 @@ def create_all_charts(all_data):
                     ha='center', fontsize=34, fontweight='bold')
             
             # Subtitle for top plot
-            ax1.set_title('Percentage of EU Production', fontsize=26, fontweight='normal', pad=35)
+            ax1.set_title('Percentage of EU Production', fontsize=26, fontweight='normal', pad=60)
             ax1.set_xlabel('Month', fontsize=28, fontweight='bold', labelpad=15)
             ax1.set_ylabel('Electricity production (%)', fontsize=28, fontweight='bold', labelpad=15)
             ax1.set_ylim(0, 100)
@@ -563,11 +563,11 @@ def create_all_charts(all_data):
             ax1.grid(True, linestyle='--', alpha=0.7)
 
             # Bold main title above bottom subplot
-            fig.text(0.5, 0.47, f'Renewables vs Non-Renewables: {period["name"]}', 
+            fig.text(0.5, 0.44, f'Renewables vs Non-Renewables: {period["name"]}', 
                     ha='center', fontsize=34, fontweight='bold')
             
             # Subtitle for bottom plot
-            ax2.set_title('Absolute Production', fontsize=26, fontweight='normal', pad=35)
+            ax2.set_title('Absolute Production', fontsize=26, fontweight='normal', pad=60)
             ax2.set_xlabel('Month', fontsize=28, fontweight='bold', labelpad=15)
             ax2.set_ylabel('Electricity production (TWh)', fontsize=28, fontweight='bold', labelpad=15)
             ax2.set_ylim(0, max_abs_renewable_periods)
@@ -575,9 +575,9 @@ def create_all_charts(all_data):
             ax2.grid(True, linestyle='--', alpha=0.7)
 
             # Double legend - one per subplot, positioned lower for more space
-            ax1.legend(loc='upper center', bbox_to_anchor=(0.5, -0.28), ncol=2,
+            ax1.legend(loc='upper center', bbox_to_anchor=(0.5, -0.15), ncol=2,
                        fontsize=22, frameon=False)
-            ax2.legend(loc='upper center', bbox_to_anchor=(0.5, -0.28), ncol=2,
+            ax2.legend(loc='upper center', bbox_to_anchor=(0.5, -0.15), ncol=2,
                        fontsize=22, frameon=False)
 
             # No main suptitle needed since we use fig.text
@@ -651,7 +651,7 @@ def create_all_charts(all_data):
 
         fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(12, 20))
         # Add more vertical spacing between subplots
-        fig.subplots_adjust(hspace=0.8)
+        fig.subplots_adjust(hspace=1.0)
 
         lines_plotted = 0
         for source_name in available_renewables:
@@ -693,7 +693,7 @@ def create_all_charts(all_data):
                     ha='center', fontsize=34, fontweight='bold')
             
             # Subtitle for top plot
-            ax1.set_title('Percentage of EU Production', fontsize=26, fontweight='normal', pad=35)
+            ax1.set_title('Percentage of EU Production', fontsize=26, fontweight='normal', pad=60)
             ax1.set_xlabel('Year', fontsize=28, fontweight='bold', labelpad=15)
             ax1.set_ylabel('Electricity production (%)', fontsize=28, fontweight='bold', labelpad=15)
             ax1.set_ylim(0, max_annual_pct)
@@ -701,11 +701,11 @@ def create_all_charts(all_data):
             ax1.grid(True, linestyle='--', alpha=0.7)
 
             # Bold main title above bottom subplot
-            fig.text(0.5, 0.47, 'Annual Renewable Trends', 
+            fig.text(0.5, 0.44, 'Annual Renewable Trends', 
                     ha='center', fontsize=34, fontweight='bold')
             
             # Subtitle for bottom plot
-            ax2.set_title('Absolute Production', fontsize=26, fontweight='normal', pad=35)
+            ax2.set_title('Absolute Production', fontsize=26, fontweight='normal', pad=60)
             ax2.set_xlabel('Year', fontsize=28, fontweight='bold', labelpad=15)
             ax2.set_ylabel('Electricity production (TWh)', fontsize=28, fontweight='bold', labelpad=15)
             ax2.set_ylim(0, max_annual_twh)
@@ -713,9 +713,9 @@ def create_all_charts(all_data):
             ax2.grid(True, linestyle='--', alpha=0.7)
 
             # Double legend - one per subplot, positioned lower for more space
-            ax1.legend(loc='upper center', bbox_to_anchor=(0.5, -0.28), ncol=len(available_renewables),
+            ax1.legend(loc='upper center', bbox_to_anchor=(0.5, -0.15), ncol=len(available_renewables),
                        fontsize=20, frameon=False)
-            ax2.legend(loc='upper center', bbox_to_anchor=(0.5, -0.28), ncol=len(available_renewables),
+            ax2.legend(loc='upper center', bbox_to_anchor=(0.5, -0.15), ncol=len(available_renewables),
                        fontsize=20, frameon=False)
 
             # No main suptitle needed since we repeat title on each subplot
@@ -733,7 +733,7 @@ def create_all_charts(all_data):
 
         fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(12, 20))
         # Add more vertical spacing between subplots
-        fig.subplots_adjust(hspace=0.8)
+        fig.subplots_adjust(hspace=1.0)
 
         lines_plotted = 0
         for source_name in available_non_renewables:
@@ -775,7 +775,7 @@ def create_all_charts(all_data):
                     ha='center', fontsize=34, fontweight='bold')
             
             # Subtitle for top plot
-            ax1.set_title('Percentage of EU Production', fontsize=26, fontweight='normal', pad=35)
+            ax1.set_title('Percentage of EU Production', fontsize=26, fontweight='normal', pad=60)
             ax1.set_xlabel('Year', fontsize=28, fontweight='bold', labelpad=15)
             ax1.set_ylabel('Electricity production (%)', fontsize=28, fontweight='bold', labelpad=15)
             ax1.set_ylim(0, max_annual_pct)
@@ -783,11 +783,11 @@ def create_all_charts(all_data):
             ax1.grid(True, linestyle='--', alpha=0.7)
 
             # Bold main title above bottom subplot
-            fig.text(0.5, 0.47, 'Annual Non-Renewable Trends', 
+            fig.text(0.5, 0.44, 'Annual Non-Renewable Trends', 
                     ha='center', fontsize=34, fontweight='bold')
             
             # Subtitle for bottom plot
-            ax2.set_title('Absolute Production', fontsize=26, fontweight='normal', pad=35)
+            ax2.set_title('Absolute Production', fontsize=26, fontweight='normal', pad=60)
             ax2.set_xlabel('Year', fontsize=28, fontweight='bold', labelpad=15)
             ax2.set_ylabel('Electricity production (TWh)', fontsize=28, fontweight='bold', labelpad=15)
             ax2.set_ylim(0, max_annual_twh)
@@ -795,9 +795,9 @@ def create_all_charts(all_data):
             ax2.grid(True, linestyle='--', alpha=0.7)
 
             # Double legend - one per subplot, positioned lower for more space
-            ax1.legend(loc='upper center', bbox_to_anchor=(0.5, -0.28),
+            ax1.legend(loc='upper center', bbox_to_anchor=(0.5, -0.15),
                        ncol=len(available_non_renewables), fontsize=20, frameon=False)
-            ax2.legend(loc='upper center', bbox_to_anchor=(0.5, -0.28),
+            ax2.legend(loc='upper center', bbox_to_anchor=(0.5, -0.15),
                        ncol=len(available_non_renewables), fontsize=20, frameon=False)
 
             # No main suptitle needed since we repeat title on each subplot
@@ -815,7 +815,7 @@ def create_all_charts(all_data):
 
         fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(12, 20))
         # Add more vertical spacing between subplots
-        fig.subplots_adjust(hspace=0.8)
+        fig.subplots_adjust(hspace=1.0)
 
         lines_plotted = 0
         for source_name in available_totals:
@@ -857,7 +857,7 @@ def create_all_charts(all_data):
                     ha='center', fontsize=34, fontweight='bold')
             
             # Subtitle for top plot
-            ax1.set_title('Percentage of EU Production', fontsize=26, fontweight='normal', pad=35)
+            ax1.set_title('Percentage of EU Production', fontsize=26, fontweight='normal', pad=60)
             ax1.set_xlabel('Year', fontsize=28, fontweight='bold', labelpad=15)
             ax1.set_ylabel('Electricity production (%)', fontsize=28, fontweight='bold', labelpad=15)
             ax1.set_ylim(0, 100)
@@ -865,11 +865,11 @@ def create_all_charts(all_data):
             ax1.grid(True, linestyle='--', alpha=0.7)
 
             # Bold main title above bottom subplot
-            fig.text(0.5, 0.47, 'Renewables vs Non-Renewables', 
+            fig.text(0.5, 0.44, 'Renewables vs Non-Renewables', 
                     ha='center', fontsize=34, fontweight='bold')
             
             # Subtitle for bottom plot
-            ax2.set_title('Absolute Production', fontsize=26, fontweight='normal', pad=35)
+            ax2.set_title('Absolute Production', fontsize=26, fontweight='normal', pad=60)
             ax2.set_xlabel('Year', fontsize=28, fontweight='bold', labelpad=15)
             ax2.set_ylabel('Electricity production (TWh)', fontsize=28, fontweight='bold', labelpad=15)
             ax2.set_ylim(bottom=0)
@@ -877,9 +877,9 @@ def create_all_charts(all_data):
             ax2.grid(True, linestyle='--', alpha=0.7)
 
             # Double legend - one per subplot, positioned lower for more space
-            ax1.legend(loc='upper center', bbox_to_anchor=(0.5, -0.28), ncol=2,
+            ax1.legend(loc='upper center', bbox_to_anchor=(0.5, -0.15), ncol=2,
                        fontsize=22, frameon=False)
-            ax2.legend(loc='upper center', bbox_to_anchor=(0.5, -0.28), ncol=2,
+            ax2.legend(loc='upper center', bbox_to_anchor=(0.5, -0.15), ncol=2,
                        fontsize=22, frameon=False)
 
             # No main suptitle needed since we repeat title on each subplot
@@ -906,7 +906,7 @@ def create_all_charts(all_data):
 
         fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(12, 20))
         # Add more vertical spacing between subplots
-        fig.subplots_adjust(hspace=0.8)
+        fig.subplots_adjust(hspace=1.0)
 
         all_yoy_values = []
 
@@ -974,7 +974,7 @@ def create_all_charts(all_data):
                     ha='center', fontsize=34, fontweight='bold')
             
             # Subtitle for top plot
-            ax1.set_title('All Electricity Sources', fontsize=26, fontweight='normal', pad=35)
+            ax1.set_title('All Electricity Sources', fontsize=26, fontweight='normal', pad=60)
             ax1.set_xlabel('Year', fontsize=28, fontweight='bold', labelpad=15)
             ax1.set_ylabel('% Change from 2015', fontsize=28, fontweight='bold', labelpad=15)
             ax1.set_ylim(y_min_limit, y_max_limit)
@@ -983,11 +983,11 @@ def create_all_charts(all_data):
             ax1.grid(True, linestyle='--', alpha=0.7)
 
             # Bold main title above bottom subplot
-            fig.text(0.5, 0.47, 'Year-over-Year Change vs 2015', 
+            fig.text(0.5, 0.44, 'Year-over-Year Change vs 2015', 
                     ha='center', fontsize=34, fontweight='bold')
             
             # Subtitle for bottom plot
-            ax2.set_title('Renewables vs Non-Renewables', fontsize=26, fontweight='normal', pad=35)
+            ax2.set_title('Renewables vs Non-Renewables', fontsize=26, fontweight='normal', pad=60)
             ax2.set_xlabel('Year', fontsize=28, fontweight='bold', labelpad=15)
             ax2.set_ylabel('% Change from 2015', fontsize=28, fontweight='bold', labelpad=15)
             ax2.set_ylim(y_min_limit, y_max_limit)
@@ -996,9 +996,9 @@ def create_all_charts(all_data):
             ax2.grid(True, linestyle='--', alpha=0.7)
 
             # Double legend - one per subplot, positioned lower for more space
-            ax1.legend(loc='upper center', bbox_to_anchor=(0.5, -0.28), ncol=5,
+            ax1.legend(loc='upper center', bbox_to_anchor=(0.5, -0.15), ncol=5,
                        fontsize=18, frameon=False)
-            ax2.legend(loc='upper center', bbox_to_anchor=(0.5, -0.28), ncol=2,
+            ax2.legend(loc='upper center', bbox_to_anchor=(0.5, -0.15), ncol=2,
                        fontsize=22, frameon=False)
 
             # No main suptitle needed since we repeat title on each subplot
