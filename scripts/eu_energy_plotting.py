@@ -1051,30 +1051,19 @@ def update_summary_table_historical_data(all_data):
         current_year = current_date.year
         current_month = current_date.month
         
-        # Calculate YTD 2025 and 2020-2024 averages for each source
-        source_mapping = {
-            'Solar': 'Solar',
-            'Wind': 'Wind',
-            'Hydro': 'Hydro',
-            'Biomass': 'Biomass',
-            'Geothermal': 'Geothermal',
-            'Gas': 'Gas',
-            'Coal': 'Coal',
-            'Nuclear': 'Nuclear',
-            'Oil': 'Oil',
-            'Waste': 'Waste',
-            'All Renewables': 'All Renewables',
-            'All Non-Renewables': 'All Non-Renewables'
-        }
+        # Define source categories
+        renewables = ['Solar', 'Wind', 'Hydro', 'Biomass', 'Geothermal']
+        non_renewables = ['Gas', 'Coal', 'Nuclear', 'Oil', 'Waste']
+        all_sources = renewables + non_renewables
         
-        # Prepare updates
-        updates = []
+        # Calculate totals for each source
+        source_calcs = {}
         
-        for row_idx, (display_name, data_key) in enumerate(source_mapping.items(), start=2):
-            if data_key not in all_data:
+        for source_name in all_sources:
+            if source_name not in all_data:
                 continue
             
-            year_data = all_data[data_key]['year_data']
+            year_data = all_data[source_name]['year_data']
             
             # Calculate YTD 2025
             ytd_2025_gwh = 0
@@ -1091,7 +1080,50 @@ def update_summary_table_historical_data(all_data):
             
             avg_2020_2024_gwh = sum(period_totals) / len(period_totals) if period_totals else 0
             
+            source_calcs[source_name] = {
+                'ytd_2025_gwh': ytd_2025_gwh,
+                'avg_2020_2024_gwh': avg_2020_2024_gwh
+            }
+        
+        # Calculate aggregates by summing individual sources
+        renewables_ytd = sum(source_calcs[s]['ytd_2025_gwh'] for s in renewables if s in source_calcs)
+        renewables_avg = sum(source_calcs[s]['avg_2020_2024_gwh'] for s in renewables if s in source_calcs)
+        
+        non_renewables_ytd = sum(source_calcs[s]['ytd_2025_gwh'] for s in non_renewables if s in source_calcs)
+        non_renewables_avg = sum(source_calcs[s]['avg_2020_2024_gwh'] for s in non_renewables if s in source_calcs)
+        
+        source_calcs['All Renewables'] = {
+            'ytd_2025_gwh': renewables_ytd,
+            'avg_2020_2024_gwh': renewables_avg
+        }
+        
+        source_calcs['All Non-Renewables'] = {
+            'ytd_2025_gwh': non_renewables_ytd,
+            'avg_2020_2024_gwh': non_renewables_avg
+        }
+        
+        # Prepare updates with correct order
+        source_order = [
+            'All Renewables',
+            'Solar', 'Wind', 'Hydro', 'Biomass', 'Geothermal',
+            'All Non-Renewables',
+            'Gas', 'Coal', 'Nuclear', 'Oil', 'Waste'
+        ]
+        
+        # Prepare updates
+        updates = []
+        
+        for row_idx, source_name in enumerate(source_order, start=2):
+            if source_name not in source_calcs:
+                continue
+            
+            ytd_2025_gwh = source_calcs[source_name]['ytd_2025_gwh']
+            avg_2020_2024_gwh = source_calcs[source_name]['avg_2020_2024_gwh']
+            
             # Calculate total generation for percentages
+            ytd_2025_pct = 0
+            avg_2020_2024_pct = 0
+            
             if 'Total Generation' in all_data:
                 total_year_data = all_data['Total Generation']['year_data']
                 
@@ -1112,9 +1144,6 @@ def update_summary_table_historical_data(all_data):
                 
                 avg_total_gen = sum(period_total_gen) / len(period_total_gen) if period_total_gen else 0
                 avg_2020_2024_pct = (avg_2020_2024_gwh / avg_total_gen * 100) if avg_total_gen > 0 else 0
-            else:
-                ytd_2025_pct = 0
-                avg_2020_2024_pct = 0
             
             # Add to updates list (columns F, G, H, I)
             updates.append({
@@ -1136,8 +1165,8 @@ def update_summary_table_historical_data(all_data):
             
             # Update timestamp in last column
             timestamp = current_date.strftime('%Y-%m-%d %H:%M UTC')
-            # Update column J for all data rows
-            for row_idx in range(2, len(source_mapping) + 2):
+            # Update column J for all data rows (12 sources: 2 aggregates + 10 individual)
+            for row_idx in range(2, 14):
                 worksheet.update(f'J{row_idx}', [[timestamp]])
             
             print(f"   Worksheet: {spreadsheet.url}")
