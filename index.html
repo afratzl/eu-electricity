@@ -564,6 +564,12 @@
             color: var(--color-text);
         }
 
+        #summary-table-container {
+            width: 100%;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
         .table-footer-pro {
             text-align: center;
             padding: var(--spacing-sm);
@@ -644,16 +650,24 @@
             }
 
             .summary-table-pro {
-                font-size: 0.875em;
+                font-size: 0.75em;
+                display: block;
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
             }
 
             .summary-table-pro th,
             .summary-table-pro td {
-                padding: 10px 12px;
+                padding: 8px 6px;
+                font-size: 0.95em;
             }
 
             .row-source-pro .source-name-cell-pro {
-                padding-left: 24px;
+                padding-left: 20px;
+            }
+
+            .row-source-pro {
+                border-left-width: 3px;
             }
 
             .table-controls-pro {
@@ -668,6 +682,37 @@
             .toggle-btn-pro {
                 width: 100%;
                 text-align: center;
+                font-size: 0.875em;
+                padding: 8px 16px;
+            }
+
+            .control-label-pro {
+                font-size: 0.9em;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .summary-table-pro {
+                font-size: 0.7em;
+            }
+
+            .summary-table-pro th,
+            .summary-table-pro td {
+                padding: 6px 4px;
+                font-size: 0.9em;
+            }
+
+            .row-source-pro .source-name-cell-pro {
+                padding-left: 16px;
+            }
+
+            .row-source-pro {
+                border-left-width: 2px;
+            }
+
+            .toggle-btn-pro {
+                font-size: 0.8em;
+                padding: 6px 12px;
             }
         }
     </style>
