@@ -1341,8 +1341,14 @@ def update_summary_table_historical_data(all_data):
                 if 2025 in total_year_data:
                     for month in range(1, current_month + 1):
                         month_value = total_year_data[2025].get(month, 0)
-                        days_in_month = calendar.monthrange(2025, month)[1]
-                        ytd_2025_total += month_value * days_in_month  # Convert daily average to monthly total
+                        if month < current_month:
+                            # Full month - sheet already has monthly total
+                            ytd_2025_total += month_value
+                        else:
+                            # Partial month
+                            current_day = current_date.day
+                            days_in_month = calendar.monthrange(2025, month)[1]
+                            ytd_2025_total += month_value * (current_day / days_in_month)
                 
                 ytd_2025_pct = (ytd_2025_gwh / ytd_2025_total * 100) if ytd_2025_total > 0 else 0
                 
@@ -1353,8 +1359,8 @@ def update_summary_table_historical_data(all_data):
                         year_total_gen = 0
                         for month in range(1, 13):
                             month_value = total_year_data[year].get(month, 0)
-                            days_in_month = calendar.monthrange(year, month)[1]
-                            year_total_gen += month_value * days_in_month  # Convert daily average to monthly total
+                            # Sheet already has monthly total, just sum
+                            year_total_gen += month_value
                         period_total_gen.append(year_total_gen)
                 
                 avg_total_gen = sum(period_total_gen) / len(period_total_gen) if period_total_gen else 0
