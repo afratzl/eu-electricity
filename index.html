@@ -215,19 +215,17 @@
                     <span class="value-change" style="display:none">${source.last_week.change_from_2015}</span>
                 </td>`;
                 
-                // YTD 2025 - Convert to PWh
-                const ytd_pwh = (source.ytd_2025.twh / 1000).toFixed(2);
+                // YTD 2025 - Display in TWh
                 html += `<td>
                     <span class="value-pct">${source.ytd_2025.percentage}%</span>
-                    <span class="value-abs" style="display:none">${ytd_pwh} PWh</span>
+                    <span class="value-abs" style="display:none">${source.ytd_2025.twh.toFixed(2)} TWh</span>
                     <span class="value-change" style="display:none">${source.ytd_2025.change_from_2015}</span>
                 </td>`;
                 
-                // 2020-2024 Avg - Convert to PWh
-                const avg_pwh = (source.avg_2020_2024.twh / 1000).toFixed(2);
+                // 2020-2024 Avg - Display in TWh
                 html += `<td>
                     <span class="value-pct">${source.avg_2020_2024.percentage}%</span>
-                    <span class="value-abs" style="display:none">${avg_pwh} PWh</span>
+                    <span class="value-abs" style="display:none">${source.avg_2020_2024.twh.toFixed(2)} TWh</span>
                     <span class="value-change" style="display:none">${source.avg_2020_2024.change_from_2015}</span>
                 </td>`;
                 
