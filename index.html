@@ -9,20 +9,8 @@
 <body>
     <nav class="navbar">
         <div class="nav-container">
-            <span class="nav-title">EU Electricity Production</span>
-            <div class="nav-links">
-                <a href="index.html" class="active">Home</a>
-                <a href="live.html">Intraday</a>
-                <a href="monthly.html">Monthly</a>
-                <a href="trends.html">Trends</a>
-            </div>
-        </div>
-    </nav>
-
-    <div class="container">
-        <header class="hero-section-pro">
-            <h1>
-                <svg width="40" height="27" viewBox="0 0 810 540" style="vertical-align: middle; margin-right: 12px;">
+            <span class="nav-title">
+                <svg width="32" height="21" viewBox="0 0 810 540" style="vertical-align: middle; margin-right: 10px;">
                     <desc>European flag</desc>
                     <defs>
                         <g id="s">
@@ -51,8 +39,20 @@
                         <use href="#l" transform="scale(-1,1)"/>
                     </g>
                 </svg>
-                European Union Electricity Production
-            </h1>
+                EU Electricity Production
+            </span>
+            <div class="nav-links">
+                <a href="index.html" class="active">Home</a>
+                <a href="live.html">Intraday</a>
+                <a href="monthly.html">Monthly</a>
+                <a href="trends.html">Trends</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <header class="hero-section-pro">
+            <h1>European Union Electricity Production</h1>
             <p class="hero-subtitle-pro">Tracking Europe's electricity transition with real-time and historical data</p>
         </header>
 
@@ -703,9 +703,10 @@
                 font-size: 1.75em;
             }
             
-            .hero-section-pro h1 svg {
-                width: 32px;
-                height: 21px;
+            .nav-title svg {
+                width: 28px;
+                height: 19px;
+                margin-right: 8px;
             }
             
             .hero-subtitle-pro {
@@ -777,10 +778,10 @@
         }
 
         @media (max-width: 480px) {
-            .hero-section-pro h1 svg {
-                width: 28px;
-                height: 19px;
-                margin-right: 8px;
+            .nav-title svg {
+                width: 24px;
+                height: 16px;
+                margin-right: 6px;
             }
             
             .summary-table-pro {
