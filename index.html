@@ -676,10 +676,25 @@
 
             .summary-table-pro {
                 font-size: 0.75em;
-                display: block;
-                overflow-x: auto;
-                -webkit-overflow-scrolling: touch;
-                width: 720px;  /* Wider to fit all columns comfortably */
+                width: 100%;
+                min-width: 800px;  /* Force wider minimum for all 3 views */
+                table-layout: auto;  /* Allow columns to size naturally */
+            }
+
+            .summary-table-pro th:first-child,
+            .summary-table-pro td:first-child {
+                width: auto;  /* Let source column size naturally */
+            }
+            
+            .summary-table-pro th:nth-child(2),
+            .summary-table-pro th:nth-child(3),
+            .summary-table-pro th:nth-child(4),
+            .summary-table-pro th:nth-child(5),
+            .summary-table-pro td:nth-child(2),
+            .summary-table-pro td:nth-child(3),
+            .summary-table-pro td:nth-child(4),
+            .summary-table-pro td:nth-child(5) {
+                width: auto;  /* Let data columns size naturally */
             }
 
             .summary-table-pro th,
@@ -720,7 +735,25 @@
         @media (max-width: 480px) {
             .summary-table-pro {
                 font-size: 0.7em;
-                width: 700px;  /* Wider for all columns */
+                width: 100%;
+                min-width: 750px;  /* Force wider minimum */
+                table-layout: auto;  /* Allow columns to size naturally */
+            }
+
+            .summary-table-pro th:first-child,
+            .summary-table-pro td:first-child {
+                width: auto;
+            }
+            
+            .summary-table-pro th:nth-child(2),
+            .summary-table-pro th:nth-child(3),
+            .summary-table-pro th:nth-child(4),
+            .summary-table-pro th:nth-child(5),
+            .summary-table-pro td:nth-child(2),
+            .summary-table-pro td:nth-child(3),
+            .summary-table-pro td:nth-child(4),
+            .summary-table-pro td:nth-child(5) {
+                width: auto;
             }
 
             .summary-table-pro th,
