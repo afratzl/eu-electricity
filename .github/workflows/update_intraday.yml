@@ -45,6 +45,8 @@ jobs:
         env:
           GOOGLE_CREDENTIALS_JSON: ${{ secrets.GOOGLE_CREDENTIALS_JSON }}
         run: |
+          echo "Fixing any JSON conflicts first..."
+          python scripts/fix_json_conflicts.py || true
           echo "Generating summary table JSON..."
           python scripts/generate_summary_table_json.py || echo "Failed to generate JSON"
       
@@ -53,11 +55,17 @@ jobs:
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
           git config --local user.name "github-actions[bot]"
           
-          # Pull latest changes with rebase and autostash
-          git pull --rebase --autostash origin main
+          # Pull with merge strategy (accept ours on conflict)
+          git pull origin main --no-rebase || true
+          
+          # If there are conflicts in JSON, take the newer version
+          if [ -f plots/energy_summary_table.json ]; then
+            git checkout --ours plots/energy_summary_table.json 2>/dev/null || true
+            git add plots/energy_summary_table.json
+          fi
           
           # Add intraday plots and JSON
-          git add plots/*_analysis.png plots/last_update.html plots/energy_summary_table.json
+          git add plots/*_analysis.png plots/last_update.html plots/energy_summary_table.json 2>/dev/null || true
           
           # Commit if there are changes
           git diff --quiet && git diff --staged --quiet || (git commit -m "Update intraday plots and summary JSON [hourly]" && git push)
