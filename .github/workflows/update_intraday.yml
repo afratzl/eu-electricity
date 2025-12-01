@@ -55,17 +55,26 @@ jobs:
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
           git config --local user.name "github-actions[bot]"
           
-          # Pull with merge strategy (accept ours on conflict)
-          git pull origin main --no-rebase || true
+          # Fetch latest from remote
+          git fetch origin main
           
-          # If there are conflicts in JSON, take the newer version
-          if [ -f plots/energy_summary_table.json ]; then
-            git checkout --ours plots/energy_summary_table.json 2>/dev/null || true
-            git add plots/energy_summary_table.json
+          # Save our generated files temporarily
+          mkdir -p /tmp/plots_backup
+          cp plots/*_analysis.png plots/last_update.html plots/energy_summary_table.json /tmp/plots_backup/ 2>/dev/null || true
+          
+          # Reset to remote (this avoids all merge conflicts)
+          git reset --hard origin/main
+          
+          # Restore our new files
+          cp /tmp/plots_backup/* plots/ 2>/dev/null || true
+          
+          # Add and commit
+          git add plots/*_analysis.png plots/last_update.html plots/energy_summary_table.json
+          
+          # Only commit if there are changes
+          if ! git diff --staged --quiet; then
+            git commit -m "Update intraday plots and summary JSON [hourly]"
+            git push origin main
+          else
+            echo "No changes to commit"
           fi
-          
-          # Add intraday plots and JSON
-          git add plots/*_analysis.png plots/last_update.html plots/energy_summary_table.json 2>/dev/null || true
-          
-          # Commit if there are changes
-          git diff --quiet && git diff --staged --quiet || (git commit -m "Update intraday plots and summary JSON [hourly]" && git push)
