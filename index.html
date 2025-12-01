@@ -491,6 +491,17 @@
             border-radius: var(--radius-md);
             overflow: hidden;
             box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            table-layout: fixed;
+        }
+
+        .summary-table-pro th,
+        .summary-table-pro td {
+            min-width: 100px;
+        }
+
+        .summary-table-pro th:first-child,
+        .summary-table-pro td:first-child {
+            min-width: 140px;
         }
 
         .summary-table-pro thead {
@@ -654,12 +665,19 @@
                 display: block;
                 overflow-x: auto;
                 -webkit-overflow-scrolling: touch;
+                table-layout: auto;
             }
 
             .summary-table-pro th,
             .summary-table-pro td {
                 padding: 8px 6px;
                 font-size: 0.95em;
+                min-width: 70px;
+            }
+
+            .summary-table-pro th:first-child,
+            .summary-table-pro td:first-child {
+                min-width: 100px;
             }
 
             .row-source-pro .source-name-cell-pro {
@@ -700,6 +718,12 @@
             .summary-table-pro td {
                 padding: 6px 4px;
                 font-size: 0.9em;
+                min-width: 60px;
+            }
+
+            .summary-table-pro th:first-child,
+            .summary-table-pro td:first-child {
+                min-width: 80px;
             }
 
             .row-source-pro .source-name-cell-pro {
