@@ -16,6 +16,37 @@ Key improvements:
 """
 
 from entsoe import EntsoePandasClient
+import entsoe.entsoe
+import entsoe.parsers
+
+# CRITICAL: Set new API endpoint (ENTSO-E migration November 2024)
+# See: https://github.com/EnergieID/entsoe-py/issues/154
+entsoe.entsoe.URL = 'https://external-api.tp.entsoe.eu/api'
+
+# Custom parser to handle new XML format from ENTSO-E API
+def _parse_load_timeseries(soup):
+    """
+    Custom parser for ENTSO-E API load timeseries
+    Handles the new XML format after November 2024 API migration
+    """
+    import pandas as pd
+    
+    positions = []
+    prices = []
+    for point in soup.find_all('point'):
+        positions.append(int(point.find('position').text))
+        prices.append(float(point.find('quantity').text))
+
+    series = pd.Series(index=positions, data=prices)
+    series = series.sort_index()
+
+    series.index = [v for i, v in enumerate(entsoe.parsers._parse_datetimeindex(soup)) if i+1 in series.index]
+
+    return series
+
+# Monkey-patch the parser into entsoe module
+entsoe.parsers._parse_load_timeseries = _parse_load_timeseries
+
 import pandas as pd
 import matplotlib
 matplotlib.use('Agg')
@@ -854,7 +885,7 @@ def plot_analysis(stats_data, source_type, output_file):
     # PLOT 2 (BOTTOM): ABSOLUTE VALUES
     ax2.set_title('Absolute Production', fontsize=26, fontweight='normal', pad=10)
     ax2.set_xlabel('Time of Day (Brussels)', fontsize=28, fontweight='bold', labelpad=15)
-    ax2.set_ylabel('Electricity production (MW)', fontsize=28, fontweight='bold', labelpad=15)
+    ax2.set_ylabel('Electricity production (GW)', fontsize=28, fontweight='bold', labelpad=15)
 
     max_energy = 0
 
@@ -871,7 +902,8 @@ def plot_analysis(stats_data, source_type, output_file):
         label = labels.get(period_name, period_name)
 
         x_values = np.arange(len(data['energy_mean']))
-        y_values = data['energy_mean'].copy()
+        # Convert MW to GW
+        y_values = data['energy_mean'].copy() / 1000
         max_energy = max(max_energy, np.nanmax(y_values))
 
         if period_name in ['today', 'today_projected']:
@@ -885,7 +917,8 @@ def plot_analysis(stats_data, source_type, output_file):
         ax2.plot(x_values, y_values, color=color, linestyle=linestyle, linewidth=6, label=label)
 
         if period_name in ['week_ago', 'year_ago', 'two_years_ago'] and 'energy_std' in data:
-            std_values = data['energy_std'][:len(x_values)]
+            # Convert MW to GW for std as well
+            std_values = data['energy_std'][:len(x_values)] / 1000
             upper_bound = y_values + std_values
             lower_bound = y_values - std_values
             max_energy = max(max_energy, np.nanmax(upper_bound))
@@ -902,12 +935,19 @@ def plot_analysis(stats_data, source_type, output_file):
         ax.set_xticks(tick_positions)
         ax.set_xticklabels([time_labels[i] for i in tick_positions], rotation=45)
 
-    # Legend
+    # Add legends to both plots
     handles1, labels1 = ax1.get_legend_handles_labels()
-    fig.legend(handles1, labels1, loc='lower center', bbox_to_anchor=(0.5, -0.05),
-               ncol=3, fontsize=20, frameon=False, columnspacing=1.5)
+    handles2, labels2 = ax2.get_legend_handles_labels()
+    
+    # Legend for percentage plot (top)
+    ax1.legend(handles1, labels1, loc='upper right', fontsize=18, frameon=True, 
+               framealpha=0.9, edgecolor='gray')
+    
+    # Legend for absolute plot (bottom)
+    ax2.legend(handles2, labels2, loc='upper right', fontsize=18, frameon=True,
+               framealpha=0.9, edgecolor='gray')
 
-    plt.tight_layout(rect=[0, 0.05, 1, 0.985])
+    plt.tight_layout(rect=[0, 0.02, 1, 0.985])
     plt.savefig(output_file, dpi=150, bbox_inches='tight')
     plt.close()
 
