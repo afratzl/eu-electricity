@@ -591,8 +591,6 @@
 
         #summary-table-container {
             width: 100%;
-            overflow-x: auto;
-            -webkit-overflow-scrolling: touch;
         }
 
         .table-footer-pro {
@@ -677,13 +675,20 @@
             .summary-table-pro {
                 font-size: 0.75em;
                 width: 100%;
-                min-width: 800px;  /* Force wider minimum for all 3 views */
-                table-layout: auto;  /* Allow columns to size naturally */
+                table-layout: fixed;  /* Force columns to share space equally */
+            }
+
+            .summary-table-pro th,
+            .summary-table-pro td {
+                white-space: normal;  /* Allow wrapping on mobile */
+                padding: 8px 4px;
+                font-size: 0.85em;
+                word-break: break-word;  /* Allow wrapping if needed */
             }
 
             .summary-table-pro th:first-child,
             .summary-table-pro td:first-child {
-                width: auto;  /* Let source column size naturally */
+                width: 25%;  /* Source name column */
             }
             
             .summary-table-pro th:nth-child(2),
@@ -694,13 +699,7 @@
             .summary-table-pro td:nth-child(3),
             .summary-table-pro td:nth-child(4),
             .summary-table-pro td:nth-child(5) {
-                width: auto;  /* Let data columns size naturally */
-            }
-
-            .summary-table-pro th,
-            .summary-table-pro td {
-                padding: 8px 6px;
-                font-size: 0.95em;
+                width: 18.75%;  /* Equal width for 4 data columns */
             }
 
             .row-source-pro .source-name-cell-pro {
@@ -734,15 +733,22 @@
 
         @media (max-width: 480px) {
             .summary-table-pro {
-                font-size: 0.7em;
+                font-size: 0.65em;
                 width: 100%;
-                min-width: 750px;  /* Force wider minimum */
-                table-layout: auto;  /* Allow columns to size naturally */
+                table-layout: fixed;  /* Force columns to share space equally */
+            }
+
+            .summary-table-pro th,
+            .summary-table-pro td {
+                white-space: normal;  /* Allow wrapping */
+                padding: 6px 3px;
+                font-size: 0.9em;
+                word-break: break-word;
             }
 
             .summary-table-pro th:first-child,
             .summary-table-pro td:first-child {
-                width: auto;
+                width: 25%;
             }
             
             .summary-table-pro th:nth-child(2),
@@ -753,13 +759,7 @@
             .summary-table-pro td:nth-child(3),
             .summary-table-pro td:nth-child(4),
             .summary-table-pro td:nth-child(5) {
-                width: auto;
-            }
-
-            .summary-table-pro th,
-            .summary-table-pro td {
-                padding: 6px 4px;
-                font-size: 0.9em;
+                width: 18.75%;
             }
 
             .row-source-pro .source-name-cell-pro {
