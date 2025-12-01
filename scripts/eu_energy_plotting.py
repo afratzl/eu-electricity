@@ -1054,6 +1054,29 @@ def update_summary_table_historical_data(all_data):
         try:
             worksheet = spreadsheet.worksheet('Summary Table Data')
             print("✓ Found 'Summary Table Data' worksheet")
+            
+            # Check if worksheet has enough columns (need 14: A-N)
+            if worksheet.col_count < 14:
+                print(f"  Expanding worksheet from {worksheet.col_count} to 14 columns...")
+                worksheet.resize(rows=worksheet.row_count, cols=14)
+                print("  ✓ Worksheet expanded")
+                
+                # Update header row with new columns
+                print("  Updating header row...")
+                headers = [
+                    'Source', 
+                    'Yesterday_GWh', 'Yesterday_%', 
+                    'LastWeek_GWh', 'LastWeek_%',
+                    'YTD2025_GWh', 'YTD2025_%',
+                    'Avg2020_2024_GWh', 'Avg2020_2024_%',
+                    'Last_Updated',
+                    'Yesterday_Change_2015_%', 'LastWeek_Change_2015_%',
+                    'YTD2025_Change_2015_%', 'Avg2020_2024_Change_2015_%'
+                ]
+                worksheet.update('A1:N1', [headers])
+                worksheet.format('A1:N1', {'textFormat': {'bold': True}})
+                print("  ✓ Header row updated")
+                
         except gspread.WorksheetNotFound:
             print("⚠ 'Summary Table Data' worksheet not found - run intraday analysis first")
             return
