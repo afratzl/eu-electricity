@@ -82,6 +82,9 @@
                     <button id="toggle-absolute" class="toggle-btn-pro" onclick="showAbsolute()">
                         Absolute (TWh)
                     </button>
+                    <button id="toggle-change" class="toggle-btn-pro" onclick="showChange()">
+                        Change from 2015
+                    </button>
                 </div>
             </div>
 
@@ -214,24 +217,28 @@
                 html += `<td>
                     <span class="value-pct">${source.yesterday.percentage}%</span>
                     <span class="value-abs" style="display:none">${source.yesterday.twh} TWh</span>
+                    <span class="value-change" style="display:none">${source.yesterday.change_from_2015}</span>
                 </td>`;
                 
                 // Last Week
                 html += `<td>
                     <span class="value-pct">${source.last_week.percentage}%</span>
                     <span class="value-abs" style="display:none">${source.last_week.twh} TWh</span>
+                    <span class="value-change" style="display:none">${source.last_week.change_from_2015}</span>
                 </td>`;
                 
                 // YTD 2025
                 html += `<td>
                     <span class="value-pct">${source.ytd_2025.percentage}%</span>
                     <span class="value-abs" style="display:none">${source.ytd_2025.twh} TWh</span>
+                    <span class="value-change" style="display:none">${source.ytd_2025.change_from_2015}</span>
                 </td>`;
                 
                 // 2020-2024 Avg
                 html += `<td>
                     <span class="value-pct">${source.avg_2020_2024.percentage}%</span>
                     <span class="value-abs" style="display:none">${source.avg_2020_2024.twh} TWh</span>
+                    <span class="value-change" style="display:none">${source.avg_2020_2024.change_from_2015}</span>
                 </td>`;
                 
                 html += '</tr>';
@@ -247,9 +254,11 @@
         function showPercentage() {
             document.querySelectorAll('.value-pct').forEach(el => el.style.display = 'inline');
             document.querySelectorAll('.value-abs').forEach(el => el.style.display = 'none');
+            document.querySelectorAll('.value-change').forEach(el => el.style.display = 'none');
             
             document.getElementById('toggle-percentage').classList.add('active');
             document.getElementById('toggle-absolute').classList.remove('active');
+            document.getElementById('toggle-change').classList.remove('active');
             
             localStorage.setItem('electricityView', 'percentage');
         }
@@ -257,11 +266,25 @@
         function showAbsolute() {
             document.querySelectorAll('.value-pct').forEach(el => el.style.display = 'none');
             document.querySelectorAll('.value-abs').forEach(el => el.style.display = 'inline');
+            document.querySelectorAll('.value-change').forEach(el => el.style.display = 'none');
             
             document.getElementById('toggle-percentage').classList.remove('active');
             document.getElementById('toggle-absolute').classList.add('active');
+            document.getElementById('toggle-change').classList.remove('active');
             
             localStorage.setItem('electricityView', 'absolute');
+        }
+
+        function showChange() {
+            document.querySelectorAll('.value-pct').forEach(el => el.style.display = 'none');
+            document.querySelectorAll('.value-abs').forEach(el => el.style.display = 'none');
+            document.querySelectorAll('.value-change').forEach(el => el.style.display = 'inline');
+            
+            document.getElementById('toggle-percentage').classList.remove('active');
+            document.getElementById('toggle-absolute').classList.remove('active');
+            document.getElementById('toggle-change').classList.add('active');
+            
+            localStorage.setItem('electricityView', 'change');
         }
 
         // Load on page load
@@ -273,6 +296,8 @@
             const preference = localStorage.getItem('electricityView') || 'percentage';
             if (preference === 'absolute') {
                 showAbsolute();
+            } else if (preference === 'change') {
+                showChange();
             }
         });
     </script>
@@ -453,6 +478,7 @@
             align-items: center;
             gap: var(--spacing-sm);
             margin-bottom: var(--spacing-lg);
+            flex-wrap: wrap;
         }
 
         .control-label-pro {
@@ -470,15 +496,16 @@
         }
 
         .toggle-btn-pro {
-            padding: 10px 24px;
+            padding: 10px 20px;
             border: none;
             background: transparent;
             color: var(--color-text-light);
             cursor: pointer;
-            font-size: 1em;
+            font-size: 0.9375em;
             font-weight: 500;
             transition: all 0.2s ease;
             border-radius: var(--radius-sm);
+            white-space: nowrap;
         }
 
         .toggle-btn-pro.active {
@@ -691,6 +718,10 @@
                 padding-left: 24px;
             }
 
+            .table-controls-pro {
+                flex-direction: column;
+            }
+
             .toggle-group {
                 flex-direction: column;
                 width: 100%;
@@ -698,6 +729,7 @@
 
             .toggle-btn-pro {
                 width: 100%;
+                text-align: center;
             }
         }
     </style>
