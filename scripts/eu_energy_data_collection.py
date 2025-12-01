@@ -293,10 +293,10 @@ def save_all_data_to_google_sheets_with_merge(all_data, month_names):
         gc = gspread.authorize(credentials)
 
         try:
-            spreadsheet = gc.open('EU Energy Production Data')
+            spreadsheet = gc.open('EU Electricity Production Data')
             print(f"✓ Connected to existing spreadsheet")
         except gspread.SpreadsheetNotFound:
-            spreadsheet = gc.create('EU Energy Production Data')
+            spreadsheet = gc.create('EU Electricity Production Data')
             # Note: You may want to share with your email - but we don't hardcode emails
             print(f"✓ Created new spreadsheet")
 
@@ -444,7 +444,7 @@ def save_all_data_to_google_sheets_with_merge(all_data, month_names):
                 [str(year) for year in sorted(updating_years, reverse=True)]) if updating_years else 'None'
             print(f"  ✓ Updated {source_name}: Added years [{new_years_str}], Updated years [{updated_years_str}]")
 
-        print(f"\n✓ All data saved to Google Sheets: 'EU Energy Production Data'")
+        print(f"\n✓ All data saved to Google Sheets: 'EU Electricity Production Data'")
         print(f"URL: {spreadsheet.url}")
         return spreadsheet.url
 
