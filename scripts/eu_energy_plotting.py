@@ -1055,10 +1055,10 @@ def update_summary_table_historical_data(all_data):
             worksheet = spreadsheet.worksheet('Summary Table Data')
             print("✓ Found 'Summary Table Data' worksheet")
             
-            # Check if worksheet has enough columns (need 14: A-N)
-            if worksheet.col_count < 14:
-                print(f"  Expanding worksheet from {worksheet.col_count} to 14 columns...")
-                worksheet.resize(rows=worksheet.row_count, cols=14)
+            # Check if worksheet has enough columns (need 18: A-R)
+            if worksheet.col_count < 18:
+                print(f"  Expanding worksheet from {worksheet.col_count} to 18 columns...")
+                worksheet.resize(rows=worksheet.row_count, cols=18)
                 print("  ✓ Worksheet expanded")
                 
                 # Update header row with new columns
