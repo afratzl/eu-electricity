@@ -147,8 +147,10 @@
                 </div>
             `;
             
-            // Scroll to chart
-            display.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            // Only scroll if user manually changed selection (not on page load)
+            if (window.pageYOffset > 0 || document.documentElement.scrollTop > 0) {
+                display.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
         }
 
         function handleImageError(img, sourceName) {
