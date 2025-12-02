@@ -1071,10 +1071,12 @@ def update_summary_table_historical_data(all_data):
                     f'{previous_year}_GWh', f'{previous_year}_%',
                     'Last_Updated',
                     'Yesterday_Change_2015_%', 'LastWeek_Change_2015_%',
-                    f'YTD{current_year}_Change_2015_%', f'{previous_year}_Change_2015_%'
+                    f'YTD{current_year}_Change_2015_%', f'{previous_year}_Change_2015_%',
+                    f'Yesterday_Change_{previous_year}_%', f'LastWeek_Change_{previous_year}_%',
+                    f'YTD{current_year}_Change_{previous_year}_%', f'{previous_year}_Change_{previous_year}_%'
                 ]
-                worksheet.update('A1:N1', [headers])
-                worksheet.format('A1:N1', {'textFormat': {'bold': True}})
+                worksheet.update('A1:R1', [headers])
+                worksheet.format('A1:R1', {'textFormat': {'bold': True}})
                 print("  ✓ Header row updated")
                 
         except gspread.WorksheetNotFound:
@@ -1123,9 +1125,16 @@ def update_summary_table_historical_data(all_data):
                     # Sheet already has monthly total, just sum
                     year_previous_gwh += month_value
             
+            # Calculate current month from previous year (e.g., December 2024)
+            # This is needed for accurate "Change from Previous Year" calculations
+            current_month_previous_year_gwh = 0
+            if previous_year in year_data:
+                current_month_previous_year_gwh = year_data[previous_year].get(current_month, 0)
+            
             source_calcs[source_name] = {
                 'ytd_current_gwh': ytd_current_gwh,
-                'year_previous_gwh': year_previous_gwh
+                'year_previous_gwh': year_previous_gwh,
+                'current_month_previous_year_gwh': current_month_previous_year_gwh
             }
         
         # Calculate 2015 baselines for change calculation
@@ -1191,10 +1200,16 @@ def update_summary_table_historical_data(all_data):
                     month_value = renewables_year_data[previous_year].get(month, 0)
                     # Sheet already has monthly total, just sum
                     renewables_previous += month_value
+            
+            # Get current month from previous year
+            renewables_current_month_prev = 0
+            if previous_year in renewables_year_data:
+                renewables_current_month_prev = renewables_year_data[previous_year].get(current_month, 0)
         else:
             # Fallback: sum individual sources
             renewables_ytd = sum(source_calcs[s]['ytd_current_gwh'] for s in renewables if s in source_calcs)
             renewables_previous = sum(source_calcs[s]['year_previous_gwh'] for s in renewables if s in source_calcs)
+            renewables_current_month_prev = sum(source_calcs[s]['current_month_previous_year_gwh'] for s in renewables if s in source_calcs)
         
         # Calculate All Non-Renewables from Total Generation - All Renewables
         # This ensures they sum to exactly 100%
@@ -1225,20 +1240,29 @@ def update_summary_table_historical_data(all_data):
                     # Sheet already has monthly total, just sum
                     total_previous += month_value
             
+            # Get current month from previous year
+            total_current_month_prev = 0
+            if previous_year in total_year_data:
+                total_current_month_prev = total_year_data[previous_year].get(current_month, 0)
+            
             non_renewables_previous = total_previous - renewables_previous
+            non_renewables_current_month_prev = total_current_month_prev - renewables_current_month_prev
         else:
             # Fallback: sum individual sources
             non_renewables_ytd = sum(source_calcs[s]['ytd_current_gwh'] for s in non_renewables if s in source_calcs)
             non_renewables_previous = sum(source_calcs[s]['year_previous_gwh'] for s in non_renewables if s in source_calcs)
+            non_renewables_current_month_prev = sum(source_calcs[s]['current_month_previous_year_gwh'] for s in non_renewables if s in source_calcs)
         
         source_calcs['All Renewables'] = {
             'ytd_current_gwh': renewables_ytd,
-            'year_previous_gwh': renewables_previous
+            'year_previous_gwh': renewables_previous,
+            'current_month_previous_year_gwh': renewables_current_month_prev
         }
         
         source_calcs['All Non-Renewables'] = {
             'ytd_current_gwh': non_renewables_ytd,
-            'year_previous_gwh': non_renewables_previous
+            'year_previous_gwh': non_renewables_previous,
+            'current_month_previous_year_gwh': non_renewables_current_month_prev
         }
         
         # Add 2015 baselines for aggregates
@@ -1393,6 +1417,150 @@ def update_summary_table_historical_data(all_data):
             # Update column J for all data rows (12 sources: 2 aggregates + 10 individual)
             for row_idx in range(2, 14):
                 worksheet.update(f'J{row_idx}', [[timestamp]])
+            
+            # ===================================================================
+            # Calculate changes from previous year (e.g., 2024)
+            # Read Yesterday/LastWeek values that were written by intraday script
+            # ===================================================================
+            print(f"\nCalculating changes from {previous_year}...")
+            
+            # Read back Yesterday and LastWeek columns (B-E)
+            summary_data = worksheet.get('A2:E13')  # Source, Yesterday_GWh, Yesterday_%, LastWeek_GWh, LastWeek_%
+            
+            # Prepare updates for change from previous year columns
+            change_updates = []
+            
+            for row_idx, row_data in enumerate(summary_data, start=2):
+                source_name = row_data[0]
+                
+                try:
+                    yesterday_gwh = float(row_data[1]) if len(row_data) > 1 and row_data[1] else 0
+                    lastweek_gwh = float(row_data[3]) if len(row_data) > 3 and row_data[3] else 0
+                except (ValueError, IndexError):
+                    yesterday_gwh = 0
+                    lastweek_gwh = 0
+                
+                # Get YTD and full year values from source_calcs
+                if source_name not in source_calcs:
+                    change_updates.append({
+                        'range': f'O{row_idx}:R{row_idx}',
+                        'values': [['', '', '', '']]
+                    })
+                    continue
+                
+                ytd_current_gwh = source_calcs[source_name]['ytd_current_gwh']
+                year_previous_gwh = source_calcs[source_name]['year_previous_gwh']
+                
+                # Get December (current month) from previous year from monthly sheets
+                current_month_prev_year_gwh = 0
+                if source_name in ['All Renewables', 'All Non-Renewables']:
+                    # Use pre-calculated aggregate value
+                    current_month_prev_year_gwh = source_calcs[source_name].get('current_month_previous_year_gwh', 0)
+                elif source_name in all_data:
+                    # Get from monthly data
+                    year_data = all_data[source_name]['year_data']
+                    if previous_year in year_data:
+                        current_month_prev_year_gwh = year_data[previous_year].get(current_month, 0)
+                
+                # Calculate changes
+                yesterday_change_prev = ''
+                lastweek_change_prev = ''
+                ytd_change_prev = ''
+                year_prev_change_prev = '—'  # Previous year compared to itself is always "—"
+                
+                # Yesterday change: compare to average day in December previous_year
+                if current_month_prev_year_gwh > 0:
+                    days_in_current_month = calendar.monthrange(previous_year, current_month)[1]
+                    avg_day_prev_year = current_month_prev_year_gwh / days_in_current_month
+                    if avg_day_prev_year > 0 and yesterday_gwh > 0:
+                        change = (yesterday_gwh - avg_day_prev_year) / avg_day_prev_year * 100
+                        yesterday_change_prev = format_change_percentage(change)
+                
+                # LastWeek change: compare to average week in December previous_year
+                if current_month_prev_year_gwh > 0:
+                    days_in_current_month = calendar.monthrange(previous_year, current_month)[1]
+                    avg_week_prev_year = (current_month_prev_year_gwh / days_in_current_month) * 7
+                    if avg_week_prev_year > 0 and lastweek_gwh > 0:
+                        change = (lastweek_gwh - avg_week_prev_year) / avg_week_prev_year * 100
+                        lastweek_change_prev = format_change_percentage(change)
+                
+                # YTD change: compare to same period in previous year
+                if previous_year in all_data.get(source_name, {}).get('year_data', {}):
+                    ytd_prev_year = 0
+                    year_data = all_data[source_name]['year_data']
+                    for month in range(1, current_month + 1):
+                        month_value = year_data[previous_year].get(month, 0)
+                        if month < current_month:
+                            ytd_prev_year += month_value
+                        else:
+                            # Partial month
+                            current_day = current_date.day
+                            days_in_month = calendar.monthrange(previous_year, month)[1]
+                            ytd_prev_year += month_value * (current_day / days_in_month)
+                    
+                    if ytd_prev_year > 0 and ytd_current_gwh > 0:
+                        change = (ytd_current_gwh - ytd_prev_year) / ytd_prev_year * 100
+                        ytd_change_prev = format_change_percentage(change)
+                
+                # For aggregates, handle YTD calculation differently
+                if source_name in ['All Renewables', 'All Non-Renewables']:
+                    # Need to calculate YTD for previous year from aggregates
+                    if source_name == 'All Renewables' and 'All Renewables' in all_data:
+                        renewables_year_data = all_data['All Renewables']['year_data']
+                        if previous_year in renewables_year_data:
+                            ytd_prev_year = 0
+                            for month in range(1, current_month + 1):
+                                month_value = renewables_year_data[previous_year].get(month, 0)
+                                if month < current_month:
+                                    ytd_prev_year += month_value
+                                else:
+                                    current_day = current_date.day
+                                    days_in_month = calendar.monthrange(previous_year, month)[1]
+                                    ytd_prev_year += month_value * (current_day / days_in_month)
+                            
+                            if ytd_prev_year > 0:
+                                change = (ytd_current_gwh - ytd_prev_year) / ytd_prev_year * 100
+                                ytd_change_prev = format_change_percentage(change)
+                    
+                    elif source_name == 'All Non-Renewables' and 'Total Generation' in all_data:
+                        # Calculate from Total - Renewables
+                        total_year_data = all_data['Total Generation']['year_data']
+                        renewables_year_data = all_data.get('All Renewables', {}).get('year_data', {})
+                        
+                        if previous_year in total_year_data and previous_year in renewables_year_data:
+                            ytd_total_prev = 0
+                            ytd_renewables_prev = 0
+                            
+                            for month in range(1, current_month + 1):
+                                month_total = total_year_data[previous_year].get(month, 0)
+                                month_renewables = renewables_year_data[previous_year].get(month, 0)
+                                
+                                if month < current_month:
+                                    ytd_total_prev += month_total
+                                    ytd_renewables_prev += month_renewables
+                                else:
+                                    current_day = current_date.day
+                                    days_in_month = calendar.monthrange(previous_year, month)[1]
+                                    ytd_total_prev += month_total * (current_day / days_in_month)
+                                    ytd_renewables_prev += month_renewables * (current_day / days_in_month)
+                            
+                            ytd_prev_year = ytd_total_prev - ytd_renewables_prev
+                            if ytd_prev_year > 0:
+                                change = (ytd_current_gwh - ytd_prev_year) / ytd_prev_year * 100
+                                ytd_change_prev = format_change_percentage(change)
+                
+                # Add to change updates list
+                change_updates.append({
+                    'range': f'O{row_idx}:R{row_idx}',
+                    'values': [[yesterday_change_prev, lastweek_change_prev, ytd_change_prev, year_prev_change_prev]]
+                })
+            
+            # Write all change from previous year values
+            if change_updates:
+                for update in change_updates:
+                    worksheet.update(update['range'], update['values'])
+                
+                print(f"✓ Updated {len(change_updates)} sources with changes from {previous_year} (columns O-R)")
             
             print(f"   Worksheet: {spreadsheet.url}")
         else:
