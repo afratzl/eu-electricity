@@ -75,22 +75,29 @@ body {
 }
 
 /* === PAGE HEADER === */
+/* === HERO SECTION === */
 .page-header {
     text-align: center;
+    padding: 2.5rem 1.5rem;
+    background: linear-gradient(135deg, #003399 0%, #6B9FD8 100%);
+    color: white;
+    border-radius: 8px;
     margin-bottom: 2rem;
 }
 
 .page-header h1 {
-    font-size: 2.5rem;
-    color: #1a202c;
+    font-size: 2.25rem;
     margin-bottom: 0.5rem;
-    font-weight: 700;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    color: white;
 }
 
 .subtitle {
-    font-size: 1.1rem;
-    color: #4a5568;
+    font-size: 1.125rem;
+    opacity: 0.95;
     font-weight: 400;
+    color: white;
 }
 
 /* === INFO BOX === */
