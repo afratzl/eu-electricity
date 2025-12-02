@@ -116,6 +116,9 @@
                     <button id="toggle-change" class="toggle-btn-pro" onclick="showChange()">
                         Change from 2015
                     </button>
+                    <button id="toggle-change-2024" class="toggle-btn-pro" onclick="showChangePreviousYear()">
+                        <span id="change-previous-year-label">Change from Previous Year</span>
+                    </button>
                 </div>
             </div>
 
@@ -157,6 +160,10 @@
     </footer>
 
     <script>
+        // Dynamic year calculation
+        const currentYear = new Date().getFullYear();
+        const previousYear = currentYear - 1;
+        
         // Load summary data (timestamp + table) - single fetch
         function loadSummaryData() {
             fetch('plots/energy_summary_table.json')
@@ -173,6 +180,38 @@
                 });
         }
 
+        // Helper function to calculate change from previous year
+        function calculateChangeFromPreviousYear(currentValue, previousYearValue, period) {
+            // For the previous year column itself, return dash
+            if (period === 'previous_year') {
+                return '—';
+            }
+            
+            // Calculate baseline from previous year based on period
+            let baselinePrevious;
+            const currentDate = new Date();
+            const currentMonth = currentDate.getMonth() + 1; // 1-12
+            
+            if (period === 'yesterday') {
+                // Compare to average day from previous year
+                baselinePrevious = previousYearValue / 365; // Simple daily average
+            } else if (period === 'lastweek') {
+                // Compare to average week from previous year  
+                baselinePrevious = (previousYearValue / 365) * 7; // Weekly average
+            } else if (period === 'ytd') {
+                // Compare to same period in previous year (Jan 1 to current day)
+                const dayOfYear = Math.floor((currentDate - new Date(currentDate.getFullYear(), 0, 0)) / 1000 / 60 / 60 / 24);
+                baselinePrevious = (previousYearValue / 365) * dayOfYear;
+            }
+            
+            if (!baselinePrevious || baselinePrevious === 0) return '—';
+            
+            const change = ((currentValue - baselinePrevious) / baselinePrevious) * 100;
+            
+            if (Math.abs(change) < 0.1) return '—';
+            return change > 0 ? `+${change.toFixed(1)}%` : `${change.toFixed(1)}%`;
+        }
+
         // Display summary table
         function displaySummaryTable(data) {
             let html = '<table class="summary-table-pro">';
@@ -184,8 +223,8 @@
                         <th>Source</th>
                         <th>Yesterday</th>
                         <th>Last Week</th>
-                        <th>2025 YTD</th>
-                        <th>2020-2024</th>
+                        <th>${currentYear} YTD</th>
+                        <th>${previousYear}</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -202,31 +241,39 @@
                 html += `<td class="source-name-cell-pro">${source.source}</td>`;
                 
                 // Yesterday
+                const yesterdayChangePrev = calculateChangeFromPreviousYear(source.yesterday.twh, source.year_2024.twh, 'yesterday');
                 html += `<td>
                     <span class="value-pct">${source.yesterday.percentage}%</span>
                     <span class="value-abs" style="display:none">${source.yesterday.twh} TWh</span>
                     <span class="value-change" style="display:none">${source.yesterday.change_from_2015}</span>
+                    <span class="value-change-2024" style="display:none">${yesterdayChangePrev}</span>
                 </td>`;
                 
                 // Last Week
+                const lastWeekChangePrev = calculateChangeFromPreviousYear(source.last_week.twh, source.year_2024.twh, 'lastweek');
                 html += `<td>
                     <span class="value-pct">${source.last_week.percentage}%</span>
                     <span class="value-abs" style="display:none">${source.last_week.twh} TWh</span>
                     <span class="value-change" style="display:none">${source.last_week.change_from_2015}</span>
+                    <span class="value-change-2024" style="display:none">${lastWeekChangePrev}</span>
                 </td>`;
                 
-                // YTD 2025 - Display in TWh
+                // YTD Current Year - Display in TWh
+                const ytdChangePrev = calculateChangeFromPreviousYear(source.ytd_2025.twh, source.year_2024.twh, 'ytd');
                 html += `<td>
                     <span class="value-pct">${source.ytd_2025.percentage}%</span>
                     <span class="value-abs" style="display:none">${source.ytd_2025.twh.toFixed(2)} TWh</span>
                     <span class="value-change" style="display:none">${source.ytd_2025.change_from_2015}</span>
+                    <span class="value-change-2024" style="display:none">${ytdChangePrev}</span>
                 </td>`;
                 
-                // 2020-2024 Avg - Display in TWh
+                // Previous Year - Display in TWh
+                const prevYearChangePrev = calculateChangeFromPreviousYear(source.year_2024.twh, source.year_2024.twh, 'previous_year');
                 html += `<td>
-                    <span class="value-pct">${source.avg_2020_2024.percentage}%</span>
-                    <span class="value-abs" style="display:none">${source.avg_2020_2024.twh.toFixed(2)} TWh</span>
-                    <span class="value-change" style="display:none">${source.avg_2020_2024.change_from_2015}</span>
+                    <span class="value-pct">${source.year_2024.percentage}%</span>
+                    <span class="value-abs" style="display:none">${source.year_2024.twh.toFixed(2)} TWh</span>
+                    <span class="value-change" style="display:none">${source.year_2024.change_from_2015}</span>
+                    <span class="value-change-2024" style="display:none">${prevYearChangePrev}</span>
                 </td>`;
                 
                 html += '</tr>';
@@ -243,10 +290,12 @@
             document.querySelectorAll('.value-pct').forEach(el => el.style.display = 'inline');
             document.querySelectorAll('.value-abs').forEach(el => el.style.display = 'none');
             document.querySelectorAll('.value-change').forEach(el => el.style.display = 'none');
+            document.querySelectorAll('.value-change-2024').forEach(el => el.style.display = 'none');
             
             document.getElementById('toggle-percentage').classList.add('active');
             document.getElementById('toggle-absolute').classList.remove('active');
             document.getElementById('toggle-change').classList.remove('active');
+            document.getElementById('toggle-change-2024').classList.remove('active');
             
             localStorage.setItem('electricityView', 'percentage');
         }
@@ -255,10 +304,12 @@
             document.querySelectorAll('.value-pct').forEach(el => el.style.display = 'none');
             document.querySelectorAll('.value-abs').forEach(el => el.style.display = 'inline');
             document.querySelectorAll('.value-change').forEach(el => el.style.display = 'none');
+            document.querySelectorAll('.value-change-2024').forEach(el => el.style.display = 'none');
             
             document.getElementById('toggle-percentage').classList.remove('active');
             document.getElementById('toggle-absolute').classList.add('active');
             document.getElementById('toggle-change').classList.remove('active');
+            document.getElementById('toggle-change-2024').classList.remove('active');
             
             localStorage.setItem('electricityView', 'absolute');
         }
@@ -267,16 +318,35 @@
             document.querySelectorAll('.value-pct').forEach(el => el.style.display = 'none');
             document.querySelectorAll('.value-abs').forEach(el => el.style.display = 'none');
             document.querySelectorAll('.value-change').forEach(el => el.style.display = 'inline');
+            document.querySelectorAll('.value-change-2024').forEach(el => el.style.display = 'none');
             
             document.getElementById('toggle-percentage').classList.remove('active');
             document.getElementById('toggle-absolute').classList.remove('active');
             document.getElementById('toggle-change').classList.add('active');
+            document.getElementById('toggle-change-2024').classList.remove('active');
             
             localStorage.setItem('electricityView', 'change');
         }
 
+        function showChangePreviousYear() {
+            document.querySelectorAll('.value-pct').forEach(el => el.style.display = 'none');
+            document.querySelectorAll('.value-abs').forEach(el => el.style.display = 'none');
+            document.querySelectorAll('.value-change').forEach(el => el.style.display = 'none');
+            document.querySelectorAll('.value-change-2024').forEach(el => el.style.display = 'inline');
+            
+            document.getElementById('toggle-percentage').classList.remove('active');
+            document.getElementById('toggle-absolute').classList.remove('active');
+            document.getElementById('toggle-change').classList.remove('active');
+            document.getElementById('toggle-change-2024').classList.add('active');
+            
+            localStorage.setItem('electricityView', 'changePreviousYear');
+        }
+
         // Load on page load
         window.addEventListener('DOMContentLoaded', () => {
+            // Update toggle button label with actual previous year
+            document.getElementById('change-previous-year-label').textContent = `Change from ${previousYear}`;
+            
             loadSummaryData();  // Single fetch for both timestamp and table
             
             // Restore user's preference
@@ -285,6 +355,9 @@
                 showAbsolute();
             } else if (preference === 'change') {
                 showChange();
+            } else if (preference === 'changePreviousYear' || preference === 'change2024') {
+                // Support both new and old localStorage values for backwards compatibility
+                showChangePreviousYear();
             }
         });
     </script>
