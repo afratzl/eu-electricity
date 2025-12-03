@@ -44,6 +44,54 @@ energy_sources = {
 }
 
 
+def generate_10day_chunks(year, current_year, current_date):
+    """
+    Generate 10-day chunks for a year to avoid ENTSO-E's 1000-row API limit
+    Returns list of (start, end, month) tuples
+    
+    Strategy:
+    - 31-day months: 10 + 10 + 10 + 1 day chunks (4 chunks)
+    - 30-day months: 10 + 10 + 10 day chunks (3 chunks)
+    - 28/29-day months: 10 + 10 + 8/9 day chunks (3 chunks)
+    
+    For current year, only generates chunks up to current date
+    """
+    from datetime import datetime, timedelta
+    import calendar
+    
+    chunks = []
+    
+    for month in range(1, 13):
+        # Skip future months in current year
+        if year == current_year and month > current_date.month:
+            break
+            
+        days_in_month = calendar.monthrange(year, month)[1]
+        
+        # For current month in current year, only go up to current day
+        if year == current_year and month == current_date.month:
+            days_in_month = current_date.day
+        
+        # Generate chunks for this month
+        day = 1
+        while day <= days_in_month:
+            chunk_start = datetime(year, month, day)
+            
+            # Determine chunk end
+            if days_in_month - day + 1 >= 10:
+                # Normal 10-day chunk
+                chunk_end = datetime(year, month, min(day + 9, days_in_month))
+                day += 10
+            else:
+                # Remaining days (1-9 days)
+                chunk_end = datetime(year, month, days_in_month)
+                day = days_in_month + 1
+            
+            chunks.append((chunk_start, chunk_end, month))
+    
+    return chunks
+
+
 def get_all_energy_data_for_country_year(client, country, year):
     """
     Get all energy generation data for a specific country and year with single API call
@@ -55,169 +103,195 @@ def get_all_energy_data_for_country_year(client, country, year):
     # Get current date for comparison
     current_date = datetime.now()
     current_year = current_date.year
-
-    # Set date ranges
-    start = pd.Timestamp(f'{year}0101', tz='Europe/Brussels')
+    
+    # Determine max_month for later use
     if year == current_year:
-        end = pd.Timestamp(current_date.strftime('%Y%m%d'), tz='Europe/Brussels')
         max_month = current_date.month
     else:
-        end = pd.Timestamp(f'{year}1231', tz='Europe/Brussels')
         max_month = 12
 
     print(f"  Querying {country} for {year}...")
 
-    # Robust retry logic with exponential backoff
-    max_retries = 4
-    for attempt in range(max_retries):
-        try:
-            # Single API call to get all generation data
-            generation_data = client.query_generation(country, start=start, end=end)
+    # Generate 10-day chunks to avoid ENTSO-E's 1000-row API limit
+    chunks = generate_10day_chunks(year, current_year, current_date)
+    print(f"    Fetching {len(chunks)} chunks to avoid API row limit...")
 
-            if generation_data.empty:
-                print(f"    ⚠ No data returned for {country} {year}")
-                return None
+    all_chunk_data = []
 
-            print(f"    ✓ Got {generation_data.shape[0]} data points with {generation_data.shape[1]} generation types")
-
-            # Calculate time differences for variable resolution handling
-            if len(generation_data) > 1:
-                time_diffs = generation_data.index.to_series().diff().dt.total_seconds() / 3600
-                time_diffs = time_diffs.fillna(time_diffs.median())
-
-                # Debug info for Spain in 2022 (to track the resolution issue we fixed)
-                if country == 'ES' and year == 2022:
-                    unique_intervals = time_diffs.unique()
-                    print(f"      Spain 2022 time intervals: {sorted(unique_intervals)} hours")
-            else:
-                time_diffs = pd.Series([1.0] * len(generation_data), index=generation_data.index)
-
-            # Initialize result structure for this country-year
-            country_year_data = {}
-
-            # Process each energy source type
-            for source_name, source_keywords in energy_sources.items():
-                # Find relevant columns
-                if source_keywords == 'ALL':
-                    relevant_columns = generation_data.columns.tolist()
-                    energy_series = generation_data.sum(axis=1)
+    # Fetch each chunk with retry logic
+    for chunk_idx, (chunk_start, chunk_end, chunk_month) in enumerate(chunks, 1):
+        max_retries = 4
+        chunk_success = False
+        
+        for attempt in range(max_retries):
+            try:
+                # Convert to pandas Timestamp with timezone
+                start_ts = pd.Timestamp(chunk_start, tz='Europe/Brussels')
+                end_ts = pd.Timestamp(chunk_end, tz='Europe/Brussels')
+                
+                # Fetch this chunk
+                chunk_data = client.query_generation(country, start=start_ts, end=end_ts)
+                
+                if not chunk_data.empty:
+                    all_chunk_data.append(chunk_data)
+                    print(f"    ✓ Chunk {chunk_idx}/{len(chunks)}: {chunk_start.date()} to {chunk_end.date()} ({chunk_data.shape[0]} rows, {chunk_data.shape[1]} types)")
                 else:
-                    relevant_columns = []
-                    for keyword in source_keywords:
-                        matching_cols = [col for col in generation_data.columns if keyword in col]
-                        relevant_columns.extend(matching_cols)
-                    relevant_columns = list(set(relevant_columns))
+                    print(f"    ⚠ Chunk {chunk_idx}/{len(chunks)}: No data for {chunk_start.date()} to {chunk_end.date()}")
+                
+                chunk_success = True
+                break  # Success, exit retry loop
+                
+            except Exception as e:
+                if attempt < max_retries - 1:
+                    wait_time = 2 ** attempt
+                    print(f"    ⚠ Chunk {chunk_idx} attempt {attempt + 1} failed: {e}")
+                    print(f"      Retrying in {wait_time}s...")
+                    time.sleep(wait_time)
+                else:
+                    print(f"    ✗ Chunk {chunk_idx} failed after {max_retries} attempts: {e}")
+                    # Don't return None yet - continue with other chunks
+        
+        if not chunk_success:
+            print(f"    ⚠ Skipping failed chunk {chunk_idx}")
 
-                    if relevant_columns:
-                        if len(relevant_columns) == 1:
-                            energy_series = generation_data[relevant_columns[0]]
-                        else:
-                            energy_series = generation_data[relevant_columns].sum(axis=1)
+    # Combine all chunks
+    if not all_chunk_data:
+        print(f"    ⚠ No data returned for {country} {year}")
+        return None
+
+    generation_data = pd.concat(all_chunk_data, axis=0).sort_index()
+    print(f"    ✓ Combined {len(all_chunk_data)} chunks: {generation_data.shape[0]} total rows with {generation_data.shape[1]} generation types")
+
+    # Now process the combined data (single try block for processing)
+    try:
+        # Calculate time differences for variable resolution handling
+        if len(generation_data) > 1:
+            time_diffs = generation_data.index.to_series().diff().dt.total_seconds() / 3600
+            time_diffs = time_diffs.fillna(time_diffs.median())
+
+            # Debug info for Spain in 2022 (to track the resolution issue we fixed)
+            if country == 'ES' and year == 2022:
+                unique_intervals = time_diffs.unique()
+                print(f"      Spain 2022 time intervals: {sorted(unique_intervals)} hours")
+        else:
+            time_diffs = pd.Series([1.0] * len(generation_data), index=generation_data.index)
+
+        # Initialize result structure for this country-year
+        country_year_data = {}
+
+        # Process each energy source type
+        for source_name, source_keywords in energy_sources.items():
+            # Find relevant columns
+            if source_keywords == 'ALL':
+                relevant_columns = generation_data.columns.tolist()
+                energy_series = generation_data.sum(axis=1)
+            else:
+                relevant_columns = []
+                for keyword in source_keywords:
+                    matching_cols = [col for col in generation_data.columns if keyword in col]
+                    relevant_columns.extend(matching_cols)
+                relevant_columns = list(set(relevant_columns))
+
+                if relevant_columns:
+                    if len(relevant_columns) == 1:
+                        energy_series = generation_data[relevant_columns[0]]
                     else:
-                        energy_series = pd.Series(0, index=generation_data.index)
+                        energy_series = generation_data[relevant_columns].sum(axis=1)
+                else:
+                    energy_series = pd.Series(0, index=generation_data.index)
 
-                # Convert power to energy using actual time intervals
-                energy_data = energy_series * time_diffs
+            # Convert power to energy using actual time intervals
+            energy_data = energy_series * time_diffs
 
-                # Calculate monthly totals
-                monthly_data = {month: 0 for month in range(1, 13)}
-                total_gwh = 0
+            # Calculate monthly totals
+            monthly_data = {month: 0 for month in range(1, 13)}
+            total_gwh = 0
 
-                for month in range(1, max_month + 1):
-                    month_mask = energy_data.index.month == month
-                    if month_mask.any():
-                        monthly_sum = energy_data[month_mask].sum() / 1000  # Convert to GWh
-                        monthly_data[month] = monthly_sum
-                        total_gwh += monthly_sum
+            for month in range(1, max_month + 1):
+                month_mask = energy_data.index.month == month
+                if month_mask.any():
+                    monthly_sum = energy_data[month_mask].sum() / 1000  # Convert to GWh
+                    monthly_data[month] = monthly_sum
+                    total_gwh += monthly_sum
 
-                # Store results for this energy source
-                country_year_data[source_name] = {
-                    'monthly': monthly_data,
-                    'total': total_gwh,
-                    'columns_used': relevant_columns
-                }
-
-                if total_gwh > 1:  # Only print if significant production
-                    print(f"      {source_name}: {total_gwh:.1f} GWh ({len(relevant_columns)} columns)")
-
-            # Add debugging for missing columns (for specific countries/years)
-            debug_countries = {
-                'CZ': 2024,  # Czech Republic 2024+
-                'DE': 2015  # Germany 2015+
+            # Store results for this energy source
+            country_year_data[source_name] = {
+                'monthly': monthly_data,
+                'total': total_gwh,
+                'columns_used': relevant_columns
             }
 
-            if country in debug_countries and year >= debug_countries[country]:
-                print(f"      === DEBUG: All available columns for {country} {year} ===")
-                for i, col in enumerate(generation_data.columns):
-                    print(f"        {i + 1:2d}. {col}")
+            if total_gwh > 1:  # Only print if significant production
+                print(f"      {source_name}: {total_gwh:.1f} GWh ({len(relevant_columns)} columns)")
 
-                # Find unmatched columns
-                all_matched_columns = set()
-                for source_name, source_keywords in energy_sources.items():
-                    if source_keywords != 'ALL':
-                        for keyword in source_keywords:
-                            matching_cols = [col for col in generation_data.columns if keyword in col]
-                            all_matched_columns.update(matching_cols)
+        # Add debugging for missing columns (for specific countries/years)
+        debug_countries = {
+            'CZ': 2024,  # Czech Republic 2024+
+            'DE': 2015  # Germany 2015+
+        }
 
-                unmatched_columns = set(generation_data.columns) - all_matched_columns
-                if unmatched_columns:
-                    print(f"      === UNMATCHED COLUMNS (potential missing sources) ===")
-                    unmatched_with_totals = []
+        if country in debug_countries and year >= debug_countries[country]:
+            print(f"      === DEBUG: All available columns for {country} {year} ===")
+            for i, col in enumerate(generation_data.columns):
+                print(f"        {i + 1:2d}. {col}")
 
-                    for col in unmatched_columns:
-                        # Calculate total energy for this unmatched column
-                        col_data = generation_data[col] * time_diffs
-                        col_total = 0
-                        for month in range(1, max_month + 1):
-                            month_mask = col_data.index.month == month
-                            if month_mask.any():
-                                col_total += col_data[month_mask].sum() / 1000
-                        if col_total > 10:  # Only show significant unmatched sources
-                            unmatched_with_totals.append((col, col_total))
+            # Find unmatched columns
+            all_matched_columns = set()
+            for source_name, source_keywords in energy_sources.items():
+                if source_keywords != 'ALL':
+                    for keyword in source_keywords:
+                        matching_cols = [col for col in generation_data.columns if keyword in col]
+                        all_matched_columns.update(matching_cols)
 
-                    # Sort by energy total (largest first)
-                    unmatched_with_totals.sort(key=lambda x: x[1], reverse=True)
+            unmatched_columns = set(generation_data.columns) - all_matched_columns
+            if unmatched_columns:
+                print(f"      === UNMATCHED COLUMNS (potential missing sources) ===")
+                unmatched_with_totals = []
 
-                    renewable_keywords = ['Solar', 'Wind', 'Hydro', 'Biomass', 'Geothermal', 'renewable']
+                for col in unmatched_columns:
+                    # Calculate total energy for this unmatched column
+                    col_data = generation_data[col] * time_diffs
+                    col_total = 0
+                    for month in range(1, max_month + 1):
+                        month_mask = col_data.index.month == month
+                        if month_mask.any():
+                            col_total += col_data[month_mask].sum() / 1000
+                    if col_total > 10:  # Only show significant unmatched sources
+                        unmatched_with_totals.append((col, col_total))
 
-                    print(f"      --- MISSING RENEWABLES ---")
-                    renewable_total = 0
-                    for col, total in unmatched_with_totals:
-                        col_str = str(col).lower()
-                        if any(keyword.lower() in col_str for keyword in renewable_keywords):
-                            print(f"        {col}: {total:.1f} GWh")
-                            renewable_total += total
-                    print(f"      Total missing renewables: {renewable_total:.1f} GWh")
+                # Sort by energy total (largest first)
+                unmatched_with_totals.sort(key=lambda x: x[1], reverse=True)
 
-                    print(f"      --- MISSING NON-RENEWABLES ---")
-                    non_renewable_total = 0
-                    for col, total in unmatched_with_totals:
-                        col_str = str(col).lower()
-                        if not any(keyword.lower() in col_str for keyword in renewable_keywords):
-                            print(f"        {col}: {total:.1f} GWh")
-                            non_renewable_total += total
-                    print(f"      Total missing non-renewables: {non_renewable_total:.1f} GWh")
+                renewable_keywords = ['Solar', 'Wind', 'Hydro', 'Biomass', 'Geothermal', 'renewable']
 
-                print(f"      === END DEBUG ===")
+                print(f"      --- MISSING RENEWABLES ---")
+                renewable_total = 0
+                for col, total in unmatched_with_totals:
+                    col_str = str(col).lower()
+                    if any(keyword.lower() in col_str for keyword in renewable_keywords):
+                        print(f"        {col}: {total:.1f} GWh")
+                        renewable_total += total
+                print(f"      Total missing renewables: {renewable_total:.1f} GWh")
 
-            # Success! Return immediately (no artificial delays on success)
-            return country_year_data
+                print(f"      --- MISSING NON-RENEWABLES ---")
+                non_renewable_total = 0
+                for col, total in unmatched_with_totals:
+                    col_str = str(col).lower()
+                    if not any(keyword.lower() in col_str for keyword in renewable_keywords):
+                        print(f"        {col}: {total:.1f} GWh")
+                        non_renewable_total += total
+                print(f"      Total missing non-renewables: {non_renewable_total:.1f} GWh")
 
-        except Exception as e:
-            error_msg = str(e)
+            print(f"      === END DEBUG ===")
 
-            # Calculate delay with exponential backoff
-            if attempt < max_retries - 1:
-                delay = 2 ** attempt  # 1s, 2s, 4s delays
-                print(f"    ⚠ Attempt {attempt + 1}/{max_retries} failed: {error_msg}")
-                print(f"    ⏳ Retrying in {delay}s...")
-                time.sleep(delay)
-                continue
-            else:
-                print(f"    ✗ All {max_retries} attempts failed for {country} {year}: {error_msg}")
-                return None
+        # Success! Return the processed data
+        return country_year_data
 
-    return None
+    except Exception as e:
+        print(f"    ✗ Error processing data for {country} {year}: {e}")
+        import traceback
+        traceback.print_exc()
+        return None
 
 
 def process_all_countries_and_years(client, years_to_analyze):
