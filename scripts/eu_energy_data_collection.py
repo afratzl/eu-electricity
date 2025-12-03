@@ -127,7 +127,11 @@ def get_all_energy_data_for_country_year(client, country, year):
             try:
                 # Convert to pandas Timestamp with timezone
                 start_ts = pd.Timestamp(chunk_start, tz='Europe/Brussels')
-                end_ts = pd.Timestamp(chunk_end, tz='Europe/Brussels')
+                
+                # IMPORTANT: ENTSO-E API treats end as EXCLUSIVE
+                # To get data for chunk_end day, we need to request chunk_end + 1 day
+                from datetime import timedelta
+                end_ts = pd.Timestamp(chunk_end + timedelta(days=1), tz='Europe/Brussels')
                 
                 # Fetch this chunk
                 chunk_data = client.query_generation(country, start=start_ts, end=end_ts)
