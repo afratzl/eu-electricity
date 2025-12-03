@@ -1409,17 +1409,31 @@ def update_summary_table_historical_data(all_data):
         
         # Batch update all rows at once
         if updates:
+            # Prepare batch updates
+            batch_updates = []
             for update in updates:
-                worksheet.update(update['range_fghi'], update['values_fghi'])
-                worksheet.update(update['range_mn'], update['values_mn'])
+                batch_updates.append({
+                    'range': update['range_fghi'],
+                    'values': update['values_fghi']
+                })
+                batch_updates.append({
+                    'range': update['range_mn'],
+                    'values': update['values_mn']
+                })
             
+            worksheet.batch_update(batch_updates)
             print(f"✓ Updated {len(updates)} sources with YTD {current_year} and {previous_year} data (columns F-I, M-N)")
             
-            # Update timestamp in last column
+            # Update timestamp in last column (batch update)
             timestamp = current_date.strftime('%Y-%m-%d %H:%M UTC')
-            # Update column J for all data rows (12 sources: 2 aggregates + 10 individual)
+            timestamp_updates = []
             for row_idx in range(2, 14):
-                worksheet.update(f'J{row_idx}', [[timestamp]])
+                timestamp_updates.append({
+                    'range': f'J{row_idx}',
+                    'values': [[timestamp]]
+                })
+            worksheet.batch_update(timestamp_updates)
+            print(f"✓ Updated timestamps")
             
             # ===================================================================
             # Calculate changes from previous year (e.g., 2024)
@@ -1558,11 +1572,9 @@ def update_summary_table_historical_data(all_data):
                     'values': [[yesterday_change_prev, lastweek_change_prev, ytd_change_prev, year_prev_change_prev]]
                 })
             
-            # Write all change from previous year values
+            # Write all change from previous year values in a single batch
             if change_updates:
-                for update in change_updates:
-                    worksheet.update(update['range'], update['values'])
-                
+                worksheet.batch_update(change_updates)
                 print(f"✓ Updated {len(change_updates)} sources with changes from {previous_year} (columns O-R)")
             
             # ===================================================================
@@ -1719,11 +1731,9 @@ def update_summary_table_historical_data(all_data):
                     'values': [[yesterday_change_2ya, lastweek_change_2ya, ytd_change_2ya, year_prev_change_2ya]]
                 })
             
-            # Write all change from 2 years ago values
+            # Write all change from 2 years ago values in a single batch
             if change_2ya_updates:
-                for update in change_2ya_updates:
-                    worksheet.update(update['range'], update['values'])
-                
+                worksheet.batch_update(change_2ya_updates)
                 print(f"✓ Updated {len(change_2ya_updates)} sources with changes from {two_years_ago} (columns S-V)")
             
             print(f"   Worksheet: {spreadsheet.url}")
