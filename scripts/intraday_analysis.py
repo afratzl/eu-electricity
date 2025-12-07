@@ -879,10 +879,10 @@ def plot_analysis(stats_data, source_type, output_file_base):
     # ========================================================================
     # PLOT 1: PERCENTAGE
     # ========================================================================
-    fig1, ax1 = plt.subplots(figsize=(14, 12))
+    fig1, ax1 = plt.subplots(figsize=(12, 10))
     
     fig1.suptitle(f'{source_name} Electricity Generation (EU)', fontsize=34, fontweight='bold', x=0.5, y=0.98, ha="center")
-    ax1.set_title('Fraction of Total Generation', fontsize=26, fontweight='normal', pad=10)
+    ax1.set_title('Fraction of Total Generation', fontsize=26, fontweight='normal', pad=15)
     ax1.set_xlabel('Time of Day (Brussels)', fontsize=28, fontweight='bold', labelpad=15)
     ax1.set_ylabel('Electrical Power (%)', fontsize=28, fontweight='bold', labelpad=15)
 
@@ -945,17 +945,17 @@ def plot_analysis(stats_data, source_type, output_file_base):
                ncol=3, fontsize=20, frameon=False)
     
     plt.tight_layout(rect=[0, 0.05, 1, 0.985])
-    plt.savefig(output_file_percentage, dpi=200, bbox_inches='tight')
+    plt.savefig(output_file_percentage, dpi=150, bbox_inches='tight')
     print(f"  ✓ Saved percentage plot: {output_file_percentage}")
     plt.close()
     
     # ========================================================================
     # PLOT 2: ABSOLUTE
     # ========================================================================
-    fig2, ax2 = plt.subplots(figsize=(14, 12))
+    fig2, ax2 = plt.subplots(figsize=(12, 10))
     
     fig2.suptitle(f'{source_name} Electricity Generation (EU)', fontsize=34, fontweight='bold', x=0.5, y=0.98, ha="center")
-    ax2.set_title('Absolute Generation', fontsize=26, fontweight='normal', pad=10)
+    ax2.set_title('Absolute Generation', fontsize=26, fontweight='normal', pad=15)
     ax2.set_xlabel('Time of Day (Brussels)', fontsize=28, fontweight='bold', labelpad=15)
     ax2.set_ylabel('Electrical Power (GW)', fontsize=28, fontweight='bold', labelpad=15)
 
@@ -1020,7 +1020,7 @@ def plot_analysis(stats_data, source_type, output_file_base):
                ncol=3, fontsize=20, frameon=False)
 
     plt.tight_layout(rect=[0, 0.05, 1, 0.985])
-    plt.savefig(output_file_absolute, dpi=200, bbox_inches='tight')
+    plt.savefig(output_file_absolute, dpi=150, bbox_inches='tight')
     print(f"  ✓ Saved absolute plot: {output_file_absolute}")
     plt.close()
     
@@ -1428,7 +1428,7 @@ def get_or_create_drive_folder(service, folder_name, parent_id=None, share_with_
                 service.permissions().create(
                     fileId=folder_id,
                     body=permission,
-                    sendNotificationEmail=False
+                    sendNotificationEmail=True  # Send email notification
                 ).execute()
                 print(f"  ✓ Shared folder with {share_with_email}")
             except Exception as e:
@@ -1601,7 +1601,8 @@ def main():
             
             # Save Drive file IDs to JSON
             if drive_file_ids:
-                print("\n📤 Saving Drive links...")
+                print(f"\n📤 Saving Drive links for {len(drive_file_ids)} sources...")
+                print(f"   Sources: {', '.join(drive_file_ids.keys())}")
                 drive_links_file = 'plots/drive_links.json'
                 drive_links = {}
                 
@@ -1639,6 +1640,9 @@ def main():
                     json.dump(drive_links, f, indent=2)
                 
                 print(f"  ✓ Drive links saved to {drive_links_file}")
+            else:
+                print("\n⚠ Warning: No Drive file IDs collected - JSON not updated")
+                print("   Check if uploads succeeded above")
         
         # Create timestamp file
         timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S UTC')
