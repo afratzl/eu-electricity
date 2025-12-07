@@ -1383,9 +1383,10 @@ def update_summary_table_worksheet(corrected_data):
         traceback.print_exc()
 
 
-def get_or_create_drive_folder(service, folder_name, parent_id=None):
+def get_or_create_drive_folder(service, folder_name, parent_id=None, share_with_email=None):
     """
     Get or create a folder in Google Drive
+    Optionally shares with specified email
     Returns folder ID
     """
     # Search for existing folder
@@ -1402,19 +1403,38 @@ def get_or_create_drive_folder(service, folder_name, parent_id=None):
     folders = results.get('files', [])
     
     if folders:
-        return folders[0]['id']
+        folder_id = folders[0]['id']
+    else:
+        # Create folder if it doesn't exist
+        file_metadata = {
+            'name': folder_name,
+            'mimeType': 'application/vnd.google-apps.folder'
+        }
+        if parent_id:
+            file_metadata['parents'] = [parent_id]
+        
+        folder = service.files().create(body=file_metadata, fields='id').execute()
+        folder_id = folder.get('id')
+        print(f"  Created Drive folder: {folder_name}")
+        
+        # Share with email if provided
+        if share_with_email:
+            try:
+                permission = {
+                    'type': 'user',
+                    'role': 'writer',  # Or 'reader' if you only want view access
+                    'emailAddress': share_with_email
+                }
+                service.permissions().create(
+                    fileId=folder_id,
+                    body=permission,
+                    sendNotificationEmail=False
+                ).execute()
+                print(f"  ✓ Shared folder with {share_with_email}")
+            except Exception as e:
+                print(f"  ⚠ Could not share folder: {e}")
     
-    # Create folder if it doesn't exist
-    file_metadata = {
-        'name': folder_name,
-        'mimeType': 'application/vnd.google-apps.folder'
-    }
-    if parent_id:
-        file_metadata['parents'] = [parent_id]
-    
-    folder = service.files().create(body=file_metadata, fields='id').execute()
-    print(f"  Created Drive folder: {folder_name}")
-    return folder.get('id')
+    return folder_id
 
 
 def upload_plot_to_drive(file_path, country='EU'):
@@ -1442,14 +1462,19 @@ def upload_plot_to_drive(file_path, country='EU'):
         service = build('drive', 'v3', credentials=credentials)
         
         # Create folder structure: EU-Electricity-Plots/[Country]/Intraday/
-        # Get or create root folder
-        root_folder_id = get_or_create_drive_folder(service, 'EU-Electricity-Plots')
+        # Get or create root folder (share with owner if email provided)
+        owner_email = os.getenv('OWNER_EMAIL')  # Optional: your Gmail address
+        root_folder_id = get_or_create_drive_folder(service, 'EU-Electricity-Plots', share_with_email=owner_email)
         
         # Get or create country folder
         country_folder_id = get_or_create_drive_folder(service, country, root_folder_id)
         
         # Get or create Intraday folder
         intraday_folder_id = get_or_create_drive_folder(service, 'Intraday', country_folder_id)
+        
+        # Print folder URL for easy access
+        folder_url = f'https://drive.google.com/drive/folders/{intraday_folder_id}'
+        print(f"  📁 Folder: {folder_url}")
         
         # Get filename from path
         filename = os.path.basename(file_path)
