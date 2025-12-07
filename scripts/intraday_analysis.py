@@ -61,6 +61,16 @@ import argparse
 import time
 import json
 
+# Google Drive imports (for plot hosting)
+try:
+    from googleapiclient.discovery import build
+    from googleapiclient.http import MediaFileUpload
+    from google.oauth2.service_account import Credentials as ServiceAccountCredentials
+    GDRIVE_AVAILABLE = True
+except ImportError:
+    GDRIVE_AVAILABLE = False
+    print("⚠ Google Drive API not available - plots will not be uploaded to Drive")
+
 warnings.filterwarnings('ignore')
 
 # Force unbuffered output for real-time progress display
@@ -1339,6 +1349,121 @@ def update_summary_table_worksheet(corrected_data):
         traceback.print_exc()
 
 
+def get_or_create_drive_folder(service, folder_name, parent_id=None):
+    """
+    Get or create a folder in Google Drive
+    Returns folder ID
+    """
+    # Search for existing folder
+    query = f"name='{folder_name}' and mimeType='application/vnd.google-apps.folder' and trashed=false"
+    if parent_id:
+        query += f" and '{parent_id}' in parents"
+    
+    results = service.files().list(
+        q=query,
+        spaces='drive',
+        fields='files(id, name)'
+    ).execute()
+    
+    folders = results.get('files', [])
+    
+    if folders:
+        return folders[0]['id']
+    
+    # Create folder if it doesn't exist
+    file_metadata = {
+        'name': folder_name,
+        'mimeType': 'application/vnd.google-apps.folder'
+    }
+    if parent_id:
+        file_metadata['parents'] = [parent_id]
+    
+    folder = service.files().create(body=file_metadata, fields='id').execute()
+    print(f"  Created Drive folder: {folder_name}")
+    return folder.get('id')
+
+
+def upload_plot_to_drive(file_path, country='EU'):
+    """
+    Upload a plot to Google Drive with geography-first structure
+    Structure: EU-Electricity-Plots/[Country]/Intraday/[plot].png
+    
+    Returns: Drive file ID or None if failed
+    """
+    if not GDRIVE_AVAILABLE:
+        return None
+    
+    try:
+        # Get credentials from environment
+        google_creds_json = os.getenv('GOOGLE_CREDENTIALS_JSON')
+        if not google_creds_json:
+            return None
+        
+        creds_dict = json.loads(google_creds_json)
+        credentials = ServiceAccountCredentials.from_service_account_info(
+            creds_dict,
+            scopes=['https://www.googleapis.com/auth/drive.file']
+        )
+        
+        service = build('drive', 'v3', credentials=credentials)
+        
+        # Create folder structure: EU-Electricity-Plots/[Country]/Intraday/
+        # Get or create root folder
+        root_folder_id = get_or_create_drive_folder(service, 'EU-Electricity-Plots')
+        
+        # Get or create country folder
+        country_folder_id = get_or_create_drive_folder(service, country, root_folder_id)
+        
+        # Get or create Intraday folder
+        intraday_folder_id = get_or_create_drive_folder(service, 'Intraday', country_folder_id)
+        
+        # Get filename from path
+        filename = os.path.basename(file_path)
+        
+        # Check if file already exists
+        query = f"name='{filename}' and '{intraday_folder_id}' in parents and trashed=false"
+        results = service.files().list(q=query, spaces='drive', fields='files(id, name)').execute()
+        existing_files = results.get('files', [])
+        
+        if existing_files:
+            # Update existing file
+            file_id = existing_files[0]['id']
+            media = MediaFileUpload(file_path, mimetype='image/png')
+            service.files().update(
+                fileId=file_id,
+                media_body=media
+            ).execute()
+        else:
+            # Create new file
+            file_metadata = {
+                'name': filename,
+                'parents': [intraday_folder_id]
+            }
+            media = MediaFileUpload(file_path, mimetype='image/png')
+            file = service.files().create(
+                body=file_metadata,
+                media_body=media,
+                fields='id'
+            ).execute()
+            file_id = file.get('id')
+        
+        # Set permissions to "Anyone with the link can view"
+        permission = {
+            'type': 'anyone',
+            'role': 'reader'
+        }
+        service.permissions().create(
+            fileId=file_id,
+            body=permission
+        ).execute()
+        
+        return file_id
+        
+    except Exception as e:
+        print(f"  ⚠ Drive upload failed for {os.path.basename(file_path)}: {e}")
+        return None
+
+
 def main():
     """
     Main function - orchestrates the 3 phases
@@ -1385,6 +1510,12 @@ def main():
             output_file = f'plots/{args.source.replace("-", "_")}_analysis.png'
             generate_plot_for_source(args.source, corrected_data, output_file)
             print(f"\n✓ Plot saved to {output_file}")
+            
+            # Upload to Google Drive
+            print(f"\n📤 Uploading to Google Drive...")
+            file_id = upload_plot_to_drive(output_file, country='EU')
+            if file_id:
+                print(f"  ✓ Uploaded: EU/Intraday/{os.path.basename(output_file)}")
         else:
             # Batch mode - generate all plots
             print("\n" + "=" * 80)
@@ -1392,10 +1523,52 @@ def main():
             print("=" * 80)
             
             all_sources = ATOMIC_SOURCES + AGGREGATE_SOURCES
+            drive_file_ids = {}
+            
             for i, source in enumerate(all_sources, 1):
                 print(f"\n[{i}/{len(all_sources)}] Processing {DISPLAY_NAMES[source]}...")
                 output_file = f'plots/{source.replace("-", "_")}_analysis.png'
                 generate_plot_for_source(source, corrected_data, output_file)
+                
+                # Upload to Google Drive
+                file_id = upload_plot_to_drive(output_file, country='EU')
+                if file_id:
+                    drive_file_ids[source] = file_id
+                    print(f"  ✓ Uploaded to Drive: EU/Intraday/{os.path.basename(output_file)}")
+            
+            # Save Drive file IDs to JSON
+            if drive_file_ids:
+                print("\n📤 Saving Drive links...")
+                drive_links_file = 'plots/drive_links.json'
+                drive_links = {}
+                
+                # Load existing links
+                if os.path.exists(drive_links_file):
+                    try:
+                        with open(drive_links_file, 'r') as f:
+                            drive_links = json.load(f)
+                    except:
+                        pass
+                
+                # Update with new file IDs
+                if 'EU' not in drive_links:
+                    drive_links['EU'] = {}
+                if 'Intraday' not in drive_links['EU']:
+                    drive_links['EU']['Intraday'] = {}
+                
+                for source, file_id in drive_file_ids.items():
+                    drive_links['EU']['Intraday'][source] = {
+                        'file_id': file_id,
+                        'view_url': f'https://drive.google.com/file/d/{file_id}/view',
+                        'direct_url': f'https://drive.google.com/uc?export=view&id={file_id}',
+                        'updated': datetime.now().isoformat()
+                    }
+                
+                # Save back to file
+                with open(drive_links_file, 'w') as f:
+                    json.dump(drive_links, f, indent=2)
+                
+                print(f"  ✓ Drive links saved to {drive_links_file}")
         
         # Create timestamp file
         timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S UTC')
