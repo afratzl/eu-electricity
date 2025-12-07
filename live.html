@@ -154,26 +154,34 @@
             // Clean source ID for lookup (replace hyphens with underscores for compatibility)
             const cleanId = sourceId.replace(/-/g, '_');
             
-            // Get Drive URL
+            // Get Drive URLs
             const links = await loadDriveLinks();
-            let imageUrl;
+            let percentageUrl, absoluteUrl;
             
             if (links && links.EU && links.EU.Intraday && links.EU.Intraday[sourceId]) {
-                // Use Drive direct URL
-                imageUrl = links.EU.Intraday[sourceId].direct_url;
+                // Use Drive direct URLs
+                percentageUrl = links.EU.Intraday[sourceId].percentage.direct_url;
+                absoluteUrl = links.EU.Intraday[sourceId].absolute.direct_url;
             } else {
                 // Fallback to GitHub plots (backward compatibility)
-                imageUrl = `plots/${cleanId}_analysis.png`;
+                percentageUrl = `plots/${cleanId}_analysis_percentage.png`;
+                absoluteUrl = `plots/${cleanId}_analysis_absolute.png`;
                 console.warn(`Drive link not found for ${sourceId}, using GitHub fallback`);
             }
             
-            // Update chart display
+            // Update chart display - two separate images
             display.innerHTML = `
                 <div style="margin-bottom: 40px;">
-                    <img src="${imageUrl}" 
-                         alt="${sourceName} Analysis" 
+                    <img src="${percentageUrl}" 
+                         alt="${sourceName} Percentage" 
                          class="chart-img"
-                         onerror="handleImageError(this, '${sourceName}', '${cleanId}')">
+                         onerror="handleImageError(this, '${sourceName}', '${cleanId}', 'percentage')">
+                </div>
+                <div style="margin-bottom: 40px;">
+                    <img src="${absoluteUrl}" 
+                         alt="${sourceName} Absolute" 
+                         class="chart-img"
+                         onerror="handleImageError(this, '${sourceName}', '${cleanId}', 'absolute')">
                 </div>
             `;
             
@@ -183,16 +191,16 @@
             }
         }
 
-        function handleImageError(img, sourceName, cleanId) {
+        function handleImageError(img, sourceName, cleanId, plotType) {
             // Try GitHub fallback if Drive fails
             if (img.src.includes('drive.google.com')) {
-                console.warn('Drive image failed, trying GitHub fallback');
-                img.src = `plots/${cleanId}_analysis.png`;
+                console.warn(`Drive image failed for ${plotType}, trying GitHub fallback`);
+                img.src = `plots/${cleanId}_analysis_${plotType}.png`;
             } else {
                 img.parentElement.innerHTML = `
                     <div style="background: #fee; color: #c33; padding: 20px; border-radius: 10px; margin: 20px 0; border-left: 4px solid #c33;">
                         <strong>Plot not available</strong><br>
-                        The ${sourceName} plot is currently unavailable. Please try again later.
+                        The ${sourceName} ${plotType} plot is currently unavailable. Please try again later.
                     </div>
                 `;
             }
