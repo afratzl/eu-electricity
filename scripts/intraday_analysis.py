@@ -1635,11 +1635,66 @@ def main():
                         'updated': datetime.now().isoformat()
                     }
                 
-                # Save back to file
-                with open(drive_links_file, 'w') as f:
-                    json.dump(drive_links, f, indent=2)
+                # Save back to file (atomic write with validation)
+                drive_links_file_path = os.path.abspath(drive_links_file)
+                temp_file = drive_links_file + '.tmp'
                 
-                print(f"  ✓ Drive links saved to {drive_links_file}")
+                # Check if file exists and is writable
+                if os.path.exists(drive_links_file):
+                    if not os.access(drive_links_file, os.W_OK):
+                        print(f"  ⚠ Warning: {drive_links_file} exists but is not writable!")
+                    else:
+                        print(f"  Overwriting existing file: {drive_links_file}")
+                
+                try:
+                    # Write to temporary file first
+                    with open(temp_file, 'w') as f:
+                        json.dump(drive_links, f, indent=2)
+                    
+                    # Validate the JSON by reading it back
+                    with open(temp_file, 'r') as f:
+                        content = f.read()
+                        # Check for git conflict markers
+                        if '<<<<<<< ' in content or '=======' in content or '>>>>>>> ' in content:
+                            raise ValueError("Git conflict markers detected in JSON file!")
+                        # Validate it's valid JSON and structure
+                        saved_data = json.loads(content)
+                    
+                    # If validation passes, atomically replace the file
+                    os.replace(temp_file, drive_links_file)
+                    
+                    # Verify structure
+                    sample_source = list(drive_file_ids.keys())[0] if drive_file_ids else None
+                    if sample_source:
+                        if 'EU' in saved_data and 'Intraday' in saved_data['EU']:
+                            if sample_source in saved_data['EU']['Intraday']:
+                                source_data = saved_data['EU']['Intraday'][sample_source]
+                                if 'percentage' in source_data and 'absolute' in source_data:
+                                    file_size = os.path.getsize(drive_links_file)
+                                    print(f"  ✓ Drive links saved to {drive_links_file}")
+                                    print(f"     Full path: {drive_links_file_path}")
+                                    print(f"     File size: {file_size} bytes")
+                                    print(f"     ✓ Verified NEW structure (percentage/absolute)")
+                                else:
+                                    print(f"  ⚠ WARNING: OLD structure detected! Missing percentage/absolute")
+                            else:
+                                print(f"  ⚠ WARNING: Source {sample_source} not in saved JSON")
+                    
+                except ValueError as e:
+                    print(f"  ✗ JSON validation error: {e}")
+                    if os.path.exists(temp_file):
+                        os.remove(temp_file)
+                    raise
+                except PermissionError as e:
+                    print(f"  ✗ Permission error: {e}")
+                    if os.path.exists(temp_file):
+                        os.remove(temp_file)
+                    raise
+                except Exception as e:
+                    print(f"  ✗ Error writing file: {e}")
+                    if os.path.exists(temp_file):
+                        os.remove(temp_file)
+                    raise
             else:
                 print("\n⚠ Warning: No Drive file IDs collected - JSON not updated")
                 print("   Check if uploads succeeded above")
