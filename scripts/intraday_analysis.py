@@ -828,16 +828,14 @@ def calculate_daily_statistics(data_dict):
     return stats
 
 
-def plot_analysis(stats_data, source_type, output_file):
+def plot_analysis(stats_data, source_type, output_file_base):
     """
-    Create vertical plots - percentage on top, absolute below
+    Create two separate plots - percentage and absolute
+    Returns tuple of (percentage_file, absolute_file)
     """
     if not stats_data:
         print("No data for plotting")
-        return None
-
-    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(14, 24))
-    plt.subplots_adjust(hspace=0.5)  # More space between subplots
+        return None, None
 
     colors = {
         'today': '#FF4444',
@@ -871,16 +869,24 @@ def plot_analysis(stats_data, source_type, output_file):
 
     time_labels = create_time_axis()
     source_name = DISPLAY_NAMES[source_type]
+    plot_order = ['week_ago', 'year_ago', 'two_years_ago', 'yesterday', 'today', 
+                  'yesterday_projected', 'today_projected']
     
-    # PLOT 1 (TOP): PERCENTAGE
-    fig.suptitle(source_name, fontsize=34, fontweight='bold', x=0.5, y=0.98, ha="center")
-    ax1.set_title('Percentage of EU Production', fontsize=26, fontweight='normal', pad=10)
+    # Generate output filenames
+    output_file_percentage = output_file_base.replace('.png', '_percentage.png')
+    output_file_absolute = output_file_base.replace('.png', '_absolute.png')
+    
+    # ========================================================================
+    # PLOT 1: PERCENTAGE
+    # ========================================================================
+    fig1, ax1 = plt.subplots(figsize=(14, 12))
+    
+    fig1.suptitle(f'{source_name} Electricity Generation (EU)', fontsize=34, fontweight='bold', x=0.5, y=0.98, ha="center")
+    ax1.set_title('Fraction of Total Generation', fontsize=26, fontweight='normal', pad=10)
     ax1.set_xlabel('Time of Day (Brussels)', fontsize=28, fontweight='bold', labelpad=15)
     ax1.set_ylabel('Electrical Power (%)', fontsize=28, fontweight='bold', labelpad=15)
 
     max_percentage = 0
-    plot_order = ['week_ago', 'year_ago', 'two_years_ago', 'yesterday', 'today', 
-                  'yesterday_projected', 'today_projected']
 
     for period_name in plot_order:
         if period_name not in stats_data:
@@ -915,16 +921,41 @@ def plot_analysis(stats_data, source_type, output_file):
             max_percentage = max(max_percentage, np.nanmax(upper_bound))
             ax1.fill_between(x_values, lower_bound, upper_bound, color=color, alpha=0.2)
 
-    ax1.grid(True, alpha=0.3, linewidth=1.5)
     ax1.tick_params(axis='both', labelsize=22)
     ax1.set_xlim(0, len(time_labels))
     ax1.set_ylim(0, max_percentage * 1.05 if max_percentage > 0 else 50)
-
-    # PLOT 2 (BOTTOM): ABSOLUTE VALUES
-    # Add source name as title above this plot too
-    ax2.text(0.5, 1.08, source_name, transform=ax2.transAxes, 
-             fontsize=34, fontweight='bold', ha='center', va='bottom')
-    ax2.set_title('Absolute Production', fontsize=26, fontweight='normal', pad=20)
+    
+    # X-axis ticks - 6-hour intervals
+    tick_positions = np.arange(0, len(time_labels)+1, 24)
+    tick_labels_display = []
+    for i in tick_positions:
+        if i < len(time_labels):
+            tick_labels_display.append(time_labels[i])
+        else:
+            tick_labels_display.append('00:00')
+    
+    ax1.set_xticks(tick_positions)
+    ax1.set_xticklabels(tick_labels_display, rotation=0, ha='center')
+    ax1.grid(True, alpha=0.3, linewidth=1.5, axis='y')
+    ax1.grid(True, alpha=0.3, linewidth=1.5, axis='x', which='major')
+    
+    # Legend
+    handles1, labels1 = ax1.get_legend_handles_labels()
+    ax1.legend(handles1, labels1, loc='upper center', bbox_to_anchor=(0.5, -0.15),
+               ncol=3, fontsize=20, frameon=False)
+    
+    plt.tight_layout(rect=[0, 0.05, 1, 0.985])
+    plt.savefig(output_file_percentage, dpi=200, bbox_inches='tight')
+    print(f"  ✓ Saved percentage plot: {output_file_percentage}")
+    plt.close()
+    
+    # ========================================================================
+    # PLOT 2: ABSOLUTE
+    # ========================================================================
+    fig2, ax2 = plt.subplots(figsize=(14, 12))
+    
+    fig2.suptitle(f'{source_name} Electricity Generation (EU)', fontsize=34, fontweight='bold', x=0.5, y=0.98, ha="center")
+    ax2.set_title('Absolute Generation', fontsize=26, fontweight='normal', pad=10)
     ax2.set_xlabel('Time of Day (Brussels)', fontsize=28, fontweight='bold', labelpad=15)
     ax2.set_ylabel('Electrical Power (GW)', fontsize=28, fontweight='bold', labelpad=15)
 
@@ -965,35 +996,38 @@ def plot_analysis(stats_data, source_type, output_file):
             max_energy = max(max_energy, np.nanmax(upper_bound))
             ax2.fill_between(x_values, lower_bound, upper_bound, color=color, alpha=0.2)
 
-    ax2.grid(True, alpha=0.3, linewidth=1.5)
     ax2.tick_params(axis='both', labelsize=22)
     ax2.set_xlim(0, len(time_labels))
     ax2.set_ylim(0, max_energy * 1.05)
 
-    # X-axis ticks - with better alignment
-    tick_positions = np.arange(0, len(time_labels), 8)
-    for ax in [ax1, ax2]:
-        ax.set_xticks(tick_positions)
-        ax.set_xticklabels([time_labels[i] for i in tick_positions], rotation=45, ha='right')
+    # X-axis ticks - 6-hour intervals
+    tick_positions = np.arange(0, len(time_labels)+1, 24)
+    tick_labels_display = []
+    for i in tick_positions:
+        if i < len(time_labels):
+            tick_labels_display.append(time_labels[i])
+        else:
+            tick_labels_display.append('00:00')
+    
+    ax2.set_xticks(tick_positions)
+    ax2.set_xticklabels(tick_labels_display, rotation=0, ha='center')
+    ax2.grid(True, alpha=0.3, linewidth=1.5, axis='y')
+    ax2.grid(True, alpha=0.3, linewidth=1.5, axis='x', which='major')
 
-    # Two legends - one below each plot (without frame)
-    handles1, labels1 = ax1.get_legend_handles_labels()
+    # Legend
     handles2, labels2 = ax2.get_legend_handles_labels()
-    
-    ax1.legend(handles1, labels1, loc='upper center', bbox_to_anchor=(0.5, -0.30),
-               ncol=3, fontsize=20, frameon=False)
-    
-    ax2.legend(handles2, labels2, loc='upper center', bbox_to_anchor=(0.5, -0.30),
+    ax2.legend(handles2, labels2, loc='upper center', bbox_to_anchor=(0.5, -0.15),
                ncol=3, fontsize=20, frameon=False)
 
-    plt.tight_layout(rect=[0, 0.05, 1, 0.985])  # More space at bottom for legends
-    plt.savefig(output_file, dpi=200, bbox_inches='tight')
+    plt.tight_layout(rect=[0, 0.05, 1, 0.985])
+    plt.savefig(output_file_absolute, dpi=200, bbox_inches='tight')
+    print(f"  ✓ Saved absolute plot: {output_file_absolute}")
     plt.close()
+    
+    return output_file_percentage, output_file_absolute
 
-    return output_file
 
-
-def generate_plot_for_source(source_type, corrected_data, output_file):
+def generate_plot_for_source(source_type, corrected_data, output_file_base):
     """
     Phase 3: Generate plot for a specific source from corrected data
     """
@@ -1011,10 +1045,10 @@ def generate_plot_for_source(source_type, corrected_data, output_file):
     # Calculate statistics
     stats_data = calculate_daily_statistics(plot_data)
     
-    # Create plot
-    plot_analysis(stats_data, source_type, output_file)
+    # Create plots (returns percentage and absolute files)
+    percentage_file, absolute_file = plot_analysis(stats_data, source_type, output_file_base)
     
-    print(f"✓ Plot saved to {output_file}")
+    return percentage_file, absolute_file
 
 
 # ==============================================================================
@@ -1505,21 +1539,21 @@ def main():
         if args.source:
             # Single plot mode
             print("\n" + "=" * 80)
-            print(f"PHASE 3: GENERATING {DISPLAY_NAMES[args.source].upper()} PLOT")
+            print(f"PHASE 3: GENERATING {DISPLAY_NAMES[args.source].upper()} PLOTS")
             print("=" * 80)
-            output_file = f'plots/{args.source.replace("-", "_")}_analysis.png'
-            generate_plot_for_source(args.source, corrected_data, output_file)
-            print(f"\n✓ Plot saved to {output_file}")
+            output_file_base = f'plots/{args.source.replace("-", "_")}_analysis.png'
+            percentage_file, absolute_file = generate_plot_for_source(args.source, corrected_data, output_file_base)
             
-            # Upload to Google Drive
+            # Upload both to Google Drive
             print(f"\n📤 Uploading to Google Drive...")
-            file_id = upload_plot_to_drive(output_file, country='EU')
-            if file_id:
-                print(f"  ✓ Uploaded: EU/Intraday/{os.path.basename(output_file)}")
+            perc_id = upload_plot_to_drive(percentage_file, country='EU')
+            abs_id = upload_plot_to_drive(absolute_file, country='EU')
+            if perc_id and abs_id:
+                print(f"  ✓ Uploaded both plots to EU/Intraday/")
         else:
             # Batch mode - generate all plots
             print("\n" + "=" * 80)
-            print("PHASE 3: GENERATING ALL 12 PLOTS")
+            print("PHASE 3: GENERATING ALL 12 PLOTS (24 files: percentage + absolute)")
             print("=" * 80)
             
             all_sources = ATOMIC_SOURCES + AGGREGATE_SOURCES
@@ -1527,14 +1561,18 @@ def main():
             
             for i, source in enumerate(all_sources, 1):
                 print(f"\n[{i}/{len(all_sources)}] Processing {DISPLAY_NAMES[source]}...")
-                output_file = f'plots/{source.replace("-", "_")}_analysis.png'
-                generate_plot_for_source(source, corrected_data, output_file)
+                output_file_base = f'plots/{source.replace("-", "_")}_analysis.png'
+                percentage_file, absolute_file = generate_plot_for_source(source, corrected_data, output_file_base)
                 
-                # Upload to Google Drive
-                file_id = upload_plot_to_drive(output_file, country='EU')
-                if file_id:
-                    drive_file_ids[source] = file_id
-                    print(f"  ✓ Uploaded to Drive: EU/Intraday/{os.path.basename(output_file)}")
+                # Upload both to Google Drive
+                perc_id = upload_plot_to_drive(percentage_file, country='EU')
+                abs_id = upload_plot_to_drive(absolute_file, country='EU')
+                if perc_id and abs_id:
+                    drive_file_ids[source] = {
+                        'percentage': perc_id,
+                        'absolute': abs_id
+                    }
+                    print(f"  ✓ Uploaded both plots to Drive: EU/Intraday/")
             
             # Save Drive file IDs to JSON
             if drive_file_ids:
@@ -1556,11 +1594,18 @@ def main():
                 if 'Intraday' not in drive_links['EU']:
                     drive_links['EU']['Intraday'] = {}
                 
-                for source, file_id in drive_file_ids.items():
+                for source, file_ids in drive_file_ids.items():
                     drive_links['EU']['Intraday'][source] = {
-                        'file_id': file_id,
-                        'view_url': f'https://drive.google.com/file/d/{file_id}/view',
-                        'direct_url': f'https://drive.google.com/uc?export=view&id={file_id}',
+                        'percentage': {
+                            'file_id': file_ids['percentage'],
+                            'view_url': f'https://drive.google.com/file/d/{file_ids["percentage"]}/view',
+                            'direct_url': f'https://drive.google.com/uc?export=view&id={file_ids["percentage"]}'
+                        },
+                        'absolute': {
+                            'file_id': file_ids['absolute'],
+                            'view_url': f'https://drive.google.com/file/d/{file_ids["absolute"]}/view',
+                            'direct_url': f'https://drive.google.com/uc?export=view&id={file_ids["absolute"]}'
+                        },
                         'updated': datetime.now().isoformat()
                     }
                 
