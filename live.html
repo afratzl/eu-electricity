@@ -1,81 +1,283 @@
-name: Update Intraday Data
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Live Intraday Analysis - EU Energy Analysis</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <span class="nav-title">
+                <svg width="32" height="21" viewBox="0 0 810 540" style="vertical-align: middle; margin-right: 10px;">
+                    <desc>European flag</desc>
+                    <defs>
+                        <g id="s">
+                            <g id="c">
+                                <path id="t" d="M0,0v1h0.5z" transform="translate(0,-1)rotate(18)"/>
+                                <use href="#t" transform="scale(-1,1)"/>
+                            </g>
+                            <g id="a">
+                                <use href="#c" transform="rotate(72)"/>
+                                <use href="#c" transform="rotate(144)"/>
+                            </g>
+                            <use href="#a" transform="scale(-1,1)"/>
+                        </g>
+                    </defs>
+                    <rect fill="#039" width="810" height="540"/>
+                    <g fill="#fc0" transform="scale(30)translate(13.5,9)">
+                        <use href="#s" y="-6"/>
+                        <use href="#s" y="6"/>
+                        <g id="l">
+                            <use href="#s" x="-6"/>
+                            <use href="#s" transform="rotate(150)translate(0,6)rotate(66)"/>
+                            <use href="#s" transform="rotate(120)translate(0,6)rotate(24)"/>
+                            <use href="#s" transform="rotate(60)translate(0,6)rotate(12)"/>
+                            <use href="#s" transform="rotate(30)translate(0,6)rotate(42)"/>
+                        </g>
+                        <use href="#l" transform="scale(-1,1)"/>
+                    </g>
+                </svg>
+                EU Electricity Production
+            </span>
+            <div class="nav-links">
+                <a href="index.html">Home</a>
+                <a href="live.html" class="active">Intraday</a>
+                <a href="monthly.html">Monthly</a>
+                <a href="trends.html">Trends</a>
+            </div>
+        </div>
+    </nav>
 
-on:
-  schedule:
-    # Hourly updates for intraday analysis (at minute 5)
-    - cron: '5 * * * *'
-  
-  workflow_dispatch:  # Allow manual triggers
+    <div class="container">
+        <header class="page-header">
+            <h1>Intraday Energy Analysis</h1>
+            <p class="subtitle">Real-time 15-minute resolution data</p>
+        </header>
 
-permissions:
-  contents: write
+        <div class="info-box">
+            <p><strong>Select an energy source below</strong> to view today's production compared with historical patterns</p>
+            <p><strong>Updates:</strong> Hourly | <strong>Data:</strong> ENTSO-E Transparency Platform</p>
+        </div>
 
-jobs:
-  update-intraday:
-    runs-on: ubuntu-latest
-    
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-      
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.10'
-      
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install entsoe-py pandas matplotlib numpy gspread google-auth google-api-python-client pytz scipy
-      
-      - name: Create plots directory
-        run: mkdir -p plots
-      
-      - name: Run Intraday Analysis
-        env:
-          ENTSOE_API_KEY: ${{ secrets.ENTSOE_API_KEY }}
-          GOOGLE_CREDENTIALS_JSON: ${{ secrets.GOOGLE_CREDENTIALS_JSON }}
-          OWNER_EMAIL: ${{ secrets.OWNER_EMAIL }}  # Optional: your Gmail for folder access
-        run: |
-          echo "Running hourly intraday analysis..."
-          python scripts/intraday_analysis.py || echo "Failed to generate intraday plots"
-      
-      - name: Generate Summary Table JSON
-        env:
-          GOOGLE_CREDENTIALS_JSON: ${{ secrets.GOOGLE_CREDENTIALS_JSON }}
-        run: |
-          echo "Fixing any JSON conflicts first..."
-          python scripts/fix_json_conflicts.py || true
-          echo "Generating summary table JSON..."
-          python scripts/generate_summary_table_json.py || echo "Failed to generate JSON"
-      
-      - name: Commit and push changes
-        run: |
-          git config --local user.email "github-actions[bot]@users.noreply.github.com"
-          git config --local user.name "github-actions[bot]"
-          
-          # Fetch latest from remote
-          git fetch origin main
-          
-          # Save our generated files temporarily
-          mkdir -p /tmp/plots_backup
-          cp plots/*_analysis.png plots/last_update.html plots/energy_summary_table.json /tmp/plots_backup/ 2>/dev/null || true
-          
-          # Reset to remote (this avoids all merge conflicts)
-          git reset --hard origin/main
-          
-          # Restore our new files
-          cp /tmp/plots_backup/* plots/ 2>/dev/null || true
-          
-          # Add and commit
-          git add plots/*_analysis.png plots/last_update.html plots/energy_summary_table.json plots/drive_links.json
-          
-          # Only commit if there are changes
-          if ! git diff --staged --quiet; then
-            git commit -m "Update intraday plots and summary JSON [hourly]"
-            git push origin main
-          else
-            echo "No changes to commit"
-          fi
+        <!-- DROPDOWN SELECTOR -->
+        <div class="chart-selector">
+            <label for="source-select">
+                <span id="color-indicator" style="display: inline-block; width: 16px; height: 16px; border-radius: 50%; background-color: #00CED1; margin-right: 8px; vertical-align: middle; border: 2px solid #333;"></span>
+                Choose Energy Source:
+            </label>
+            <select id="source-select" onchange="showSource(this.value)">
+                <optgroup label="Renewable Sources">
+                    <option value="all-renewables" selected data-color="#00CED1">All Renewables</option>
+                    <option value="wind" data-color="#228B22">Wind</option>
+                    <option value="hydro" data-color="#1E90FF">Hydro</option>
+                    <option value="solar" data-color="#FFD700">Solar</option>
+                    <option value="biomass" data-color="#9ACD32">Biomass</option>
+                    <option value="geothermal" data-color="#708090">Geothermal</option>
+                </optgroup>
+                <optgroup label="Non-Renewable Sources">
+                    <option value="all-non-renewables" data-color="#000000">All Non-Renewables</option>
+                    <option value="nuclear" data-color="#8B4513">Nuclear</option>
+                    <option value="gas" data-color="#FF1493">Gas</option>
+                    <option value="coal" data-color="#8B008B">Coal</option>
+                    <option value="waste" data-color="#808000">Waste</option>
+                    <option value="oil" data-color="#191970">Oil</option>
+                </optgroup>
+            </select>
+        </div>
+
+        <!-- DYNAMIC CHART DISPLAY -->
+        <div id="chart-display" class="chart-container">
+            <!-- Charts will be loaded here by JavaScript -->
+        </div>
+
+        <div id="last-update" style="text-align: center; color: #666; margin-top: 20px; font-size: 14px;">
+            <!-- Last update timestamp will be loaded here -->
+        </div>
+    </div>
+
+    <footer>
+        <p>Built with data from <a href="https://transparency.entsoe.eu/" target="_blank">ENTSO-E</a> | 
+           Source code on <a href="https://github.com/afratzl/eu-energy-analysis" target="_blank">GitHub</a> | 
+           Built by <a href="https://www.linkedin.com/in/alexfratzl/" target="_blank">Alex Fratzl</a> with Claude Sonnet</p>
+    </footer>
+
+    <script>
+        // Energy source configurations
+        const sources = {
+            'solar': 'Solar',
+            'wind': 'Wind',
+            'hydro': 'Hydro',
+            'biomass': 'Biomass',
+            'geothermal': 'Geothermal',
+            'gas': 'Gas',
+            'coal': 'Coal',
+            'nuclear': 'Nuclear',
+            'oil': 'Oil',
+            'waste': 'Waste',
+            'all-renewables': 'All Renewables',
+            'all-non-renewables': 'All Non-Renewables'
+        };
+
+        // Drive links cache
+        let driveLinks = null;
+
+        // Load Drive links from JSON
+        async function loadDriveLinks() {
+            if (driveLinks) return driveLinks;
+            
+            try {
+                const response = await fetch('plots/drive_links.json');
+                driveLinks = await response.json();
+                return driveLinks;
+            } catch (error) {
+                console.error('Failed to load Drive links:', error);
+                return null;
+            }
+        }
+
+        // Show source function - loads from Google Drive
+        async function showSource(sourceId) {
+            const sourceName = sources[sourceId];
+            const display = document.getElementById('chart-display');
+            
+            // Update color indicator
+            const select = document.getElementById('source-select');
+            const selectedOption = select.options[select.selectedIndex];
+            const color = selectedOption.getAttribute('data-color');
+            const indicator = document.getElementById('color-indicator');
+            if (indicator && color) {
+                indicator.style.backgroundColor = color;
+            }
+            
+            // Clean source ID for lookup (replace hyphens with underscores for compatibility)
+            const cleanId = sourceId.replace(/-/g, '_');
+            
+            // Get Drive URLs
+            const links = await loadDriveLinks();
+            let percentageUrl, absoluteUrl;
+            
+            if (links && links.EU && links.EU.Intraday && links.EU.Intraday[sourceId]) {
+                // Use Drive direct URLs
+                percentageUrl = links.EU.Intraday[sourceId].percentage.direct_url;
+                absoluteUrl = links.EU.Intraday[sourceId].absolute.direct_url;
+            } else {
+                // Fallback to GitHub plots (backward compatibility)
+                percentageUrl = `plots/${cleanId}_analysis_percentage.png`;
+                absoluteUrl = `plots/${cleanId}_analysis_absolute.png`;
+                console.warn(`Drive link not found for ${sourceId}, using GitHub fallback`);
+            }
+            
+            // Update chart display - two separate images
+            display.innerHTML = `
+                <div style="margin-bottom: 40px;">
+                    <img src="${percentageUrl}" 
+                         alt="${sourceName} Percentage" 
+                         class="chart-img"
+                         onerror="handleImageError(this, '${sourceName}', '${cleanId}', 'percentage')">
+                </div>
+                <div style="margin-bottom: 40px;">
+                    <img src="${absoluteUrl}" 
+                         alt="${sourceName} Absolute" 
+                         class="chart-img"
+                         onerror="handleImageError(this, '${sourceName}', '${cleanId}', 'absolute')">
+                </div>
+            `;
+            
+            // Only scroll if user manually changed selection (not on page load)
+            if (window.pageYOffset > 0 || document.documentElement.scrollTop > 0) {
+                display.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+        }
+
+        function handleImageError(img, sourceName, cleanId, plotType) {
+            // Try GitHub fallback if Drive fails
+            if (img.src.includes('drive.google.com')) {
+                console.warn(`Drive image failed for ${plotType}, trying GitHub fallback`);
+                img.src = `plots/${cleanId}_analysis_${plotType}.png`;
+            } else {
+                img.parentElement.innerHTML = `
+                    <div style="background: #fee; color: #c33; padding: 20px; border-radius: 10px; margin: 20px 0; border-left: 4px solid #c33;">
+                        <strong>Plot not available</strong><br>
+                        The ${sourceName} ${plotType} plot is currently unavailable. Please try again later.
+                    </div>
+                `;
+            }
+        }
+
+        // Load timestamp
+        function loadTimestamp() {
+            fetch('plots/last_update.html')
+                .then(response => response.text())
+                .then(html => {
+                    document.getElementById('last-update').innerHTML = html;
+                })
+                .catch(error => {
+                    document.getElementById('last-update').innerHTML = '<p>Update time unavailable</p>';
+                });
+        }
+
+        // Load default source on page load
+        window.addEventListener('DOMContentLoaded', () => {
+            showSource('all-renewables');
+            loadTimestamp();
+            
+            // Reload timestamp every 5 minutes
+            setInterval(loadTimestamp, 300000);
+        });
+    </script>
+
+    <style>
+        /* Color-coded dropdown options */
+        select option[value="solar"] { color: #FFD700; font-weight: bold; }
+        select option[value="wind"] { color: #228B22; font-weight: bold; }
+        select option[value="hydro"] { color: #1E90FF; font-weight: bold; }
+        select option[value="biomass"] { color: #9ACD32; font-weight: bold; }
+        select option[value="geothermal"] { color: #708090; font-weight: bold; }
+        select option[value="gas"] { color: #FF1493; font-weight: bold; }
+        select option[value="coal"] { color: #8B008B; font-weight: bold; }
+        select option[value="nuclear"] { color: #8B4513; font-weight: bold; }
+        select option[value="oil"] { color: #191970; font-weight: bold; }
+        select option[value="waste"] { color: #808000; font-weight: bold; }
+        select option[value="all-renewables"] { color: #00CED1; font-weight: bold; }
+        select option[value="all-non-renewables"] { color: #000000; font-weight: bold; }
+        
+        /* Responsive image sizing - UPDATED TO 60% */
+        .chart-img {
+            width: 100%;
+            height: auto;
+        }
+        
+        /* Desktop: Scale down to 60% */
+        @media (min-width: 1024px) {
+            .chart-img {
+                width: 60%;
+                margin: 0 auto;
+                display: block;
+            }
+        }
+        
+        /* EU Flag responsive sizing */
+        @media (max-width: 768px) {
+            .nav-title svg {
+                width: 28px;
+                height: 19px;
+                margin-right: 8px;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .nav-title svg {
+                width: 24px;
+                height: 16px;
+                margin-right: 6px;
+            }
+        }
+    </style>
+
+    <!-- GoatCounter Analytics -->
+    <script data-goatcounter="https://eu-electricity.goatcounter.com/count"
+            async src="//gc.zgo.at/count.js"></script>
+</body>
+</html>
