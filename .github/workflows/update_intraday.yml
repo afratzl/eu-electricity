@@ -37,6 +37,7 @@ jobs:
         env:
           ENTSOE_API_KEY: ${{ secrets.ENTSOE_API_KEY }}
           GOOGLE_CREDENTIALS_JSON: ${{ secrets.GOOGLE_CREDENTIALS_JSON }}
+          OWNER_EMAIL: ${{ secrets.OWNER_EMAIL }}  # Optional: your Gmail for folder access
         run: |
           echo "Running hourly intraday analysis..."
           python scripts/intraday_analysis.py || echo "Failed to generate intraday plots"
