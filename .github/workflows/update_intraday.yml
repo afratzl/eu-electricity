@@ -40,7 +40,7 @@ jobs:
           OWNER_EMAIL: ${{ secrets.OWNER_EMAIL }}  # Optional: your Gmail for folder access
         run: |
           echo "Running hourly intraday analysis..."
-          python scripts/intraday_analysis.py || echo "Failed to generate intraday plots"
+          python scripts/intraday_analysis_v2.py || echo "Failed to generate intraday plots"
       
       - name: Generate Summary Table JSON
         env:
@@ -61,7 +61,7 @@ jobs:
           
           # Save our generated files temporarily
           mkdir -p /tmp/plots_backup
-          cp plots/*_analysis.png plots/last_update.html plots/energy_summary_table.json /tmp/plots_backup/ 2>/dev/null || true
+          cp plots/*_analysis.png plots/last_update.html plots/energy_summary_table.json plots/drive_links.json /tmp/plots_backup/ 2>/dev/null || true
           
           # Reset to remote (this avoids all merge conflicts)
           git reset --hard origin/main
