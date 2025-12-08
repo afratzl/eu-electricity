@@ -929,7 +929,6 @@ def plot_analysis(stats_data, source_type, output_file_base):
             ax1.fill_between(x_values, lower_bound, upper_bound, color=color, alpha=0.2)
 
     ax1.tick_params(axis='both', labelsize=22)
-    ax1.set_xlim(-2, len(time_labels)+2)  # Add padding on both sides
     ax1.set_ylim(0, max_percentage * 1.20 if max_percentage > 0 else 50)  # 20% headroom
     
     # X-axis ticks - 6-hour intervals
@@ -951,7 +950,8 @@ def plot_analysis(stats_data, source_type, output_file_base):
     ax1.legend(handles1, labels1, loc='upper center', bbox_to_anchor=(0.5, -0.20),
                ncol=3, fontsize=20, frameon=False)
     
-    plt.tight_layout()  # Auto-optimize layout like monthly plots
+    plt.tight_layout()
+    
     plt.savefig(output_file_percentage, dpi=150, bbox_inches='tight')
     print(f"  ✓ Saved percentage plot: {output_file_percentage}")
     plt.close()
@@ -1004,7 +1004,6 @@ def plot_analysis(stats_data, source_type, output_file_base):
             ax2.fill_between(x_values, lower_bound, upper_bound, color=color, alpha=0.2)
 
     ax2.tick_params(axis='both', labelsize=22)
-    ax2.set_xlim(-2, len(time_labels)+2)  # Add padding on both sides
     ax2.set_ylim(0, max_energy * 1.20)  # 20% headroom
 
     # X-axis ticks - 6-hour intervals
@@ -1026,7 +1025,8 @@ def plot_analysis(stats_data, source_type, output_file_base):
     ax2.legend(handles2, labels2, loc='upper center', bbox_to_anchor=(0.5, -0.20),
                ncol=3, fontsize=20, frameon=False)
 
-    plt.tight_layout()  # Auto-optimize layout like monthly plots
+    plt.tight_layout()
+    
     plt.savefig(output_file_absolute, dpi=150, bbox_inches='tight')
     print(f"  ✓ Saved absolute plot: {output_file_absolute}")
     plt.close()
