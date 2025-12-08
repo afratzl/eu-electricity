@@ -876,8 +876,11 @@ def plot_analysis(stats_data, source_type, output_file_base):
     elif source_name == 'All Non-Renewables':
         source_name = 'Non-Renewables'
     
-    plot_order = ['week_ago', 'year_ago', 'two_years_ago', 'yesterday', 'today', 
-                  'yesterday_projected', 'today_projected']
+    # Reorder for 2-column legend: Left=Today/Yesterday, Right=Historical comparisons
+    plot_order = ['today', 'week_ago', 
+                  'today_projected', 'year_ago', 
+                  'yesterday', 'two_years_ago', 
+                  'yesterday_projected']
     
     # Generate output filenames
     output_file_percentage = output_file_base.replace('.png', '_percentage.png')
@@ -948,7 +951,7 @@ def plot_analysis(stats_data, source_type, output_file_base):
     # Legend - move further down
     handles1, labels1 = ax1.get_legend_handles_labels()
     ax1.legend(handles1, labels1, loc='upper center', bbox_to_anchor=(0.5, -0.20),
-               ncol=3, fontsize=20, frameon=False)
+               ncol=2, fontsize=20, frameon=False)  # 2 columns instead of 3
     
     plt.tight_layout()
     
@@ -1023,7 +1026,7 @@ def plot_analysis(stats_data, source_type, output_file_base):
     # Legend - move further down
     handles2, labels2 = ax2.get_legend_handles_labels()
     ax2.legend(handles2, labels2, loc='upper center', bbox_to_anchor=(0.5, -0.20),
-               ncol=3, fontsize=20, frameon=False)
+               ncol=2, fontsize=20, frameon=False)  # 2 columns instead of 3
 
     plt.tight_layout()
     
