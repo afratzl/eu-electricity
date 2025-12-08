@@ -1435,7 +1435,7 @@ def get_or_create_drive_folder(service, folder_name, parent_id=None, share_with_
                 service.permissions().create(
                     fileId=folder_id,
                     body=permission,
-                    sendNotificationEmail=True  # Send email notification
+                    sendNotificationEmail=False  # Send email notification
                 ).execute()
                 print(f"  ✓ Shared folder '{folder_name}' with {share_with_email}")
             else:
