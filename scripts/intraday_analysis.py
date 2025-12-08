@@ -1404,6 +1404,7 @@ def get_or_create_drive_folder(service, folder_name, parent_id=None, share_with_
     
     if folders:
         folder_id = folders[0]['id']
+        folder_already_existed = True
     else:
         # Create folder if it doesn't exist
         file_metadata = {
@@ -1416,10 +1417,16 @@ def get_or_create_drive_folder(service, folder_name, parent_id=None, share_with_
         folder = service.files().create(body=file_metadata, fields='id').execute()
         folder_id = folder.get('id')
         print(f"  Created Drive folder: {folder_name}")
-        
-        # Share with email if provided
-        if share_with_email:
-            try:
+        folder_already_existed = False
+    
+    # Share with email if provided (do this regardless of whether folder existed)
+    if share_with_email:
+        try:
+            # Check if already shared with this email
+            permissions = service.permissions().list(fileId=folder_id, fields='permissions(emailAddress)').execute()
+            existing_emails = [p.get('emailAddress') for p in permissions.get('permissions', [])]
+            
+            if share_with_email not in existing_emails:
                 permission = {
                     'type': 'user',
                     'role': 'writer',  # Or 'reader' if you only want view access
@@ -1430,9 +1437,12 @@ def get_or_create_drive_folder(service, folder_name, parent_id=None, share_with_
                     body=permission,
                     sendNotificationEmail=True  # Send email notification
                 ).execute()
-                print(f"  ✓ Shared folder with {share_with_email}")
-            except Exception as e:
-                print(f"  ⚠ Could not share folder: {e}")
+                print(f"  ✓ Shared folder '{folder_name}' with {share_with_email}")
+            else:
+                if folder_already_existed:
+                    print(f"  ✓ Folder '{folder_name}' already shared with {share_with_email}")
+        except Exception as e:
+            print(f"  ⚠ Could not share folder '{folder_name}': {e}")
     
     return folder_id
 
