@@ -57,21 +57,56 @@
         </header>
 
         <div class="info-box">
-            <p><strong>Select an energy source below</strong> to view today's production compared with historical patterns</p>
+            <p><strong>Select a country/region and energy source below</strong> to view today's production compared with historical patterns</p>
             <p><strong>Updates:</strong> Hourly | <strong>Data:</strong> ENTSO-E Transparency Platform</p>
         </div>
 
-        <!-- PLOT TYPE TOGGLE -->
-        <div class="table-controls-pro">
-            <span class="control-label-pro">Display:</span>
-            <div class="toggle-group">
-                <button id="toggle-percentage" class="toggle-btn-pro active" onclick="showPercentagePlot()">
-                    Percentage
-                </button>
-                <button id="toggle-absolute" class="toggle-btn-pro" onclick="showAbsolutePlot()">
-                    Absolute
-                </button>
-            </div>
+        <!-- COUNTRY/REGION SELECTOR -->
+        <div class="chart-selector">
+            <label for="country-select">
+                <span id="country-flag-indicator" style="display: inline-block; font-size: 20px; margin-right: 8px; vertical-align: middle;">🇪🇺</span>
+                Choose Country/Region:
+            </label>
+            <select id="country-select" onchange="updateCharts()">
+                <optgroup label="Region">
+                    <option value="EU" data-flag="🇪🇺" selected>European Union</option>
+                </optgroup>
+                <optgroup label="EU Member States">
+                    <option value="AT" data-flag="🇦🇹">Austria</option>
+                    <option value="BE" data-flag="🇧🇪">Belgium</option>
+                    <option value="BG" data-flag="🇧🇬">Bulgaria</option>
+                    <option value="HR" data-flag="🇭🇷">Croatia</option>
+                    <option value="CY" data-flag="🇨🇾">Cyprus</option>
+                    <option value="CZ" data-flag="🇨🇿">Czechia</option>
+                    <option value="DK" data-flag="🇩🇰">Denmark</option>
+                    <option value="EE" data-flag="🇪🇪">Estonia</option>
+                    <option value="FI" data-flag="🇫🇮">Finland</option>
+                    <option value="FR" data-flag="🇫🇷">France</option>
+                    <option value="DE" data-flag="🇩🇪">Germany</option>
+                    <option value="GR" data-flag="🇬🇷">Greece</option>
+                    <option value="HU" data-flag="🇭🇺">Hungary</option>
+                    <option value="IE" data-flag="🇮🇪">Ireland</option>
+                    <option value="IT" data-flag="🇮🇹">Italy</option>
+                    <option value="LV" data-flag="🇱🇻">Latvia</option>
+                    <option value="LT" data-flag="🇱🇹">Lithuania</option>
+                    <option value="LU" data-flag="🇱🇺">Luxembourg</option>
+                    <option value="MT" data-flag="🇲🇹">Malta</option>
+                    <option value="NL" data-flag="🇳🇱">Netherlands</option>
+                    <option value="PL" data-flag="🇵🇱">Poland</option>
+                    <option value="PT" data-flag="🇵🇹">Portugal</option>
+                    <option value="RO" data-flag="🇷🇴">Romania</option>
+                    <option value="SK" data-flag="🇸🇰">Slovakia</option>
+                    <option value="SI" data-flag="🇸🇮">Slovenia</option>
+                    <option value="ES" data-flag="🇪🇸">Spain</option>
+                    <option value="SE" data-flag="🇸🇪">Sweden</option>
+                </optgroup>
+                <optgroup label="Other European Countries">
+                    <option value="MD" data-flag="🇲🇩">Moldova</option>
+                    <option value="NO" data-flag="🇳🇴">Norway</option>
+                    <option value="CH" data-flag="🇨🇭">Switzerland</option>
+                    <option value="GB" data-flag="🇬🇧">United Kingdom</option>
+                </optgroup>
+            </select>
         </div>
 
         <!-- DROPDOWN SELECTOR -->
@@ -80,7 +115,7 @@
                 <span id="color-indicator" style="display: inline-block; width: 16px; height: 16px; border-radius: 50%; background-color: #00CED1; margin-right: 8px; vertical-align: middle; border: 2px solid #333;"></span>
                 Choose Energy Source:
             </label>
-            <select id="source-select" onchange="showSource(this.value)">
+            <select id="source-select" onchange="updateCharts()">
                 <optgroup label="Renewable Sources">
                     <option value="all-renewables" selected data-color="#00CED1">All Renewables</option>
                     <option value="wind" data-color="#228B22">Wind</option>
@@ -98,6 +133,19 @@
                     <option value="oil" data-color="#191970">Oil</option>
                 </optgroup>
             </select>
+        </div>
+
+        <!-- PLOT TYPE TOGGLE -->
+        <div class="table-controls-pro">
+            <span class="control-label-pro">Display:</span>
+            <div class="toggle-group">
+                <button id="toggle-percentage" class="toggle-btn-pro active" onclick="showPercentagePlot()">
+                    Percentage
+                </button>
+                <button id="toggle-absolute" class="toggle-btn-pro" onclick="showAbsolutePlot()">
+                    Absolute
+                </button>
+            </div>
         </div>
 
         <!-- DYNAMIC CHART DISPLAY -->
@@ -150,8 +198,25 @@
             }
         }
 
+        // Update charts based on both country and source selection
+        function updateCharts() {
+            const countrySelect = document.getElementById('country-select');
+            const countryId = countrySelect.value;
+            const sourceId = document.getElementById('source-select').value;
+            
+            // Update country flag indicator
+            const selectedCountryOption = countrySelect.options[countrySelect.selectedIndex];
+            const flag = selectedCountryOption.getAttribute('data-flag');
+            const flagIndicator = document.getElementById('country-flag-indicator');
+            if (flagIndicator && flag) {
+                flagIndicator.textContent = flag;
+            }
+            
+            showSource(sourceId, countryId);
+        }
+
         // Show source function - loads from Google Drive
-        async function showSource(sourceId) {
+        async function showSource(sourceId, countryId = 'EU') {
             const sourceName = sources[sourceId];
             const display = document.getElementById('chart-display');
             
@@ -171,15 +236,15 @@
             const links = await loadDriveLinks();
             let percentageUrl, absoluteUrl;
             
-            if (links && links.EU && links.EU.Intraday && links.EU.Intraday[sourceId]) {
+            if (links && links[countryId] && links[countryId].Intraday && links[countryId].Intraday[sourceId]) {
                 // Use Drive direct URLs
-                percentageUrl = links.EU.Intraday[sourceId].percentage.direct_url;
-                absoluteUrl = links.EU.Intraday[sourceId].absolute.direct_url;
+                percentageUrl = links[countryId].Intraday[sourceId].percentage.direct_url;
+                absoluteUrl = links[countryId].Intraday[sourceId].absolute.direct_url;
             } else {
                 // Fallback to GitHub plots (backward compatibility)
                 percentageUrl = `plots/${cleanId}_analysis_percentage.png`;
                 absoluteUrl = `plots/${cleanId}_analysis_absolute.png`;
-                console.warn(`Drive link not found for ${sourceId}, using GitHub fallback`);
+                console.warn(`Drive link not found for ${countryId}/${sourceId}, using GitHub fallback`);
             }
             
             // Update chart display - two separate divs that can be toggled
@@ -198,12 +263,8 @@
                 </div>
             `;
             
-            // Apply saved toggle preference
-            const plotView = localStorage.getItem('intradayPlotView') || 'percentage';
-            if (plotView === 'absolute') {
-                document.getElementById('percentage-plot-container').style.display = 'none';
-                document.getElementById('absolute-plot-container').style.display = 'block';
-            }
+            // Always show percentage view by default when source changes
+            // (No localStorage persistence)
             
             // Only scroll if user manually changed selection (not on page load)
             if (window.pageYOffset > 0 || document.documentElement.scrollTop > 0) {
@@ -250,8 +311,6 @@
             
             document.getElementById('toggle-percentage').classList.add('active');
             document.getElementById('toggle-absolute').classList.remove('active');
-            
-            localStorage.setItem('intradayPlotView', 'percentage');
         }
 
         function showAbsolutePlot() {
@@ -265,21 +324,15 @@
             
             document.getElementById('toggle-percentage').classList.remove('active');
             document.getElementById('toggle-absolute').classList.add('active');
-            
-            localStorage.setItem('intradayPlotView', 'absolute');
         }
 
         // Load default source on page load
         window.addEventListener('DOMContentLoaded', () => {
-            showSource('all-renewables');
+            showSource('all-renewables', 'EU');  // Default: EU + All Renewables
             loadTimestamp();
             
-            // Restore toggle preference
-            const plotView = localStorage.getItem('intradayPlotView') || 'percentage';
-            if (plotView === 'absolute') {
-                document.getElementById('toggle-absolute').classList.add('active');
-                document.getElementById('toggle-percentage').classList.remove('active');
-            }
+            // Always start with percentage view (no localStorage persistence)
+            // This ensures button state and content are always in sync
             
             // Reload timestamp every 5 minutes
             setInterval(loadTimestamp, 300000);
@@ -347,6 +400,28 @@
             background: rgba(0, 51, 153, 0.1);
         }
         
+        /* Dropdown selector spacing */
+        .chart-selector {
+            margin-bottom: 20px;
+        }
+        
+        .chart-selector label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            font-size: 1em;
+        }
+        
+        .chart-selector select {
+            width: 100%;
+            max-width: 600px;
+            padding: 10px;
+            font-size: 1em;
+            border: 2px solid #cbd5e0;
+            border-radius: 4px;
+            background: white;
+        }
+        
         /* Responsive image sizing - UPDATED TO 60% */
         .chart-img {
             width: 100%;
@@ -385,6 +460,11 @@
                 font-size: 0.875em;
                 padding: 8px 16px;
             }
+            
+            .chart-selector select {
+                max-width: 100%;
+                font-size: 0.9em;
+            }
         }
         
         @media (max-width: 480px) {
@@ -397,6 +477,15 @@
             .toggle-btn-pro {
                 font-size: 0.8em;
                 padding: 6px 12px;
+            }
+            
+            .chart-selector select {
+                font-size: 0.85em;
+                padding: 8px;
+            }
+            
+            .chart-selector label {
+                font-size: 0.9em;
             }
         }
     </style>
