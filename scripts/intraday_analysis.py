@@ -1435,7 +1435,7 @@ def get_or_create_drive_folder(service, folder_name, parent_id=None, share_with_
                 service.permissions().create(
                     fileId=folder_id,
                     body=permission,
-                    sendNotificationEmail=False  # Send email notification
+                    sendNotificationEmail=False  # Don't spam with emails
                 ).execute()
                 print(f"  ✓ Shared folder '{folder_name}' with {share_with_email}")
             else:
@@ -1517,14 +1517,39 @@ def upload_plot_to_drive(file_path, country='EU'):
             file_id = file.get('id')
         
         # Set permissions to "Anyone with the link can view"
-        permission = {
-            'type': 'anyone',
-            'role': 'reader'
-        }
-        service.permissions().create(
-            fileId=file_id,
-            body=permission
-        ).execute()
+        # Check if permission already exists
+        try:
+            existing_perms = service.permissions().list(
+                fileId=file_id,
+                fields='permissions(id,type)'
+            ).execute()
+            
+            # Check if 'anyone' permission exists
+            anyone_perm = None
+            for perm in existing_perms.get('permissions', []):
+                if perm.get('type') == 'anyone':
+                    anyone_perm = perm
+                    break
+            
+            if anyone_perm:
+                # Update existing permission
+                service.permissions().update(
+                    fileId=file_id,
+                    permissionId=anyone_perm['id'],
+                    body={'role': 'reader'}
+                ).execute()
+            else:
+                # Create new permission
+                permission = {
+                    'type': 'anyone',
+                    'role': 'reader'
+                }
+                service.permissions().create(
+                    fileId=file_id,
+                    body=permission
+                ).execute()
+        except Exception as e:
+            print(f"  ⚠ Warning: Could not set permissions on {os.path.basename(file_path)}: {e}")
         
         return file_id
         
@@ -1635,12 +1660,12 @@ def main():
                         'percentage': {
                             'file_id': file_ids['percentage'],
                             'view_url': f'https://drive.google.com/file/d/{file_ids["percentage"]}/view',
-                            'direct_url': f'https://drive.google.com/uc?export=view&id={file_ids["percentage"]}'
+                            'direct_url': f'https://drive.google.com/thumbnail?id={file_ids["percentage"]}&sz=w2000'
                         },
                         'absolute': {
                             'file_id': file_ids['absolute'],
                             'view_url': f'https://drive.google.com/file/d/{file_ids["absolute"]}/view',
-                            'direct_url': f'https://drive.google.com/uc?export=view&id={file_ids["absolute"]}'
+                            'direct_url': f'https://drive.google.com/thumbnail?id={file_ids["absolute"]}&sz=w2000'
                         },
                         'updated': datetime.now().isoformat()
                     }
