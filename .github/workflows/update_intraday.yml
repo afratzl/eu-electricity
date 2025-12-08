@@ -40,7 +40,7 @@ jobs:
           OWNER_EMAIL: ${{ secrets.OWNER_EMAIL }}  # Optional: your Gmail for folder access
         run: |
           echo "Running hourly intraday analysis..."
-          python scripts/intraday_analysis_v2.py || echo "Failed to generate intraday plots"
+          python scripts/intraday_analysis.py || echo "Failed to generate intraday plots"
       
       - name: Generate Summary Table JSON
         env:
