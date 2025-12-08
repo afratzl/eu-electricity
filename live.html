@@ -57,94 +57,125 @@
         </header>
 
         <div class="info-box">
-            <p><strong>Select a country/region and energy source below</strong> to view today's production compared with historical patterns</p>
+            <p><strong>Select country, energy source, and display mode</strong> to view today's production compared with historical patterns</p>
             <p><strong>Updates:</strong> Hourly | <strong>Data:</strong> ENTSO-E Transparency Platform</p>
         </div>
 
-        <!-- COUNTRY/REGION SELECTOR -->
-        <div class="chart-selector">
-            <label for="country-select">
-                <span id="country-flag-indicator" style="display: inline-block; font-size: 20px; margin-right: 8px; vertical-align: middle;">🇪🇺</span>
-                Choose Country/Region:
-            </label>
-            <select id="country-select" onchange="updateCharts()">
-                <optgroup label="Region">
-                    <option value="EU" data-flag="🇪🇺" selected>European Union</option>
-                </optgroup>
-                <optgroup label="EU Member States">
-                    <option value="AT" data-flag="🇦🇹">Austria</option>
-                    <option value="BE" data-flag="🇧🇪">Belgium</option>
-                    <option value="BG" data-flag="🇧🇬">Bulgaria</option>
-                    <option value="HR" data-flag="🇭🇷">Croatia</option>
-                    <option value="CY" data-flag="🇨🇾">Cyprus</option>
-                    <option value="CZ" data-flag="🇨🇿">Czechia</option>
-                    <option value="DK" data-flag="🇩🇰">Denmark</option>
-                    <option value="EE" data-flag="🇪🇪">Estonia</option>
-                    <option value="FI" data-flag="🇫🇮">Finland</option>
-                    <option value="FR" data-flag="🇫🇷">France</option>
-                    <option value="DE" data-flag="🇩🇪">Germany</option>
-                    <option value="GR" data-flag="🇬🇷">Greece</option>
-                    <option value="HU" data-flag="🇭🇺">Hungary</option>
-                    <option value="IE" data-flag="🇮🇪">Ireland</option>
-                    <option value="IT" data-flag="🇮🇹">Italy</option>
-                    <option value="LV" data-flag="🇱🇻">Latvia</option>
-                    <option value="LT" data-flag="🇱🇹">Lithuania</option>
-                    <option value="LU" data-flag="🇱🇺">Luxembourg</option>
-                    <option value="MT" data-flag="🇲🇹">Malta</option>
-                    <option value="NL" data-flag="🇳🇱">Netherlands</option>
-                    <option value="PL" data-flag="🇵🇱">Poland</option>
-                    <option value="PT" data-flag="🇵🇹">Portugal</option>
-                    <option value="RO" data-flag="🇷🇴">Romania</option>
-                    <option value="SK" data-flag="🇸🇰">Slovakia</option>
-                    <option value="SI" data-flag="🇸🇮">Slovenia</option>
-                    <option value="ES" data-flag="🇪🇸">Spain</option>
-                    <option value="SE" data-flag="🇸🇪">Sweden</option>
-                </optgroup>
-                <optgroup label="Other European Countries">
-                    <option value="MD" data-flag="🇲🇩">Moldova</option>
-                    <option value="NO" data-flag="🇳🇴">Norway</option>
-                    <option value="CH" data-flag="🇨🇭">Switzerland</option>
-                    <option value="GB" data-flag="🇬🇧">United Kingdom</option>
-                </optgroup>
-            </select>
-        </div>
+        <!-- COMPACT SELECTOR BOX -->
+        <div class="compact-selector-box">
+            <!-- Country/Region Selector -->
+            <div class="selector-item">
+                <label for="country-select">
+                    <svg id="country-flag-indicator" width="20" height="15" viewBox="0 0 810 540" style="display: inline-block; margin-right: 6px; vertical-align: middle;">
+                        <desc>EU flag</desc>
+                        <defs>
+                            <g id="flag-star">
+                                <g id="flag-c">
+                                    <path id="flag-t" d="M0,0v1h0.5z" transform="translate(0,-1)rotate(18)"/>
+                                    <use href="#flag-t" transform="scale(-1,1)"/>
+                                </g>
+                                <g id="flag-a">
+                                    <use href="#flag-c" transform="rotate(72)"/>
+                                    <use href="#flag-c" transform="rotate(144)"/>
+                                </g>
+                                <use href="#flag-a" transform="scale(-1,1)"/>
+                            </g>
+                        </defs>
+                        <rect fill="#039" width="810" height="540"/>
+                        <g fill="#fc0" transform="scale(30)translate(13.5,9)">
+                            <use href="#flag-star" y="-6"/>
+                            <use href="#flag-star" y="6"/>
+                            <g id="flag-circle">
+                                <use href="#flag-star" x="-6"/>
+                                <use href="#flag-star" transform="rotate(150)translate(0,6)rotate(66)"/>
+                                <use href="#flag-star" transform="rotate(120)translate(0,6)rotate(24)"/>
+                                <use href="#flag-star" transform="rotate(60)translate(0,6)rotate(12)"/>
+                                <use href="#flag-star" transform="rotate(30)translate(0,6)rotate(42)"/>
+                            </g>
+                            <use href="#flag-circle" transform="scale(-1,1)"/>
+                        </g>
+                    </svg>
+                    Country/Region:
+                </label>
+                <select id="country-select" onchange="updateCharts()">
+                    <optgroup label="Region">
+                        <option value="EU" selected>European Union</option>
+                    </optgroup>
+                    <optgroup label="EU Member States">
+                        <option value="AT">Austria</option>
+                        <option value="BE">Belgium</option>
+                        <option value="BG">Bulgaria</option>
+                        <option value="HR">Croatia</option>
+                        <option value="CY">Cyprus</option>
+                        <option value="CZ">Czechia</option>
+                        <option value="DK">Denmark</option>
+                        <option value="EE">Estonia</option>
+                        <option value="FI">Finland</option>
+                        <option value="FR">France</option>
+                        <option value="DE">Germany</option>
+                        <option value="GR">Greece</option>
+                        <option value="HU">Hungary</option>
+                        <option value="IE">Ireland</option>
+                        <option value="IT">Italy</option>
+                        <option value="LV">Latvia</option>
+                        <option value="LT">Lithuania</option>
+                        <option value="LU">Luxembourg</option>
+                        <option value="MT">Malta</option>
+                        <option value="NL">Netherlands</option>
+                        <option value="PL">Poland</option>
+                        <option value="PT">Portugal</option>
+                        <option value="RO">Romania</option>
+                        <option value="SK">Slovakia</option>
+                        <option value="SI">Slovenia</option>
+                        <option value="ES">Spain</option>
+                        <option value="SE">Sweden</option>
+                    </optgroup>
+                    <optgroup label="Other European Countries">
+                        <option value="MD">Moldova</option>
+                        <option value="NO">Norway</option>
+                        <option value="CH">Switzerland</option>
+                        <option value="GB">United Kingdom</option>
+                    </optgroup>
+                </select>
+            </div>
 
-        <!-- DROPDOWN SELECTOR -->
-        <div class="chart-selector">
-            <label for="source-select">
-                <span id="color-indicator" style="display: inline-block; width: 16px; height: 16px; border-radius: 50%; background-color: #00CED1; margin-right: 8px; vertical-align: middle; border: 2px solid #333;"></span>
-                Choose Energy Source:
-            </label>
-            <select id="source-select" onchange="updateCharts()">
-                <optgroup label="Renewable Sources">
-                    <option value="all-renewables" selected data-color="#00CED1">All Renewables</option>
-                    <option value="wind" data-color="#228B22">Wind</option>
-                    <option value="hydro" data-color="#1E90FF">Hydro</option>
-                    <option value="solar" data-color="#FFD700">Solar</option>
-                    <option value="biomass" data-color="#9ACD32">Biomass</option>
-                    <option value="geothermal" data-color="#708090">Geothermal</option>
-                </optgroup>
-                <optgroup label="Non-Renewable Sources">
-                    <option value="all-non-renewables" data-color="#000000">All Non-Renewables</option>
-                    <option value="nuclear" data-color="#8B4513">Nuclear</option>
-                    <option value="gas" data-color="#FF1493">Gas</option>
-                    <option value="coal" data-color="#8B008B">Coal</option>
-                    <option value="waste" data-color="#808000">Waste</option>
-                    <option value="oil" data-color="#191970">Oil</option>
-                </optgroup>
-            </select>
-        </div>
+            <!-- Energy Source Selector -->
+            <div class="selector-item">
+                <label for="source-select">
+                    <span id="color-indicator" style="display: inline-block; width: 14px; height: 14px; border-radius: 50%; background-color: #00CED1; margin-right: 6px; vertical-align: middle; border: 2px solid #333;"></span>
+                    Energy Source:
+                </label>
+                <select id="source-select" onchange="updateCharts()">
+                    <optgroup label="Renewable Sources">
+                        <option value="all-renewables" selected data-color="#00CED1">All Renewables</option>
+                        <option value="wind" data-color="#228B22">Wind</option>
+                        <option value="hydro" data-color="#1E90FF">Hydro</option>
+                        <option value="solar" data-color="#FFD700">Solar</option>
+                        <option value="biomass" data-color="#9ACD32">Biomass</option>
+                        <option value="geothermal" data-color="#708090">Geothermal</option>
+                    </optgroup>
+                    <optgroup label="Non-Renewable Sources">
+                        <option value="all-non-renewables" data-color="#000000">All Non-Renewables</option>
+                        <option value="nuclear" data-color="#8B4513">Nuclear</option>
+                        <option value="gas" data-color="#FF1493">Gas</option>
+                        <option value="coal" data-color="#8B008B">Coal</option>
+                        <option value="waste" data-color="#808000">Waste</option>
+                        <option value="oil" data-color="#191970">Oil</option>
+                    </optgroup>
+                </select>
+            </div>
 
-        <!-- PLOT TYPE TOGGLE -->
-        <div class="table-controls-pro">
-            <span class="control-label-pro">Display:</span>
-            <div class="toggle-group">
-                <button id="toggle-percentage" class="toggle-btn-pro active" onclick="showPercentagePlot()">
-                    Percentage
-                </button>
-                <button id="toggle-absolute" class="toggle-btn-pro" onclick="showAbsolutePlot()">
-                    Absolute
-                </button>
+            <!-- Display Toggle -->
+            <div class="selector-item selector-item-toggle">
+                <label>Display:</label>
+                <div class="toggle-group-compact">
+                    <button id="toggle-percentage" class="toggle-btn-compact active" onclick="showPercentagePlot()">
+                        Percentage
+                    </button>
+                    <button id="toggle-absolute" class="toggle-btn-compact" onclick="showAbsolutePlot()">
+                        Absolute
+                    </button>
+                </div>
             </div>
         </div>
 
@@ -204,13 +235,9 @@
             const countryId = countrySelect.value;
             const sourceId = document.getElementById('source-select').value;
             
-            // Update country flag indicator
-            const selectedCountryOption = countrySelect.options[countrySelect.selectedIndex];
-            const flag = selectedCountryOption.getAttribute('data-flag');
-            const flagIndicator = document.getElementById('country-flag-indicator');
-            if (flagIndicator && flag) {
-                flagIndicator.textContent = flag;
-            }
+            // TODO: Update flag SVG when individual country flags are added
+            // For now, EU flag shows for all selections (dropdown shows country name)
+            // Future: Switch SVG based on countryId (e.g., #flag-DE, #flag-FR, etc.)
             
             showSource(sourceId, countryId);
         }
@@ -354,72 +381,116 @@
         select option[value="all-renewables"] { color: #00CED1; font-weight: bold; }
         select option[value="all-non-renewables"] { color: #000000; font-weight: bold; }
         
-        /* Toggle controls styling - matching index.html */
-        .table-controls-pro {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 16px;
-            margin-bottom: 24px;
-            flex-wrap: wrap;
-        }
-
-        .control-label-pro {
-            font-weight: 500;
-            color: #4a5568;
-            font-size: 1em;
-        }
-
-        .toggle-group {
-            display: flex;
+        /* Compact selector box - all controls in one container */
+        .compact-selector-box {
             background: #f7fafc;
-            border: 1px solid #cbd5e0;
-            border-radius: 4px;
-            padding: 2px;
+            border: 2px solid #cbd5e0;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 24px;
+            display: grid;
+            grid-template-columns: 1fr 1fr auto;
+            gap: 20px;
+            align-items: end;
         }
-
-        .toggle-btn-pro {
-            padding: 10px 20px;
-            border: none;
-            background: transparent;
+        
+        .selector-item {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        
+        .selector-item label {
+            font-weight: 500;
+            font-size: 0.95em;
             color: #4a5568;
-            cursor: pointer;
-            font-size: 0.9375em;
-            font-weight: 500;
-            transition: all 0.2s ease;
-            border-radius: 4px;
-            white-space: nowrap;
-        }
-
-        .toggle-btn-pro.active {
-            background: #003399;
-            color: white;
-        }
-
-        .toggle-btn-pro:hover:not(.active) {
-            background: rgba(0, 51, 153, 0.1);
+            display: flex;
+            align-items: center;
         }
         
-        /* Dropdown selector spacing */
-        .chart-selector {
-            margin-bottom: 20px;
-        }
-        
-        .chart-selector label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: 500;
-            font-size: 1em;
-        }
-        
-        .chart-selector select {
-            width: 100%;
-            max-width: 600px;
-            padding: 10px;
+        .selector-item select {
+            padding: 8px 10px;
             font-size: 1em;
             border: 2px solid #cbd5e0;
             border-radius: 4px;
             background: white;
+            width: 100%;
+        }
+        
+        .selector-item-toggle {
+            min-width: 200px;
+        }
+        
+        .toggle-group-compact {
+            display: flex;
+            background: white;
+            border: 2px solid #cbd5e0;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        
+        .toggle-btn-compact {
+            flex: 1;
+            padding: 8px 16px;
+            border: none;
+            background: white;
+            color: #4a5568;
+            cursor: pointer;
+            font-size: 0.95em;
+            font-weight: 600;
+            transition: all 0.2s ease;
+        }
+        
+        .toggle-btn-compact.active {
+            background: #003399;
+            color: white;
+        }
+        
+        .toggle-btn-compact:hover:not(.active) {
+            background: #f0f4f8;
+        }
+        
+        /* Mobile: Stack vertically */
+        @media (max-width: 768px) {
+            .compact-selector-box {
+                grid-template-columns: 1fr;
+                gap: 16px;
+                padding: 16px;
+            }
+            
+            .selector-item-toggle {
+                min-width: unset;
+            }
+            
+            .selector-item label {
+                font-size: 0.9em;
+            }
+            
+            .selector-item select {
+                font-size: 0.95em;
+            }
+        }
+        
+        /* Tablet: 2 columns with toggle on separate row */
+        @media (min-width: 769px) and (max-width: 1024px) {
+            .compact-selector-box {
+                grid-template-columns: 1fr 1fr;
+                gap: 16px;
+            }
+            
+            .selector-item-toggle {
+                grid-column: 1 / -1;
+                justify-self: center;
+            }
+        }
+        
+        /* Remove old styling */
+        .chart-selector {
+            display: none;
+        }
+        
+        .table-controls-pro {
+            display: none;
         }
         
         /* Responsive image sizing - UPDATED TO 60% */
@@ -444,27 +515,6 @@
                 height: 19px;
                 margin-right: 8px;
             }
-            
-            .table-controls-pro {
-                flex-direction: column;
-                gap: 12px;
-            }
-
-            .toggle-group {
-                width: 100%;
-            }
-
-            .toggle-btn-pro {
-                flex: 1;
-                text-align: center;
-                font-size: 0.875em;
-                padding: 8px 16px;
-            }
-            
-            .chart-selector select {
-                max-width: 100%;
-                font-size: 0.9em;
-            }
         }
         
         @media (max-width: 480px) {
@@ -472,20 +522,6 @@
                 width: 24px;
                 height: 16px;
                 margin-right: 6px;
-            }
-            
-            .toggle-btn-pro {
-                font-size: 0.8em;
-                padding: 6px 12px;
-            }
-            
-            .chart-selector select {
-                font-size: 0.85em;
-                padding: 8px;
-            }
-            
-            .chart-selector label {
-                font-size: 0.9em;
             }
         }
     </style>
