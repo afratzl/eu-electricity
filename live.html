@@ -61,6 +61,19 @@
             <p><strong>Updates:</strong> Hourly | <strong>Data:</strong> ENTSO-E Transparency Platform</p>
         </div>
 
+        <!-- PLOT TYPE TOGGLE -->
+        <div class="table-controls-pro">
+            <span class="control-label-pro">Display:</span>
+            <div class="toggle-group">
+                <button id="toggle-percentage" class="toggle-btn-pro active" onclick="showPercentagePlot()">
+                    Percentage
+                </button>
+                <button id="toggle-absolute" class="toggle-btn-pro" onclick="showAbsolutePlot()">
+                    Absolute
+                </button>
+            </div>
+        </div>
+
         <!-- DROPDOWN SELECTOR -->
         <div class="chart-selector">
             <label for="source-select">
@@ -169,21 +182,28 @@
                 console.warn(`Drive link not found for ${sourceId}, using GitHub fallback`);
             }
             
-            // Update chart display - two separate images
+            // Update chart display - two separate divs that can be toggled
             display.innerHTML = `
-                <div style="margin-bottom: 40px;">
+                <div id="percentage-plot-container">
                     <img src="${percentageUrl}" 
                          alt="${sourceName} Percentage" 
                          class="chart-img"
                          onerror="handleImageError(this, '${sourceName}', '${cleanId}', 'percentage')">
                 </div>
-                <div style="margin-bottom: 40px;">
+                <div id="absolute-plot-container" style="display: none;">
                     <img src="${absoluteUrl}" 
                          alt="${sourceName} Absolute" 
                          class="chart-img"
                          onerror="handleImageError(this, '${sourceName}', '${cleanId}', 'absolute')">
                 </div>
             `;
+            
+            // Apply saved toggle preference
+            const plotView = localStorage.getItem('intradayPlotView') || 'percentage';
+            if (plotView === 'absolute') {
+                document.getElementById('percentage-plot-container').style.display = 'none';
+                document.getElementById('absolute-plot-container').style.display = 'block';
+            }
             
             // Only scroll if user manually changed selection (not on page load)
             if (window.pageYOffset > 0 || document.documentElement.scrollTop > 0) {
@@ -218,10 +238,48 @@
                 });
         }
 
+        // Toggle functions for plot type
+        function showPercentagePlot() {
+            const percentageContainer = document.getElementById('percentage-plot-container');
+            const absoluteContainer = document.getElementById('absolute-plot-container');
+            
+            if (percentageContainer && absoluteContainer) {
+                percentageContainer.style.display = 'block';
+                absoluteContainer.style.display = 'none';
+            }
+            
+            document.getElementById('toggle-percentage').classList.add('active');
+            document.getElementById('toggle-absolute').classList.remove('active');
+            
+            localStorage.setItem('intradayPlotView', 'percentage');
+        }
+
+        function showAbsolutePlot() {
+            const percentageContainer = document.getElementById('percentage-plot-container');
+            const absoluteContainer = document.getElementById('absolute-plot-container');
+            
+            if (percentageContainer && absoluteContainer) {
+                percentageContainer.style.display = 'none';
+                absoluteContainer.style.display = 'block';
+            }
+            
+            document.getElementById('toggle-percentage').classList.remove('active');
+            document.getElementById('toggle-absolute').classList.add('active');
+            
+            localStorage.setItem('intradayPlotView', 'absolute');
+        }
+
         // Load default source on page load
         window.addEventListener('DOMContentLoaded', () => {
             showSource('all-renewables');
             loadTimestamp();
+            
+            // Restore toggle preference
+            const plotView = localStorage.getItem('intradayPlotView') || 'percentage';
+            if (plotView === 'absolute') {
+                document.getElementById('toggle-absolute').classList.add('active');
+                document.getElementById('toggle-percentage').classList.remove('active');
+            }
             
             // Reload timestamp every 5 minutes
             setInterval(loadTimestamp, 300000);
@@ -242,6 +300,52 @@
         select option[value="waste"] { color: #808000; font-weight: bold; }
         select option[value="all-renewables"] { color: #00CED1; font-weight: bold; }
         select option[value="all-non-renewables"] { color: #000000; font-weight: bold; }
+        
+        /* Toggle controls styling - matching index.html */
+        .table-controls-pro {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 16px;
+            margin-bottom: 24px;
+            flex-wrap: wrap;
+        }
+
+        .control-label-pro {
+            font-weight: 500;
+            color: #4a5568;
+            font-size: 1em;
+        }
+
+        .toggle-group {
+            display: flex;
+            background: #f7fafc;
+            border: 1px solid #cbd5e0;
+            border-radius: 4px;
+            padding: 2px;
+        }
+
+        .toggle-btn-pro {
+            padding: 10px 20px;
+            border: none;
+            background: transparent;
+            color: #4a5568;
+            cursor: pointer;
+            font-size: 0.9375em;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            border-radius: 4px;
+            white-space: nowrap;
+        }
+
+        .toggle-btn-pro.active {
+            background: #003399;
+            color: white;
+        }
+
+        .toggle-btn-pro:hover:not(.active) {
+            background: rgba(0, 51, 153, 0.1);
+        }
         
         /* Responsive image sizing - UPDATED TO 60% */
         .chart-img {
@@ -265,6 +369,22 @@
                 height: 19px;
                 margin-right: 8px;
             }
+            
+            .table-controls-pro {
+                flex-direction: column;
+                gap: 12px;
+            }
+
+            .toggle-group {
+                width: 100%;
+            }
+
+            .toggle-btn-pro {
+                flex: 1;
+                text-align: center;
+                font-size: 0.875em;
+                padding: 8px 16px;
+            }
         }
         
         @media (max-width: 480px) {
@@ -272,6 +392,11 @@
                 width: 24px;
                 height: 16px;
                 margin-right: 6px;
+            }
+            
+            .toggle-btn-pro {
+                font-size: 0.8em;
+                padding: 6px 12px;
             }
         }
     </style>
