@@ -1,9 +1,5 @@
 {
-<<<<<<< Updated upstream
-  "last_updated": "2025-12-08 05:53:02 UTC",
-=======
-  "last_updated": "2025-12-08 06:19:28 UTC",
->>>>>>> Stashed changes
+  "last_updated": "2025-12-08 07:04:19 UTC",
   "sources": [
     {
       "source": "All Renewables",
@@ -81,7 +77,7 @@
       "source": "Hydro",
       "category": "renewable",
       "yesterday": {
-        "gwh": 1092.8,
+        "gwh": 1092.9,
         "twh": 1.09,
         "percentage": 14.8,
         "change_from_2015": "+47%",
@@ -261,9 +257,9 @@
       "source": "Nuclear",
       "category": "non-renewable",
       "yesterday": {
-        "gwh": 1813.4,
+        "gwh": 1814.2,
         "twh": 1.81,
-        "percentage": 24.55,
+        "percentage": 24.56,
         "change_from_2015": "-17%",
         "change_from_2024": "-1.7%",
         "change_from_2023": "+4.4%"
@@ -333,9 +329,9 @@
       "source": "Coal",
       "category": "non-renewable",
       "yesterday": {
-        "gwh": 629.6,
+        "gwh": 629.0,
         "twh": 0.63,
-        "percentage": 8.53,
+        "percentage": 8.52,
         "change_from_2015": "-60%",
         "change_from_2024": "-20%",
         "change_from_2023": "-25%"
@@ -369,7 +365,7 @@
       "source": "Waste",
       "category": "non-renewable",
       "yesterday": {
-        "gwh": 187.5,
+        "gwh": 187.8,
         "twh": 0.19,
         "percentage": 2.54,
         "change_from_2015": "-31%",
@@ -405,10 +401,10 @@
       "source": "Oil",
       "category": "non-renewable",
       "yesterday": {
-        "gwh": 51.1,
+        "gwh": 50.7,
         "twh": 0.05,
         "percentage": 0.69,
-        "change_from_2015": "-13%",
+        "change_from_2015": "-14%",
         "change_from_2024": "+68%",
         "change_from_2023": "+20%"
       },
