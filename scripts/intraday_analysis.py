@@ -869,6 +869,13 @@ def plot_analysis(stats_data, source_type, output_file_base):
 
     time_labels = create_time_axis()
     source_name = DISPLAY_NAMES[source_type]
+    
+    # Shorten aggregate names for plot titles (but keep full names in dropdown)
+    if source_name == 'All Renewables':
+        source_name = 'Renewables'
+    elif source_name == 'All Non-Renewables':
+        source_name = 'Non-Renewables'
+    
     plot_order = ['week_ago', 'year_ago', 'two_years_ago', 'yesterday', 'today', 
                   'yesterday_projected', 'today_projected']
     
@@ -922,8 +929,8 @@ def plot_analysis(stats_data, source_type, output_file_base):
             ax1.fill_between(x_values, lower_bound, upper_bound, color=color, alpha=0.2)
 
     ax1.tick_params(axis='both', labelsize=22)
-    ax1.set_xlim(0, len(time_labels))
-    ax1.set_ylim(0, max_percentage * 1.05 if max_percentage > 0 else 50)
+    ax1.set_xlim(-2, len(time_labels)+2)  # Add padding on both sides
+    ax1.set_ylim(0, max_percentage * 1.20 if max_percentage > 0 else 50)  # 20% headroom
     
     # X-axis ticks - 6-hour intervals
     tick_positions = np.arange(0, len(time_labels)+1, 24)
@@ -939,12 +946,12 @@ def plot_analysis(stats_data, source_type, output_file_base):
     ax1.grid(True, alpha=0.3, linewidth=1.5, axis='y')
     ax1.grid(True, alpha=0.3, linewidth=1.5, axis='x', which='major')
     
-    # Legend
+    # Legend - move further down
     handles1, labels1 = ax1.get_legend_handles_labels()
-    ax1.legend(handles1, labels1, loc='upper center', bbox_to_anchor=(0.5, -0.15),
+    ax1.legend(handles1, labels1, loc='upper center', bbox_to_anchor=(0.5, -0.20),
                ncol=3, fontsize=20, frameon=False)
     
-    plt.tight_layout(rect=[0, 0.05, 1, 0.985])
+    plt.tight_layout()  # Auto-optimize layout like monthly plots
     plt.savefig(output_file_percentage, dpi=150, bbox_inches='tight')
     print(f"  ✓ Saved percentage plot: {output_file_percentage}")
     plt.close()
@@ -997,8 +1004,8 @@ def plot_analysis(stats_data, source_type, output_file_base):
             ax2.fill_between(x_values, lower_bound, upper_bound, color=color, alpha=0.2)
 
     ax2.tick_params(axis='both', labelsize=22)
-    ax2.set_xlim(0, len(time_labels))
-    ax2.set_ylim(0, max_energy * 1.05)
+    ax2.set_xlim(-2, len(time_labels)+2)  # Add padding on both sides
+    ax2.set_ylim(0, max_energy * 1.20)  # 20% headroom
 
     # X-axis ticks - 6-hour intervals
     tick_positions = np.arange(0, len(time_labels)+1, 24)
@@ -1014,12 +1021,12 @@ def plot_analysis(stats_data, source_type, output_file_base):
     ax2.grid(True, alpha=0.3, linewidth=1.5, axis='y')
     ax2.grid(True, alpha=0.3, linewidth=1.5, axis='x', which='major')
 
-    # Legend
+    # Legend - move further down
     handles2, labels2 = ax2.get_legend_handles_labels()
-    ax2.legend(handles2, labels2, loc='upper center', bbox_to_anchor=(0.5, -0.15),
+    ax2.legend(handles2, labels2, loc='upper center', bbox_to_anchor=(0.5, -0.20),
                ncol=3, fontsize=20, frameon=False)
 
-    plt.tight_layout(rect=[0, 0.05, 1, 0.985])
+    plt.tight_layout()  # Auto-optimize layout like monthly plots
     plt.savefig(output_file_absolute, dpi=150, bbox_inches='tight')
     print(f"  ✓ Saved absolute plot: {output_file_absolute}")
     plt.close()
