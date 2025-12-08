@@ -184,23 +184,25 @@
                 });
         }
 
+        // Helper function to calculate change from previous year
+
         // Display summary table
         function displaySummaryTable(data) {
             let html = '<table class="summary-table-pro">';
             
             // Header
-            html += \`
+            html += `
                 <thead>
                     <tr>
                         <th>Source</th>
                         <th>Yesterday</th>
                         <th>Last Week</th>
-                        <th>\${currentYear} YTD</th>
-                        <th>\${previousYear}</th>
+                        <th>${currentYear} YTD</th>
+                        <th>${previousYear}</th>
                     </tr>
                 </thead>
                 <tbody>
-            \`;
+            `;
             
             // Data rows
             data.sources.forEach(source => {
@@ -209,50 +211,50 @@
                 const rowClass = isAggregate ? 'row-aggregate-pro' : 'row-source-pro';
                 const categoryClass = isRenewable ? 'renewable' : 'non-renewable';
                 
-                html += \`<tr class="\${rowClass} \${categoryClass}">\`;
-                html += \`<td class="source-name-cell-pro">\${source.source}</td>\`;
+                html += `<tr class="${rowClass} ${categoryClass}">`;
+                html += `<td class="source-name-cell-pro">${source.source}</td>`;
                 
                 // Yesterday
-                html += \`<td>
-                    <span class="value-pct">\${source.yesterday.percentage}%</span>
-                    <span class="value-abs" style="display:none">\${source.yesterday.twh} TWh</span>
-                    <span class="value-change" style="display:none">\${source.yesterday.change_from_2015}</span>
-                    <span class="value-change-2024" style="display:none">\${source.yesterday.change_from_2024}</span>
-                    <span class="value-change-2023" style="display:none">\${source.yesterday.change_from_2023}</span>
-                </td>\`;
+                html += `<td>
+                    <span class="value-pct">${source.yesterday.percentage}%</span>
+                    <span class="value-abs" style="display:none">${source.yesterday.twh} TWh</span>
+                    <span class="value-change" style="display:none">${source.yesterday.change_from_2015}</span>
+                    <span class="value-change-2024" style="display:none">${source.yesterday.change_from_2024}</span>
+                    <span class="value-change-2023" style="display:none">${source.yesterday.change_from_2023}</span>
+                </td>`;
                 
                 // Last Week
-                html += \`<td>
-                    <span class="value-pct">\${source.last_week.percentage}%</span>
-                    <span class="value-abs" style="display:none">\${source.last_week.twh} TWh</span>
-                    <span class="value-change" style="display:none">\${source.last_week.change_from_2015}</span>
-                    <span class="value-change-2024" style="display:none">\${source.last_week.change_from_2024}</span>
-                    <span class="value-change-2023" style="display:none">\${source.last_week.change_from_2023}</span>
-                </td>\`;
+                html += `<td>
+                    <span class="value-pct">${source.last_week.percentage}%</span>
+                    <span class="value-abs" style="display:none">${source.last_week.twh} TWh</span>
+                    <span class="value-change" style="display:none">${source.last_week.change_from_2015}</span>
+                    <span class="value-change-2024" style="display:none">${source.last_week.change_from_2024}</span>
+                    <span class="value-change-2023" style="display:none">${source.last_week.change_from_2023}</span>
+                </td>`;
                 
-                // YTD Current Year
-                html += \`<td>
-                    <span class="value-pct">\${source.ytd_2025.percentage}%</span>
-                    <span class="value-abs" style="display:none">\${source.ytd_2025.twh.toFixed(2)} TWh</span>
-                    <span class="value-change" style="display:none">\${source.ytd_2025.change_from_2015}</span>
-                    <span class="value-change-2024" style="display:none">\${source.ytd_2025.change_from_2024}</span>
-                    <span class="value-change-2023" style="display:none">\${source.ytd_2025.change_from_2023}</span>
-                </td>\`;
+                // YTD Current Year - Display in TWh
+                html += `<td>
+                    <span class="value-pct">${source.ytd_2025.percentage}%</span>
+                    <span class="value-abs" style="display:none">${source.ytd_2025.twh.toFixed(2)} TWh</span>
+                    <span class="value-change" style="display:none">${source.ytd_2025.change_from_2015}</span>
+                    <span class="value-change-2024" style="display:none">${source.ytd_2025.change_from_2024}</span>
+                    <span class="value-change-2023" style="display:none">${source.ytd_2025.change_from_2023}</span>
+                </td>`;
                 
-                // Previous Year
-                html += \`<td>
-                    <span class="value-pct">\${source.year_2024.percentage}%</span>
-                    <span class="value-abs" style="display:none">\${source.year_2024.twh.toFixed(2)} TWh</span>
-                    <span class="value-change" style="display:none">\${source.year_2024.change_from_2015}</span>
-                    <span class="value-change-2024" style="display:none">\${source.year_2024.change_from_2024}</span>
-                    <span class="value-change-2023" style="display:none">\${source.year_2024.change_from_2023}</span>
-                </td>\`;
+                // Previous Year - Display in TWh
+                html += `<td>
+                    <span class="value-pct">${source.year_2024.percentage}%</span>
+                    <span class="value-abs" style="display:none">${source.year_2024.twh.toFixed(2)} TWh</span>
+                    <span class="value-change" style="display:none">${source.year_2024.change_from_2015}</span>
+                    <span class="value-change-2024" style="display:none">${source.year_2024.change_from_2024}</span>
+                    <span class="value-change-2023" style="display:none">${source.year_2024.change_from_2023}</span>
+                </td>`;
                 
                 html += '</tr>';
             });
             
             html += '</tbody></table>';
-            html += \`<div class="table-footer-pro">Last updated: \${data.last_updated}</div>\`;
+            html += `<div class="table-footer-pro">Last updated: ${data.last_updated}</div>`;
             
             document.getElementById('summary-table-container').innerHTML = html;
         }
@@ -270,6 +272,8 @@
             document.getElementById('toggle-change').classList.remove('active');
             document.getElementById('toggle-change-2024').classList.remove('active');
             document.getElementById('toggle-change-2023').classList.remove('active');
+            
+            localStorage.setItem('electricityView', 'percentage');
         }
 
         function showAbsolute() {
@@ -284,6 +288,8 @@
             document.getElementById('toggle-change').classList.remove('active');
             document.getElementById('toggle-change-2024').classList.remove('active');
             document.getElementById('toggle-change-2023').classList.remove('active');
+            
+            localStorage.setItem('electricityView', 'absolute');
         }
 
         function showChange() {
@@ -298,6 +304,8 @@
             document.getElementById('toggle-change').classList.add('active');
             document.getElementById('toggle-change-2024').classList.remove('active');
             document.getElementById('toggle-change-2023').classList.remove('active');
+            
+            localStorage.setItem('electricityView', 'change');
         }
 
         function showChangePreviousYear() {
@@ -312,6 +320,8 @@
             document.getElementById('toggle-change').classList.remove('active');
             document.getElementById('toggle-change-2024').classList.add('active');
             document.getElementById('toggle-change-2023').classList.remove('active');
+            
+            localStorage.setItem('electricityView', 'changePreviousYear');
         }
 
         function showChangeTwoYearsAgo() {
@@ -326,23 +336,556 @@
             document.getElementById('toggle-change').classList.remove('active');
             document.getElementById('toggle-change-2024').classList.remove('active');
             document.getElementById('toggle-change-2023').classList.add('active');
+            
+            localStorage.setItem('electricityView', 'changeTwoYearsAgo');
         }
 
         // Load on page load
         window.addEventListener('DOMContentLoaded', () => {
             // Update toggle button labels with actual years
-            document.getElementById('change-previous-year-label').textContent = \`Change from \${previousYear}\`;
-            document.getElementById('change-two-years-ago-label').textContent = \`Change from \${twoYearsAgo}\`;
+            document.getElementById('change-previous-year-label').textContent = `Change from ${previousYear}`;
+            document.getElementById('change-two-years-ago-label').textContent = `Change from ${twoYearsAgo}`;
             
-            loadSummaryData();
+            loadSummaryData();  // Single fetch for both timestamp and table
             
-            // Always start with percentage view (no localStorage persistence)
-            // This ensures button state and content are always in sync
+            // Restore user's preference
+            const preference = localStorage.getItem('electricityView') || 'percentage';
+            if (preference === 'absolute') {
+                showAbsolute();
+            } else if (preference === 'change') {
+                showChange();
+            } else if (preference === 'changePreviousYear' || preference === 'change2024') {
+                // Support both new and old localStorage values for backwards compatibility
+                showChangePreviousYear();
+            } else if (preference === 'changeTwoYearsAgo') {
+                showChangeTwoYearsAgo();
+            }
         });
     </script>
 
     <style>
-        /* I'll add the full styles section in a follow-up - this is getting very long */
+        /* Professional Design System with EU Blue */
+        :root {
+            --color-primary: #003399;        /* EU Blue */
+            --color-primary-light: #0052CC;  /* Lighter EU Blue */
+            --color-secondary: #041E42;      /* Dark Blue */
+            --color-accent: #0066CC;         /* Bright Blue */
+            --color-text: #1a202c;
+            --color-text-light: #4a5568;
+            --color-border: #cbd5e0;
+            --color-bg-light: #f7fafc;
+            --color-renewable: #38a169;
+            --color-non-renewable: #e53e3e;
+            --spacing-xs: 8px;
+            --spacing-sm: 16px;
+            --spacing-md: 24px;
+            --spacing-lg: 32px;
+            --spacing-xl: 48px;
+            --radius-sm: 4px;
+            --radius-md: 8px;
+            --shadow-sm: 0 1px 3px rgba(0,0,0,0.06);
+            --shadow-md: 0 4px 6px rgba(0,0,0,0.07);
+        }
+
+        /* Hero Section - Professional */
+        .hero-section-pro {
+            text-align: center;
+            padding: var(--spacing-xl) var(--spacing-md);
+            background: linear-gradient(135deg, #003399 0%, #6B9FD8 100%);
+            color: white;
+            border-radius: var(--radius-md);
+            margin-bottom: var(--spacing-lg);
+        }
+
+        .hero-section-pro h1 {
+            font-size: 2.25em;
+            margin-bottom: var(--spacing-sm);
+            font-weight: 600;
+            letter-spacing: -0.02em;
+        }
+
+        .hero-subtitle-pro {
+            font-size: 1.125em;
+            opacity: 0.95;
+            font-weight: 400;
+        }
+
+        /* Info Box - Professional */
+        .info-box-pro {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: var(--spacing-md);
+            padding: var(--spacing-md);
+            background: var(--color-bg-light);
+            border: 1px solid var(--color-border);
+            border-radius: var(--radius-md);
+            margin-bottom: var(--spacing-lg);
+        }
+
+        .info-item {
+            display: flex;
+            flex-direction: column;
+            gap: var(--spacing-xs);
+        }
+
+        .info-label {
+            font-size: 0.875em;
+            font-weight: 600;
+            color: var(--color-text-light);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .info-value {
+            font-size: 1.0625em;
+            color: var(--color-text);
+            font-weight: 500;
+        }
+
+        /* Cards Grid - Professional */
+        .cards-grid-pro {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: var(--spacing-md);
+            margin: var(--spacing-xl) 0;
+        }
+
+        .feature-card-pro {
+            background: white;
+            border: 1px solid var(--color-border);
+            border-radius: var(--radius-md);
+            padding: var(--spacing-md);
+            transition: all 0.2s ease;
+        }
+
+        .feature-card-pro:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+            border-color: var(--color-accent);
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: var(--spacing-sm);
+        }
+
+        .feature-card-pro h2 {
+            color: var(--color-text);
+            margin: 0;
+            font-size: 1.25em;
+            font-weight: 600;
+        }
+
+        .update-badge {
+            display: inline-block;
+            background: #e6f2ff;
+            color: var(--color-primary);
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 0.75em;
+            font-weight: 600;
+        }
+
+        .card-description {
+            color: var(--color-text-light);
+            margin: var(--spacing-sm) 0;
+            line-height: 1.5;
+            font-size: 1em;
+        }
+
+        .card-button-pro {
+            display: inline-block;
+            background: var(--color-primary);
+            color: white;
+            padding: 10px 20px;
+            border-radius: var(--radius-sm);
+            text-decoration: none;
+            font-weight: 500;
+            font-size: 0.9375em;
+            transition: background 0.2s ease;
+        }
+
+        .card-button-pro:hover {
+            background: var(--color-primary-light);
+        }
+
+        /* Summary Table Section - Professional */
+        .summary-table-section-pro {
+            margin: var(--spacing-xl) 0;
+        }
+
+        .section-header-pro {
+            text-align: center;
+            margin-bottom: var(--spacing-lg);
+        }
+
+        .section-header-pro h2 {
+            color: var(--color-text);
+            margin-bottom: var(--spacing-xs);
+            font-size: 1.875em;
+            font-weight: 600;
+        }
+
+        .section-subtitle-pro {
+            color: var(--color-text-light);
+            font-size: 1.0625em;
+        }
+
+        .table-controls-pro {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: var(--spacing-sm);
+            margin-bottom: var(--spacing-lg);
+            flex-wrap: wrap;
+        }
+
+        .control-label-pro {
+            font-weight: 500;
+            color: var(--color-text-light);
+            font-size: 1em;
+        }
+
+        .toggle-group {
+            display: flex;
+            background: var(--color-bg-light);
+            border: 1px solid var(--color-border);
+            border-radius: var(--radius-sm);
+            padding: 2px;
+        }
+
+        .toggle-btn-pro {
+            padding: 10px 20px;
+            border: none;
+            background: transparent;
+            color: var(--color-text-light);
+            cursor: pointer;
+            font-size: 0.9375em;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            border-radius: var(--radius-sm);
+            white-space: nowrap;
+        }
+
+        .toggle-btn-pro.active {
+            background: var(--color-primary);
+            color: white;
+        }
+
+        .summary-table-pro {
+            width: 100%;
+            max-width: 100%;
+            border-collapse: collapse;
+            background: white;
+            border: 1px solid var(--color-border);
+            border-radius: var(--radius-md);
+            overflow: hidden;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            table-layout: fixed;
+        }
+
+        .summary-table-pro th,
+        .summary-table-pro td {
+            white-space: nowrap;
+        }
+
+        .summary-table-pro th:first-child,
+        .summary-table-pro td:first-child {
+            width: 30%;
+        }
+        
+        .summary-table-pro th:nth-child(2),
+        .summary-table-pro th:nth-child(3),
+        .summary-table-pro th:nth-child(4),
+        .summary-table-pro th:nth-child(5),
+        .summary-table-pro td:nth-child(2),
+        .summary-table-pro td:nth-child(3),
+        .summary-table-pro td:nth-child(4),
+        .summary-table-pro td:nth-child(5) {
+            width: 17.5%;
+        }
+
+        .summary-table-pro thead {
+            background: linear-gradient(135deg, #003399 0%, #6B9FD8 100%);
+            color: white;
+        }
+
+        .summary-table-pro th {
+            padding: 18px 20px;
+            text-align: left;
+            font-weight: 600;
+            font-size: 1.0625em;
+            letter-spacing: 0.025em;
+        }
+
+        .summary-table-pro th:first-child {
+            padding-left: 24px;  /* Extra padding for source column */
+        }
+
+        .summary-table-pro td {
+            padding: 14px 20px;
+            border-bottom: 1px solid #ecf0f1;
+            font-size: 1.0625em;
+            color: var(--color-text);
+        }
+
+        .summary-table-pro td:first-child {
+            padding-left: 24px;  /* Extra padding for source column */
+        }
+
+        .row-aggregate-pro {
+            font-weight: 600;
+            font-size: 1.125em;
+        }
+
+        .row-aggregate-pro.renewable {
+            background: linear-gradient(to right, rgba(0, 102, 204, 0.08), transparent);
+            border-top: 2px solid rgba(0, 102, 204, 0.3);
+            border-bottom: 2px solid rgba(0, 102, 204, 0.3);
+        }
+
+        .row-aggregate-pro.non-renewable {
+            background: linear-gradient(to right, rgba(74, 85, 104, 0.08), transparent);
+            border-top: 2px solid rgba(74, 85, 104, 0.3);
+            border-bottom: 2px solid rgba(74, 85, 104, 0.3);
+        }
+
+        /* Subsection rows - blue left border and alternating backgrounds */
+        .row-source-pro {
+            border-left: 4px solid var(--color-accent);
+        }
+
+        .row-source-pro.renewable:nth-of-type(even) {
+            background: rgba(0, 102, 204, 0.02);
+        }
+
+        .row-source-pro.renewable:nth-of-type(odd) {
+            background: white;
+        }
+
+        .row-source-pro.non-renewable:nth-of-type(even) {
+            background: rgba(74, 85, 104, 0.03);
+        }
+
+        .row-source-pro.non-renewable:nth-of-type(odd) {
+            background: white;
+        }
+
+        .row-source-pro .source-name-cell-pro {
+            padding-left: 48px;  /* Indent subsections more */
+        }
+
+        .row-source-pro:hover {
+            background: var(--color-bg-light) !important;
+        }
+
+        .source-name-cell-pro {
+            font-weight: 600;
+            color: var(--color-text);
+        }
+
+        #summary-table-container {
+            width: 100%;
+        }
+
+        .table-footer-pro {
+            text-align: center;
+            padding: var(--spacing-sm);
+            color: var(--color-text-light);
+            font-size: 0.9375em;
+            background: var(--color-bg-light);
+            border-top: 1px solid var(--color-border);
+        }
+
+        /* About Section - Professional */
+        .about-section-pro {
+            background: var(--color-bg-light);
+            border: 1px solid var(--color-border);
+            border-radius: var(--radius-md);
+            padding: var(--spacing-xl);
+            margin-top: var(--spacing-xl);
+        }
+
+        .about-section-pro h2 {
+            color: var(--color-text);
+            margin-bottom: var(--spacing-md);
+            font-size: 1.5em;
+            font-weight: 600;
+        }
+
+        .about-section-pro p {
+            font-size: 1.0625em;
+            line-height: 1.7;
+            color: var(--color-text-light);
+            margin-bottom: var(--spacing-md);
+        }
+
+        .features-grid-pro {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: var(--spacing-md);
+        }
+
+        .feature-item-pro {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .feature-item-pro strong {
+            color: var(--color-text);
+            font-weight: 600;
+            font-size: 1em;
+        }
+
+        .feature-item-pro span {
+            color: var(--color-text-light);
+            font-size: 0.9375em;
+        }
+
+        .loading-message-pro, .error-message-pro {
+            text-align: center;
+            padding: var(--spacing-xl);
+            color: var(--color-text-light);
+            font-size: 1.0625em;
+        }
+
+        .error-message-pro {
+            color: var(--color-non-renewable);
+        }
+
+        @media (max-width: 768px) {
+            .hero-section-pro h1 {
+                font-size: 1.75em;
+            }
+            
+            .nav-title svg {
+                width: 28px;
+                height: 19px;
+                margin-right: 8px;
+            }
+            
+            .hero-subtitle-pro {
+                font-size: 1em;
+            }
+            
+            .info-box-pro {
+                grid-template-columns: 1fr;
+            }
+
+            .summary-table-pro {
+                font-size: 0.75em;
+                width: 100%;
+                table-layout: fixed;  /* Force columns to share space equally */
+            }
+
+            .summary-table-pro th,
+            .summary-table-pro td {
+                white-space: normal;  /* Allow wrapping on mobile */
+                padding: 8px 4px;
+                font-size: 0.85em;
+                word-break: break-word;  /* Allow wrapping if needed */
+            }
+
+            .summary-table-pro th:first-child,
+            .summary-table-pro td:first-child {
+                width: 25%;  /* Source name column */
+                padding-left: 16px;  /* Extra padding from left edge */
+            }
+            
+            .summary-table-pro th:nth-child(2),
+            .summary-table-pro th:nth-child(3),
+            .summary-table-pro th:nth-child(4),
+            .summary-table-pro th:nth-child(5),
+            .summary-table-pro td:nth-child(2),
+            .summary-table-pro td:nth-child(3),
+            .summary-table-pro td:nth-child(4),
+            .summary-table-pro td:nth-child(5) {
+                width: 18.75%;  /* Equal width for 4 data columns */
+            }
+
+            .row-source-pro .source-name-cell-pro {
+                padding-left: 30px;  /* Indent subsections on mobile */
+            }
+
+            .row-source-pro {
+                border-left-width: 3px;
+            }
+
+            .table-controls-pro {
+                flex-direction: column;
+            }
+
+            .toggle-group {
+                flex-direction: column;
+                width: 100%;
+            }
+
+            .toggle-btn-pro {
+                width: 100%;
+                text-align: center;
+                font-size: 0.875em;
+                padding: 8px 16px;
+            }
+
+            .control-label-pro {
+                font-size: 0.9em;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .nav-title svg {
+                width: 24px;
+                height: 16px;
+                margin-right: 6px;
+            }
+            
+            .summary-table-pro {
+                font-size: 0.65em;
+                width: 100%;
+                table-layout: fixed;  /* Force columns to share space equally */
+            }
+
+            .summary-table-pro th,
+            .summary-table-pro td {
+                white-space: normal;  /* Allow wrapping */
+                padding: 6px 3px;
+                font-size: 0.9em;
+                word-break: break-word;
+            }
+
+            .summary-table-pro th:first-child,
+            .summary-table-pro td:first-child {
+                width: 25%;
+                padding-left: 12px;  /* Extra padding from left edge */
+            }
+            
+            .summary-table-pro th:nth-child(2),
+            .summary-table-pro th:nth-child(3),
+            .summary-table-pro th:nth-child(4),
+            .summary-table-pro th:nth-child(5),
+            .summary-table-pro td:nth-child(2),
+            .summary-table-pro td:nth-child(3),
+            .summary-table-pro td:nth-child(4),
+            .summary-table-pro td:nth-child(5) {
+                width: 18.75%;
+            }
+
+            .row-source-pro .source-name-cell-pro {
+                padding-left: 24px;  /* Indent subsections on phone */
+            }
+
+            .row-source-pro {
+                border-left-width: 2px;
+            }
+
+            .toggle-btn-pro {
+                font-size: 0.8em;
+                padding: 6px 12px;
+            }
+        }
     </style>
 
     <!-- GoatCounter Analytics -->
