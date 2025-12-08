@@ -860,9 +860,9 @@ def plot_analysis(stats_data, source_type, output_file_base):
     labels = {
         'today': 'Today',
         'yesterday': 'Yesterday',
-        'week_ago': 'Previous Week (avg ± std)',
-        'year_ago': 'Same Period Last Year (avg ± std)',
-        'two_years_ago': 'Same Period 2 Years Ago (avg ± std)',
+        'week_ago': 'Previous Week',
+        'year_ago': 'Last Year',
+        'two_years_ago': 'Two Years Ago',
         'today_projected': 'Today (Projected)',
         'yesterday_projected': 'Yesterday (Projected)'
     }
@@ -876,11 +876,11 @@ def plot_analysis(stats_data, source_type, output_file_base):
     elif source_name == 'All Non-Renewables':
         source_name = 'Non-Renewables'
     
-    # Reorder for 2-column legend: Left=Today/Yesterday, Right=Historical comparisons
-    plot_order = ['today', 'week_ago', 
-                  'today_projected', 'year_ago', 
-                  'yesterday', 'two_years_ago', 
-                  'yesterday_projected']
+    # Order for 2-column legend:
+    # Column 1: Today, Today (Projected), Yesterday, Yesterday (Projected)
+    # Column 2: Previous Week, Last Year, Two Years Ago
+    plot_order = ['today', 'today_projected', 'yesterday', 'yesterday_projected', 
+                  'week_ago', 'year_ago', 'two_years_ago']
     
     # Generate output filenames
     output_file_percentage = output_file_base.replace('.png', '_percentage.png')
@@ -934,24 +934,10 @@ def plot_analysis(stats_data, source_type, output_file_base):
     ax1.tick_params(axis='both', labelsize=22)
     ax1.set_ylim(0, max_percentage * 1.20 if max_percentage > 0 else 50)  # 20% headroom
     
-    # X-axis ticks - 6-hour intervals
-    tick_positions = np.arange(0, len(time_labels)+1, 24)
-    tick_labels_display = []
-    for i in tick_positions:
-        if i < len(time_labels):
-            tick_labels_display.append(time_labels[i])
-        else:
-            tick_labels_display.append('00:00')
+    ax1.grid(True, alpha=0.3, linewidth=1.5)
     
-    ax1.set_xticks(tick_positions)
-    ax1.set_xticklabels(tick_labels_display, rotation=0, ha='center')
-    ax1.grid(True, alpha=0.3, linewidth=1.5, axis='y')
-    ax1.grid(True, alpha=0.3, linewidth=1.5, axis='x', which='major')
-    
-    # Legend - move further down
-    handles1, labels1 = ax1.get_legend_handles_labels()
-    ax1.legend(handles1, labels1, loc='upper center', bbox_to_anchor=(0.5, -0.20),
-               ncol=2, fontsize=20, frameon=False)  # 2 columns instead of 3
+    ax1.legend(loc='upper center', bbox_to_anchor=(0.5, -0.15), 
+              ncol=2, fontsize=20, frameon=False)
     
     plt.tight_layout()
     
@@ -1008,26 +994,12 @@ def plot_analysis(stats_data, source_type, output_file_base):
 
     ax2.tick_params(axis='both', labelsize=22)
     ax2.set_ylim(0, max_energy * 1.20)  # 20% headroom
-
-    # X-axis ticks - 6-hour intervals
-    tick_positions = np.arange(0, len(time_labels)+1, 24)
-    tick_labels_display = []
-    for i in tick_positions:
-        if i < len(time_labels):
-            tick_labels_display.append(time_labels[i])
-        else:
-            tick_labels_display.append('00:00')
     
-    ax2.set_xticks(tick_positions)
-    ax2.set_xticklabels(tick_labels_display, rotation=0, ha='center')
-    ax2.grid(True, alpha=0.3, linewidth=1.5, axis='y')
-    ax2.grid(True, alpha=0.3, linewidth=1.5, axis='x', which='major')
-
-    # Legend - move further down
-    handles2, labels2 = ax2.get_legend_handles_labels()
-    ax2.legend(handles2, labels2, loc='upper center', bbox_to_anchor=(0.5, -0.20),
-               ncol=2, fontsize=20, frameon=False)  # 2 columns instead of 3
-
+    ax2.grid(True, alpha=0.3, linewidth=1.5)
+    
+    ax2.legend(loc='upper center', bbox_to_anchor=(0.5, -0.15),
+              ncol=2, fontsize=20, frameon=False)
+    
     plt.tight_layout()
     
     plt.savefig(output_file_absolute, dpi=150, bbox_inches='tight')
