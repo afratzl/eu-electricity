@@ -877,10 +877,10 @@ def plot_analysis(stats_data, source_type, output_file_base):
         source_name = 'Non-Renewables'
     
     # Order for 2-column legend:
-    # Column 1: Today, Today (Projected), Yesterday, Yesterday (Projected)
-    # Column 2: Previous Week, Last Year, Two Years Ago
-    plot_order = ['today', 'today_projected', 'yesterday', 'yesterday_projected', 
-                  'week_ago', 'year_ago', 'two_years_ago']
+    # Plot order: historical first (background), then today/yesterday last (foreground on top)
+    # This ensures red (today) and orange (yesterday) are clearly visible
+    plot_order = ['two_years_ago', 'year_ago', 'week_ago',
+                  'yesterday_projected', 'yesterday', 'today_projected', 'today']
     
     # Generate output filenames
     output_file_percentage = output_file_base.replace('.png', '_percentage.png')
@@ -936,7 +936,25 @@ def plot_analysis(stats_data, source_type, output_file_base):
     
     ax1.grid(True, alpha=0.3, linewidth=1.5)
     
-    ax1.legend(loc='upper center', bbox_to_anchor=(0.5, -0.15), 
+    # Reorder legend to show today/yesterday first, then historical
+    # (even though plotting order is reversed for proper z-layering)
+    handles, labels_list = ax1.get_legend_handles_labels()
+    legend_order = ['today', 'today_projected', 'yesterday', 'yesterday_projected',
+                    'week_ago', 'year_ago', 'two_years_ago']
+    
+    # Create ordered handles/labels matching desired legend layout
+    ordered_handles = []
+    ordered_labels = []
+    label_to_handle = dict(zip(labels_list, handles))
+    
+    for period in legend_order:
+        period_label = labels.get(period, period)
+        if period_label in label_to_handle:
+            ordered_handles.append(label_to_handle[period_label])
+            ordered_labels.append(period_label)
+    
+    ax1.legend(ordered_handles, ordered_labels, 
+              loc='upper center', bbox_to_anchor=(0.5, -0.15), 
               ncol=2, fontsize=20, frameon=False)
     
     plt.tight_layout()
@@ -997,7 +1015,21 @@ def plot_analysis(stats_data, source_type, output_file_base):
     
     ax2.grid(True, alpha=0.3, linewidth=1.5)
     
-    ax2.legend(loc='upper center', bbox_to_anchor=(0.5, -0.15),
+    # Reorder legend to show today/yesterday first, then historical
+    handles2, labels_list2 = ax2.get_legend_handles_labels()
+    
+    ordered_handles2 = []
+    ordered_labels2 = []
+    label_to_handle2 = dict(zip(labels_list2, handles2))
+    
+    for period in legend_order:
+        period_label = labels.get(period, period)
+        if period_label in label_to_handle2:
+            ordered_handles2.append(label_to_handle2[period_label])
+            ordered_labels2.append(period_label)
+    
+    ax2.legend(ordered_handles2, ordered_labels2,
+              loc='upper center', bbox_to_anchor=(0.5, -0.15),
               ncol=2, fontsize=20, frameon=False)
     
     plt.tight_layout()
