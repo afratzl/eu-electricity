@@ -300,6 +300,7 @@
             
             // Update chart display - two separate divs that can be toggled
             display.innerHTML = `
+            showPercentagePlot();  // Syncs button state with content
                 <div id="percentage-plot-container">
                     <img src="${percentageUrl}" 
                          alt="${sourceName} Percentage" 
