@@ -427,12 +427,21 @@
                 // If we found a file ID, construct proper download URL
                 if (fileId) {
                     downloadUrl = `https://drive.google.com/uc?export=download&id=${fileId}`;
-                    window.open(downloadUrl, '_blank');
+                    
+                    // Try using download attribute (may work in some browsers for Drive)
+                    const link = document.createElement('a');
+                    link.href = downloadUrl;
+                    link.download = filename;
+                    link.target = '_blank';
+                    link.rel = 'noopener noreferrer';
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
                     return;
                 }
             }
             
-            // For GitHub/same-origin images, try to download with custom filename
+            // For GitHub/same-origin images, download with custom filename
             const link = document.createElement('a');
             link.href = downloadUrl;
             link.download = filename;
@@ -574,7 +583,8 @@
             border-top: 1px solid #e2e8f0;
             border-bottom: 1px solid #e2e8f0;
             padding: 12px 24px;
-            margin-top: 20px;
+            margin-top: 12px;
+            margin-bottom: 12px;
             gap: 20px;
         }
         
