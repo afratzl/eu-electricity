@@ -242,6 +242,9 @@
             showSource(sourceId, countryId);
         }
 
+        // Track if this is initial page load (for cache-busting)
+        let isInitialPageLoad = true;
+
         // Show source function - loads from Google Drive
         async function showSource(sourceId, countryId = 'EU') {
             const sourceName = sources[sourceId];
@@ -267,12 +270,30 @@
                 // Use Drive direct URLs
                 percentageUrl = links[countryId].Intraday[sourceId].percentage.direct_url;
                 absoluteUrl = links[countryId].Intraday[sourceId].absolute.direct_url;
+                
+                // Add cache-buster ONLY on initial page load (forces mobile to refresh)
+                if (isInitialPageLoad) {
+                    const cacheBuster = Date.now();
+                    percentageUrl += `&t=${cacheBuster}`;
+                    absoluteUrl += `&t=${cacheBuster}`;
+                }
             } else {
                 // Fallback to GitHub plots (backward compatibility)
                 percentageUrl = `plots/${cleanId}_analysis_percentage.png`;
                 absoluteUrl = `plots/${cleanId}_analysis_absolute.png`;
+                
+                // Add cache-buster ONLY on initial page load
+                if (isInitialPageLoad) {
+                    const cacheBuster = Date.now();
+                    percentageUrl += `?t=${cacheBuster}`;
+                    absoluteUrl += `?t=${cacheBuster}`;
+                }
+                
                 console.warn(`Drive link not found for ${countryId}/${sourceId}, using GitHub fallback`);
             }
+            
+            // Clear the flag after first load
+            isInitialPageLoad = false;
             
             // Update chart display - two separate divs that can be toggled
             display.innerHTML = `
