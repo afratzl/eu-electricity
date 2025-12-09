@@ -191,18 +191,18 @@
             let html = '<table class="summary-table-pro">';
             
             // Header
-            html += \`
+            html += `
                 <thead>
                     <tr>
                         <th>Source</th>
                         <th>Yesterday</th>
                         <th>Last Week</th>
-                        <th>\${currentYear} YTD</th>
-                        <th>\${previousYear}</th>
+                        <th>${currentYear} YTD</th>
+                        <th>${previousYear}</th>
                     </tr>
                 </thead>
                 <tbody>
-            \`;
+            `;
             
             // Data rows
             data.sources.forEach(source => {
@@ -211,50 +211,50 @@
                 const rowClass = isAggregate ? 'row-aggregate-pro' : 'row-source-pro';
                 const categoryClass = isRenewable ? 'renewable' : 'non-renewable';
                 
-                html += \`<tr class="\${rowClass} \${categoryClass}">\`;
-                html += \`<td class="source-name-cell-pro">\${source.source}</td>\`;
+                html += `<tr class="${rowClass} ${categoryClass}">`;
+                html += `<td class="source-name-cell-pro">${source.source}</td>`;
                 
                 // Yesterday
-                html += \`<td>
-                    <span class="value-pct">\${source.yesterday.percentage}%</span>
-                    <span class="value-abs" style="display:none">\${source.yesterday.twh} TWh</span>
-                    <span class="value-change" style="display:none">\${source.yesterday.change_from_2015}</span>
-                    <span class="value-change-2024" style="display:none">\${source.yesterday.change_from_2024}</span>
-                    <span class="value-change-2023" style="display:none">\${source.yesterday.change_from_2023}</span>
-                </td>\`;
+                html += `<td>
+                    <span class="value-pct">${source.yesterday.percentage}%</span>
+                    <span class="value-abs" style="display:none">${source.yesterday.twh} TWh</span>
+                    <span class="value-change" style="display:none">${source.yesterday.change_from_2015}</span>
+                    <span class="value-change-2024" style="display:none">${source.yesterday.change_from_2024}</span>
+                    <span class="value-change-2023" style="display:none">${source.yesterday.change_from_2023}</span>
+                </td>`;
                 
                 // Last Week
-                html += \`<td>
-                    <span class="value-pct">\${source.last_week.percentage}%</span>
-                    <span class="value-abs" style="display:none">\${source.last_week.twh} TWh</span>
-                    <span class="value-change" style="display:none">\${source.last_week.change_from_2015}</span>
-                    <span class="value-change-2024" style="display:none">\${source.last_week.change_from_2024}</span>
-                    <span class="value-change-2023" style="display:none">\${source.last_week.change_from_2023}</span>
-                </td>\`;
+                html += `<td>
+                    <span class="value-pct">${source.last_week.percentage}%</span>
+                    <span class="value-abs" style="display:none">${source.last_week.twh} TWh</span>
+                    <span class="value-change" style="display:none">${source.last_week.change_from_2015}</span>
+                    <span class="value-change-2024" style="display:none">${source.last_week.change_from_2024}</span>
+                    <span class="value-change-2023" style="display:none">${source.last_week.change_from_2023}</span>
+                </td>`;
                 
                 // YTD Current Year - Display in TWh
-                html += \`<td>
-                    <span class="value-pct">\${source.ytd_2025.percentage}%</span>
-                    <span class="value-abs" style="display:none">\${source.ytd_2025.twh.toFixed(2)} TWh</span>
-                    <span class="value-change" style="display:none">\${source.ytd_2025.change_from_2015}</span>
-                    <span class="value-change-2024" style="display:none">\${source.ytd_2025.change_from_2024}</span>
-                    <span class="value-change-2023" style="display:none">\${source.ytd_2025.change_from_2023}</span>
-                </td>\`;
+                html += `<td>
+                    <span class="value-pct">${source.ytd_2025.percentage}%</span>
+                    <span class="value-abs" style="display:none">${source.ytd_2025.twh.toFixed(2)} TWh</span>
+                    <span class="value-change" style="display:none">${source.ytd_2025.change_from_2015}</span>
+                    <span class="value-change-2024" style="display:none">${source.ytd_2025.change_from_2024}</span>
+                    <span class="value-change-2023" style="display:none">${source.ytd_2025.change_from_2023}</span>
+                </td>`;
                 
                 // Previous Year - Display in TWh
-                html += \`<td>
-                    <span class="value-pct">\${source.year_2024.percentage}%</span>
-                    <span class="value-abs" style="display:none">\${source.year_2024.twh.toFixed(2)} TWh</span>
-                    <span class="value-change" style="display:none">\${source.year_2024.change_from_2015}</span>
-                    <span class="value-change-2024" style="display:none">\${source.year_2024.change_from_2024}</span>
-                    <span class="value-change-2023" style="display:none">\${source.year_2024.change_from_2023}</span>
-                </td>\`;
+                html += `<td>
+                    <span class="value-pct">${source.year_2024.percentage}%</span>
+                    <span class="value-abs" style="display:none">${source.year_2024.twh.toFixed(2)} TWh</span>
+                    <span class="value-change" style="display:none">${source.year_2024.change_from_2015}</span>
+                    <span class="value-change-2024" style="display:none">${source.year_2024.change_from_2024}</span>
+                    <span class="value-change-2023" style="display:none">${source.year_2024.change_from_2023}</span>
+                </td>`;
                 
                 html += '</tr>';
             });
             
             html += '</tbody></table>';
-            html += \`<div class="table-footer-pro">Last updated: \${data.last_updated}</div>\`;
+            html += `<div class="table-footer-pro">Last updated: ${data.last_updated}</div>`;
             
             document.getElementById('summary-table-container').innerHTML = html;
         }
@@ -272,6 +272,8 @@
             document.getElementById('toggle-change').classList.remove('active');
             document.getElementById('toggle-change-2024').classList.remove('active');
             document.getElementById('toggle-change-2023').classList.remove('active');
+            
+            localStorage.setItem('electricityView', 'percentage');
         }
 
         function showAbsolute() {
@@ -286,6 +288,8 @@
             document.getElementById('toggle-change').classList.remove('active');
             document.getElementById('toggle-change-2024').classList.remove('active');
             document.getElementById('toggle-change-2023').classList.remove('active');
+            
+            localStorage.setItem('electricityView', 'absolute');
         }
 
         function showChange() {
@@ -300,6 +304,8 @@
             document.getElementById('toggle-change').classList.add('active');
             document.getElementById('toggle-change-2024').classList.remove('active');
             document.getElementById('toggle-change-2023').classList.remove('active');
+            
+            localStorage.setItem('electricityView', 'change');
         }
 
         function showChangePreviousYear() {
@@ -314,6 +320,8 @@
             document.getElementById('toggle-change').classList.remove('active');
             document.getElementById('toggle-change-2024').classList.add('active');
             document.getElementById('toggle-change-2023').classList.remove('active');
+            
+            localStorage.setItem('electricityView', 'changePreviousYear');
         }
 
         function showChangeTwoYearsAgo() {
@@ -328,18 +336,30 @@
             document.getElementById('toggle-change').classList.remove('active');
             document.getElementById('toggle-change-2024').classList.remove('active');
             document.getElementById('toggle-change-2023').classList.add('active');
+            
+            localStorage.setItem('electricityView', 'changeTwoYearsAgo');
         }
 
         // Load on page load
         window.addEventListener('DOMContentLoaded', () => {
             // Update toggle button labels with actual years
-            document.getElementById('change-previous-year-label').textContent = \`Change from \${previousYear}\`;
-            document.getElementById('change-two-years-ago-label').textContent = \`Change from \${twoYearsAgo}\`;
+            document.getElementById('change-previous-year-label').textContent = `Change from ${previousYear}`;
+            document.getElementById('change-two-years-ago-label').textContent = `Change from ${twoYearsAgo}`;
             
             loadSummaryData();  // Single fetch for both timestamp and table
             
-            // Always start with percentage view (no localStorage persistence)
-            // This ensures button state and content are always in sync
+            // Restore user's preference
+            const preference = localStorage.getItem('electricityView') || 'percentage';
+            if (preference === 'absolute') {
+                showAbsolute();
+            } else if (preference === 'change') {
+                showChange();
+            } else if (preference === 'changePreviousYear' || preference === 'change2024') {
+                // Support both new and old localStorage values for backwards compatibility
+                showChangePreviousYear();
+            } else if (preference === 'changeTwoYearsAgo') {
+                showChangeTwoYearsAgo();
+            }
         });
     </script>
 
