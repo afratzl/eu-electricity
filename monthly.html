@@ -303,7 +303,7 @@
         }
 
         // Download current chart
-        function downloadChart() {
+        async function downloadChart() {
             const countryId = document.getElementById('country-select').value;
             const sourceId = document.getElementById('source-select').value;
             const sourceName = sources[sourceId];
@@ -330,13 +330,27 @@
                 return;
             }
             
-            // Download the image
-            const link = document.createElement('a');
-            link.href = img.src;
-            link.download = filename;
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
+            try {
+                // Fetch image as blob to force download (works for cross-origin)
+                const response = await fetch(img.src);
+                const blob = await response.blob();
+                
+                // Create object URL and download
+                const url = window.URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = filename;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                
+                // Clean up object URL
+                window.URL.revokeObjectURL(url);
+            } catch (error) {
+                console.error('Download failed:', error);
+                // Fallback: open in new tab if fetch fails
+                window.open(img.src, '_blank');
+            }
         }
 
         // Load default chart on page load
