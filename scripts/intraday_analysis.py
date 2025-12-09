@@ -60,6 +60,7 @@ import sys
 import argparse
 import time
 import json
+import random
 
 # Google Drive imports (for plot hosting)
 try:
@@ -868,6 +869,11 @@ def plot_analysis(stats_data, source_type, output_file_base):
     }
 
     time_labels = create_time_axis()
+    
+    # Calculate x-axis tick positions (every 4 hours) for both plots
+    tick_positions = list(range(0, len(time_labels), 16))  # Every 4 hours (16 * 15min = 4h)
+    tick_labels_axis = [time_labels[i] if i < len(time_labels) else '' for i in tick_positions]
+    
     source_name = DISPLAY_NAMES[source_type]
     
     # Shorten aggregate names for plot titles (but keep full names in dropdown)
@@ -934,6 +940,11 @@ def plot_analysis(stats_data, source_type, output_file_base):
     ax1.tick_params(axis='both', labelsize=22)
     ax1.set_ylim(0, max_percentage * 1.20 if max_percentage > 0 else 50)  # 20% headroom
     
+    # Set x-axis time labels
+    ax1.set_xlim(0, len(time_labels))
+    ax1.set_xticks(tick_positions)
+    ax1.set_xticklabels(tick_labels_axis)
+    
     ax1.grid(True, alpha=0.3, linewidth=1.5)
     
     # Reorder legend to show today/yesterday first, then historical
@@ -954,7 +965,7 @@ def plot_analysis(stats_data, source_type, output_file_base):
             ordered_labels.append(period_label)
     
     ax1.legend(ordered_handles, ordered_labels, 
-              loc='upper center', bbox_to_anchor=(0.5, -0.15), 
+              loc='upper center', bbox_to_anchor=(0.5, -0.18), 
               ncol=2, fontsize=20, frameon=False)
     
     plt.tight_layout()
@@ -1013,6 +1024,11 @@ def plot_analysis(stats_data, source_type, output_file_base):
     ax2.tick_params(axis='both', labelsize=22)
     ax2.set_ylim(0, max_energy * 1.20)  # 20% headroom
     
+    # Set x-axis time labels
+    ax2.set_xlim(0, len(time_labels))
+    ax2.set_xticks(tick_positions)
+    ax2.set_xticklabels(tick_labels_axis)
+    
     ax2.grid(True, alpha=0.3, linewidth=1.5)
     
     # Reorder legend to show today/yesterday first, then historical
@@ -1029,7 +1045,7 @@ def plot_analysis(stats_data, source_type, output_file_base):
             ordered_labels2.append(period_label)
     
     ax2.legend(ordered_handles2, ordered_labels2,
-              loc='upper center', bbox_to_anchor=(0.5, -0.15),
+              loc='upper center', bbox_to_anchor=(0.5, -0.18),
               ncol=2, fontsize=20, frameon=False)
     
     plt.tight_layout()
@@ -1669,17 +1685,22 @@ def main():
                 if 'Intraday' not in drive_links['EU']:
                     drive_links['EU']['Intraday'] = {}
                 
+                # Random thumbnail size to bypass mobile browser cache
+                # Rotates between 5 sizes: each new URL forces browser to fetch fresh image
+                thumbnail_size = random.choice([1998, 1999, 2000, 2001, 2002])
+                print(f"  📐 Using thumbnail size: w{thumbnail_size} (cache-busting)")
+                
                 for source, file_ids in drive_file_ids.items():
                     drive_links['EU']['Intraday'][source] = {
                         'percentage': {
                             'file_id': file_ids['percentage'],
                             'view_url': f'https://drive.google.com/file/d/{file_ids["percentage"]}/view',
-                            'direct_url': f'https://drive.google.com/thumbnail?id={file_ids["percentage"]}&sz=w2000'
+                            'direct_url': f'https://drive.google.com/thumbnail?id={file_ids["percentage"]}&sz=w{thumbnail_size}'
                         },
                         'absolute': {
                             'file_id': file_ids['absolute'],
                             'view_url': f'https://drive.google.com/file/d/{file_ids["absolute"]}/view',
-                            'direct_url': f'https://drive.google.com/thumbnail?id={file_ids["absolute"]}&sz=w2000'
+                            'direct_url': f'https://drive.google.com/thumbnail?id={file_ids["absolute"]}&sz=w{thumbnail_size}'
                         },
                         'updated': datetime.now().isoformat()
                     }
