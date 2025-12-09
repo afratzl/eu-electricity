@@ -56,35 +56,46 @@
             <p class="subtitle">10-year monthly comparison (2015-2025)</p>
         </header>
 
-        <div class="info-box">
-            <p><strong>Select an energy source below</strong> to view its 10-year monthly production trends</p>
-            <p><strong>Data Period:</strong> 2015-2025 (current year shows partial data)</p>
-        </div>
+        <!-- COMPACT SELECTOR BOX -->
+        <div class="compact-selector-box">
+            <!-- Energy Source Selector -->
+            <div class="selector-item">
+                <label for="monthly-select">
+                    <span id="color-indicator" style="display: inline-block; width: 14px; height: 14px; border-radius: 50%; background-color: #00CED1; margin-right: 6px; vertical-align: middle; border: 2px solid #333;"></span>
+                    Energy Source:
+                </label>
+                <select id="monthly-select" onchange="showMonthlyChart(this.value)">
+                    <optgroup label="Renewable Sources">
+                        <option value="all-renewables" selected data-color="#00CED1">All Renewables</option>
+                        <option value="wind" data-color="#228B22">Wind</option>
+                        <option value="hydro" data-color="#1E90FF">Hydro</option>
+                        <option value="solar" data-color="#FFD700">Solar</option>
+                        <option value="biomass" data-color="#9ACD32">Biomass</option>
+                        <option value="geothermal" data-color="#708090">Geothermal</option>
+                    </optgroup>
+                    <optgroup label="Non-Renewable Sources">
+                        <option value="all-non-renewables" data-color="#000000">All Non-Renewables</option>
+                        <option value="nuclear" data-color="#8B4513">Nuclear</option>
+                        <option value="gas" data-color="#FF1493">Gas</option>
+                        <option value="coal" data-color="#8B008B">Coal</option>
+                        <option value="waste" data-color="#808000">Waste</option>
+                        <option value="oil" data-color="#191970">Oil</option>
+                    </optgroup>
+                </select>
+            </div>
 
-        <!-- DROPDOWN SELECTOR -->
-        <div class="chart-selector">
-            <label for="monthly-select">
-                <span id="color-indicator" style="display: inline-block; width: 16px; height: 16px; border-radius: 50%; background-color: #00CED1; margin-right: 8px; vertical-align: middle; border: 2px solid #333;"></span>
-                Choose Energy Source:
-            </label>
-            <select id="monthly-select" onchange="showMonthlyChart(this.value)">
-                <optgroup label="Renewable Sources">
-                    <option value="all-renewables" selected data-color="#00CED1">All Renewables</option>
-                    <option value="wind" data-color="#228B22">Wind</option>
-                    <option value="hydro" data-color="#1E90FF">Hydro</option>
-                    <option value="solar" data-color="#FFD700">Solar</option>
-                    <option value="biomass" data-color="#9ACD32">Biomass</option>
-                    <option value="geothermal" data-color="#708090">Geothermal</option>
-                </optgroup>
-                <optgroup label="Non-Renewable Sources">
-                    <option value="all-non-renewables" data-color="#000000">All Non-Renewables</option>
-                    <option value="nuclear" data-color="#8B4513">Nuclear</option>
-                    <option value="gas" data-color="#FF1493">Gas</option>
-                    <option value="coal" data-color="#8B008B">Coal</option>
-                    <option value="waste" data-color="#808000">Waste</option>
-                    <option value="oil" data-color="#191970">Oil</option>
-                </optgroup>
-            </select>
+            <!-- Display Toggle -->
+            <div class="selector-item selector-item-toggle">
+                <label>Display:</label>
+                <div class="toggle-group-compact">
+                    <button id="toggle-percentage" class="toggle-btn-compact active" onclick="showPercentagePlot()">
+                        Percentage
+                    </button>
+                    <button id="toggle-absolute" class="toggle-btn-compact" onclick="showAbsolutePlot()">
+                        Absolute
+                    </button>
+                </div>
+            </div>
         </div>
 
         <!-- DYNAMIC CHART DISPLAY -->
@@ -92,6 +103,12 @@
             <!-- Chart will be loaded here by JavaScript -->
         </div>
     </div>
+
+    <footer>
+        <p>Built with data from <a href="https://transparency.entsoe.eu/" target="_blank">ENTSO-E</a> | 
+           Source code on <a href="https://github.com/afratzl/eu-energy-analysis" target="_blank">GitHub</a> | 
+           Built by <a href="https://www.linkedin.com/in/alexfratzl/" target="_blank">Alex Fratzl</a> with Claude Sonnet</p>
+    </footer>
 
     <script>
         // Monthly chart configurations
@@ -110,7 +127,7 @@
             'all-non-renewables': 'All Non-Renewables'
         };
 
-        // Show monthly chart function - displays both plots vertically without section headers
+        // Show monthly chart function - displays one plot at a time based on toggle
         function showMonthlyChart(chartId) {
             const sourceName = monthlyCharts[chartId];
             const display = document.getElementById('monthly-chart-display');
@@ -127,27 +144,56 @@
             // Clean chart ID for filename
             const cleanId = chartId.replace(/-/g, '_');
             
-            // Update chart display with both plots stacked vertically (NO HTML TITLES)
+            // Update chart display - two separate divs that can be toggled
             display.innerHTML = `
-                <div style="margin-bottom: 40px;">
+                <div id="percentage-plot-container">
                     <img src="plots/eu_monthly_${cleanId}_percentage_10years.png" 
                          alt="${sourceName} Percentage" 
                          class="chart-img"
                          onerror="this.src='plots/eu_monthly_${cleanId}_combined_10years.png'; this.onerror=null;">
                 </div>
-                
-                <div style="margin-bottom: 40px;">
+                <div id="absolute-plot-container" style="display: none;">
                     <img src="plots/eu_monthly_${cleanId}_absolute_10years.png" 
                          alt="${sourceName} Absolute Production" 
                          class="chart-img"
                          onerror="this.style.display='none';">
                 </div>
             `;
+            
+            // CRITICAL: Reset toggle buttons to percentage (sync button state with displayed content)
+            showPercentagePlot();
 
             // Only scroll if user manually changed selection (not on page load)
             if (window.pageYOffset > 0 || document.documentElement.scrollTop > 0) {
                 display.scrollIntoView({ behavior: 'smooth', block: 'start' });
             }
+        }
+
+        // Toggle functions for plot type
+        function showPercentagePlot() {
+            const percentageContainer = document.getElementById('percentage-plot-container');
+            const absoluteContainer = document.getElementById('absolute-plot-container');
+            
+            if (percentageContainer && absoluteContainer) {
+                percentageContainer.style.display = 'block';
+                absoluteContainer.style.display = 'none';
+            }
+            
+            document.getElementById('toggle-percentage').classList.add('active');
+            document.getElementById('toggle-absolute').classList.remove('active');
+        }
+
+        function showAbsolutePlot() {
+            const percentageContainer = document.getElementById('percentage-plot-container');
+            const absoluteContainer = document.getElementById('absolute-plot-container');
+            
+            if (percentageContainer && absoluteContainer) {
+                percentageContainer.style.display = 'none';
+                absoluteContainer.style.display = 'block';
+            }
+            
+            document.getElementById('toggle-percentage').classList.remove('active');
+            document.getElementById('toggle-absolute').classList.add('active');
         }
 
         // Load default chart on page load
@@ -156,21 +202,8 @@
         });
     </script>
 
-    <footer>
-        <p>Built with data from <a href="https://transparency.entsoe.eu/" target="_blank">ENTSO-E</a> | 
-           Source code on <a href="https://github.com/afratzl/eu-energy-analysis" target="_blank">GitHub</a> | 
-           Built by <a href="https://www.linkedin.com/in/alexfratzl/" target="_blank">Alex Fratzl</a> with Claude Sonnet</p>
-    </footer>
-
     <style>
-        .chart-subtitle {
-            text-align: center;
-            color: #7f8c8d;
-            font-size: 1.1em;
-            margin-bottom: 30px;
-        }
-        
-        /* Color-coded dropdown options (no bullets) */
+        /* Color-coded dropdown options */
         select option[value="solar"] { color: #FFD700; font-weight: bold; }
         select option[value="wind"] { color: #228B22; font-weight: bold; }
         select option[value="hydro"] { color: #1E90FF; font-weight: bold; }
@@ -184,13 +217,92 @@
         select option[value="all-renewables"] { color: #00CED1; font-weight: bold; }
         select option[value="all-non-renewables"] { color: #000000; font-weight: bold; }
         
-        /* Responsive image sizing - UPDATED TO 60% */
+        /* Compact selector box - all controls in one container */
+        .compact-selector-box {
+            background: #f7fafc;
+            border: 2px solid #cbd5e0;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 24px;
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 20px;
+            align-items: end;
+        }
+        
+        .selector-item {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        
+        .selector-item label {
+            font-weight: 500;
+            font-size: 0.95em;
+            color: #4a5568;
+            display: flex;
+            align-items: center;
+        }
+        
+        .selector-item select {
+            padding: 8px 10px;
+            font-size: 1em;
+            border: 2px solid #cbd5e0;
+            border-radius: 4px;
+            cursor: pointer;
+            background: white;
+        }
+        
+        .selector-item select:focus {
+            outline: none;
+            border-color: #003399;
+        }
+        
+        /* Toggle button styling */
+        .toggle-group-compact {
+            display: flex;
+            gap: 0;
+        }
+        
+        .toggle-btn-compact {
+            padding: 8px 16px;
+            font-size: 0.95em;
+            font-weight: 500;
+            border: 2px solid #cbd5e0;
+            background: white;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .toggle-btn-compact:first-child {
+            border-radius: 4px 0 0 4px;
+        }
+        
+        .toggle-btn-compact:last-child {
+            border-radius: 0 4px 4px 0;
+            border-left: none;
+        }
+        
+        .toggle-btn-compact:hover {
+            background: #edf2f7;
+        }
+        
+        .toggle-btn-compact.active {
+            background: #003399;
+            color: white;
+            border-color: #003399;
+        }
+        
+        .toggle-btn-compact.active + .toggle-btn-compact {
+            border-left: 2px solid #cbd5e0;
+        }
+        
+        /* Responsive image sizing - 60% on desktop */
         .chart-img {
             width: 100%;
             height: auto;
         }
         
-        /* Desktop: Scale down to 60% */
         @media (min-width: 1024px) {
             .chart-img {
                 width: 60%;
@@ -199,8 +311,17 @@
             }
         }
         
-        /* EU Flag responsive sizing */
+        /* Mobile responsive */
         @media (max-width: 768px) {
+            .compact-selector-box {
+                grid-template-columns: 1fr;
+                gap: 16px;
+            }
+            
+            .selector-item-toggle {
+                justify-self: center;
+            }
+            
             .nav-title svg {
                 width: 28px;
                 height: 19px;
@@ -213,6 +334,11 @@
                 width: 24px;
                 height: 16px;
                 margin-right: 6px;
+            }
+            
+            .toggle-btn-compact {
+                padding: 6px 12px;
+                font-size: 0.9em;
             }
         }
     </style>
