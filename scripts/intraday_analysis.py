@@ -453,7 +453,10 @@ def apply_projections_and_corrections(data_matrix):
 def apply_corrections_for_period(data_matrix, target_period, reference_period):
     """
     Apply component-level corrections for a specific period
-    Uses weekly hourly averages for threshold comparison
+    Projects ALL timestamps from 00:00 to fetch_time for consistency
+    Uses hybrid approach for aggregates:
+      - Today: safe summation (avoid race condition)
+      - Yesterday+: delta correction (preserve untracked sources)
     Returns BOTH actual (uncorrected) and corrected versions
     """
     print(f"  Analyzing {target_period} against {reference_period}...")
@@ -471,14 +474,6 @@ def apply_corrections_for_period(data_matrix, target_period, reference_period):
             # Group by time to get hourly averages across the week
             weekly_hourly_avgs[source] = ref_data_with_time.groupby('time').mean(numeric_only=True)
     
-    # Build weekly hourly average for total generation
-    total_gen_weekly_avg = None
-    if reference_period in data_matrix['total_generation']:
-        ref_total_gen = data_matrix['total_generation'][reference_period]
-        ref_total_gen_with_time = ref_total_gen.copy()
-        ref_total_gen_with_time['time'] = ref_total_gen_with_time.index.strftime('%H:%M')
-        total_gen_weekly_avg = ref_total_gen_with_time.groupby('time').mean(numeric_only=True)
-    
     # Get target period data
     target_atomic = {src: data_matrix['atomic_sources'][src].get(target_period) 
                      for src in ATOMIC_SOURCES if src in data_matrix['atomic_sources']}
@@ -487,69 +482,98 @@ def apply_corrections_for_period(data_matrix, target_period, reference_period):
     if target_total_gen is None:
         return {}
     
+    # Get full timestamp range from reference period (00:00 to 23:45)
+    # This ensures we project consistently for all times
+    reference_total_gen = data_matrix['total_generation'].get(reference_period)
+    if reference_total_gen is not None:
+        full_timestamp_range = reference_total_gen.index
+    else:
+        full_timestamp_range = target_total_gen.index
+    
     # Build BOTH corrected and actual (uncorrected) data
     corrected_sources = {}
-    actual_sources = {}  # NEW: Store uncorrected versions
+    actual_sources = {}
     correction_log = []
     
     for source in ATOMIC_SOURCES + AGGREGATE_SOURCES:
         corrected_sources[source] = {}
         actual_sources[source] = {}
     
-    # Process each timestamp
-    for timestamp in target_total_gen.index:
+    # Process ALL timestamps in full range (00:00 to 23:45)
+    # This ensures consistent time coverage across all sources
+    for timestamp in full_timestamp_range:
         time_str = timestamp.strftime('%H:%M')
         
-        # Correct atomic sources
+        # Project atomic sources for this timestamp
         for source in ATOMIC_SOURCES:
             if source not in target_atomic or target_atomic[source] is None:
                 continue
             
-            if timestamp not in target_atomic[source].index:
-                continue
-            
-            source_row = target_atomic[source].loc[timestamp]
-            
             # Initialize this timestamp for this source
             if timestamp not in corrected_sources[source]:
                 corrected_sources[source][timestamp] = {}
+            if timestamp not in actual_sources[source]:
                 actual_sources[source][timestamp] = {}
             
-            for country in source_row.index:
-                actual_val = source_row[country]
+            # Check if we have actual data for this timestamp
+            if timestamp in target_atomic[source].index:
+                source_row = target_atomic[source].loc[timestamp]
                 
-                # Store actual (uncorrected) value
-                actual_sources[source][timestamp][country] = actual_val if not pd.isna(actual_val) else 0
-                
-                # Default: use actual value
-                corrected_val = actual_val if not pd.isna(actual_val) else 0
-                
-                # Get weekly hourly average for this source-country-time
+                for country in source_row.index:
+                    actual_val = source_row[country]
+                    
+                    # Store actual (uncorrected) value
+                    actual_sources[source][timestamp][country] = actual_val if not pd.isna(actual_val) else 0
+                    
+                    # Default: use actual value
+                    corrected_val = actual_val if not pd.isna(actual_val) else 0
+                    
+                    # Get weekly hourly average for this source-country-time
+                    if source in weekly_hourly_avgs and time_str in weekly_hourly_avgs[source].index:
+                        if country in weekly_hourly_avgs[source].columns:
+                            week_avg = weekly_hourly_avgs[source].loc[time_str, country]
+                            
+                            if not pd.isna(week_avg) and week_avg > 0:
+                                threshold = 0.1 * week_avg
+                                
+                                # Check if below threshold
+                                if pd.isna(actual_val) or actual_val < threshold:
+                                    correction_log.append({
+                                        'time': time_str,
+                                        'source': source,
+                                        'country': country,
+                                        'actual': actual_val if not pd.isna(actual_val) else 0,
+                                        'expected': week_avg,
+                                        'threshold': threshold
+                                    })
+                                    corrected_val = week_avg
+                    
+                    # Store corrected value
+                    corrected_sources[source][timestamp][country] = corrected_val
+            
+            else:
+                # No actual data for this timestamp - use weekly average for ALL countries
                 if source in weekly_hourly_avgs and time_str in weekly_hourly_avgs[source].index:
-                    if country in weekly_hourly_avgs[source].columns:
+                    for country in weekly_hourly_avgs[source].columns:
                         week_avg = weekly_hourly_avgs[source].loc[time_str, country]
                         
                         if not pd.isna(week_avg) and week_avg > 0:
-                            threshold = 0.1 * week_avg
+                            # No actual data - store 0 for actual, weekly avg for projected
+                            actual_sources[source][timestamp][country] = 0
+                            corrected_sources[source][timestamp][country] = week_avg
                             
-                            # Check if below threshold
-                            if pd.isna(actual_val) or actual_val < threshold:
-                                correction_log.append({
-                                    'time': time_str,
-                                    'source': source,
-                                    'country': country,
-                                    'actual': actual_val if not pd.isna(actual_val) else 0,
-                                    'expected': week_avg,
-                                    'threshold': threshold
-                                })
-                                corrected_val = week_avg
-                
-                # Store corrected value
-                corrected_sources[source][timestamp][country] = corrected_val
+                            correction_log.append({
+                                'time': time_str,
+                                'source': source,
+                                'country': country,
+                                'actual': 0,
+                                'expected': week_avg,
+                                'threshold': 0
+                            })
     
     # Print correction log
     if correction_log:
-        print(f"\n  🚨 Detected {len(correction_log)} values below 10% threshold:")
+        print(f"\n  Detected {len(correction_log)} corrections (missing data + threshold violations):")
         for log in correction_log[:20]:  # Print first 20
             print(f"    {log['time']} | {log['country']}-{log['source']}: "
                   f"{log['actual']:.1f} MW < 10% of {log['expected']:.1f} MW "
@@ -559,48 +583,65 @@ def apply_corrections_for_period(data_matrix, target_period, reference_period):
     else:
         print("  ✓ No corrections needed")
     
-    # Build aggregate sources using COMPONENT-LEVEL DELTA CORRECTION
-    # Formula: Projected Aggregate = Measured Aggregate + Σ(Projected Component - Actual Component)
-    # This preserves untracked sources in the aggregate while correcting tracked components
+    # Build aggregates using HYBRID APPROACH
+    # TODAY: Safe summation (avoid 90-minute race condition)
+    # YESTERDAY+: Delta correction (preserve untracked sources)
     for agg_source in AGGREGATE_SOURCES:
         components = AGGREGATE_DEFINITIONS[agg_source]
-        
-        # Get measured aggregate from API (includes untracked sources)
         measured_aggregate = data_matrix['aggregates'].get(agg_source, {}).get(target_period)
         
-        for timestamp in target_total_gen.index:
-            # Actual aggregate: use measured value directly
-            if measured_aggregate is not None and timestamp in measured_aggregate.index:
-                actual_agg_value = measured_aggregate[timestamp]
-            else:
+        if target_period == 'today':
+            # SAFE SUMMATION for today (high race condition risk)
+            print(f"  Using safe summation for {agg_source} (today)")
+            
+            for timestamp in full_timestamp_range:
+                # Sum actual components
                 actual_agg_value = 0
-            actual_sources[agg_source][timestamp] = {'EU': actual_agg_value}
-            
-            # Corrected aggregate: start with measured, add component corrections
-            corrected_agg_value = actual_agg_value
-            
-            # Calculate correction for each tracked component
-            for component in components:
-                # Projected component value
-                projected_component = 0
-                if timestamp in corrected_sources[component]:
-                    projected_component = sum(corrected_sources[component][timestamp].values())
+                for component in components:
+                    if timestamp in actual_sources[component]:
+                        actual_agg_value += sum(actual_sources[component][timestamp].values())
+                actual_sources[agg_source][timestamp] = {'EU': actual_agg_value}
                 
-                # Actual component value
-                actual_component = 0
-                if timestamp in actual_sources[component]:
-                    actual_component = sum(actual_sources[component][timestamp].values())
-                
-                # Add delta correction
-                correction = projected_component - actual_component
-                corrected_agg_value += correction
+                # Sum projected components
+                projected_agg_value = 0
+                for component in components:
+                    if timestamp in corrected_sources[component]:
+                        projected_agg_value += sum(corrected_sources[component][timestamp].values())
+                corrected_sources[agg_source][timestamp] = {'EU': projected_agg_value}
+        
+        else:
+            # DELTA CORRECTION for yesterday+ (stable data, preserve untracked sources)
+            print(f"  Using delta correction for {agg_source} ({target_period})")
             
-            corrected_sources[agg_source][timestamp] = {'EU': corrected_agg_value}
+            for timestamp in full_timestamp_range:
+                # Actual: use measured aggregate directly
+                if measured_aggregate is not None and timestamp in measured_aggregate.index:
+                    actual_agg_value = measured_aggregate[timestamp]
+                else:
+                    actual_agg_value = 0
+                actual_sources[agg_source][timestamp] = {'EU': actual_agg_value}
+                
+                # Projected: start with measured, add component corrections
+                corrected_agg_value = actual_agg_value
+                
+                for component in components:
+                    projected_component = 0
+                    if timestamp in corrected_sources[component]:
+                        projected_component = sum(corrected_sources[component][timestamp].values())
+                    
+                    actual_component = 0
+                    if timestamp in actual_sources[component]:
+                        actual_component = sum(actual_sources[component][timestamp].values())
+                    
+                    correction = projected_component - actual_component
+                    corrected_agg_value += correction
+                
+                corrected_sources[agg_source][timestamp] = {'EU': corrected_agg_value}
     
     # Build corrected and actual total generation
     corrected_total_gen = {}
     actual_total_gen = {}
-    for timestamp in target_total_gen.index:
+    for timestamp in full_timestamp_range:
         # Corrected total
         total_corrected = 0
         for source in ATOMIC_SOURCES:
@@ -881,8 +922,8 @@ def plot_analysis(stats_data, source_type, output_file_base):
         'week_ago': '-',
         'year_ago': '-',
         'two_years_ago': '-',
-        'today_projected': ':',  # Changed from '--' to ':' (dotted)
-        'yesterday_projected': ':'  # Changed from '--' to ':' (dotted)
+        'today_projected': '-.',  # Changed from ':' to '-.' (dash-dot)
+        'yesterday_projected': '-.'  # Changed from ':' to '-.' (dash-dot)
     }
 
     labels = {
@@ -897,9 +938,12 @@ def plot_analysis(stats_data, source_type, output_file_base):
 
     time_labels = create_time_axis()
     
-    # Calculate x-axis tick positions (every 4 hours) for both plots
+    # Calculate x-axis tick positions (every 4 hours) + add 24:00 at end
     tick_positions = list(range(0, len(time_labels), 16))  # Every 4 hours (16 * 15min = 4h)
-    tick_labels_axis = [time_labels[i] if i < len(time_labels) else '' for i in tick_positions]
+    tick_positions.append(len(time_labels))  # Add position for 24:00
+    
+    tick_labels_axis = [time_labels[i] if i < len(time_labels) else '' for i in tick_positions[:-1]]
+    tick_labels_axis.append('24:00')  # Add 24:00 label at the end
     
     source_name = DISPLAY_NAMES[source_type]
     
@@ -926,8 +970,8 @@ def plot_analysis(stats_data, source_type, output_file_base):
     
     fig1.suptitle(f'{source_name} Electricity Generation (EU)', fontsize=34, fontweight='bold', x=0.5, y=0.98, ha="center")
     ax1.set_title('Fraction of Total Generation', fontsize=26, fontweight='normal', pad=15)
-    ax1.set_xlabel('Time of Day (Brussels)', fontsize=28, fontweight='bold', labelpad=15)
-    ax1.set_ylabel('Electrical Power (%)', fontsize=28, fontweight='bold', labelpad=15)
+    ax1.set_xlabel('Time of Day (Brussels)', fontsize=28, fontweight='bold', labelpad=25)
+    ax1.set_ylabel('Electrical Power (%)', fontsize=28, fontweight='bold', labelpad=20)
 
     max_percentage = 0
 
@@ -974,14 +1018,14 @@ def plot_analysis(stats_data, source_type, output_file_base):
     
     ax1.grid(True, alpha=0.3, linewidth=1.5)
     
-    # Reorder legend for 3-column layout with custom grouping:
-    # Column 1: Today, Today (Projected)
-    # Column 2: Yesterday, Yesterday (Projected)
-    # Column 3: Previous Week, Last Year, Two Years Ago
-    # Legend fills left-to-right, so order is: today, yesterday, week_ago, today_projected, yesterday_projected, year_ago, two_years_ago
+    # Reorder legend for 3-column layout:
+    # Row 1: Today, Today (Projected), Yesterday
+    # Row 2: Yesterday (Projected), Previous Week, Last Year
+    # Row 3: Two Years Ago
+    # This groups today/yesterday pairs while fitting in 3 columns
     handles, labels_list = ax1.get_legend_handles_labels()
-    legend_order = ['today', 'yesterday', 'week_ago',
-                    'today_projected', 'yesterday_projected', 'year_ago', 'two_years_ago']
+    legend_order = ['today', 'today_projected', 'yesterday',
+                    'yesterday_projected', 'week_ago', 'year_ago', 'two_years_ago']
     
     # Create ordered handles/labels matching desired legend layout
     ordered_handles = []
@@ -995,7 +1039,7 @@ def plot_analysis(stats_data, source_type, output_file_base):
             ordered_labels.append(period_label)
     
     ax1.legend(ordered_handles, ordered_labels, 
-              loc='upper center', bbox_to_anchor=(0.5, -0.18), 
+              loc='upper center', bbox_to_anchor=(0.5, -0.22), 
               ncol=3, fontsize=20, frameon=False)
     
     plt.tight_layout()
@@ -1011,8 +1055,8 @@ def plot_analysis(stats_data, source_type, output_file_base):
     
     fig2.suptitle(f'{source_name} Electricity Generation (EU)', fontsize=34, fontweight='bold', x=0.5, y=0.98, ha="center")
     ax2.set_title('Absolute Generation', fontsize=26, fontweight='normal', pad=15)
-    ax2.set_xlabel('Time of Day (Brussels)', fontsize=28, fontweight='bold', labelpad=15)
-    ax2.set_ylabel('Electrical Power (GW)', fontsize=28, fontweight='bold', labelpad=15)
+    ax2.set_xlabel('Time of Day (Brussels)', fontsize=28, fontweight='bold', labelpad=25)
+    ax2.set_ylabel('Electrical Power (GW)', fontsize=28, fontweight='bold', labelpad=20)
 
     max_energy = 0
 
@@ -1075,7 +1119,7 @@ def plot_analysis(stats_data, source_type, output_file_base):
             ordered_labels2.append(period_label)
     
     ax2.legend(ordered_handles2, ordered_labels2,
-              loc='upper center', bbox_to_anchor=(0.5, -0.18),
+              loc='upper center', bbox_to_anchor=(0.5, -0.22),
               ncol=3, fontsize=20, frameon=False)
     
     plt.tight_layout()
