@@ -58,13 +58,89 @@
 
         <!-- COMPACT SELECTOR BOX -->
         <div class="compact-selector-box">
+            <!-- Country/Region Selector -->
+            <div class="selector-item">
+                <label for="country-select">
+                    <svg id="country-flag-indicator" width="20" height="15" viewBox="0 0 810 540" style="display: inline-block; margin-right: 6px; vertical-align: middle;">
+                        <desc>EU flag</desc>
+                        <defs>
+                            <g id="flag-star">
+                                <g id="flag-c">
+                                    <path id="flag-t" d="M0,0v1h0.5z" transform="translate(0,-1)rotate(18)"/>
+                                    <use href="#flag-t" transform="scale(-1,1)"/>
+                                </g>
+                                <g id="flag-a">
+                                    <use href="#flag-c" transform="rotate(72)"/>
+                                    <use href="#flag-c" transform="rotate(144)"/>
+                                </g>
+                                <use href="#flag-a" transform="scale(-1,1)"/>
+                            </g>
+                        </defs>
+                        <rect fill="#039" width="810" height="540"/>
+                        <g fill="#fc0" transform="scale(30)translate(13.5,9)">
+                            <use href="#flag-star" y="-6"/>
+                            <use href="#flag-star" y="6"/>
+                            <g id="flag-circle">
+                                <use href="#flag-star" x="-6"/>
+                                <use href="#flag-star" transform="rotate(150)translate(0,6)rotate(66)"/>
+                                <use href="#flag-star" transform="rotate(120)translate(0,6)rotate(24)"/>
+                                <use href="#flag-star" transform="rotate(60)translate(0,6)rotate(12)"/>
+                                <use href="#flag-star" transform="rotate(30)translate(0,6)rotate(42)"/>
+                            </g>
+                            <use href="#flag-circle" transform="scale(-1,1)"/>
+                        </g>
+                    </svg>
+                    Country/Region:
+                </label>
+                <select id="country-select" onchange="updateCharts()">
+                    <optgroup label="Region">
+                        <option value="EU" selected>European Union</option>
+                    </optgroup>
+                    <optgroup label="EU Member States">
+                        <option value="AT">Austria</option>
+                        <option value="BE">Belgium</option>
+                        <option value="BG">Bulgaria</option>
+                        <option value="HR">Croatia</option>
+                        <option value="CY">Cyprus</option>
+                        <option value="CZ">Czechia</option>
+                        <option value="DK">Denmark</option>
+                        <option value="EE">Estonia</option>
+                        <option value="FI">Finland</option>
+                        <option value="FR">France</option>
+                        <option value="DE">Germany</option>
+                        <option value="GR">Greece</option>
+                        <option value="HU">Hungary</option>
+                        <option value="IE">Ireland</option>
+                        <option value="IT">Italy</option>
+                        <option value="LV">Latvia</option>
+                        <option value="LT">Lithuania</option>
+                        <option value="LU">Luxembourg</option>
+                        <option value="MT">Malta</option>
+                        <option value="NL">Netherlands</option>
+                        <option value="PL">Poland</option>
+                        <option value="PT">Portugal</option>
+                        <option value="RO">Romania</option>
+                        <option value="SK">Slovakia</option>
+                        <option value="SI">Slovenia</option>
+                        <option value="ES">Spain</option>
+                        <option value="SE">Sweden</option>
+                    </optgroup>
+                    <optgroup label="Other European Countries">
+                        <option value="MD">Moldova</option>
+                        <option value="NO">Norway</option>
+                        <option value="CH">Switzerland</option>
+                        <option value="GB">United Kingdom</option>
+                    </optgroup>
+                </select>
+            </div>
+
             <!-- Energy Source Selector -->
             <div class="selector-item">
-                <label for="monthly-select">
+                <label for="source-select">
                     <span id="color-indicator" style="display: inline-block; width: 14px; height: 14px; border-radius: 50%; background-color: #00CED1; margin-right: 6px; vertical-align: middle; border: 2px solid #333;"></span>
                     Energy Source:
                 </label>
-                <select id="monthly-select" onchange="showMonthlyChart(this.value)">
+                <select id="source-select" onchange="updateCharts()">
                     <optgroup label="Renewable Sources">
                         <option value="all-renewables" selected data-color="#00CED1">All Renewables</option>
                         <option value="wind" data-color="#228B22">Wind</option>
@@ -99,7 +175,7 @@
         </div>
 
         <!-- DYNAMIC CHART DISPLAY -->
-        <div id="monthly-chart-display" class="chart-container">
+        <div id="chart-display" class="chart-container">
             <!-- Chart will be loaded here by JavaScript -->
         </div>
     </div>
@@ -111,8 +187,8 @@
     </footer>
 
     <script>
-        // Monthly chart configurations
-        const monthlyCharts = {
+        // Energy source configurations
+        const sources = {
             'solar': 'Solar',
             'wind': 'Wind',
             'hydro': 'Hydro',
@@ -127,13 +203,20 @@
             'all-non-renewables': 'All Non-Renewables'
         };
 
+        // Update charts based on both country and source selection
+        function updateCharts() {
+            const countryId = document.getElementById('country-select').value;
+            const sourceId = document.getElementById('source-select').value;
+            showMonthlyChart(sourceId, countryId);
+        }
+
         // Show monthly chart function - displays one plot at a time based on toggle
-        function showMonthlyChart(chartId) {
-            const sourceName = monthlyCharts[chartId];
-            const display = document.getElementById('monthly-chart-display');
+        function showMonthlyChart(sourceId, countryId = 'EU') {
+            const sourceName = sources[sourceId];
+            const display = document.getElementById('chart-display');
             
             // Update color indicator
-            const select = document.getElementById('monthly-select');
+            const select = document.getElementById('source-select');
             const selectedOption = select.options[select.selectedIndex];
             const color = selectedOption.getAttribute('data-color');
             const indicator = document.getElementById('color-indicator');
@@ -141,27 +224,38 @@
                 indicator.style.backgroundColor = color;
             }
             
-            // Clean chart ID for filename
-            const cleanId = chartId.replace(/-/g, '_');
+            // Clean source ID for filename
+            const cleanId = sourceId.replace(/-/g, '_');
+            
+            // Construct filenames based on country
+            const prefix = countryId === 'EU' ? 'eu_monthly' : `${countryId.toLowerCase()}_monthly`;
+            
+            // Check CURRENT toggle state before regenerating HTML (preserve user's viewing preference)
+            const absoluteBtn = document.getElementById('toggle-absolute');
+            const isAbsoluteActive = absoluteBtn && absoluteBtn.classList.contains('active');
             
             // Update chart display - two separate divs that can be toggled
             display.innerHTML = `
                 <div id="percentage-plot-container">
-                    <img src="plots/eu_monthly_${cleanId}_percentage_10years.png" 
+                    <img src="plots/${prefix}_${cleanId}_percentage_10years.png" 
                          alt="${sourceName} Percentage" 
                          class="chart-img"
-                         onerror="this.src='plots/eu_monthly_${cleanId}_combined_10years.png'; this.onerror=null;">
+                         onerror="this.src='plots/${prefix}_${cleanId}_combined_10years.png'; this.onerror=null;">
                 </div>
                 <div id="absolute-plot-container" style="display: none;">
-                    <img src="plots/eu_monthly_${cleanId}_absolute_10years.png" 
+                    <img src="plots/${prefix}_${cleanId}_absolute_10years.png" 
                          alt="${sourceName} Absolute Production" 
                          class="chart-img"
                          onerror="this.style.display='none';">
                 </div>
             `;
             
-            // CRITICAL: Reset toggle buttons to percentage (sync button state with displayed content)
-            showPercentagePlot();
+            // Restore previous toggle state (preserve user's viewing preference)
+            if (isAbsoluteActive) {
+                showAbsolutePlot();
+            } else {
+                showPercentagePlot();
+            }
 
             // Only scroll if user manually changed selection (not on page load)
             if (window.pageYOffset > 0 || document.documentElement.scrollTop > 0) {
@@ -198,7 +292,7 @@
 
         // Load default chart on page load
         window.addEventListener('DOMContentLoaded', () => {
-            showMonthlyChart('all-renewables');
+            showMonthlyChart('all-renewables', 'EU');
         });
     </script>
 
@@ -225,7 +319,7 @@
             padding: 20px;
             margin-bottom: 24px;
             display: grid;
-            grid-template-columns: 1fr auto;
+            grid-template-columns: 1fr 1fr auto;
             gap: 20px;
             align-items: end;
         }
