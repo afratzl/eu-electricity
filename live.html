@@ -402,26 +402,47 @@
                 return;
             }
             
+            let downloadUrl = img.src;
+            
+            // Special handling for Google Drive URLs
+            if (downloadUrl.includes('drive.google.com')) {
+                // Convert view URL to download URL
+                // From: https://drive.google.com/uc?export=view&id=FILE_ID
+                // To: https://drive.google.com/uc?export=download&id=FILE_ID
+                downloadUrl = downloadUrl.replace('export=view', 'export=download');
+            }
+            
             try {
-                // Fetch image as blob to force download (works for cross-origin)
-                const response = await fetch(img.src);
-                const blob = await response.blob();
-                
-                // Create object URL and download
-                const url = window.URL.createObjectURL(blob);
-                const link = document.createElement('a');
-                link.href = url;
-                link.download = filename;
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
-                
-                // Clean up object URL
-                window.URL.revokeObjectURL(url);
+                // For Google Drive download URLs, use direct link approach
+                if (downloadUrl.includes('export=download')) {
+                    const link = document.createElement('a');
+                    link.href = downloadUrl;
+                    link.download = filename;
+                    link.target = '_blank';
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                } else {
+                    // For same-origin images (GitHub), use blob approach for reliability
+                    const response = await fetch(downloadUrl);
+                    const blob = await response.blob();
+                    
+                    // Create object URL and download
+                    const url = window.URL.createObjectURL(blob);
+                    const link = document.createElement('a');
+                    link.href = url;
+                    link.download = filename;
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    
+                    // Clean up object URL
+                    window.URL.revokeObjectURL(url);
+                }
             } catch (error) {
                 console.error('Download failed:', error);
-                // Fallback: open in new tab if fetch fails
-                window.open(img.src, '_blank');
+                // Fallback: open in new tab
+                window.open(downloadUrl, '_blank');
             }
         }
 
