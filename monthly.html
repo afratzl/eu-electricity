@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Monthly Trends - EU Energy Analysis</title>
+    <title>Monthly Generation Trends - EU Electricity</title>
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -39,7 +39,7 @@
                         <use href="#l" transform="scale(-1,1)"/>
                     </g>
                 </svg>
-                EU Electricity Production
+                EU Electricity Generation
             </span>
             <div class="nav-links">
                 <a href="index.html">Home</a>
@@ -52,8 +52,7 @@
 
     <div class="container">
         <header class="page-header">
-            <h1>Monthly Energy Production Trends</h1>
-            <p class="subtitle">10-year monthly comparison (2015-2025)</p>
+            <h1>Monthly Generation Trends</h1>
         </header>
 
         <!-- COMPACT SELECTOR BOX -->
@@ -178,6 +177,19 @@
         <div id="chart-display" class="chart-container">
             <!-- Chart will be loaded here by JavaScript -->
         </div>
+        
+        <!-- Download button -->
+        <div class="chart-info-bar">
+            <span></span>
+            <button id="download-btn" class="download-btn" onclick="downloadChart()" title="Download current chart">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                    <polyline points="7 10 12 15 17 10"></polyline>
+                    <line x1="12" y1="15" x2="12" y2="3"></line>
+                </svg>
+                <span>Download Chart</span>
+            </button>
+        </div>
     </div>
 
     <footer>
@@ -244,7 +256,7 @@
                 </div>
                 <div id="absolute-plot-container" style="display: none;">
                     <img src="plots/${prefix}_${cleanId}_absolute_10years.png" 
-                         alt="${sourceName} Absolute Production" 
+                         alt="${sourceName} Absolute Generation" 
                          class="chart-img"
                          onerror="this.style.display='none';">
                 </div>
@@ -288,6 +300,43 @@
             
             document.getElementById('toggle-percentage').classList.remove('active');
             document.getElementById('toggle-absolute').classList.add('active');
+        }
+
+        // Download current chart
+        function downloadChart() {
+            const countryId = document.getElementById('country-select').value;
+            const sourceId = document.getElementById('source-select').value;
+            const sourceName = sources[sourceId];
+            const cleanId = sourceId.replace(/-/g, '_');
+            
+            // Determine if percentage or absolute is showing
+            const isAbsolute = document.getElementById('toggle-absolute').classList.contains('active');
+            const plotType = isAbsolute ? 'Absolute' : 'Percentage';
+            const plotTypeFile = isAbsolute ? 'absolute' : 'percentage';
+            
+            // Get current date for filename
+            const now = new Date();
+            const timestamp = now.toISOString().slice(0,10).replace(/-/g, '');
+            
+            // Construct filename: CountryCode_SourceName_PlotType_Monthly_Timestamp.png
+            const filename = `${countryId}_${sourceName.replace(/\s+/g, '')}_${plotType}_Monthly_${timestamp}.png`;
+            
+            // Get the image source
+            const container = isAbsolute ? document.getElementById('absolute-plot-container') : document.getElementById('percentage-plot-container');
+            const img = container.querySelector('img');
+            
+            if (!img || !img.src) {
+                alert('No chart available to download');
+                return;
+            }
+            
+            // Download the image
+            const link = document.createElement('a');
+            link.href = img.src;
+            link.download = filename;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
         }
 
         // Load default chart on page load
@@ -378,6 +427,62 @@
         
         .toggle-btn-compact:hover:not(.active) {
             background: #f0f4f8;
+        }
+        
+        /* Chart info bar with download button */
+        .chart-info-bar {
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            background: #f7fafc;
+            border-top: 1px solid #e2e8f0;
+            border-bottom: 1px solid #e2e8f0;
+            padding: 12px 24px;
+            margin-top: 20px;
+        }
+        
+        .download-btn {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 16px;
+            background: white;
+            border: 1px solid #cbd5e0;
+            border-radius: 4px;
+            color: #4a5568;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .download-btn:hover {
+            background: #003399;
+            color: white;
+            border-color: #003399;
+        }
+        
+        .download-btn svg {
+            width: 16px;
+            height: 16px;
+        }
+        
+        .download-btn:active {
+            transform: translateY(1px);
+        }
+        
+        /* Mobile: Center download button */
+        @media (max-width: 768px) {
+            .chart-info-bar {
+                justify-content: center;
+                padding: 12px 16px;
+            }
+            
+            .download-btn {
+                width: 100%;
+                max-width: 300px;
+                justify-content: center;
+            }
         }
         
         /* Mobile: Stack vertically */
