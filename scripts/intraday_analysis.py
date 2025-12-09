@@ -315,6 +315,10 @@ def collect_all_data(api_key):
     print("PHASE 1: DATA COLLECTION")
     print("=" * 80)
     
+    # Cache fetch time at start for consistent cutoff across all sources
+    fetch_time = pd.Timestamp.now(tz='Europe/Brussels')
+    print(f"🕐 Reference fetch time: {fetch_time.strftime('%Y-%m-%d %H:%M:%S %Z')}")
+    
     # Define periods
     today = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
     yesterday = today - timedelta(days=1)
@@ -399,7 +403,7 @@ def collect_all_data(api_key):
             print(f"  {period_name}: ✗ No data")
     
     print("\n✓ Data collection complete!")
-    return data_matrix, periods
+    return data_matrix, periods, fetch_time
 
 
 # ============================================================================
@@ -555,24 +559,43 @@ def apply_corrections_for_period(data_matrix, target_period, reference_period):
     else:
         print("  ✓ No corrections needed")
     
-    # Build aggregate sources from corrected atomic sources
+    # Build aggregate sources using COMPONENT-LEVEL DELTA CORRECTION
+    # Formula: Projected Aggregate = Measured Aggregate + Σ(Projected Component - Actual Component)
+    # This preserves untracked sources in the aggregate while correcting tracked components
     for agg_source in AGGREGATE_SOURCES:
         components = AGGREGATE_DEFINITIONS[agg_source]
         
+        # Get measured aggregate from API (includes untracked sources)
+        measured_aggregate = data_matrix['aggregates'].get(agg_source, {}).get(target_period)
+        
         for timestamp in target_total_gen.index:
-            # Corrected aggregate
-            total_corrected = 0
-            for component in components:
-                if timestamp in corrected_sources[component]:
-                    total_corrected += sum(corrected_sources[component][timestamp].values())
-            corrected_sources[agg_source][timestamp] = {'EU': total_corrected}
+            # Actual aggregate: use measured value directly
+            if measured_aggregate is not None and timestamp in measured_aggregate.index:
+                actual_agg_value = measured_aggregate[timestamp]
+            else:
+                actual_agg_value = 0
+            actual_sources[agg_source][timestamp] = {'EU': actual_agg_value}
             
-            # Actual (uncorrected) aggregate
-            total_actual = 0
+            # Corrected aggregate: start with measured, add component corrections
+            corrected_agg_value = actual_agg_value
+            
+            # Calculate correction for each tracked component
             for component in components:
+                # Projected component value
+                projected_component = 0
+                if timestamp in corrected_sources[component]:
+                    projected_component = sum(corrected_sources[component][timestamp].values())
+                
+                # Actual component value
+                actual_component = 0
                 if timestamp in actual_sources[component]:
-                    total_actual += sum(actual_sources[component][timestamp].values())
-            actual_sources[agg_source][timestamp] = {'EU': total_actual}
+                    actual_component = sum(actual_sources[component][timestamp].values())
+                
+                # Add delta correction
+                correction = projected_component - actual_component
+                corrected_agg_value += correction
+            
+            corrected_sources[agg_source][timestamp] = {'EU': corrected_agg_value}
     
     # Build corrected and actual total generation
     corrected_total_gen = {}
@@ -746,7 +769,7 @@ def create_time_axis():
     return times
 
 
-def calculate_daily_statistics(data_dict):
+def calculate_daily_statistics(data_dict, fetch_time=None):
     """
     Calculate daily statistics for plotting
     """
@@ -764,7 +787,11 @@ def calculate_daily_statistics(data_dict):
             aligned_percentage = time_indexed['energy_percentage'].reindex(standard_times)
 
             if period_name in ['today', 'today_projected']:
-                current_time = pd.Timestamp.now(tz='Europe/Brussels')
+                # Use cached fetch_time for consistent cutoff across all sources
+                if fetch_time is None:
+                    current_time = pd.Timestamp.now(tz='Europe/Brussels')
+                else:
+                    current_time = fetch_time
                 cutoff_time = current_time - timedelta(hours=2)
                 cutoff_time = cutoff_time.floor('15T')
 
@@ -854,8 +881,8 @@ def plot_analysis(stats_data, source_type, output_file_base):
         'week_ago': '-',
         'year_ago': '-',
         'two_years_ago': '-',
-        'today_projected': '--',
-        'yesterday_projected': '--'
+        'today_projected': ':',  # Changed from '--' to ':' (dotted)
+        'yesterday_projected': ':'  # Changed from '--' to ':' (dotted)
     }
 
     labels = {
@@ -947,11 +974,14 @@ def plot_analysis(stats_data, source_type, output_file_base):
     
     ax1.grid(True, alpha=0.3, linewidth=1.5)
     
-    # Reorder legend to show today/yesterday first, then historical
-    # (even though plotting order is reversed for proper z-layering)
+    # Reorder legend for 3-column layout with custom grouping:
+    # Column 1: Today, Today (Projected)
+    # Column 2: Yesterday, Yesterday (Projected)
+    # Column 3: Previous Week, Last Year, Two Years Ago
+    # Legend fills left-to-right, so order is: today, yesterday, week_ago, today_projected, yesterday_projected, year_ago, two_years_ago
     handles, labels_list = ax1.get_legend_handles_labels()
-    legend_order = ['today', 'today_projected', 'yesterday', 'yesterday_projected',
-                    'week_ago', 'year_ago', 'two_years_ago']
+    legend_order = ['today', 'yesterday', 'week_ago',
+                    'today_projected', 'yesterday_projected', 'year_ago', 'two_years_ago']
     
     # Create ordered handles/labels matching desired legend layout
     ordered_handles = []
@@ -966,7 +996,7 @@ def plot_analysis(stats_data, source_type, output_file_base):
     
     ax1.legend(ordered_handles, ordered_labels, 
               loc='upper center', bbox_to_anchor=(0.5, -0.18), 
-              ncol=2, fontsize=20, frameon=False)
+              ncol=3, fontsize=20, frameon=False)
     
     plt.tight_layout()
     
@@ -1046,7 +1076,7 @@ def plot_analysis(stats_data, source_type, output_file_base):
     
     ax2.legend(ordered_handles2, ordered_labels2,
               loc='upper center', bbox_to_anchor=(0.5, -0.18),
-              ncol=2, fontsize=20, frameon=False)
+              ncol=3, fontsize=20, frameon=False)
     
     plt.tight_layout()
     
@@ -1057,7 +1087,7 @@ def plot_analysis(stats_data, source_type, output_file_base):
     return output_file_percentage, output_file_absolute
 
 
-def generate_plot_for_source(source_type, corrected_data, output_file_base):
+def generate_plot_for_source(source_type, corrected_data, output_file_base, fetch_time=None):
     """
     Phase 3: Generate plot for a specific source from corrected data
     """
@@ -1072,8 +1102,8 @@ def generate_plot_for_source(source_type, corrected_data, output_file_base):
         print(f"✗ No data available for {source_type}")
         return
     
-    # Calculate statistics
-    stats_data = calculate_daily_statistics(plot_data)
+    # Calculate statistics (pass fetch_time for consistent cutoff)
+    stats_data = calculate_daily_statistics(plot_data, fetch_time=fetch_time)
     
     # Create plots (returns percentage and absolute files)
     percentage_file, absolute_file = plot_analysis(stats_data, source_type, output_file_base)
@@ -1620,7 +1650,7 @@ def main():
     
     try:
         # Phase 1: Collect all data ONCE
-        data_matrix, periods = collect_all_data(api_key)
+        data_matrix, periods, fetch_time = collect_all_data(api_key)
         
         # Phase 2: Apply projections and corrections ONCE
         corrected_data = apply_projections_and_corrections(data_matrix)
@@ -1632,7 +1662,7 @@ def main():
             print(f"PHASE 3: GENERATING {DISPLAY_NAMES[args.source].upper()} PLOTS")
             print("=" * 80)
             output_file_base = f'plots/{args.source.replace("-", "_")}_analysis.png'
-            percentage_file, absolute_file = generate_plot_for_source(args.source, corrected_data, output_file_base)
+            percentage_file, absolute_file = generate_plot_for_source(args.source, corrected_data, output_file_base, fetch_time=fetch_time)
             
             # Upload both to Google Drive
             print(f"\n📤 Uploading to Google Drive...")
@@ -1652,7 +1682,7 @@ def main():
             for i, source in enumerate(all_sources, 1):
                 print(f"\n[{i}/{len(all_sources)}] Processing {DISPLAY_NAMES[source]}...")
                 output_file_base = f'plots/{source.replace("-", "_")}_analysis.png'
-                percentage_file, absolute_file = generate_plot_for_source(source, corrected_data, output_file_base)
+                percentage_file, absolute_file = generate_plot_for_source(source, corrected_data, output_file_base, fetch_time=fetch_time)
                 
                 # Upload both to Google Drive
                 perc_id = upload_plot_to_drive(percentage_file, country='EU')
