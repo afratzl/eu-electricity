@@ -303,7 +303,7 @@
         }
 
         // Download current chart
-        async function downloadChart() {
+        function downloadChart() {
             const countryId = document.getElementById('country-select').value;
             const sourceId = document.getElementById('source-select').value;
             const sourceName = sources[sourceId];
@@ -332,46 +332,41 @@
             
             let downloadUrl = img.src;
             
-            // Special handling for Google Drive URLs
+            // Special handling for ALL Google Drive URL formats
             if (downloadUrl.includes('drive.google.com')) {
-                // Convert view URL to download URL
-                // From: https://drive.google.com/uc?export=view&id=FILE_ID
-                // To: https://drive.google.com/uc?export=download&id=FILE_ID
-                downloadUrl = downloadUrl.replace('export=view', 'export=download');
+                // Extract file ID from various Drive URL formats
+                let fileId = null;
+                
+                // Format 1: thumbnail?id=FILE_ID
+                if (downloadUrl.includes('thumbnail?id=')) {
+                    fileId = downloadUrl.split('thumbnail?id=')[1].split('&')[0];
+                }
+                // Format 2: uc?export=view&id=FILE_ID or uc?id=FILE_ID&export=view
+                else if (downloadUrl.includes('/uc?')) {
+                    const match = downloadUrl.match(/[?&]id=([^&]+)/);
+                    if (match) fileId = match[1];
+                }
+                // Format 3: file/d/FILE_ID/view
+                else if (downloadUrl.includes('/file/d/')) {
+                    const match = downloadUrl.match(/\/file\/d\/([^\/]+)/);
+                    if (match) fileId = match[1];
+                }
+                
+                // If we found a file ID, construct proper download URL
+                if (fileId) {
+                    downloadUrl = `https://drive.google.com/uc?export=download&id=${fileId}`;
+                    window.open(downloadUrl, '_blank');
+                    return;
+                }
             }
             
-            try {
-                // For Google Drive download URLs, use direct link approach
-                if (downloadUrl.includes('export=download')) {
-                    const link = document.createElement('a');
-                    link.href = downloadUrl;
-                    link.download = filename;
-                    link.target = '_blank';
-                    document.body.appendChild(link);
-                    link.click();
-                    document.body.removeChild(link);
-                } else {
-                    // For same-origin images (GitHub), use blob approach for reliability
-                    const response = await fetch(downloadUrl);
-                    const blob = await response.blob();
-                    
-                    // Create object URL and download
-                    const url = window.URL.createObjectURL(blob);
-                    const link = document.createElement('a');
-                    link.href = url;
-                    link.download = filename;
-                    document.body.appendChild(link);
-                    link.click();
-                    document.body.removeChild(link);
-                    
-                    // Clean up object URL
-                    window.URL.revokeObjectURL(url);
-                }
-            } catch (error) {
-                console.error('Download failed:', error);
-                // Fallback: open in new tab
-                window.open(downloadUrl, '_blank');
-            }
+            // For GitHub/same-origin images, try to download with custom filename
+            const link = document.createElement('a');
+            link.href = downloadUrl;
+            link.download = filename;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
         }
 
         // Load default chart on page load
