@@ -263,14 +263,17 @@
             const links = await loadDriveLinks();
             let percentageUrl, absoluteUrl;
             
+            // Add cache-busting timestamp to force mobile browsers to refresh images
+            const cacheBuster = Date.now();
+            
             if (links && links[countryId] && links[countryId].Intraday && links[countryId].Intraday[sourceId]) {
-                // Use Drive direct URLs
-                percentageUrl = links[countryId].Intraday[sourceId].percentage.direct_url;
-                absoluteUrl = links[countryId].Intraday[sourceId].absolute.direct_url;
+                // Use Drive direct URLs with cache-busting parameter
+                percentageUrl = links[countryId].Intraday[sourceId].percentage.direct_url + `&t=${cacheBuster}`;
+                absoluteUrl = links[countryId].Intraday[sourceId].absolute.direct_url + `&t=${cacheBuster}`;
             } else {
                 // Fallback to GitHub plots (backward compatibility)
-                percentageUrl = `plots/${cleanId}_analysis_percentage.png`;
-                absoluteUrl = `plots/${cleanId}_analysis_absolute.png`;
+                percentageUrl = `plots/${cleanId}_analysis_percentage.png?t=${cacheBuster}`;
+                absoluteUrl = `plots/${cleanId}_analysis_absolute.png?t=${cacheBuster}`;
                 console.warn(`Drive link not found for ${countryId}/${sourceId}, using GitHub fallback`);
             }
             
@@ -402,132 +405,4 @@
         
         .selector-item label {
             font-weight: 500;
-            font-size: 0.95em;
-            color: #4a5568;
-            display: flex;
-            align-items: center;
-        }
-        
-        .selector-item select {
-            padding: 8px 10px;
-            font-size: 1em;
-            border: 2px solid #cbd5e0;
-            border-radius: 4px;
-            background: white;
-            width: 100%;
-        }
-        
-        .selector-item-toggle {
-            min-width: 200px;
-        }
-        
-        .toggle-group-compact {
-            display: flex;
-            background: white;
-            border: 2px solid #cbd5e0;
-            border-radius: 4px;
-            overflow: hidden;
-        }
-        
-        .toggle-btn-compact {
-            flex: 1;
-            padding: 8px 16px;
-            border: none;
-            background: white;
-            color: #4a5568;
-            cursor: pointer;
-            font-size: 0.95em;
-            font-weight: 600;
-            transition: all 0.2s ease;
-        }
-        
-        .toggle-btn-compact.active {
-            background: #003399;
-            color: white;
-        }
-        
-        .toggle-btn-compact:hover:not(.active) {
-            background: #f0f4f8;
-        }
-        
-        /* Mobile: Stack vertically */
-        @media (max-width: 768px) {
-            .compact-selector-box {
-                grid-template-columns: 1fr;
-                gap: 16px;
-                padding: 16px;
-            }
-            
-            .selector-item-toggle {
-                min-width: unset;
-            }
-            
-            .selector-item label {
-                font-size: 0.9em;
-            }
-            
-            .selector-item select {
-                font-size: 0.95em;
-            }
-        }
-        
-        /* Tablet: 2 columns with toggle on separate row */
-        @media (min-width: 769px) and (max-width: 1024px) {
-            .compact-selector-box {
-                grid-template-columns: 1fr 1fr;
-                gap: 16px;
-            }
-            
-            .selector-item-toggle {
-                grid-column: 1 / -1;
-                justify-self: center;
-            }
-        }
-        
-        /* Remove old styling */
-        .chart-selector {
-            display: none;
-        }
-        
-        .table-controls-pro {
-            display: none;
-        }
-        
-        /* Responsive image sizing - UPDATED TO 60% */
-        .chart-img {
-            width: 100%;
-            height: auto;
-        }
-        
-        /* Desktop: Scale down to 60% */
-        @media (min-width: 1024px) {
-            .chart-img {
-                width: 60%;
-                margin: 0 auto;
-                display: block;
-            }
-        }
-        
-        /* EU Flag responsive sizing */
-        @media (max-width: 768px) {
-            .nav-title svg {
-                width: 28px;
-                height: 19px;
-                margin-right: 8px;
-            }
-        }
-        
-        @media (max-width: 480px) {
-            .nav-title svg {
-                width: 24px;
-                height: 16px;
-                margin-right: 6px;
-            }
-        }
-    </style>
-
-    <!-- GoatCounter Analytics -->
-    <script data-goatcounter="https://eu-electricity.goatcounter.com/count"
-            async src="//gc.zgo.at/count.js"></script>
-</body>
-</html>
+            font-size:
