@@ -59,11 +59,6 @@
             <p class="subtitle">Real-time 15-minute resolution data</p>
         </header>
 
-        <div class="info-box">
-            <p><strong>Select country, energy source, and display mode</strong> to view today's production compared with historical patterns</p>
-            <p><strong>Updates:</strong> Hourly | <strong>Data:</strong> ENTSO-E Transparency Platform</p>
-        </div>
-
         <!-- COMPACT SELECTOR BOX -->
         <div class="compact-selector-box">
             <!-- Country/Region Selector -->
@@ -298,9 +293,12 @@
             // Clear the flag after first load
             isInitialPageLoad = false;
             
+            // Check CURRENT toggle state before regenerating HTML (preserve user's viewing preference)
+            const absoluteBtn = document.getElementById('toggle-absolute');
+            const isAbsoluteActive = absoluteBtn && absoluteBtn.classList.contains('active');
+            
             // Update chart display - two separate divs that can be toggled
             display.innerHTML = `
-            showPercentagePlot();  // Syncs button state with content
                 <div id="percentage-plot-container">
                     <img src="${percentageUrl}" 
                          alt="${sourceName} Percentage" 
@@ -326,8 +324,12 @@
                 }, 100);
             }
             
-            // Always show percentage view by default when source changes
-            // (No localStorage persistence)
+            // Restore previous toggle state (preserve user's viewing preference)
+            if (isAbsoluteActive) {
+                showAbsolutePlot();
+            } else {
+                showPercentagePlot();
+            }
             
             // Only scroll if user manually changed selection (not on page load)
             if (window.pageYOffset > 0 || document.documentElement.scrollTop > 0) {
