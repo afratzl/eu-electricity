@@ -262,19 +262,17 @@
             showPlot(plotId, countryId);
         }
 
-        // Update plot timestamp by fetching image Last-Modified header
-        async function updatePlotTimestamp(imageSrc) {
+        // Update plot timestamp by reading timestamp file
+        async function updatePlotTimestamp() {
             try {
-                const response = await fetch(imageSrc, { method: 'HEAD' });
-                const lastModified = response.headers.get('Last-Modified');
-                
-                if (lastModified) {
-                    const date = new Date(lastModified);
-                    const formattedDate = date.toISOString().slice(0, 16).replace('T', ' ') + ' UTC';
-                    document.getElementById('plot-timestamp').textContent = `Plots generated: ${formattedDate}`;
+                const response = await fetch('plots/plot_generation_timestamp.txt');
+                if (response.ok) {
+                    const timestamp = await response.text();
+                    document.getElementById('plot-timestamp').textContent = `Plots generated: ${timestamp.trim()}`;
                 } else {
+                    // Fallback to current date if file not found
                     const now = new Date();
-                    const formattedDate = now.toISOString().slice(0, 10);
+                    const formattedDate = now.toISOString().slice(0, 16).replace('T', ' ') + ' UTC';
                     document.getElementById('plot-timestamp').textContent = `Plots generated: ${formattedDate}`;
                 }
             } catch (error) {
@@ -315,7 +313,7 @@
                         <img src="${config.percentage}" 
                              alt="Percentage plot" 
                              class="chart-img"
-                             onload="updatePlotTimestamp(this.src)">
+                             >
                     </div>
                     <div id="absolute-plot-container" style="display: none;">
                         <img src="${config.absolute}" 
@@ -345,7 +343,7 @@
                         <img src="${config.single}" 
                              alt="YoY plot" 
                              class="chart-img"
-                             onload="updatePlotTimestamp(this.src)">
+                             >
                     </div>
                 `;
                 
@@ -358,6 +356,9 @@
             if (window.pageYOffset > 0 || document.documentElement.scrollTop > 0) {
                 display.scrollIntoView({ behavior: 'smooth', block: 'start' });
             }
+            
+            // Update timestamp
+            updatePlotTimestamp();
         }
 
         // Toggle functions
@@ -526,8 +527,8 @@
             background: #f7fafc;
             border-top: 1px solid #e2e8f0;
             border-bottom: 1px solid #e2e8f0;
-            padding: 8px 24px;
-            margin-top: 8px;
+            padding: 6px 24px;
+            margin-top: 0px;
             margin-bottom: 8px;
             gap: 20px;
         }
