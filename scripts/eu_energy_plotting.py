@@ -237,7 +237,14 @@ def create_all_charts(all_data):
                         linewidth=6, markersize=13, label=str(year))
 
         # Title and labels - match intraday format
-        fig1.suptitle(f'{source_name} Electricity Generation (EU)', fontsize=34, fontweight='bold', x=0.55, y=0.96, ha='center')
+        # Clean up display name for aggregates
+        display_name = source_name
+        if source_name == 'All Renewables':
+            display_name = 'Renewable'
+        elif source_name == 'All Non-Renewables':
+            display_name = 'Non-Renewable'
+        
+        fig1.suptitle(f'{display_name} Electricity Generation (EU)', fontsize=34, fontweight='bold', x=0.55, y=0.96, ha='center')
         ax1.set_title('Fraction of Total Generation', fontsize=26, fontweight='normal', pad=10, ha='center')
         ax1.set_xlabel('Month', fontsize=28, fontweight='bold', labelpad=15)
         ax1.set_ylabel('Electricity Generation (%)', fontsize=28, fontweight='bold', labelpad=15)
@@ -294,7 +301,14 @@ def create_all_charts(all_data):
                     linewidth=6, markersize=13, label=str(year))
 
         # Title and labels - match intraday format
-        fig2.suptitle(f'{source_name} Electricity Generation (EU)', fontsize=34, fontweight='bold', x=0.55, y=0.96, ha='center')
+        # Clean up display name for aggregates
+        display_name = source_name
+        if source_name == 'All Renewables':
+            display_name = 'Renewable'
+        elif source_name == 'All Non-Renewables':
+            display_name = 'Non-Renewable'
+        
+        fig2.suptitle(f'{display_name} Electricity Generation (EU)', fontsize=34, fontweight='bold', x=0.55, y=0.96, ha='center')
         ax2.set_title('Absolute Generation', fontsize=26, fontweight='normal', pad=10, ha='center')
         ax2.set_xlabel('Month', fontsize=28, fontweight='bold', labelpad=15)
         ax2.set_ylabel('Electricity Generation (TWh)', fontsize=28, fontweight='bold', labelpad=15)
