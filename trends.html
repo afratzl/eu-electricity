@@ -424,6 +424,20 @@
     </script>
 
     <style>
+        /* Responsive image sizing - 60% on desktop */
+        .chart-img {
+            width: 100%;
+            height: auto;
+        }
+        
+        @media (min-width: 1024px) {
+            .chart-img {
+                width: 60%;
+                margin: 0 auto;
+                display: block;
+            }
+        }
+        
         /* Compact selector box - all controls in one container */
         .compact-selector-box {
             background: #f7fafc;
