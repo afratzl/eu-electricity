@@ -428,13 +428,18 @@ def create_all_charts(all_data):
             # PERCENTAGE PLOT
             fig1, ax1 = plt.subplots(figsize=(12, 10))
 
+            # Plot sources and track handles for legend reordering
+            from matplotlib.lines import Line2D
+            line_handles = {}
+            
             for source_name in available_sources:
                 color = ENTSOE_COLORS.get(source_name, 'black')
-                ax1.plot(months, monthly_means_pct[source_name], marker='o', color=color,
+                line, = ax1.plot(months, monthly_means_pct[source_name], marker='o', color=color,
                          linewidth=6, markersize=13, label=source_name)
+                line_handles[source_name] = line
 
-            # Title and labels - match intraday/monthly format
-            fig1.suptitle(f'All Electricity Sources: {period["name"]} (EU)', 
+            # Title and labels - clean format with context in parentheses
+            fig1.suptitle(f'Electricity Generation ({period["name"]}, EU)', 
                          fontsize=34, fontweight='bold', x=0.5, y=0.98, ha="center")
             ax1.set_title('Fraction of Total Generation', fontsize=26, fontweight='normal', pad=15)
             ax1.set_xlabel('Month', fontsize=28, fontweight='bold', labelpad=15)
@@ -443,7 +448,26 @@ def create_all_charts(all_data):
             ax1.tick_params(axis='both', labelsize=22, length=8, pad=8)
             ax1.grid(True, alpha=0.3, linewidth=1.5)
 
-            ax1.legend(loc='upper center', bbox_to_anchor=(0.45, -0.20), ncol=5,
+            # Create legend with spacers for centered row 3 (renewables left, non-renewables right)
+            spacer = Line2D([0], [0], color='none', label=' ')
+            legend_order = [
+                'Wind', 'Hydro', 'Nuclear', 'Gas',
+                'Solar', 'Biomass', 'Coal', 'Waste',
+                '_SPACER_', 'Geothermal', 'Oil', '_SPACER_'
+            ]
+            
+            legend_handles = []
+            legend_labels = []
+            for item in legend_order:
+                if item == '_SPACER_':
+                    legend_handles.append(spacer)
+                    legend_labels.append(' ')
+                elif item in line_handles:
+                    legend_handles.append(line_handles[item])
+                    legend_labels.append(item)
+            
+            ax1.legend(legend_handles, legend_labels,
+                       loc='upper center', bbox_to_anchor=(0.45, -0.25), ncol=4,
                        fontsize=20, frameon=False)
 
             # Add timestamp
@@ -461,14 +485,18 @@ def create_all_charts(all_data):
             # ABSOLUTE PLOT
             fig2, ax2 = plt.subplots(figsize=(12, 10))
 
+            # Plot sources and track handles for legend reordering
+            line_handles = {}
+            
             for source_name in available_sources:
                 color = ENTSOE_COLORS.get(source_name, 'black')
                 values_twh = [val / 1000 for val in monthly_means_abs[source_name]]
-                ax2.plot(months, values_twh, marker='o', color=color,
+                line, = ax2.plot(months, values_twh, marker='o', color=color,
                          linewidth=6, markersize=13, label=source_name)
+                line_handles[source_name] = line
 
-            # Title and labels - match intraday/monthly format
-            fig2.suptitle(f'All Electricity Sources: {period["name"]} (EU)', 
+            # Title and labels - clean format with context in parentheses
+            fig2.suptitle(f'Electricity Generation ({period["name"]}, EU)', 
                          fontsize=34, fontweight='bold', x=0.5, y=0.98, ha="center")
             ax2.set_title('Absolute Generation', fontsize=26, fontweight='normal', pad=15)
             ax2.set_xlabel('Month', fontsize=28, fontweight='bold', labelpad=15)
@@ -477,7 +505,26 @@ def create_all_charts(all_data):
             ax2.tick_params(axis='both', labelsize=22, length=8, pad=8)
             ax2.grid(True, alpha=0.3, linewidth=1.5)
 
-            ax2.legend(loc='upper center', bbox_to_anchor=(0.45, -0.20), ncol=5,
+            # Create legend with spacers for centered row 3 (renewables left, non-renewables right)
+            spacer = Line2D([0], [0], color='none', label=' ')
+            legend_order = [
+                'Wind', 'Hydro', 'Nuclear', 'Gas',
+                'Solar', 'Biomass', 'Coal', 'Waste',
+                '_SPACER_', 'Geothermal', 'Oil', '_SPACER_'
+            ]
+            
+            legend_handles = []
+            legend_labels = []
+            for item in legend_order:
+                if item == '_SPACER_':
+                    legend_handles.append(spacer)
+                    legend_labels.append(' ')
+                elif item in line_handles:
+                    legend_handles.append(line_handles[item])
+                    legend_labels.append(item)
+            
+            ax2.legend(legend_handles, legend_labels,
+                       loc='upper center', bbox_to_anchor=(0.45, -0.25), ncol=4,
                        fontsize=20, frameon=False)
 
             # Add timestamp (reuse same timestamp)
@@ -583,8 +630,8 @@ def create_all_charts(all_data):
                 ax1.plot(month_names_abbr, monthly_means_pct[category_name], marker='o', color=color,
                          linewidth=6, markersize=13, label=category_name)
 
-            # Title and labels - match intraday/monthly format
-            fig1.suptitle(f'Renewables vs Non-Renewables: {period["name"]} (EU)', 
+            # Title and labels - clean format with context in parentheses
+            fig1.suptitle(f'Electricity Generation ({period["name"]}, EU)', 
                          fontsize=34, fontweight='bold', x=0.5, y=0.98, ha="center")
             ax1.set_title('Fraction of Total Generation', fontsize=26, fontweight='normal', pad=15)
             ax1.set_xlabel('Month', fontsize=28, fontweight='bold', labelpad=15)
@@ -617,8 +664,8 @@ def create_all_charts(all_data):
                 ax2.plot(month_names_abbr, values_twh, marker='o', color=color,
                          linewidth=6, markersize=13, label=category_name)
 
-            # Title and labels - match intraday/monthly format
-            fig2.suptitle(f'Renewables vs Non-Renewables: {period["name"]} (EU)', 
+            # Title and labels - clean format with context in parentheses
+            fig2.suptitle(f'Electricity Generation ({period["name"]}, EU)', 
                          fontsize=34, fontweight='bold', x=0.5, y=0.98, ha="center")
             ax2.set_title('Absolute Generation', fontsize=26, fontweight='normal', pad=15)
             ax2.set_xlabel('Month', fontsize=28, fontweight='bold', labelpad=15)
@@ -708,6 +755,8 @@ def create_all_charts(all_data):
         fig1, ax1 = plt.subplots(figsize=(12, 10))
 
         lines_plotted = 0
+        line_handles = {}
+        
         for source_name in all_sources:
             if source_name in annual_totals and len(annual_totals[source_name]) > 0:
                 years_list = sorted(annual_totals[source_name].keys())
@@ -729,13 +778,14 @@ def create_all_charts(all_data):
                         else:
                             percentages.append(0)
 
-                    ax1.plot(pct_years, percentages, marker='o', color=color,
+                    line, = ax1.plot(pct_years, percentages, marker='o', color=color,
                              linewidth=6, markersize=13, label=source_name)
+                    line_handles[source_name] = line
                     lines_plotted += 1
 
         if lines_plotted > 0:
-            # Title and labels - match intraday/monthly format
-            fig1.suptitle('Annual Trends: All Sources (EU)', 
+            # Title and labels - clean format
+            fig1.suptitle('Electricity Generation (EU)', 
                          fontsize=34, fontweight='bold', x=0.5, y=0.98, ha="center")
             ax1.set_title('Fraction of Total Generation', fontsize=26, fontweight='normal', pad=15)
             ax1.set_xlabel('Year', fontsize=28, fontweight='bold', labelpad=15)
@@ -744,7 +794,27 @@ def create_all_charts(all_data):
             ax1.tick_params(axis='both', labelsize=22, length=8, pad=8)
             ax1.grid(True, alpha=0.3, linewidth=1.5)
 
-            ax1.legend(loc='upper center', bbox_to_anchor=(0.45, -0.20), ncol=5,
+            # Create legend with spacers for centered row 3 (renewables left, non-renewables right)
+            from matplotlib.lines import Line2D
+            spacer = Line2D([0], [0], color='none', label=' ')
+            legend_order = [
+                'Wind', 'Hydro', 'Nuclear', 'Gas',
+                'Solar', 'Biomass', 'Coal', 'Waste',
+                '_SPACER_', 'Geothermal', 'Oil', '_SPACER_'
+            ]
+            
+            legend_handles = []
+            legend_labels = []
+            for item in legend_order:
+                if item == '_SPACER_':
+                    legend_handles.append(spacer)
+                    legend_labels.append(' ')
+                elif item in line_handles:
+                    legend_handles.append(line_handles[item])
+                    legend_labels.append(item)
+            
+            ax1.legend(legend_handles, legend_labels,
+                       loc='upper center', bbox_to_anchor=(0.45, -0.25), ncol=4,
                        fontsize=20, frameon=False)
 
             # Add timestamp
@@ -762,19 +832,22 @@ def create_all_charts(all_data):
         fig2, ax2 = plt.subplots(figsize=(12, 10))
 
         lines_plotted = 0
+        line_handles = {}
+        
         for source_name in all_sources:
             if source_name in annual_totals and len(annual_totals[source_name]) > 0:
                 years_list = sorted(annual_totals[source_name].keys())
                 color = ENTSOE_COLORS.get(source_name, 'black')
                 
                 values_twh = [annual_totals[source_name][year] / 1000 for year in years_list]
-                ax2.plot(years_list, values_twh, marker='o', color=color,
+                line, = ax2.plot(years_list, values_twh, marker='o', color=color,
                          linewidth=6, markersize=13, label=source_name)
+                line_handles[source_name] = line
                 lines_plotted += 1
 
         if lines_plotted > 0:
-            # Title and labels - match intraday/monthly format
-            fig2.suptitle('Annual Trends: All Sources (EU)', 
+            # Title and labels - clean format
+            fig2.suptitle('Electricity Generation (EU)', 
                          fontsize=34, fontweight='bold', x=0.5, y=0.98, ha="center")
             ax2.set_title('Absolute Generation', fontsize=26, fontweight='normal', pad=15)
             ax2.set_xlabel('Year', fontsize=28, fontweight='bold', labelpad=15)
@@ -783,7 +856,26 @@ def create_all_charts(all_data):
             ax2.tick_params(axis='both', labelsize=22, length=8, pad=8)
             ax2.grid(True, alpha=0.3, linewidth=1.5)
 
-            ax2.legend(loc='upper center', bbox_to_anchor=(0.45, -0.20), ncol=5,
+            # Create legend with spacers for centered row 3 (renewables left, non-renewables right)
+            spacer = Line2D([0], [0], color='none', label=' ')
+            legend_order = [
+                'Wind', 'Hydro', 'Nuclear', 'Gas',
+                'Solar', 'Biomass', 'Coal', 'Waste',
+                '_SPACER_', 'Geothermal', 'Oil', '_SPACER_'
+            ]
+            
+            legend_handles = []
+            legend_labels = []
+            for item in legend_order:
+                if item == '_SPACER_':
+                    legend_handles.append(spacer)
+                    legend_labels.append(' ')
+                elif item in line_handles:
+                    legend_handles.append(line_handles[item])
+                    legend_labels.append(item)
+            
+            ax2.legend(legend_handles, legend_labels,
+                       loc='upper center', bbox_to_anchor=(0.45, -0.25), ncol=4,
                        fontsize=20, frameon=False)
 
             # Add timestamp (reuse same timestamp)
@@ -834,8 +926,8 @@ def create_all_charts(all_data):
                     lines_plotted += 1
 
         if lines_plotted > 0:
-            # Title and labels - match intraday/monthly format
-            fig1.suptitle('Annual Trends: Aggregates (EU)', 
+            # Title and labels - clean format
+            fig1.suptitle('Electricity Generation (EU)', 
                          fontsize=34, fontweight='bold', x=0.5, y=0.98, ha="center")
             ax1.set_title('Fraction of Total Generation', fontsize=26, fontweight='normal', pad=15)
             ax1.set_xlabel('Year', fontsize=28, fontweight='bold', labelpad=15)
@@ -873,8 +965,8 @@ def create_all_charts(all_data):
                 lines_plotted += 1
 
         if lines_plotted > 0:
-            # Title and labels - match intraday/monthly format
-            fig2.suptitle('Annual Trends: Aggregates (EU)', 
+            # Title and labels - clean format
+            fig2.suptitle('Electricity Generation (EU)', 
                          fontsize=34, fontweight='bold', x=0.5, y=0.98, ha="center")
             ax2.set_title('Absolute Generation', fontsize=26, fontweight='normal', pad=15)
             ax2.set_xlabel('Year', fontsize=28, fontweight='bold', labelpad=15)
@@ -917,6 +1009,7 @@ def create_all_charts(all_data):
         
         all_yoy_values = []
         lines_plotted = 0
+        line_handles = {}
         
         for source_name in all_sources_for_yoy:
             if source_name in annual_totals and baseline_year in annual_totals[source_name]:
@@ -937,8 +1030,9 @@ def create_all_charts(all_data):
 
                     if len(years_to_plot) > 0:
                         color = ENTSOE_COLORS.get(source_name, 'black')
-                        ax1.plot(years_to_plot, yoy_changes, marker='o', color=color,
+                        line, = ax1.plot(years_to_plot, yoy_changes, marker='o', color=color,
                                  linewidth=6, markersize=13, label=source_name)
+                        line_handles[source_name] = line
                         lines_plotted += 1
 
         if lines_plotted > 0:
@@ -953,8 +1047,8 @@ def create_all_charts(all_data):
                 y_min_limit = -50
                 y_max_limit = 100
 
-            # Title and labels
-            fig1.suptitle('YoY Change vs 2015: All Sources (EU)', 
+            # Title and labels - clean format
+            fig1.suptitle('Electricity Generation (YoY Change since 2015, EU)', 
                          fontsize=34, fontweight='bold', x=0.5, y=0.98, ha="center")
             ax1.set_title('Year-over-Year Change', fontsize=26, fontweight='normal', pad=15)
             ax1.set_xlabel('Year', fontsize=28, fontweight='bold', labelpad=15)
@@ -964,7 +1058,27 @@ def create_all_charts(all_data):
             ax1.tick_params(axis='both', labelsize=22, length=8, pad=8)
             ax1.grid(True, alpha=0.3, linewidth=1.5)
 
-            ax1.legend(loc='upper center', bbox_to_anchor=(0.45, -0.20), ncol=5,
+            # Create legend with spacers for centered row 3 (renewables left, non-renewables right)
+            from matplotlib.lines import Line2D
+            spacer = Line2D([0], [0], color='none', label=' ')
+            legend_order = [
+                'Wind', 'Hydro', 'Nuclear', 'Gas',
+                'Solar', 'Biomass', 'Coal', 'Waste',
+                '_SPACER_', 'Geothermal', 'Oil', '_SPACER_'
+            ]
+            
+            legend_handles = []
+            legend_labels = []
+            for item in legend_order:
+                if item == '_SPACER_':
+                    legend_handles.append(spacer)
+                    legend_labels.append(' ')
+                elif item in line_handles:
+                    legend_handles.append(line_handles[item])
+                    legend_labels.append(item)
+            
+            ax1.legend(legend_handles, legend_labels,
+                       loc='upper center', bbox_to_anchor=(0.45, -0.25), ncol=4,
                        fontsize=18, frameon=False)
 
             # Add timestamp
@@ -1018,8 +1132,8 @@ def create_all_charts(all_data):
             y_min_limit = -50
             y_max_limit = 100
 
-        # Title and labels
-        fig2.suptitle('YoY Change vs 2015: Aggregates (EU)', 
+        # Title and labels - clean format
+        fig2.suptitle('Electricity Generation (YoY Change since 2015, EU)', 
                      fontsize=34, fontweight='bold', x=0.5, y=0.98, ha="center")
         ax2.set_title('Year-over-Year Change', fontsize=26, fontweight='normal', pad=15)
         ax2.set_xlabel('Year', fontsize=28, fontweight='bold', labelpad=15)
