@@ -236,11 +236,11 @@ def create_all_charts(all_data):
                 ax1.plot(months, percentages, marker='o', color=color, 
                         linewidth=6, markersize=13, label=str(year))
 
-        # Title with bold source name ONLY (no confusing subtitle)
-        fig1.suptitle(source_name, fontsize=34, fontweight='bold', x=0.5, y=0.98, ha="center")
-        ax1.set_title('Percentage of EU Production', fontsize=26, fontweight='normal', pad=15)
+        # Title and labels - match intraday format
+        fig1.suptitle(f'{source_name} Electricity Generation (EU)', fontsize=34, fontweight='bold', x=0.5, y=0.98, ha="center")
+        ax1.set_title('Fraction of Total Generation', fontsize=26, fontweight='normal', pad=15)
         ax1.set_xlabel('Month', fontsize=28, fontweight='bold', labelpad=15)
-        ax1.set_ylabel('Electricity production (%)', fontsize=28, fontweight='bold', labelpad=15)
+        ax1.set_ylabel('Electricity Generation (%)', fontsize=28, fontweight='bold', labelpad=15)
         
         # NO RESTRICTION - let it scale to data
         ax1.set_ylim(0, max_pct_value * 1.1 if max_pct_value > 0 else 10)
@@ -248,8 +248,15 @@ def create_all_charts(all_data):
         ax1.tick_params(axis='both', labelsize=22)
         ax1.grid(True, alpha=0.3, linewidth=1.5)
 
-        ax1.legend(loc='upper center', bbox_to_anchor=(0.5, -0.15), 
+        ax1.legend(loc='upper center', bbox_to_anchor=(0.5, -0.20), 
                   ncol=5, fontsize=20, frameon=False)
+
+        # Add timestamp
+        timestamp = datetime.now().strftime('%Y-%m-%d %H:%M UTC')
+        fig1.text(0.93, 0.02, f"Generated: {timestamp}",
+                  ha='right', va='bottom',
+                  fontsize=11, color='#666',
+                  style='italic')
 
         plt.tight_layout()
 
@@ -286,11 +293,11 @@ def create_all_charts(all_data):
             ax2.plot(months, values_twh, marker='o', color=color,
                     linewidth=6, markersize=13, label=str(year))
 
-        # Title with bold source name ONLY (no confusing subtitle)
-        fig2.suptitle(source_name, fontsize=34, fontweight='bold', x=0.5, y=0.98, ha="center")
-        ax2.set_title('Absolute Production', fontsize=26, fontweight='normal', pad=15)
+        # Title and labels - match intraday format
+        fig2.suptitle(f'{source_name} Electricity Generation (EU)', fontsize=34, fontweight='bold', x=0.5, y=0.98, ha="center")
+        ax2.set_title('Absolute Generation', fontsize=26, fontweight='normal', pad=15)
         ax2.set_xlabel('Month', fontsize=28, fontweight='bold', labelpad=15)
-        ax2.set_ylabel('Electricity production (TWh)', fontsize=28, fontweight='bold', labelpad=15)
+        ax2.set_ylabel('Electricity Generation (TWh)', fontsize=28, fontweight='bold', labelpad=15)
         
         # NO RESTRICTION - let it scale to data
         ax2.set_ylim(0, max_abs_value * 1.1 if max_abs_value > 0 else 10)
@@ -298,8 +305,14 @@ def create_all_charts(all_data):
         ax2.tick_params(axis='both', labelsize=22)
         ax2.grid(True, alpha=0.3, linewidth=1.5)
 
-        ax2.legend(loc='upper center', bbox_to_anchor=(0.5, -0.15),
+        ax2.legend(loc='upper center', bbox_to_anchor=(0.5, -0.20),
                   ncol=5, fontsize=20, frameon=False)
+
+        # Add timestamp (reuse from percentage plot)
+        fig2.text(0.93, 0.02, f"Generated: {timestamp}",
+                  ha='right', va='bottom',
+                  fontsize=11, color='#666',
+                  style='italic')
 
         plt.tight_layout()
 
