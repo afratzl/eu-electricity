@@ -3,7 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Historical Analysis - EU Energy Analysis</title>
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <title>Long-term Trends - EU Electricity Generation</title>
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -39,7 +42,7 @@
                         <use href="#l" transform="scale(-1,1)"/>
                     </g>
                 </svg>
-                EU Electricity Production
+                EU Electricity Generation
             </span>
             <div class="nav-links">
                 <a href="index.html">Home</a>
@@ -50,42 +53,99 @@
         </div>
     </nav>
 
-    <div class="container">
+    <div class="container" style="margin-bottom: 20px;">
         <header class="page-header">
-            <h1>Historical Energy Analysis</h1>
-            <p class="subtitle">Long-term trends and energy transition data (2015-2025)</p>
+            <h1>Long-term Trends</h1>
         </header>
 
-        <div class="info-box">
-            <p><strong>Select a chart below</strong> to explore period comparisons and annual evolution of EU energy production</p>
-            <p><strong>Note:</strong> For monthly trends by individual energy source, visit the <a href="monthly.html">Monthly page</a></p>
+        <!-- COMPACT SELECTOR BOX -->
+        <div class="compact-selector-box">
+            <!-- Country/Region Selector -->
+            <div class="selector-item">
+                <label for="country-select">Country / Region:</label>
+                <select id="country-select" onchange="updateCharts()">
+                    <option value="EU" selected>🇪🇺 European Union</option>
+                    <option value="AT">🇦🇹 Austria</option>
+                    <option value="BE">🇧🇪 Belgium</option>
+                    <option value="BG">🇧🇬 Bulgaria</option>
+                    <option value="HR">🇭🇷 Croatia</option>
+                    <option value="CY">🇨🇾 Cyprus</option>
+                    <option value="CZ">🇨🇿 Czechia</option>
+                    <option value="DK">🇩🇰 Denmark</option>
+                    <option value="EE">🇪🇪 Estonia</option>
+                    <option value="FI">🇫🇮 Finland</option>
+                    <option value="FR">🇫🇷 France</option>
+                    <option value="DE">🇩🇪 Germany</option>
+                    <option value="GR">🇬🇷 Greece</option>
+                    <option value="HU">🇭🇺 Hungary</option>
+                    <option value="IE">🇮🇪 Ireland</option>
+                    <option value="IT">🇮🇹 Italy</option>
+                    <option value="LV">🇱🇻 Latvia</option>
+                    <option value="LT">🇱🇹 Lithuania</option>
+                    <option value="LU">🇱🇺 Luxembourg</option>
+                    <option value="MT">🇲🇹 Malta</option>
+                    <option value="NL">🇳🇱 Netherlands</option>
+                    <option value="PL">🇵🇱 Poland</option>
+                    <option value="PT">🇵🇹 Portugal</option>
+                    <option value="RO">🇷🇴 Romania</option>
+                    <option value="SK">🇸🇰 Slovakia</option>
+                    <option value="SI">🇸🇮 Slovenia</option>
+                    <option value="ES">🇪🇸 Spain</option>
+                    <option value="SE">🇸🇪 Sweden</option>
+                </select>
+            </div>
+
+            <!-- Plot Type Selector -->
+            <div class="selector-item">
+                <label for="plot-select">Analysis Type:</label>
+                <select id="plot-select" onchange="updateCharts()">
+                    <optgroup label="Individual Sources">
+                        <option value="annual-all" selected>Annual Trends</option>
+                        <option value="yoy-all">YoY vs 2015</option>
+                        <option value="period-2015-2019-all">2015-2019</option>
+                        <option value="period-2020-2024-all">2020-2024</option>
+                        <option value="period-2025-2029-all">2025-2029</option>
+                    </optgroup>
+                    <optgroup label="Aggregates">
+                        <option value="annual-agg">Annual Trends</option>
+                        <option value="yoy-agg">YoY vs 2015</option>
+                        <option value="period-2015-2019-agg">2015-2019</option>
+                        <option value="period-2020-2024-agg">2020-2024</option>
+                        <option value="period-2025-2029-agg">2025-2029</option>
+                    </optgroup>
+                </select>
+            </div>
+
+            <!-- Toggle between Percentage and Absolute -->
+            <div class="selector-item-toggle">
+                <label>View Type:</label>
+                <div class="toggle-group-compact">
+                    <button id="toggle-percentage" class="toggle-btn-compact active" onclick="showPercentagePlot()">
+                        Percentage
+                    </button>
+                    <button id="toggle-absolute" class="toggle-btn-compact" onclick="showAbsolutePlot()">
+                        Absolute
+                    </button>
+                </div>
+            </div>
         </div>
 
-        <!-- DROPDOWN SELECTOR -->
-        <div class="chart-selector">
-            <label for="chart-select">Choose Analysis:</label>
-            <select id="chart-select" onchange="showChart(this.value)">
-                <optgroup label="Period Comparisons">
-                    <option value="period-2015-2019">All: 2015-2019</option>
-                    <option value="period-2020-2024">All: 2020-2024</option>
-                    <option value="period-2025-2029" selected>All: 2025-2029</option>
-                    <option value="ren-vs-nonren-2015-2019">Aggregates: 2015-2019</option>
-                    <option value="ren-vs-nonren-2020-2024">Aggregates: 2020-2024</option>
-                    <option value="ren-vs-nonren-2025-2029">Aggregates: 2025-2029</option>
-                </optgroup>
-                
-                <optgroup label="Annual Trends">
-                    <option value="annual-renewable">Renewables</option>
-                    <option value="annual-nonrenewable">Non-Renewables</option>
-                    <option value="transition">Aggregates</option>
-                    <option value="yoy">YoY vs 2015</option>
-                </optgroup>
-            </select>
-        </div>
-
-        <!-- DYNAMIC CHART DISPLAY -->
+        <!-- CHART DISPLAY -->
         <div id="chart-display" class="chart-container">
             <!-- Chart will be loaded here by JavaScript -->
+        </div>
+
+        <!-- Download button with timestamp -->
+        <div id="chart-info-bar" class="chart-info-bar">
+            <span id="plot-timestamp" class="timestamp">Plots generated: Loading...</span>
+            <button class="download-btn" onclick="downloadChart()">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                    <polyline points="7 10 12 15 17 10"></polyline>
+                    <line x1="12" y1="15" x2="12" y2="3"></line>
+                </svg>
+                Download Chart
+            </button>
         </div>
     </div>
 
@@ -96,116 +156,385 @@
     </footer>
 
     <script>
-        // Chart configurations
-        const charts = {
-            'period-2015-2019': {
-                image: 'plots/eu_monthly_energy_sources_mean_2015_2019_combined.png',
-                title: 'All Energy Sources: 2015-2019'
+        // Plot configurations - mapping IDs to file paths
+        const plotConfigs = {
+            // Individual Sources - Annual Trends
+            'annual-all': {
+                percentage: 'plots/eu_annual_all_sources_percentage.png',
+                absolute: 'plots/eu_annual_all_sources_absolute.png',
+                hasToggle: true
             },
-            'period-2020-2024': {
-                image: 'plots/eu_monthly_energy_sources_mean_2020_2024_combined.png',
-                title: 'All Energy Sources: 2020-2024'
+            // Individual Sources - YoY vs 2015
+            'yoy-all': {
+                single: 'plots/eu_annual_yoy_all_sources_vs_2015.png',
+                hasToggle: false
             },
-            'period-2025-2029': {
-                image: 'plots/eu_monthly_energy_sources_mean_2025_2029_combined.png',
-                title: 'All Energy Sources: 2025-2029'
+            // Individual Sources - Period Comparisons
+            'period-2015-2019-all': {
+                percentage: 'plots/eu_monthly_energy_sources_mean_2015_2019_percentage.png',
+                absolute: 'plots/eu_monthly_energy_sources_mean_2015_2019_absolute.png',
+                hasToggle: true
             },
-            'ren-vs-nonren-2015-2019': {
-                image: 'plots/eu_monthly_renewable_vs_nonrenewable_mean_2015_2019_combined.png',
-                title: 'Aggregates: 2015-2019'
+            'period-2020-2024-all': {
+                percentage: 'plots/eu_monthly_energy_sources_mean_2020_2024_percentage.png',
+                absolute: 'plots/eu_monthly_energy_sources_mean_2020_2024_absolute.png',
+                hasToggle: true
             },
-            'ren-vs-nonren-2020-2024': {
-                image: 'plots/eu_monthly_renewable_vs_nonrenewable_mean_2020_2024_combined.png',
-                title: 'Aggregates: 2020-2024'
+            'period-2025-2029-all': {
+                percentage: 'plots/eu_monthly_energy_sources_mean_2025_2029_percentage.png',
+                absolute: 'plots/eu_monthly_energy_sources_mean_2025_2029_absolute.png',
+                hasToggle: true
             },
-            'ren-vs-nonren-2025-2029': {
-                image: 'plots/eu_monthly_renewable_vs_nonrenewable_mean_2025_2029_combined.png',
-                title: 'Aggregates: 2025-2029'
+            // Aggregates - Annual Trends
+            'annual-agg': {
+                percentage: 'plots/eu_annual_renewable_vs_nonrenewable_percentage.png',
+                absolute: 'plots/eu_annual_renewable_vs_nonrenewable_absolute.png',
+                hasToggle: true
             },
-            'annual-renewable': {
-                image: 'plots/eu_annual_renewable_trends_combined.png',
-                title: 'Annual Renewable Energy Trends'
+            // Aggregates - YoY vs 2015
+            'yoy-agg': {
+                single: 'plots/eu_annual_yoy_aggregates_vs_2015.png',
+                hasToggle: false
             },
-            'annual-nonrenewable': {
-                image: 'plots/eu_annual_non_renewable_trends_combined.png',
-                title: 'Annual Non-Renewable Energy Trends'
+            // Aggregates - Period Comparisons
+            'period-2015-2019-agg': {
+                percentage: 'plots/eu_monthly_renewable_vs_nonrenewable_mean_2015_2019_percentage.png',
+                absolute: 'plots/eu_monthly_renewable_vs_nonrenewable_mean_2015_2019_absolute.png',
+                hasToggle: true
             },
-            'transition': {
-                image: 'plots/eu_annual_renewable_vs_non_renewable_combined.png',
-                title: 'Aggregates'
+            'period-2020-2024-agg': {
+                percentage: 'plots/eu_monthly_renewable_vs_nonrenewable_mean_2020_2024_percentage.png',
+                absolute: 'plots/eu_monthly_renewable_vs_nonrenewable_mean_2020_2024_absolute.png',
+                hasToggle: true
             },
-            'yoy': {
-                image: 'plots/eu_annual_yoy_change_vs_2015.png',
-                title: 'Year-over-Year Change vs 2015 Baseline'
+            'period-2025-2029-agg': {
+                percentage: 'plots/eu_monthly_renewable_vs_nonrenewable_mean_2025_2029_percentage.png',
+                absolute: 'plots/eu_monthly_renewable_vs_nonrenewable_mean_2025_2029_absolute.png',
+                hasToggle: true
             }
         };
 
-        // Show chart function - NO HTML titles (titles are in the PNG)
-        function showChart(chartId) {
-            const chart = charts[chartId];
+        // Update charts based on country and plot selection
+        function updateCharts() {
+            const countryId = document.getElementById('country-select').value;
+            const plotId = document.getElementById('plot-select').value;
+            showPlot(plotId, countryId);
+        }
+
+        // Update plot timestamp by fetching image Last-Modified header
+        async function updatePlotTimestamp(imageSrc) {
+            try {
+                const response = await fetch(imageSrc, { method: 'HEAD' });
+                const lastModified = response.headers.get('Last-Modified');
+                
+                if (lastModified) {
+                    const date = new Date(lastModified);
+                    const formattedDate = date.toISOString().slice(0, 16).replace('T', ' ') + ' UTC';
+                    document.getElementById('plot-timestamp').textContent = `Plots generated: ${formattedDate}`;
+                } else {
+                    const now = new Date();
+                    const formattedDate = now.toISOString().slice(0, 10);
+                    document.getElementById('plot-timestamp').textContent = `Plots generated: ${formattedDate}`;
+                }
+            } catch (error) {
+                console.error('Failed to fetch timestamp:', error);
+                document.getElementById('plot-timestamp').textContent = 'Long-term Trends';
+            }
+        }
+
+        // Show plot function
+        function showPlot(plotId, countryId = 'EU') {
+            const config = plotConfigs[plotId];
             const display = document.getElementById('chart-display');
+            
+            if (!config) {
+                console.error('Plot config not found:', plotId);
+                return;
+            }
 
-            // Update chart display - just the image, no HTML title
-            display.innerHTML = `
-                <img src="${chart.image}" alt="${chart.title}" class="chart-img">
-            `;
+            // Handle toggle state
+            const percentageBtn = document.getElementById('toggle-percentage');
+            const absoluteBtn = document.getElementById('toggle-absolute');
+            
+            if (config.hasToggle) {
+                // Enable toggle buttons
+                percentageBtn.disabled = false;
+                absoluteBtn.disabled = false;
+                percentageBtn.style.opacity = '1';
+                absoluteBtn.style.opacity = '1';
+                percentageBtn.style.cursor = 'pointer';
+                absoluteBtn.style.cursor = 'pointer';
+                
+                // Check current toggle state
+                const isAbsoluteActive = absoluteBtn.classList.contains('active');
+                
+                // Update display with both plot containers
+                display.innerHTML = `
+                    <div id="percentage-plot-container">
+                        <img src="${config.percentage}" 
+                             alt="Percentage plot" 
+                             class="chart-img"
+                             onload="updatePlotTimestamp(this.src)">
+                    </div>
+                    <div id="absolute-plot-container" style="display: none;">
+                        <img src="${config.absolute}" 
+                             alt="Absolute plot" 
+                             class="chart-img">
+                    </div>
+                `;
+                
+                // Restore toggle state
+                if (isAbsoluteActive) {
+                    showAbsolutePlot();
+                } else {
+                    showPercentagePlot();
+                }
+            } else {
+                // Disable toggle buttons for YoY plots
+                percentageBtn.disabled = true;
+                absoluteBtn.disabled = true;
+                percentageBtn.style.opacity = '0.5';
+                absoluteBtn.style.opacity = '0.5';
+                percentageBtn.style.cursor = 'not-allowed';
+                absoluteBtn.style.cursor = 'not-allowed';
+                
+                // Show single plot (no toggle)
+                display.innerHTML = `
+                    <div>
+                        <img src="${config.single}" 
+                             alt="YoY plot" 
+                             class="chart-img"
+                             onload="updatePlotTimestamp(this.src)">
+                    </div>
+                `;
+                
+                // Reset toggle to percentage state visually
+                percentageBtn.classList.add('active');
+                absoluteBtn.classList.remove('active');
+            }
 
-            // Only scroll if user manually changed selection (not on page load)
+            // Scroll to chart if not initial load
             if (window.pageYOffset > 0 || document.documentElement.scrollTop > 0) {
                 display.scrollIntoView({ behavior: 'smooth', block: 'start' });
             }
         }
 
+        // Toggle functions
+        function showPercentagePlot() {
+            const percentageContainer = document.getElementById('percentage-plot-container');
+            const absoluteContainer = document.getElementById('absolute-plot-container');
+            
+            if (percentageContainer && absoluteContainer) {
+                percentageContainer.style.display = 'block';
+                absoluteContainer.style.display = 'none';
+            }
+            
+            document.getElementById('toggle-percentage').classList.add('active');
+            document.getElementById('toggle-absolute').classList.remove('active');
+        }
+
+        function showAbsolutePlot() {
+            const percentageContainer = document.getElementById('percentage-plot-container');
+            const absoluteContainer = document.getElementById('absolute-plot-container');
+            
+            if (percentageContainer && absoluteContainer) {
+                percentageContainer.style.display = 'none';
+                absoluteContainer.style.display = 'block';
+            }
+            
+            document.getElementById('toggle-percentage').classList.remove('active');
+            document.getElementById('toggle-absolute').classList.add('active');
+        }
+
+        // Download current chart
+        function downloadChart() {
+            const countryId = document.getElementById('country-select').value;
+            const plotId = document.getElementById('plot-select').value;
+            const config = plotConfigs[plotId];
+            
+            if (!config) return;
+            
+            // Get current image source
+            let imgSrc;
+            if (config.hasToggle) {
+                const isAbsolute = document.getElementById('toggle-absolute').classList.contains('active');
+                imgSrc = isAbsolute ? config.absolute : config.percentage;
+            } else {
+                imgSrc = config.single;
+            }
+            
+            // Extract filename from path
+            const filename = imgSrc.split('/').pop();
+            
+            // Open in new tab for download (works for both same-origin and cross-origin)
+            const link = document.createElement('a');
+            link.href = imgSrc;
+            link.download = filename;
+            link.target = '_blank';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
         // Load default chart on page load
         window.addEventListener('DOMContentLoaded', () => {
-            showChart('period-2025-2029');
+            showPlot('annual-all', 'EU');
         });
     </script>
 
     <style>
-        .chart-subtitle {
-            text-align: center;
-            color: #7f8c8d;
-            font-size: 1.05em;
-            margin-top: -10px;
-            margin-bottom: 30px;
+        /* Compact selector box - all controls in one container */
+        .compact-selector-box {
+            background: #f7fafc;
+            border: 2px solid #cbd5e0;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 24px;
+            display: grid;
+            grid-template-columns: 1fr 1fr auto;
+            gap: 20px;
+            align-items: end;
         }
         
-        /* Responsive image sizing - UPDATED TO 60% */
-        .chart-img {
+        .selector-item label,
+        .selector-item-toggle label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #2c3e50;
+            font-size: 0.95em;
+        }
+        
+        .selector-item select {
             width: 100%;
-            height: auto;
+            padding: 10px 12px;
+            font-size: 1em;
+            border: 2px solid #cbd5e0;
+            border-radius: 4px;
+            background: white;
+            width: 100%;
         }
         
-        /* Desktop: Scale down to 60% */
-        @media (min-width: 1024px) {
-            .chart-img {
-                width: 60%;
-                margin: 0 auto;
-                display: block;
-            }
+        .selector-item-toggle {
+            min-width: 200px;
         }
         
-        /* EU Flag responsive sizing */
+        .toggle-group-compact {
+            display: flex;
+            background: white;
+            border: 2px solid #cbd5e0;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        
+        .toggle-btn-compact {
+            flex: 1;
+            padding: 8px 16px;
+            border: none;
+            background: white;
+            color: #4a5568;
+            cursor: pointer;
+            font-size: 0.95em;
+            font-weight: 600;
+            transition: all 0.2s ease;
+        }
+        
+        .toggle-btn-compact.active {
+            background: #003399;
+            color: white;
+        }
+        
+        .toggle-btn-compact:hover:not(.active):not(:disabled) {
+            background: #f0f4f8;
+        }
+        
+        .toggle-btn-compact:disabled {
+            cursor: not-allowed;
+            opacity: 0.5;
+        }
+        
+        /* Chart info bar with timestamp and download button */
+        .chart-info-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #f7fafc;
+            border-top: 1px solid #e2e8f0;
+            border-bottom: 1px solid #e2e8f0;
+            padding: 12px 24px;
+            margin-top: 12px;
+            margin-bottom: 12px;
+            gap: 20px;
+        }
+        
+        .timestamp {
+            color: #666;
+            font-size: 14px;
+        }
+        
+        .download-btn {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 16px;
+            background: white;
+            border: 1px solid #cbd5e0;
+            border-radius: 4px;
+            color: #4a5568;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .download-btn:hover {
+            background: #003399;
+            color: white;
+            border-color: #003399;
+        }
+        
+        .download-btn svg {
+            width: 16px;
+            height: 16px;
+        }
+        
+        .download-btn:active {
+            transform: translateY(1px);
+        }
+        
+        /* Mobile: Stack selector vertically */
         @media (max-width: 768px) {
-            .nav-title svg {
-                width: 28px;
-                height: 19px;
-                margin-right: 8px;
+            .compact-selector-box {
+                grid-template-columns: 1fr;
+                gap: 16px;
+                padding: 16px;
+            }
+            
+            .chart-info-bar {
+                flex-direction: column;
+                text-align: center;
+                padding: 12px 16px;
+            }
+            
+            .download-btn {
+                width: 100%;
+                max-width: 300px;
+                justify-content: center;
             }
         }
         
-        @media (max-width: 480px) {
-            .nav-title svg {
-                width: 24px;
-                height: 16px;
-                margin-right: 6px;
+        /* Tablet: 2 columns with toggle on separate row */
+        @media (min-width: 769px) and (max-width: 1024px) {
+            .compact-selector-box {
+                grid-template-columns: 1fr 1fr;
+                gap: 16px;
+            }
+            
+            .selector-item-toggle {
+                grid-column: 1 / -1;
+                justify-self: center;
             }
         }
     </style>
-
-    <!-- GoatCounter Analytics -->
-    <script data-goatcounter="https://eu-electricity.goatcounter.com/count"
-            async src="//gc.zgo.at/count.js"></script>
 </body>
 </html>
