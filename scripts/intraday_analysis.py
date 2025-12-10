@@ -922,8 +922,8 @@ def plot_analysis(stats_data, source_type, output_file_base):
         'week_ago': '-',
         'year_ago': '-',
         'two_years_ago': '-',
-        'today_projected': '-.',  # Changed from ':' to '-.' (dash-dot)
-        'yesterday_projected': '-.'  # Changed from ':' to '-.' (dash-dot)
+        'today_projected': (0, (6, 6)),  # Equal: 6pt dash, 6pt gap (- - - - pattern)
+        'yesterday_projected': (0, (6, 6))  # Equal: 6pt dash, 6pt gap
     }
 
     labels = {
@@ -971,7 +971,7 @@ def plot_analysis(stats_data, source_type, output_file_base):
     fig1.suptitle(f'{source_name} Electricity Generation (EU)', fontsize=34, fontweight='bold', x=0.5, y=0.98, ha="center")
     ax1.set_title('Fraction of Total Generation', fontsize=26, fontweight='normal', pad=15)
     ax1.set_xlabel('Time of Day (Brussels)', fontsize=28, fontweight='bold', labelpad=25)
-    ax1.set_ylabel('Electrical Power (%)', fontsize=28, fontweight='bold', labelpad=20)
+    ax1.set_ylabel('Electrical Power (%)', fontsize=28, fontweight='bold', labelpad=30)
 
     max_percentage = 0
 
@@ -999,7 +999,7 @@ def plot_analysis(stats_data, source_type, output_file_base):
             else:
                 continue
 
-        ax1.plot(x_values, y_values, color=color, linestyle=linestyle, linewidth=6, label=label)
+        ax1.plot(x_values, y_values, color=color, linestyle=linestyle, linewidth=6, label=label, marker='')
 
         if period_name in ['week_ago', 'year_ago', 'two_years_ago'] and 'percentage_std' in data:
             std_values = data['percentage_std'][:len(x_values)]
@@ -1008,7 +1008,7 @@ def plot_analysis(stats_data, source_type, output_file_base):
             max_percentage = max(max_percentage, np.nanmax(upper_bound))
             ax1.fill_between(x_values, lower_bound, upper_bound, color=color, alpha=0.2)
 
-    ax1.tick_params(axis='both', labelsize=22)
+    ax1.tick_params(axis='both', labelsize=22, length=8, pad=8)
     ax1.set_ylim(0, max_percentage * 1.20 if max_percentage > 0 else 50)  # 20% headroom
     
     # Set x-axis time labels
@@ -1018,14 +1018,14 @@ def plot_analysis(stats_data, source_type, output_file_base):
     
     ax1.grid(True, alpha=0.3, linewidth=1.5)
     
-    # Reorder legend for 3-column layout:
-    # Row 1: Today, Today (Projected), Yesterday
-    # Row 2: Yesterday (Projected), Previous Week, Last Year
-    # Row 3: Two Years Ago
-    # This groups today/yesterday pairs while fitting in 3 columns
+    # Reorder legend for 3-2-2 layout:
+    # Row 1: Previous Week, Last Year, Two Years Ago
+    # Row 2: Yesterday, Yesterday (Projected), [empty]
+    # Row 3: Today, Today (Projected), [empty]
     handles, labels_list = ax1.get_legend_handles_labels()
-    legend_order = ['today', 'today_projected', 'yesterday',
-                    'yesterday_projected', 'week_ago', 'year_ago', 'two_years_ago']
+    legend_order = ['week_ago', 'year_ago', 'two_years_ago',
+                    'yesterday', 'yesterday_projected',
+                    'today', 'today_projected']
     
     # Create ordered handles/labels matching desired legend layout
     ordered_handles = []
@@ -1042,6 +1042,14 @@ def plot_analysis(stats_data, source_type, output_file_base):
               loc='upper center', bbox_to_anchor=(0.5, -0.22), 
               ncol=3, fontsize=20, frameon=False)
     
+    # Add timestamp below legend (bottom-right, using figure coordinates)
+    from datetime import datetime
+    timestamp = datetime.now().strftime('%Y-%m-%d %H:%M UTC')
+    fig1.text(0.95, 0.02, f"Generated: {timestamp}",
+              ha='right', va='bottom',
+              fontsize=11, color='#666',
+              style='italic')
+    
     plt.tight_layout()
     
     plt.savefig(output_file_percentage, dpi=150, bbox_inches='tight')
@@ -1056,7 +1064,7 @@ def plot_analysis(stats_data, source_type, output_file_base):
     fig2.suptitle(f'{source_name} Electricity Generation (EU)', fontsize=34, fontweight='bold', x=0.5, y=0.98, ha="center")
     ax2.set_title('Absolute Generation', fontsize=26, fontweight='normal', pad=15)
     ax2.set_xlabel('Time of Day (Brussels)', fontsize=28, fontweight='bold', labelpad=25)
-    ax2.set_ylabel('Electrical Power (GW)', fontsize=28, fontweight='bold', labelpad=20)
+    ax2.set_ylabel('Electrical Power (GW)', fontsize=28, fontweight='bold', labelpad=30)
 
     max_energy = 0
 
@@ -1085,7 +1093,7 @@ def plot_analysis(stats_data, source_type, output_file_base):
             else:
                 continue
 
-        ax2.plot(x_values, y_values, color=color, linestyle=linestyle, linewidth=6, label=label)
+        ax2.plot(x_values, y_values, color=color, linestyle=linestyle, linewidth=6, label=label, marker='')
 
         if period_name in ['week_ago', 'year_ago', 'two_years_ago'] and 'energy_std' in data:
             # Convert MW to GW for std as well
@@ -1095,7 +1103,7 @@ def plot_analysis(stats_data, source_type, output_file_base):
             max_energy = max(max_energy, np.nanmax(upper_bound))
             ax2.fill_between(x_values, lower_bound, upper_bound, color=color, alpha=0.2)
 
-    ax2.tick_params(axis='both', labelsize=22)
+    ax2.tick_params(axis='both', labelsize=22, length=8, pad=8)
     ax2.set_ylim(0, max_energy * 1.20)  # 20% headroom
     
     # Set x-axis time labels
@@ -1105,7 +1113,7 @@ def plot_analysis(stats_data, source_type, output_file_base):
     
     ax2.grid(True, alpha=0.3, linewidth=1.5)
     
-    # Reorder legend to show today/yesterday first, then historical
+    # Reorder legend to match percentage plot (3-2-2 layout)
     handles2, labels_list2 = ax2.get_legend_handles_labels()
     
     ordered_handles2 = []
@@ -1121,6 +1129,12 @@ def plot_analysis(stats_data, source_type, output_file_base):
     ax2.legend(ordered_handles2, ordered_labels2,
               loc='upper center', bbox_to_anchor=(0.5, -0.22),
               ncol=3, fontsize=20, frameon=False)
+    
+    # Add timestamp below legend (bottom-right, using figure coordinates)
+    fig2.text(0.95, 0.02, f"Generated: {timestamp}",
+              ha='right', va='bottom',
+              fontsize=11, color='#666',
+              style='italic')
     
     plt.tight_layout()
     
