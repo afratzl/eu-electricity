@@ -159,7 +159,7 @@
 
             <!-- Toggle between Percentage and Absolute -->
             <div class="selector-item-toggle">
-                <label>View Type:</label>
+                <label>Display:</label>
                 <div class="toggle-group-compact">
                     <button id="toggle-percentage" class="toggle-btn-compact active" onclick="showPercentagePlot()">
                         Percentage
@@ -287,65 +287,33 @@
                 return;
             }
 
-            // Handle toggle state
+            // Handle toggle state - all plots now support toggle
             const percentageBtn = document.getElementById('toggle-percentage');
             const absoluteBtn = document.getElementById('toggle-absolute');
             
-            if (config.hasToggle) {
-                // Enable toggle buttons
-                percentageBtn.disabled = false;
-                absoluteBtn.disabled = false;
-                percentageBtn.style.opacity = '1';
-                absoluteBtn.style.opacity = '1';
-                percentageBtn.style.cursor = 'pointer';
-                absoluteBtn.style.cursor = 'pointer';
-                
-                // Check current toggle state
-                const isAbsoluteActive = absoluteBtn.classList.contains('active');
-                
-                // Update display with both plot containers
-                display.innerHTML = `
-                    <div id="percentage-plot-container">
-                        <img src="${config.percentage}" 
-                             alt="Percentage plot" 
-                             class="chart-img"
-                             >
-                    </div>
-                    <div id="absolute-plot-container" style="display: none;">
-                        <img src="${config.absolute}" 
-                             alt="Absolute plot" 
-                             class="chart-img">
-                    </div>
-                `;
-                
-                // Restore toggle state
-                if (isAbsoluteActive) {
-                    showAbsolutePlot();
-                } else {
-                    showPercentagePlot();
-                }
+            // Check current toggle state
+            const isAbsoluteActive = absoluteBtn.classList.contains('active');
+            
+            // Update display with both plot containers
+            display.innerHTML = `
+                <div id="percentage-plot-container">
+                    <img src="${config.percentage}" 
+                         alt="Percentage plot" 
+                         class="chart-img"
+                         >
+                </div>
+                <div id="absolute-plot-container" style="display: none;">
+                    <img src="${config.absolute}" 
+                         alt="Absolute plot" 
+                         class="chart-img">
+                </div>
+            `;
+            
+            // Restore toggle state
+            if (isAbsoluteActive) {
+                showAbsolutePlot();
             } else {
-                // Disable toggle buttons for YoY plots
-                percentageBtn.disabled = true;
-                absoluteBtn.disabled = true;
-                percentageBtn.style.opacity = '0.5';
-                absoluteBtn.style.opacity = '0.5';
-                percentageBtn.style.cursor = 'not-allowed';
-                absoluteBtn.style.cursor = 'not-allowed';
-                
-                // Show single plot (no toggle)
-                display.innerHTML = `
-                    <div>
-                        <img src="${config.single}" 
-                             alt="YoY plot" 
-                             class="chart-img"
-                             >
-                    </div>
-                `;
-                
-                // Reset toggle to percentage state visually
-                percentageBtn.classList.add('active');
-                absoluteBtn.classList.remove('active');
+                showPercentagePlot();
             }
 
             // Scroll to chart if not initial load
@@ -502,13 +470,8 @@
             color: white;
         }
         
-        .toggle-btn-compact:hover:not(.active):not(:disabled) {
+        .toggle-btn-compact:hover:not(.active) {
             background: #f0f4f8;
-        }
-        
-        .toggle-btn-compact:disabled {
-            cursor: not-allowed;
-            opacity: 0.5;
         }
         
         /* Chart info bar with timestamp and download button */
@@ -575,6 +538,10 @@
             
             .selector-item-toggle {
                 min-width: unset;
+            }
+            
+            .selector-item label {
+                font-size: 0.9em;
             }
             
             .selector-item select {
