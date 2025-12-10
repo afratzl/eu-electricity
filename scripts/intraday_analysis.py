@@ -921,8 +921,8 @@ def plot_analysis(stats_data, source_type, output_file_base):
         'week_ago': '-',
         'year_ago': '-',
         'two_years_ago': '-',
-        'today_projected': (0, (3, 3)),  # Equal: 3pt dash, 3pt gap (tighter pattern)
-        'yesterday_projected': (0, (3, 3))  # Equal: 3pt dash, 3pt gap
+        'today_projected': (0, (2, 2)),  # Equal: 2pt dash, 2pt gap (tighter pattern)
+        'yesterday_projected': (0, (2, 2))  # Equal: 2pt dash, 2pt gap
     }
 
     labels = {
