@@ -438,10 +438,10 @@ def create_all_charts(all_data):
                          linewidth=6, markersize=13, label=source_name)
                 line_handles[source_name] = line
 
-            # Title and labels - clean format with context in parentheses
-            fig1.suptitle(f'Electricity Generation ({period["name"]}, EU)', 
+            # Title and labels - clean format
+            fig1.suptitle('Electricity Generation (EU)', 
                          fontsize=34, fontweight='bold', x=0.5, y=0.98, ha="center")
-            ax1.set_title('Fraction of Total Generation', fontsize=26, fontweight='normal', pad=15)
+            ax1.set_title(f'Fraction of Total Generation ({period["name"]})', fontsize=26, fontweight='normal', pad=15)
             ax1.set_xlabel('Month', fontsize=28, fontweight='bold', labelpad=15)
             ax1.set_ylabel('Electricity Generation (%)', fontsize=28, fontweight='bold', labelpad=15)
             ax1.set_ylim(0, max_pct_all_periods)
@@ -450,10 +450,12 @@ def create_all_charts(all_data):
 
             # Create legend with spacers for centered row 3 (renewables left, non-renewables right)
             spacer = Line2D([0], [0], color='none', label=' ')
+            # ncol=4 fills by COLUMN, so order: col1, col2, col3, col4
             legend_order = [
-                'Wind', 'Hydro', 'Nuclear', 'Gas',
-                'Solar', 'Biomass', 'Coal', 'Waste',
-                '_SPACER_', 'Geothermal', 'Oil', '_SPACER_'
+                'Wind', 'Solar', '_SPACER_',              # Column 1: renewables
+                'Hydro', 'Biomass', 'Geothermal',         # Column 2: renewables
+                'Nuclear', 'Coal', 'Oil',                 # Column 3: non-renewables
+                'Gas', 'Waste', '_SPACER_'                # Column 4: non-renewables
             ]
             
             legend_handles = []
@@ -495,10 +497,10 @@ def create_all_charts(all_data):
                          linewidth=6, markersize=13, label=source_name)
                 line_handles[source_name] = line
 
-            # Title and labels - clean format with context in parentheses
-            fig2.suptitle(f'Electricity Generation ({period["name"]}, EU)', 
+            # Title and labels - clean format
+            fig2.suptitle('Electricity Generation (EU)', 
                          fontsize=34, fontweight='bold', x=0.5, y=0.98, ha="center")
-            ax2.set_title('Absolute Generation', fontsize=26, fontweight='normal', pad=15)
+            ax2.set_title(f'Absolute Generation ({period["name"]})', fontsize=26, fontweight='normal', pad=15)
             ax2.set_xlabel('Month', fontsize=28, fontweight='bold', labelpad=15)
             ax2.set_ylabel('Electricity Generation (TWh)', fontsize=28, fontweight='bold', labelpad=15)
             ax2.set_ylim(0, max_abs_all_periods)
@@ -507,10 +509,12 @@ def create_all_charts(all_data):
 
             # Create legend with spacers for centered row 3 (renewables left, non-renewables right)
             spacer = Line2D([0], [0], color='none', label=' ')
+            # ncol=4 fills by COLUMN, so order: col1, col2, col3, col4
             legend_order = [
-                'Wind', 'Hydro', 'Nuclear', 'Gas',
-                'Solar', 'Biomass', 'Coal', 'Waste',
-                '_SPACER_', 'Geothermal', 'Oil', '_SPACER_'
+                'Wind', 'Solar', '_SPACER_',              # Column 1: renewables
+                'Hydro', 'Biomass', 'Geothermal',         # Column 2: renewables
+                'Nuclear', 'Coal', 'Oil',                 # Column 3: non-renewables
+                'Gas', 'Waste', '_SPACER_'                # Column 4: non-renewables
             ]
             
             legend_handles = []
@@ -630,10 +634,10 @@ def create_all_charts(all_data):
                 ax1.plot(month_names_abbr, monthly_means_pct[category_name], marker='o', color=color,
                          linewidth=6, markersize=13, label=category_name)
 
-            # Title and labels - clean format with context in parentheses
-            fig1.suptitle(f'Electricity Generation ({period["name"]}, EU)', 
+            # Title and labels - clean format
+            fig1.suptitle('Electricity Generation (EU)', 
                          fontsize=34, fontweight='bold', x=0.5, y=0.98, ha="center")
-            ax1.set_title('Fraction of Total Generation', fontsize=26, fontweight='normal', pad=15)
+            ax1.set_title(f'Fraction of Total Generation ({period["name"]})', fontsize=26, fontweight='normal', pad=15)
             ax1.set_xlabel('Month', fontsize=28, fontweight='bold', labelpad=15)
             ax1.set_ylabel('Electricity Generation (%)', fontsize=28, fontweight='bold', labelpad=15)
             ax1.set_ylim(0, 100)
@@ -664,10 +668,10 @@ def create_all_charts(all_data):
                 ax2.plot(month_names_abbr, values_twh, marker='o', color=color,
                          linewidth=6, markersize=13, label=category_name)
 
-            # Title and labels - clean format with context in parentheses
-            fig2.suptitle(f'Electricity Generation ({period["name"]}, EU)', 
+            # Title and labels - clean format
+            fig2.suptitle('Electricity Generation (EU)', 
                          fontsize=34, fontweight='bold', x=0.5, y=0.98, ha="center")
-            ax2.set_title('Absolute Generation', fontsize=26, fontweight='normal', pad=15)
+            ax2.set_title(f'Absolute Generation ({period["name"]})', fontsize=26, fontweight='normal', pad=15)
             ax2.set_xlabel('Month', fontsize=28, fontweight='bold', labelpad=15)
             ax2.set_ylabel('Electricity Generation (TWh)', fontsize=28, fontweight='bold', labelpad=15)
             ax2.set_ylim(0, max_abs_renewable_periods)
@@ -797,10 +801,12 @@ def create_all_charts(all_data):
             # Create legend with spacers for centered row 3 (renewables left, non-renewables right)
             from matplotlib.lines import Line2D
             spacer = Line2D([0], [0], color='none', label=' ')
+            # ncol=4 fills by COLUMN, so order: col1, col2, col3, col4
             legend_order = [
-                'Wind', 'Hydro', 'Nuclear', 'Gas',
-                'Solar', 'Biomass', 'Coal', 'Waste',
-                '_SPACER_', 'Geothermal', 'Oil', '_SPACER_'
+                'Wind', 'Solar', '_SPACER_',              # Column 1: renewables
+                'Hydro', 'Biomass', 'Geothermal',         # Column 2: renewables
+                'Nuclear', 'Coal', 'Oil',                 # Column 3: non-renewables
+                'Gas', 'Waste', '_SPACER_'                # Column 4: non-renewables
             ]
             
             legend_handles = []
@@ -858,10 +864,12 @@ def create_all_charts(all_data):
 
             # Create legend with spacers for centered row 3 (renewables left, non-renewables right)
             spacer = Line2D([0], [0], color='none', label=' ')
+            # ncol=4 fills by COLUMN, so order: col1, col2, col3, col4
             legend_order = [
-                'Wind', 'Hydro', 'Nuclear', 'Gas',
-                'Solar', 'Biomass', 'Coal', 'Waste',
-                '_SPACER_', 'Geothermal', 'Oil', '_SPACER_'
+                'Wind', 'Solar', '_SPACER_',              # Column 1: renewables
+                'Hydro', 'Biomass', 'Geothermal',         # Column 2: renewables
+                'Nuclear', 'Coal', 'Oil',                 # Column 3: non-renewables
+                'Gas', 'Waste', '_SPACER_'                # Column 4: non-renewables
             ]
             
             legend_handles = []
@@ -1048,9 +1056,9 @@ def create_all_charts(all_data):
                 y_max_limit = 100
 
             # Title and labels - clean format
-            fig1.suptitle('Electricity Generation (YoY Change since 2015, EU)', 
+            fig1.suptitle('Electricity Generation (EU)', 
                          fontsize=34, fontweight='bold', x=0.5, y=0.98, ha="center")
-            ax1.set_title('Year-over-Year Change', fontsize=26, fontweight='normal', pad=15)
+            ax1.set_title('Year-over-Year Change since 2015', fontsize=26, fontweight='normal', pad=15)
             ax1.set_xlabel('Year', fontsize=28, fontweight='bold', labelpad=15)
             ax1.set_ylabel('Change vs 2015 (%)', fontsize=28, fontweight='bold', labelpad=15)
             ax1.set_ylim(y_min_limit, y_max_limit)
@@ -1061,10 +1069,12 @@ def create_all_charts(all_data):
             # Create legend with spacers for centered row 3 (renewables left, non-renewables right)
             from matplotlib.lines import Line2D
             spacer = Line2D([0], [0], color='none', label=' ')
+            # ncol=4 fills by COLUMN, so order: col1, col2, col3, col4
             legend_order = [
-                'Wind', 'Hydro', 'Nuclear', 'Gas',
-                'Solar', 'Biomass', 'Coal', 'Waste',
-                '_SPACER_', 'Geothermal', 'Oil', '_SPACER_'
+                'Wind', 'Solar', '_SPACER_',              # Column 1: renewables
+                'Hydro', 'Biomass', 'Geothermal',         # Column 2: renewables
+                'Nuclear', 'Coal', 'Oil',                 # Column 3: non-renewables
+                'Gas', 'Waste', '_SPACER_'                # Column 4: non-renewables
             ]
             
             legend_handles = []
@@ -1133,9 +1143,9 @@ def create_all_charts(all_data):
             y_max_limit = 100
 
         # Title and labels - clean format
-        fig2.suptitle('Electricity Generation (YoY Change since 2015, EU)', 
+        fig2.suptitle('Electricity Generation (EU)', 
                      fontsize=34, fontweight='bold', x=0.5, y=0.98, ha="center")
-        ax2.set_title('Year-over-Year Change', fontsize=26, fontweight='normal', pad=15)
+        ax2.set_title('Year-over-Year Change since 2015', fontsize=26, fontweight='normal', pad=15)
         ax2.set_xlabel('Year', fontsize=28, fontweight='bold', labelpad=15)
         ax2.set_ylabel('Change vs 2015 (%)', fontsize=28, fontweight='bold', labelpad=15)
         ax2.set_ylim(y_min_limit, y_max_limit)
