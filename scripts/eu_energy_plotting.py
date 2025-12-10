@@ -1339,10 +1339,10 @@ def create_all_charts(all_data):
         plt.close()
 
     # Write timestamp file for HTML to read
-    timestamp_file = 'plots/plot_generation_timestamp.txt'
-    generation_time = datetime.now().strftime('%Y-%m-%d %H:%M UTC')
+    timestamp_file = 'plots/last_update_monthly_trends.html'
+    generation_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S UTC')
     with open(timestamp_file, 'w') as f:
-        f.write(generation_time)
+        f.write(f'<p>Plots generated: {generation_time}</p>')
     print(f"\n✓ Timestamp written to {timestamp_file}: {generation_time}")
 
     print("\n" + "=" * 60)
