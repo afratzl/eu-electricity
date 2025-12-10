@@ -50,7 +50,7 @@
         </div>
     </nav>
 
-    <div class="container">
+    <div class="container" style="margin-bottom: 20px;">
         <header class="page-header">
             <h1>Monthly Generation Trends</h1>
         </header>
@@ -180,7 +180,7 @@
         
         <!-- Download button -->
         <div class="chart-info-bar">
-            <span></span>
+            <span id="plot-timestamp" class="timestamp">Plots generated: Loading...</span>
             <button id="download-btn" class="download-btn" onclick="downloadChart()" title="Download current chart">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
@@ -221,6 +221,29 @@
             const sourceId = document.getElementById('source-select').value;
             showMonthlyChart(sourceId, countryId);
         }
+        
+        // Update plot timestamp by fetching image Last-Modified header
+        async function updatePlotTimestamp(imageSrc) {
+            try {
+                const response = await fetch(imageSrc, { method: 'HEAD' });
+                const lastModified = response.headers.get('Last-Modified');
+                
+                if (lastModified) {
+                    const date = new Date(lastModified);
+                    const formattedDate = date.toISOString().slice(0, 16).replace('T', ' ') + ' UTC';
+                    document.getElementById('plot-timestamp').textContent = `Plots generated: ${formattedDate}`;
+                } else {
+                    // Fallback to current date if Last-Modified not available
+                    const now = new Date();
+                    const formattedDate = now.toISOString().slice(0, 10);
+                    document.getElementById('plot-timestamp').textContent = `Plots generated: ${formattedDate}`;
+                }
+            } catch (error) {
+                console.error('Failed to fetch timestamp:', error);
+                // Show generic message on error
+                document.getElementById('plot-timestamp').textContent = 'Monthly Generation Trends';
+            }
+        }
 
         // Show monthly chart function - displays one plot at a time based on toggle
         function showMonthlyChart(sourceId, countryId = 'EU') {
@@ -252,6 +275,7 @@
                     <img src="plots/${prefix}_${cleanId}_percentage_10years.png" 
                          alt="${sourceName} Percentage" 
                          class="chart-img"
+                         onload="updatePlotTimestamp(this.src)"
                          onerror="this.src='plots/${prefix}_${cleanId}_combined_10years.png'; this.onerror=null;">
                 </div>
                 <div id="absolute-plot-container" style="display: none;">
@@ -471,7 +495,7 @@
         /* Chart info bar with download button */
         .chart-info-bar {
             display: flex;
-            justify-content: flex-end;
+            justify-content: space-between;
             align-items: center;
             background: #f7fafc;
             border-top: 1px solid #e2e8f0;
@@ -479,6 +503,12 @@
             padding: 12px 24px;
             margin-top: 12px;
             margin-bottom: 12px;
+            gap: 20px;
+        }
+        
+        .timestamp {
+            color: #666;
+            font-size: 14px;
         }
         
         .download-btn {
