@@ -55,43 +55,84 @@
 
     <div class="container" style="margin-bottom: 20px;">
         <header class="page-header">
-            <h1>Long-term Trends</h1>
+            <h1>Long-term Electricity Generation</h1>
         </header>
 
         <!-- COMPACT SELECTOR BOX -->
         <div class="compact-selector-box">
             <!-- Country/Region Selector -->
             <div class="selector-item">
-                <label for="country-select">Country / Region:</label>
+                <label for="country-select">
+                    <svg id="country-flag-indicator" width="20" height="15" viewBox="0 0 810 540" style="display: inline-block; margin-right: 6px; vertical-align: middle;">
+                        <desc>EU flag</desc>
+                        <defs>
+                            <g id="flag-star">
+                                <g id="flag-c">
+                                    <path id="flag-t" d="M0,0v1h0.5z" transform="translate(0,-1)rotate(18)"/>
+                                    <use href="#flag-t" transform="scale(-1,1)"/>
+                                </g>
+                                <g id="flag-a">
+                                    <use href="#flag-c" transform="rotate(72)"/>
+                                    <use href="#flag-c" transform="rotate(144)"/>
+                                </g>
+                                <use href="#flag-a" transform="scale(-1,1)"/>
+                            </g>
+                        </defs>
+                        <rect fill="#039" width="810" height="540"/>
+                        <g fill="#fc0" transform="scale(30)translate(13.5,9)">
+                            <use href="#flag-star" y="-6"/>
+                            <use href="#flag-star" y="6"/>
+                            <g id="flag-circle">
+                                <use href="#flag-star" x="-6"/>
+                                <use href="#flag-star" transform="rotate(150)translate(0,6)rotate(66)"/>
+                                <use href="#flag-star" transform="rotate(120)translate(0,6)rotate(24)"/>
+                                <use href="#flag-star" transform="rotate(60)translate(0,6)rotate(12)"/>
+                                <use href="#flag-star" transform="rotate(30)translate(0,6)rotate(42)"/>
+                            </g>
+                            <use href="#flag-circle" transform="scale(-1,1)"/>
+                        </g>
+                    </svg>
+                    Country/Region:
+                </label>
                 <select id="country-select" onchange="updateCharts()">
-                    <option value="EU" selected>🇪🇺 European Union</option>
-                    <option value="AT">🇦🇹 Austria</option>
-                    <option value="BE">🇧🇪 Belgium</option>
-                    <option value="BG">🇧🇬 Bulgaria</option>
-                    <option value="HR">🇭🇷 Croatia</option>
-                    <option value="CY">🇨🇾 Cyprus</option>
-                    <option value="CZ">🇨🇿 Czechia</option>
-                    <option value="DK">🇩🇰 Denmark</option>
-                    <option value="EE">🇪🇪 Estonia</option>
-                    <option value="FI">🇫🇮 Finland</option>
-                    <option value="FR">🇫🇷 France</option>
-                    <option value="DE">🇩🇪 Germany</option>
-                    <option value="GR">🇬🇷 Greece</option>
-                    <option value="HU">🇭🇺 Hungary</option>
-                    <option value="IE">🇮🇪 Ireland</option>
-                    <option value="IT">🇮🇹 Italy</option>
-                    <option value="LV">🇱🇻 Latvia</option>
-                    <option value="LT">🇱🇹 Lithuania</option>
-                    <option value="LU">🇱🇺 Luxembourg</option>
-                    <option value="MT">🇲🇹 Malta</option>
-                    <option value="NL">🇳🇱 Netherlands</option>
-                    <option value="PL">🇵🇱 Poland</option>
-                    <option value="PT">🇵🇹 Portugal</option>
-                    <option value="RO">🇷🇴 Romania</option>
-                    <option value="SK">🇸🇰 Slovakia</option>
-                    <option value="SI">🇸🇮 Slovenia</option>
-                    <option value="ES">🇪🇸 Spain</option>
-                    <option value="SE">🇸🇪 Sweden</option>
+                    <optgroup label="Region">
+                        <option value="EU" selected>European Union</option>
+                    </optgroup>
+                    <optgroup label="EU Member States">
+                        <option value="AT">Austria</option>
+                        <option value="BE">Belgium</option>
+                        <option value="BG">Bulgaria</option>
+                        <option value="HR">Croatia</option>
+                        <option value="CY">Cyprus</option>
+                        <option value="CZ">Czechia</option>
+                        <option value="DK">Denmark</option>
+                        <option value="EE">Estonia</option>
+                        <option value="FI">Finland</option>
+                        <option value="FR">France</option>
+                        <option value="DE">Germany</option>
+                        <option value="GR">Greece</option>
+                        <option value="HU">Hungary</option>
+                        <option value="IE">Ireland</option>
+                        <option value="IT">Italy</option>
+                        <option value="LV">Latvia</option>
+                        <option value="LT">Lithuania</option>
+                        <option value="LU">Luxembourg</option>
+                        <option value="MT">Malta</option>
+                        <option value="NL">Netherlands</option>
+                        <option value="PL">Poland</option>
+                        <option value="PT">Portugal</option>
+                        <option value="RO">Romania</option>
+                        <option value="SK">Slovakia</option>
+                        <option value="SI">Slovenia</option>
+                        <option value="ES">Spain</option>
+                        <option value="SE">Sweden</option>
+                    </optgroup>
+                    <optgroup label="Other European Countries">
+                        <option value="MD">Moldova</option>
+                        <option value="NO">Norway</option>
+                        <option value="CH">Switzerland</option>
+                        <option value="GB">United Kingdom</option>
+                    </optgroup>
                 </select>
             </div>
 
@@ -396,18 +437,20 @@
             align-items: end;
         }
         
-        .selector-item label,
-        .selector-item-toggle label {
-            display: block;
-            font-weight: 600;
-            margin-bottom: 8px;
-            color: #2c3e50;
+        .selector-item {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        
+        .selector-item label {
+            font-weight: 500;
             font-size: 0.95em;
+            color: #2c3e50;
         }
         
         .selector-item select {
-            width: 100%;
-            padding: 10px 12px;
+            padding: 8px 10px;
             font-size: 1em;
             border: 2px solid #cbd5e0;
             border-radius: 4px;
@@ -417,6 +460,14 @@
         
         .selector-item-toggle {
             min-width: 200px;
+        }
+        
+        .selector-item-toggle label {
+            font-weight: 500;
+            font-size: 0.95em;
+            color: #2c3e50;
+            margin-bottom: 8px;
+            display: block;
         }
         
         .toggle-group-compact {
@@ -508,6 +559,14 @@
                 grid-template-columns: 1fr;
                 gap: 16px;
                 padding: 16px;
+            }
+            
+            .selector-item-toggle {
+                min-width: unset;
+            }
+            
+            .selector-item select {
+                font-size: 0.95em;
             }
             
             .chart-info-bar {
