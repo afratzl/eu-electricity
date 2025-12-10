@@ -266,7 +266,7 @@
 
         // Update plot timestamp by reading timestamp file
         function updatePlotTimestamp() {
-            fetch('plots/last_update_trends.html')
+            fetch('plots/last_update_monthly_trends.html')
                 .then(response => response.text())
                 .then(html => {
                     document.getElementById('plot-timestamp').innerHTML = html;
