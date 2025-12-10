@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EU Electricity Production - Real-time Renewable Electricity Tracking</title>
+    <title>EU Electricity Generation - Real-time Renewable Electricity Tracking</title>
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -39,7 +39,7 @@
                         <use href="#l" transform="scale(-1,1)"/>
                     </g>
                 </svg>
-                EU Electricity Production
+                EU Electricity Generation
             </span>
             <div class="nav-links">
                 <a href="index.html" class="active">Home</a>
@@ -51,57 +51,15 @@
     </nav>
 
     <div class="container">
-        <header class="hero-section-pro">
-            <h1>European Union Electricity Production</h1>
-            <p class="hero-subtitle-pro">Tracking Europe's electricity transition with real-time and historical data</p>
+        <header class="page-header">
+            <h1>European Union Electricity Generation</h1>
         </header>
-
-        <div class="info-box-pro">
-            <div class="info-item">
-                <span class="info-label">Data Source</span>
-                <span class="info-value">ENTSO-E Transparency Platform</span>
-            </div>
-            <div class="info-item">
-                <span class="info-label">Last Updated</span>
-                <span class="info-value" id="last-update-time">Loading...</span>
-            </div>
-        </div>
-
-        <!-- Three main navigation cards -->
-        <div class="cards-grid-pro">
-            <div class="feature-card-pro">
-                <div class="card-header">
-                    <h2>Intraday</h2>
-                    <span class="update-badge">Updates hourly</span>
-                </div>
-                <p class="card-description">Current wind, solar, and renewable production</p>
-                <a href="live.html" class="card-button-pro">View Intraday Data →</a>
-            </div>
-
-            <div class="feature-card-pro">
-                <div class="card-header">
-                    <h2>Monthly Trends</h2>
-                    <span class="update-badge">Updates daily</span>
-                </div>
-                <p class="card-description">10-year monthly comparisons for key sources</p>
-                <a href="monthly.html" class="card-button-pro">Explore Trends →</a>
-            </div>
-
-            <div class="feature-card-pro">
-                <div class="card-header">
-                    <h2>Historical</h2>
-                    <span class="update-badge">Updates daily</span>
-                </div>
-                <p class="card-description">Long-term trends and electricity transition data</p>
-                <a href="trends.html" class="card-button-pro">View Historical →</a>
-            </div>
-        </div>
 
         <!-- Electricity Mix Summary Table -->
         <section class="summary-table-section-pro">
             <div class="section-header-pro">
                 <h2>Electricity Mix Summary</h2>
-                <p class="section-subtitle-pro">Production by source across different time periods</p>
+                <p class="section-subtitle-pro">Generation by source across different time periods</p>
             </div>
             
             <div class="table-controls-pro">
@@ -130,30 +88,35 @@
             </div>
         </section>
 
-        <!-- About Section -->
-        <section class="about-section-pro">
-            <h2>About This Project</h2>
-            <p>This site provides comprehensive tracking of European Union electricity generation data, monitoring the ongoing transition from fossil fuels to renewable sources.</p>
-            
-            <div class="features-grid-pro">
-                <div class="feature-item-pro">
-                    <strong>Real-time Data</strong>
-                    <span>Hourly updates with 15-minute resolution</span>
+        <!-- Three main navigation cards -->
+        <div class="cards-grid-pro">
+            <div class="feature-card-pro">
+                <div class="card-header">
+                    <h2>Intraday</h2>
+                    <span class="update-badge">Updates hourly</span>
                 </div>
-                <div class="feature-item-pro">
-                    <strong>Historical Analysis</strong>
-                    <span>10 years of monthly production data</span>
-                </div>
-                <div class="feature-item-pro">
-                    <strong>27 EU Countries</strong>
-                    <span>Aggregated data from all member states</span>
-                </div>
-                <div class="feature-item-pro">
-                    <strong>12 Electricity Sources</strong>
-                    <span>Solar, wind, hydro, gas, coal, nuclear, and more</span>
-                </div>
+                <p class="card-description">Current wind, solar, and renewable generation</p>
+                <a href="live.html" class="card-button-pro">View Intraday Data →</a>
             </div>
-        </section>
+
+            <div class="feature-card-pro">
+                <div class="card-header">
+                    <h2>Monthly Trends</h2>
+                    <span class="update-badge">Updates daily</span>
+                </div>
+                <p class="card-description">10-year monthly comparisons for key sources</p>
+                <a href="monthly.html" class="card-button-pro">Explore Trends →</a>
+            </div>
+
+            <div class="feature-card-pro">
+                <div class="card-header">
+                    <h2>Historical</h2>
+                    <span class="update-badge">Updates daily</span>
+                </div>
+                <p class="card-description">Long-term trends and electricity transition data</p>
+                <a href="trends.html" class="card-button-pro">View Historical →</a>
+            </div>
+        </div>
     </div>
 
     <footer>
@@ -173,18 +136,14 @@
             fetch('plots/energy_summary_table.json')
                 .then(response => response.json())
                 .then(data => {
-                    // Update timestamp in info box
-                    document.getElementById('last-update-time').textContent = data.last_updated;
                     // Display table
                     displaySummaryTable(data);
                 })
                 .catch(error => {
                     console.error('Error loading summary data:', error);
-                    document.getElementById('last-update-time').textContent = 'unavailable';
+                    document.getElementById('summary-table-container').innerHTML = '<div class="error-message-pro">Failed to load summary data</div>';
                 });
         }
-
-        // Helper function to calculate change from previous year
 
         // Display summary table
         function displaySummaryTable(data) {
@@ -272,8 +231,6 @@
             document.getElementById('toggle-change').classList.remove('active');
             document.getElementById('toggle-change-2024').classList.remove('active');
             document.getElementById('toggle-change-2023').classList.remove('active');
-            
-            localStorage.setItem('electricityView', 'percentage');
         }
 
         function showAbsolute() {
@@ -288,8 +245,6 @@
             document.getElementById('toggle-change').classList.remove('active');
             document.getElementById('toggle-change-2024').classList.remove('active');
             document.getElementById('toggle-change-2023').classList.remove('active');
-            
-            localStorage.setItem('electricityView', 'absolute');
         }
 
         function showChange() {
@@ -304,8 +259,6 @@
             document.getElementById('toggle-change').classList.add('active');
             document.getElementById('toggle-change-2024').classList.remove('active');
             document.getElementById('toggle-change-2023').classList.remove('active');
-            
-            localStorage.setItem('electricityView', 'change');
         }
 
         function showChangePreviousYear() {
@@ -320,8 +273,6 @@
             document.getElementById('toggle-change').classList.remove('active');
             document.getElementById('toggle-change-2024').classList.add('active');
             document.getElementById('toggle-change-2023').classList.remove('active');
-            
-            localStorage.setItem('electricityView', 'changePreviousYear');
         }
 
         function showChangeTwoYearsAgo() {
@@ -336,8 +287,6 @@
             document.getElementById('toggle-change').classList.remove('active');
             document.getElementById('toggle-change-2024').classList.remove('active');
             document.getElementById('toggle-change-2023').classList.add('active');
-            
-            localStorage.setItem('electricityView', 'changeTwoYearsAgo');
         }
 
         // Load on page load
@@ -346,30 +295,17 @@
             document.getElementById('change-previous-year-label').textContent = `Change from ${previousYear}`;
             document.getElementById('change-two-years-ago-label').textContent = `Change from ${twoYearsAgo}`;
             
-            loadSummaryData();  // Single fetch for both timestamp and table
-            
-            // Restore user's preference
-            const preference = localStorage.getItem('electricityView') || 'percentage';
-            if (preference === 'absolute') {
-                showAbsolute();
-            } else if (preference === 'change') {
-                showChange();
-            } else if (preference === 'changePreviousYear' || preference === 'change2024') {
-                // Support both new and old localStorage values for backwards compatibility
-                showChangePreviousYear();
-            } else if (preference === 'changeTwoYearsAgo') {
-                showChangeTwoYearsAgo();
-            }
+            loadSummaryData();  // Load table (starts with percentage view by default)
         });
     </script>
 
     <style>
         /* Professional Design System with EU Blue */
         :root {
-            --color-primary: #003399;        /* EU Blue */
-            --color-primary-light: #0052CC;  /* Lighter EU Blue */
-            --color-secondary: #041E42;      /* Dark Blue */
-            --color-accent: #0066CC;         /* Bright Blue */
+            --color-primary: #003399;
+            --color-primary-light: #0052CC;
+            --color-secondary: #041E42;
+            --color-accent: #0066CC;
             --color-text: #1a202c;
             --color-text-light: #4a5568;
             --color-border: #cbd5e0;
@@ -385,61 +321,6 @@
             --radius-md: 8px;
             --shadow-sm: 0 1px 3px rgba(0,0,0,0.06);
             --shadow-md: 0 4px 6px rgba(0,0,0,0.07);
-        }
-
-        /* Hero Section - Professional */
-        .hero-section-pro {
-            text-align: center;
-            padding: var(--spacing-xl) var(--spacing-md);
-            background: linear-gradient(135deg, #003399 0%, #6B9FD8 100%);
-            color: white;
-            border-radius: var(--radius-md);
-            margin-bottom: var(--spacing-lg);
-        }
-
-        .hero-section-pro h1 {
-            font-size: 2.25em;
-            margin-bottom: var(--spacing-sm);
-            font-weight: 600;
-            letter-spacing: -0.02em;
-        }
-
-        .hero-subtitle-pro {
-            font-size: 1.125em;
-            opacity: 0.95;
-            font-weight: 400;
-        }
-
-        /* Info Box - Professional */
-        .info-box-pro {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: var(--spacing-md);
-            padding: var(--spacing-md);
-            background: var(--color-bg-light);
-            border: 1px solid var(--color-border);
-            border-radius: var(--radius-md);
-            margin-bottom: var(--spacing-lg);
-        }
-
-        .info-item {
-            display: flex;
-            flex-direction: column;
-            gap: var(--spacing-xs);
-        }
-
-        .info-label {
-            font-size: 0.875em;
-            font-weight: 600;
-            color: var(--color-text-light);
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-        }
-
-        .info-value {
-            font-size: 1.0625em;
-            color: var(--color-text);
-            font-weight: 500;
         }
 
         /* Cards Grid - Professional */
@@ -621,7 +502,7 @@
         }
 
         .summary-table-pro th:first-child {
-            padding-left: 24px;  /* Extra padding for source column */
+            padding-left: 24px;
         }
 
         .summary-table-pro td {
@@ -632,7 +513,7 @@
         }
 
         .summary-table-pro td:first-child {
-            padding-left: 24px;  /* Extra padding for source column */
+            padding-left: 24px;
         }
 
         .row-aggregate-pro {
@@ -652,7 +533,6 @@
             border-bottom: 2px solid rgba(74, 85, 104, 0.3);
         }
 
-        /* Subsection rows - blue left border and alternating backgrounds */
         .row-source-pro {
             border-left: 4px solid var(--color-accent);
         }
@@ -674,7 +554,7 @@
         }
 
         .row-source-pro .source-name-cell-pro {
-            padding-left: 48px;  /* Indent subsections more */
+            padding-left: 48px;
         }
 
         .row-source-pro:hover {
@@ -699,52 +579,6 @@
             border-top: 1px solid var(--color-border);
         }
 
-        /* About Section - Professional */
-        .about-section-pro {
-            background: var(--color-bg-light);
-            border: 1px solid var(--color-border);
-            border-radius: var(--radius-md);
-            padding: var(--spacing-xl);
-            margin-top: var(--spacing-xl);
-        }
-
-        .about-section-pro h2 {
-            color: var(--color-text);
-            margin-bottom: var(--spacing-md);
-            font-size: 1.5em;
-            font-weight: 600;
-        }
-
-        .about-section-pro p {
-            font-size: 1.0625em;
-            line-height: 1.7;
-            color: var(--color-text-light);
-            margin-bottom: var(--spacing-md);
-        }
-
-        .features-grid-pro {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: var(--spacing-md);
-        }
-
-        .feature-item-pro {
-            display: flex;
-            flex-direction: column;
-            gap: 4px;
-        }
-
-        .feature-item-pro strong {
-            color: var(--color-text);
-            font-weight: 600;
-            font-size: 1em;
-        }
-
-        .feature-item-pro span {
-            color: var(--color-text-light);
-            font-size: 0.9375em;
-        }
-
         .loading-message-pro, .error-message-pro {
             text-align: center;
             padding: var(--spacing-xl);
@@ -757,42 +591,30 @@
         }
 
         @media (max-width: 768px) {
-            .hero-section-pro h1 {
-                font-size: 1.75em;
-            }
-            
             .nav-title svg {
                 width: 28px;
                 height: 19px;
                 margin-right: 8px;
             }
-            
-            .hero-subtitle-pro {
-                font-size: 1em;
-            }
-            
-            .info-box-pro {
-                grid-template-columns: 1fr;
-            }
 
             .summary-table-pro {
                 font-size: 0.75em;
                 width: 100%;
-                table-layout: fixed;  /* Force columns to share space equally */
+                table-layout: fixed;
             }
 
             .summary-table-pro th,
             .summary-table-pro td {
-                white-space: normal;  /* Allow wrapping on mobile */
+                white-space: normal;
                 padding: 8px 4px;
                 font-size: 0.85em;
-                word-break: break-word;  /* Allow wrapping if needed */
+                word-break: break-word;
             }
 
             .summary-table-pro th:first-child,
             .summary-table-pro td:first-child {
-                width: 25%;  /* Source name column */
-                padding-left: 16px;  /* Extra padding from left edge */
+                width: 25%;
+                padding-left: 16px;
             }
             
             .summary-table-pro th:nth-child(2),
@@ -803,11 +625,11 @@
             .summary-table-pro td:nth-child(3),
             .summary-table-pro td:nth-child(4),
             .summary-table-pro td:nth-child(5) {
-                width: 18.75%;  /* Equal width for 4 data columns */
+                width: 18.75%;
             }
 
             .row-source-pro .source-name-cell-pro {
-                padding-left: 30px;  /* Indent subsections on mobile */
+                padding-left: 30px;
             }
 
             .row-source-pro {
@@ -845,12 +667,12 @@
             .summary-table-pro {
                 font-size: 0.65em;
                 width: 100%;
-                table-layout: fixed;  /* Force columns to share space equally */
+                table-layout: fixed;
             }
 
             .summary-table-pro th,
             .summary-table-pro td {
-                white-space: normal;  /* Allow wrapping */
+                white-space: normal;
                 padding: 6px 3px;
                 font-size: 0.9em;
                 word-break: break-word;
@@ -859,7 +681,7 @@
             .summary-table-pro th:first-child,
             .summary-table-pro td:first-child {
                 width: 25%;
-                padding-left: 12px;  /* Extra padding from left edge */
+                padding-left: 12px;
             }
             
             .summary-table-pro th:nth-child(2),
@@ -874,7 +696,7 @@
             }
 
             .row-source-pro .source-name-cell-pro {
-                padding-left: 24px;  /* Indent subsections on phone */
+                padding-left: 24px;
             }
 
             .row-source-pro {
