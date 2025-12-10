@@ -260,7 +260,7 @@ def create_all_charts(all_data):
 
         # Add timestamp
         timestamp = datetime.now().strftime('%Y-%m-%d %H:%M UTC')
-        fig1.text(0.93, 0.02, f"Generated: {timestamp}",
+        fig1.text(0.93, 0.04, f"Generated: {timestamp}",
                   ha='right', va='bottom',
                   fontsize=11, color='#666',
                   style='italic')
@@ -323,7 +323,7 @@ def create_all_charts(all_data):
                   ncol=5, fontsize=20, frameon=False)
 
         # Add timestamp (reuse from percentage plot)
-        fig2.text(0.93, 0.02, f"Generated: {timestamp}",
+        fig2.text(0.93, 0.04, f"Generated: {timestamp}",
                   ha='right', va='bottom',
                   fontsize=11, color='#666',
                   style='italic')
@@ -487,7 +487,7 @@ def create_all_charts(all_data):
                        fontsize=20, frameon=False)
 
             # Add timestamp
-            fig1.text(0.93, 0.02, f"Generated: {timestamp}",
+            fig1.text(0.93, 0.04, f"Generated: {timestamp}",
                      ha='right', va='bottom', fontsize=11, color='#666', style='italic')
 
             plt.tight_layout(rect=[0, 0, 1, 0.96])
@@ -546,7 +546,7 @@ def create_all_charts(all_data):
                        fontsize=20, frameon=False)
 
             # Add timestamp (reuse same timestamp)
-            fig2.text(0.93, 0.02, f"Generated: {timestamp}",
+            fig2.text(0.93, 0.04, f"Generated: {timestamp}",
                      ha='right', va='bottom', fontsize=11, color='#666', style='italic')
 
             plt.tight_layout(rect=[0, 0, 1, 0.96])
@@ -662,7 +662,7 @@ def create_all_charts(all_data):
                        fontsize=22, frameon=False)
 
             # Add timestamp
-            fig1.text(0.93, 0.02, f"Generated: {timestamp}",
+            fig1.text(0.93, 0.04, f"Generated: {timestamp}",
                      ha='right', va='bottom', fontsize=11, color='#666', style='italic')
 
             plt.tight_layout(rect=[0, 0, 1, 0.96])
@@ -696,7 +696,7 @@ def create_all_charts(all_data):
                        fontsize=22, frameon=False)
 
             # Add timestamp (reuse same timestamp)
-            fig2.text(0.93, 0.02, f"Generated: {timestamp}",
+            fig2.text(0.93, 0.04, f"Generated: {timestamp}",
                      ha='right', va='bottom', fontsize=11, color='#666', style='italic')
 
             plt.tight_layout(rect=[0, 0, 1, 0.96])
@@ -838,7 +838,7 @@ def create_all_charts(all_data):
                        fontsize=20, frameon=False)
 
             # Add timestamp
-            fig1.text(0.93, 0.02, f"Generated: {timestamp}",
+            fig1.text(0.93, 0.04, f"Generated: {timestamp}",
                      ha='right', va='bottom', fontsize=11, color='#666', style='italic')
 
             plt.tight_layout(rect=[0, 0, 1, 0.96])
@@ -901,7 +901,7 @@ def create_all_charts(all_data):
                        fontsize=20, frameon=False)
 
             # Add timestamp (reuse same timestamp)
-            fig2.text(0.93, 0.02, f"Generated: {timestamp}",
+            fig2.text(0.93, 0.04, f"Generated: {timestamp}",
                      ha='right', va='bottom', fontsize=11, color='#666', style='italic')
 
             plt.tight_layout(rect=[0, 0, 1, 0.96])
@@ -962,7 +962,7 @@ def create_all_charts(all_data):
                        fontsize=22, frameon=False)
 
             # Add timestamp
-            fig1.text(0.93, 0.02, f"Generated: {timestamp}",
+            fig1.text(0.93, 0.04, f"Generated: {timestamp}",
                      ha='right', va='bottom', fontsize=11, color='#666', style='italic')
 
             plt.tight_layout(rect=[0, 0, 1, 0.96])
@@ -1001,7 +1001,7 @@ def create_all_charts(all_data):
                        fontsize=22, frameon=False)
 
             # Add timestamp (reuse same timestamp)
-            fig2.text(0.93, 0.02, f"Generated: {timestamp}",
+            fig2.text(0.93, 0.04, f"Generated: {timestamp}",
                      ha='right', va='bottom', fontsize=11, color='#666', style='italic')
 
             plt.tight_layout(rect=[0, 0, 1, 0.96])
@@ -1106,7 +1106,7 @@ def create_all_charts(all_data):
                        fontsize=18, frameon=False)
 
             # Add timestamp
-            fig1.text(0.93, 0.02, f"Generated: {timestamp}",
+            fig1.text(0.93, 0.04, f"Generated: {timestamp}",
                      ha='right', va='bottom', fontsize=11, color='#666', style='italic')
 
             plt.tight_layout(rect=[0, 0, 1, 0.96])
@@ -1171,7 +1171,7 @@ def create_all_charts(all_data):
                    fontsize=22, frameon=False)
 
         # Add timestamp (reuse same timestamp)
-        fig2.text(0.93, 0.02, f"Generated: {timestamp}",
+        fig2.text(0.93, 0.04, f"Generated: {timestamp}",
                  ha='right', va='bottom', fontsize=11, color='#666', style='italic')
 
         plt.tight_layout(rect=[0, 0, 1, 0.96])
@@ -1180,6 +1180,13 @@ def create_all_charts(all_data):
         plt.savefig(filename_yoy_agg, dpi=150, bbox_inches='tight')
         print(f"  ✓ Saved: {filename_yoy_agg}")
         plt.close()
+
+    # Write timestamp file for HTML to read
+    timestamp_file = 'plots/plot_generation_timestamp.txt'
+    generation_time = datetime.now().strftime('%Y-%m-%d %H:%M UTC')
+    with open(timestamp_file, 'w') as f:
+        f.write(generation_time)
+    print(f"\n✓ Timestamp written to {timestamp_file}: {generation_time}")
 
     print("\n" + "=" * 60)
     print("ALL MOBILE-OPTIMIZED PLOTS GENERATED")
