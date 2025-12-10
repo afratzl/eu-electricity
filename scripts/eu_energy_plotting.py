@@ -1111,9 +1111,100 @@ def create_all_charts(all_data):
 
             plt.tight_layout(rect=[0, 0, 1, 0.96])
 
-            filename_yoy_all = 'plots/eu_annual_yoy_all_sources_vs_2015.png'
-            plt.savefig(filename_yoy_all, dpi=150, bbox_inches='tight')
-            print(f"  ✓ Saved: {filename_yoy_all}")
+            filename_yoy_all_pct = 'plots/eu_annual_yoy_all_sources_vs_2015_percentage.png'
+            plt.savefig(filename_yoy_all_pct, dpi=150, bbox_inches='tight')
+            print(f"  ✓ Saved percentage: {filename_yoy_all_pct}")
+            plt.close()
+            
+        # PLOT 1B: ALL SOURCES YoY ABSOLUTE
+        print("\nCreating YoY All Sources vs 2015 (Absolute)...")
+        
+        fig1b, ax1b = plt.subplots(figsize=(12, 10))
+        
+        all_yoy_abs_values = []
+        lines_plotted_abs = 0
+        line_handles_abs = {}
+        
+        for source_name in all_sources_for_yoy:
+            if source_name in annual_totals and baseline_year in annual_totals[source_name]:
+                baseline_value = annual_totals[source_name][baseline_year]
+
+                if baseline_value > 0:
+                    years_list = sorted(annual_totals[source_name].keys())
+                    yoy_abs_changes = []
+                    
+                    for year in years_list:
+                        if year >= baseline_year:
+                            current_value = annual_totals[source_name][year]
+                            abs_change_gwh = current_value - baseline_value
+                            abs_change_twh = abs_change_gwh / 1000
+                            yoy_abs_changes.append(abs_change_twh)
+                            all_yoy_abs_values.append(abs_change_twh)
+
+                    years_to_plot = [year for year in years_list if year >= baseline_year]
+
+                    if len(years_to_plot) > 0:
+                        color = ENTSOE_COLORS.get(source_name, 'black')
+                        line, = ax1b.plot(years_to_plot, yoy_abs_changes, marker='o', color=color,
+                                 linewidth=6, markersize=13, label=source_name)
+                        line_handles_abs[source_name] = line
+                        lines_plotted_abs += 1
+
+        if lines_plotted_abs > 0:
+            # Calculate y-axis limits
+            if all_yoy_abs_values:
+                y_min = min(all_yoy_abs_values)
+                y_max = max(all_yoy_abs_values)
+                y_margin = (y_max - y_min) * 0.1
+                y_min_limit = y_min - y_margin
+                y_max_limit = y_max + y_margin
+            else:
+                y_min_limit = -50
+                y_max_limit = 100
+
+            # Title and labels - clean format
+            fig1b.suptitle('Electricity Generation (EU)', 
+                         fontsize=34, fontweight='bold', x=0.55, y=0.96, ha='center')
+            ax1b.set_title('Year-over-Year Change since 2015', fontsize=26, fontweight='normal', pad=10, ha='center')
+            ax1b.set_xlabel('Year', fontsize=28, fontweight='bold', labelpad=15)
+            ax1b.set_ylabel('Change vs 2015 (TWh)', fontsize=28, fontweight='bold', labelpad=15)
+            ax1b.set_ylim(y_min_limit, y_max_limit)
+            ax1b.axhline(y=0, color='black', linestyle='--', linewidth=2, alpha=0.5)
+            ax1b.tick_params(axis='both', labelsize=22, length=8, pad=8)
+            ax1b.grid(True, alpha=0.3, linewidth=1.5)
+
+            # Create legend with spacers
+            spacer = Line2D([0], [0], color='none', label=' ')
+            legend_order = [
+                'Wind', 'Solar', '_SPACER_',
+                'Hydro', 'Biomass', 'Geothermal',
+                'Nuclear', 'Coal', 'Oil',
+                'Gas', 'Waste', '_SPACER_'
+            ]
+            
+            legend_handles_list = []
+            legend_labels = []
+            for item in legend_order:
+                if item == '_SPACER_':
+                    legend_handles_list.append(spacer)
+                    legend_labels.append(' ')
+                elif item in line_handles_abs:
+                    legend_handles_list.append(line_handles_abs[item])
+                    legend_labels.append(item)
+            
+            ax1b.legend(legend_handles_list, legend_labels,
+                       loc='upper center', bbox_to_anchor=(0.45, -0.25), ncol=4,
+                       fontsize=18, frameon=False)
+
+            # Add timestamp (reuse same timestamp)
+            fig1b.text(0.93, 0.04, f"Generated: {timestamp}",
+                     ha='right', va='bottom', fontsize=11, color='#666', style='italic')
+
+            plt.tight_layout(rect=[0, 0, 1, 0.96])
+
+            filename_yoy_all_abs = 'plots/eu_annual_yoy_all_sources_vs_2015_absolute.png'
+            plt.savefig(filename_yoy_all_abs, dpi=150, bbox_inches='tight')
+            print(f"  ✓ Saved absolute: {filename_yoy_all_abs}")
             plt.close()
 
         # PLOT 2: AGGREGATES YoY
@@ -1176,9 +1267,75 @@ def create_all_charts(all_data):
 
         plt.tight_layout(rect=[0, 0, 1, 0.96])
 
-        filename_yoy_agg = 'plots/eu_annual_yoy_aggregates_vs_2015.png'
-        plt.savefig(filename_yoy_agg, dpi=150, bbox_inches='tight')
-        print(f"  ✓ Saved: {filename_yoy_agg}")
+        filename_yoy_agg_pct = 'plots/eu_annual_yoy_aggregates_vs_2015_percentage.png'
+        plt.savefig(filename_yoy_agg_pct, dpi=150, bbox_inches='tight')
+        print(f"  ✓ Saved percentage: {filename_yoy_agg_pct}")
+        plt.close()
+        
+        # PLOT 2B: AGGREGATES YoY ABSOLUTE
+        print("\nCreating YoY Aggregates vs 2015 (Absolute)...")
+        
+        fig2b, ax2b = plt.subplots(figsize=(12, 10))
+        
+        agg_yoy_abs_values = []
+        
+        for category_name in totals_for_yoy:
+            if category_name in annual_totals and baseline_year in annual_totals[category_name]:
+                baseline_value = annual_totals[category_name][baseline_year]
+
+                if baseline_value > 0:
+                    years_list = sorted(annual_totals[category_name].keys())
+                    yoy_abs_changes = []
+                    
+                    for year in years_list:
+                        if year >= baseline_year:
+                            current_value = annual_totals[category_name][year]
+                            abs_change_gwh = current_value - baseline_value
+                            abs_change_twh = abs_change_gwh / 1000
+                            yoy_abs_changes.append(abs_change_twh)
+                            agg_yoy_abs_values.append(abs_change_twh)
+
+                    years_to_plot = [year for year in years_list if year >= baseline_year]
+
+                    if len(years_to_plot) > 0:
+                        color = ENTSOE_COLORS[category_name]
+                        ax2b.plot(years_to_plot, yoy_abs_changes, marker='o', color=color,
+                                 linewidth=6, markersize=13, label=category_name)
+
+        # Calculate y-axis limits
+        if agg_yoy_abs_values:
+            y_min = min(agg_yoy_abs_values)
+            y_max = max(agg_yoy_abs_values)
+            y_margin = (y_max - y_min) * 0.1
+            y_min_limit = y_min - y_margin
+            y_max_limit = y_max + y_margin
+        else:
+            y_min_limit = -50
+            y_max_limit = 100
+
+        # Title and labels - clean format
+        fig2b.suptitle('Electricity Generation (EU)', 
+                     fontsize=34, fontweight='bold', x=0.55, y=0.96, ha='center')
+        ax2b.set_title('Year-over-Year Change since 2015', fontsize=26, fontweight='normal', pad=10, ha='center')
+        ax2b.set_xlabel('Year', fontsize=28, fontweight='bold', labelpad=15)
+        ax2b.set_ylabel('Change vs 2015 (TWh)', fontsize=28, fontweight='bold', labelpad=15)
+        ax2b.set_ylim(y_min_limit, y_max_limit)
+        ax2b.axhline(y=0, color='black', linestyle='--', linewidth=2, alpha=0.5)
+        ax2b.tick_params(axis='both', labelsize=22, length=8, pad=8)
+        ax2b.grid(True, alpha=0.3, linewidth=1.5)
+
+        ax2b.legend(loc='upper center', bbox_to_anchor=(0.45, -0.20), ncol=2,
+                   fontsize=22, frameon=False)
+
+        # Add timestamp (reuse same timestamp)
+        fig2b.text(0.93, 0.04, f"Generated: {timestamp}",
+                 ha='right', va='bottom', fontsize=11, color='#666', style='italic')
+
+        plt.tight_layout(rect=[0, 0, 1, 0.96])
+
+        filename_yoy_agg_abs = 'plots/eu_annual_yoy_aggregates_vs_2015_absolute.png'
+        plt.savefig(filename_yoy_agg_abs, dpi=150, bbox_inches='tight')
+        print(f"  ✓ Saved absolute: {filename_yoy_agg_abs}")
         plt.close()
 
     # Write timestamp file for HTML to read
