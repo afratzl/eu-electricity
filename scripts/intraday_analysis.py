@@ -922,8 +922,8 @@ def plot_analysis(stats_data, source_type, output_file_base):
         'week_ago': '-',
         'year_ago': '-',
         'two_years_ago': '-',
-        'today_projected': (0, (6, 6)),  # Equal: 6pt dash, 6pt gap (- - - - pattern)
-        'yesterday_projected': (0, (6, 6))  # Equal: 6pt dash, 6pt gap
+        'today_projected': (0, (3, 3)),  # Equal: 3pt dash, 3pt gap (tighter pattern)
+        'yesterday_projected': (0, (3, 3))  # Equal: 3pt dash, 3pt gap
     }
 
     labels = {
@@ -1039,13 +1039,13 @@ def plot_analysis(stats_data, source_type, output_file_base):
             ordered_labels.append(period_label)
     
     ax1.legend(ordered_handles, ordered_labels, 
-              loc='upper center', bbox_to_anchor=(0.5, -0.22), 
+              loc='upper center', bbox_to_anchor=(0.45, -0.25), 
               ncol=3, fontsize=20, frameon=False)
     
     # Add timestamp below legend (bottom-right, using figure coordinates)
     from datetime import datetime
     timestamp = datetime.now().strftime('%Y-%m-%d %H:%M UTC')
-    fig1.text(0.95, 0.02, f"Generated: {timestamp}",
+    fig1.text(0.93, 0.02, f"Generated: {timestamp}",
               ha='right', va='bottom',
               fontsize=11, color='#666',
               style='italic')
@@ -1127,11 +1127,11 @@ def plot_analysis(stats_data, source_type, output_file_base):
             ordered_labels2.append(period_label)
     
     ax2.legend(ordered_handles2, ordered_labels2,
-              loc='upper center', bbox_to_anchor=(0.5, -0.22),
+              loc='upper center', bbox_to_anchor=(0.45, -0.25),
               ncol=3, fontsize=20, frameon=False)
     
     # Add timestamp below legend (bottom-right, using figure coordinates)
-    fig2.text(0.95, 0.02, f"Generated: {timestamp}",
+    fig2.text(0.93, 0.02, f"Generated: {timestamp}",
               ha='right', va='bottom',
               fontsize=11, color='#666',
               style='italic')
