@@ -35,5 +35,5 @@ jobs:
       run: |
         git config --local user.email "github-actions[bot]@users.noreply.github.com"
         git config --local user.name "github-actions[bot]"
-        git add plots/*.png plots/energy_summary_table.json
+        git add plots/*.png plots/*.html plots/energy_summary_table.json
         git diff --quiet && git diff --staged --quiet || (git commit -m "Generate historical plots and summary JSON" && git push)
