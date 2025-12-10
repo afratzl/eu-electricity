@@ -238,7 +238,7 @@ def create_all_charts(all_data):
 
         # Title and labels - match intraday format
         fig1.suptitle(f'{source_name} Electricity Generation (EU)', fontsize=34, fontweight='bold', x=0.5, y=0.98, ha="center")
-        ax1.set_title('Fraction of Total Generation', fontsize=26, fontweight='normal', pad=15)
+        ax1.set_title('Fraction of Total Generation', fontsize=26, fontweight='normal', pad=15, ha='center')
         ax1.set_xlabel('Month', fontsize=28, fontweight='bold', labelpad=15)
         ax1.set_ylabel('Electricity Generation (%)', fontsize=28, fontweight='bold', labelpad=15)
         
@@ -295,7 +295,7 @@ def create_all_charts(all_data):
 
         # Title and labels - match intraday format
         fig2.suptitle(f'{source_name} Electricity Generation (EU)', fontsize=34, fontweight='bold', x=0.5, y=0.98, ha="center")
-        ax2.set_title('Absolute Generation', fontsize=26, fontweight='normal', pad=15)
+        ax2.set_title('Absolute Generation', fontsize=26, fontweight='normal', pad=15, ha='center')
         ax2.set_xlabel('Month', fontsize=28, fontweight='bold', labelpad=15)
         ax2.set_ylabel('Electricity Generation (TWh)', fontsize=28, fontweight='bold', labelpad=15)
         
@@ -441,7 +441,7 @@ def create_all_charts(all_data):
             # Title and labels - clean format
             fig1.suptitle('Electricity Generation (EU)', 
                          fontsize=34, fontweight='bold', x=0.5, y=0.98, ha="center")
-            ax1.set_title(f'Fraction of Total Generation ({period["name"]})', fontsize=26, fontweight='normal', pad=15)
+            ax1.set_title(f'Fraction of Total Generation ({period["name"]})', fontsize=26, fontweight='normal', pad=15, ha='center')
             ax1.set_xlabel('Month', fontsize=28, fontweight='bold', labelpad=15)
             ax1.set_ylabel('Electricity Generation (%)', fontsize=28, fontweight='bold', labelpad=15)
             ax1.set_ylim(0, max_pct_all_periods)
@@ -500,7 +500,7 @@ def create_all_charts(all_data):
             # Title and labels - clean format
             fig2.suptitle('Electricity Generation (EU)', 
                          fontsize=34, fontweight='bold', x=0.5, y=0.98, ha="center")
-            ax2.set_title(f'Absolute Generation ({period["name"]})', fontsize=26, fontweight='normal', pad=15)
+            ax2.set_title(f'Absolute Generation ({period["name"]})', fontsize=26, fontweight='normal', pad=15, ha='center')
             ax2.set_xlabel('Month', fontsize=28, fontweight='bold', labelpad=15)
             ax2.set_ylabel('Electricity Generation (TWh)', fontsize=28, fontweight='bold', labelpad=15)
             ax2.set_ylim(0, max_abs_all_periods)
@@ -637,7 +637,7 @@ def create_all_charts(all_data):
             # Title and labels - clean format
             fig1.suptitle('Electricity Generation (EU)', 
                          fontsize=34, fontweight='bold', x=0.5, y=0.98, ha="center")
-            ax1.set_title(f'Fraction of Total Generation ({period["name"]})', fontsize=26, fontweight='normal', pad=15)
+            ax1.set_title(f'Fraction of Total Generation ({period["name"]})', fontsize=26, fontweight='normal', pad=15, ha='center')
             ax1.set_xlabel('Month', fontsize=28, fontweight='bold', labelpad=15)
             ax1.set_ylabel('Electricity Generation (%)', fontsize=28, fontweight='bold', labelpad=15)
             ax1.set_ylim(0, 100)
@@ -671,7 +671,7 @@ def create_all_charts(all_data):
             # Title and labels - clean format
             fig2.suptitle('Electricity Generation (EU)', 
                          fontsize=34, fontweight='bold', x=0.5, y=0.98, ha="center")
-            ax2.set_title(f'Absolute Generation ({period["name"]})', fontsize=26, fontweight='normal', pad=15)
+            ax2.set_title(f'Absolute Generation ({period["name"]})', fontsize=26, fontweight='normal', pad=15, ha='center')
             ax2.set_xlabel('Month', fontsize=28, fontweight='bold', labelpad=15)
             ax2.set_ylabel('Electricity Generation (TWh)', fontsize=28, fontweight='bold', labelpad=15)
             ax2.set_ylim(0, max_abs_renewable_periods)
@@ -791,7 +791,7 @@ def create_all_charts(all_data):
             # Title and labels - clean format
             fig1.suptitle('Electricity Generation (EU)', 
                          fontsize=34, fontweight='bold', x=0.5, y=0.98, ha="center")
-            ax1.set_title('Fraction of Total Generation', fontsize=26, fontweight='normal', pad=15)
+            ax1.set_title('Fraction of Total Generation', fontsize=26, fontweight='normal', pad=15, ha='center')
             ax1.set_xlabel('Year', fontsize=28, fontweight='bold', labelpad=15)
             ax1.set_ylabel('Electricity Generation (%)', fontsize=28, fontweight='bold', labelpad=15)
             ax1.set_ylim(0, max_annual_pct)
@@ -855,7 +855,7 @@ def create_all_charts(all_data):
             # Title and labels - clean format
             fig2.suptitle('Electricity Generation (EU)', 
                          fontsize=34, fontweight='bold', x=0.5, y=0.98, ha="center")
-            ax2.set_title('Absolute Generation', fontsize=26, fontweight='normal', pad=15)
+            ax2.set_title('Absolute Generation', fontsize=26, fontweight='normal', pad=15, ha='center')
             ax2.set_xlabel('Year', fontsize=28, fontweight='bold', labelpad=15)
             ax2.set_ylabel('Electricity Generation (TWh)', fontsize=28, fontweight='bold', labelpad=15)
             ax2.set_ylim(0, max_annual_twh)
@@ -937,7 +937,7 @@ def create_all_charts(all_data):
             # Title and labels - clean format
             fig1.suptitle('Electricity Generation (EU)', 
                          fontsize=34, fontweight='bold', x=0.5, y=0.98, ha="center")
-            ax1.set_title('Fraction of Total Generation', fontsize=26, fontweight='normal', pad=15)
+            ax1.set_title('Fraction of Total Generation', fontsize=26, fontweight='normal', pad=15, ha='center')
             ax1.set_xlabel('Year', fontsize=28, fontweight='bold', labelpad=15)
             ax1.set_ylabel('Electricity Generation (%)', fontsize=28, fontweight='bold', labelpad=15)
             ax1.set_ylim(0, 100)
@@ -976,7 +976,7 @@ def create_all_charts(all_data):
             # Title and labels - clean format
             fig2.suptitle('Electricity Generation (EU)', 
                          fontsize=34, fontweight='bold', x=0.5, y=0.98, ha="center")
-            ax2.set_title('Absolute Generation', fontsize=26, fontweight='normal', pad=15)
+            ax2.set_title('Absolute Generation', fontsize=26, fontweight='normal', pad=15, ha='center')
             ax2.set_xlabel('Year', fontsize=28, fontweight='bold', labelpad=15)
             ax2.set_ylabel('Electricity Generation (TWh)', fontsize=28, fontweight='bold', labelpad=15)
             ax2.set_ylim(bottom=0)
@@ -1058,7 +1058,7 @@ def create_all_charts(all_data):
             # Title and labels - clean format
             fig1.suptitle('Electricity Generation (EU)', 
                          fontsize=34, fontweight='bold', x=0.5, y=0.98, ha="center")
-            ax1.set_title('Year-over-Year Change since 2015', fontsize=26, fontweight='normal', pad=15)
+            ax1.set_title('Year-over-Year Change since 2015', fontsize=26, fontweight='normal', pad=15, ha='center')
             ax1.set_xlabel('Year', fontsize=28, fontweight='bold', labelpad=15)
             ax1.set_ylabel('Change vs 2015 (%)', fontsize=28, fontweight='bold', labelpad=15)
             ax1.set_ylim(y_min_limit, y_max_limit)
@@ -1145,7 +1145,7 @@ def create_all_charts(all_data):
         # Title and labels - clean format
         fig2.suptitle('Electricity Generation (EU)', 
                      fontsize=34, fontweight='bold', x=0.5, y=0.98, ha="center")
-        ax2.set_title('Year-over-Year Change since 2015', fontsize=26, fontweight='normal', pad=15)
+        ax2.set_title('Year-over-Year Change since 2015', fontsize=26, fontweight='normal', pad=15, ha='center')
         ax2.set_xlabel('Year', fontsize=28, fontweight='bold', labelpad=15)
         ax2.set_ylabel('Change vs 2015 (%)', fontsize=28, fontweight='bold', labelpad=15)
         ax2.set_ylim(y_min_limit, y_max_limit)
