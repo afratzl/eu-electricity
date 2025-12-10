@@ -243,7 +243,7 @@ def create_all_charts(all_data):
         ax1.set_ylabel('Electricity Generation (%)', fontsize=28, fontweight='bold', labelpad=15)
         
         # NO RESTRICTION - let it scale to data
-        ax1.set_ylim(0, max_pct_value * 1.1 if max_pct_value > 0 else 10)
+        ax1.set_ylim(0, max_pct_value * 1.2 if max_pct_value > 0 else 10)  # 20% margin
             
         ax1.tick_params(axis='both', labelsize=22)
         ax1.grid(True, alpha=0.3, linewidth=1.5)
@@ -258,7 +258,7 @@ def create_all_charts(all_data):
                   fontsize=11, color='#666',
                   style='italic')
 
-        plt.tight_layout()
+        plt.tight_layout(rect=[0, 0, 1, 0.96])
 
         percentage_filename = f'plots/eu_monthly_{source_name.lower().replace(" ", "_")}_percentage_10years.png'
         plt.savefig(percentage_filename, dpi=150, bbox_inches='tight')
@@ -300,7 +300,7 @@ def create_all_charts(all_data):
         ax2.set_ylabel('Electricity Generation (TWh)', fontsize=28, fontweight='bold', labelpad=15)
         
         # NO RESTRICTION - let it scale to data
-        ax2.set_ylim(0, max_abs_value * 1.1 if max_abs_value > 0 else 10)
+        ax2.set_ylim(0, max_abs_value * 1.2 if max_abs_value > 0 else 10)  # 20% margin
             
         ax2.tick_params(axis='both', labelsize=22)
         ax2.grid(True, alpha=0.3, linewidth=1.5)
@@ -314,7 +314,7 @@ def create_all_charts(all_data):
                   fontsize=11, color='#666',
                   style='italic')
 
-        plt.tight_layout()
+        plt.tight_layout(rect=[0, 0, 1, 0.96])
 
         absolute_filename = f'plots/eu_monthly_{source_name.lower().replace(" ", "_")}_absolute_10years.png'
         plt.savefig(absolute_filename, dpi=150, bbox_inches='tight')
@@ -366,8 +366,8 @@ def create_all_charts(all_data):
                                 percentage = (source_val / total_val) * 100
                                 max_pct_all_periods = max(max_pct_all_periods, percentage)
 
-        max_abs_all_periods *= 1.1
-        max_pct_all_periods *= 1.1
+        max_abs_all_periods *= 1.2  # 20% margin
+        max_pct_all_periods *= 1.2  # 20% margin
 
         for period in periods:
             print(f"\nCreating Monthly Mean chart for {period['name']}...")
@@ -476,7 +476,7 @@ def create_all_charts(all_data):
             fig1.text(0.93, 0.02, f"Generated: {timestamp}",
                      ha='right', va='bottom', fontsize=11, color='#666', style='italic')
 
-            plt.tight_layout()
+            plt.tight_layout(rect=[0, 0, 1, 0.96])
 
             period_name_clean = period['name'].replace('-', '_')
             filename_pct = f'plots/eu_monthly_energy_sources_mean_{period_name_clean}_percentage.png'
@@ -535,7 +535,7 @@ def create_all_charts(all_data):
             fig2.text(0.93, 0.02, f"Generated: {timestamp}",
                      ha='right', va='bottom', fontsize=11, color='#666', style='italic')
 
-            plt.tight_layout()
+            plt.tight_layout(rect=[0, 0, 1, 0.96])
 
             filename_abs = f'plots/eu_monthly_energy_sources_mean_{period_name_clean}_absolute.png'
             plt.savefig(filename_abs, dpi=150, bbox_inches='tight')
@@ -568,7 +568,7 @@ def create_all_charts(all_data):
                             category_val = category_monthly.get(month, 0)
                             max_abs_renewable_periods = max(max_abs_renewable_periods, category_val / 1000)
 
-        max_abs_renewable_periods *= 1.1
+        max_abs_renewable_periods *= 1.2  # 20% margin
 
         for period in periods:
             print(f"\nCreating Renewable vs Non-Renewable chart for {period['name']}...")
@@ -651,7 +651,7 @@ def create_all_charts(all_data):
             fig1.text(0.93, 0.02, f"Generated: {timestamp}",
                      ha='right', va='bottom', fontsize=11, color='#666', style='italic')
 
-            plt.tight_layout()
+            plt.tight_layout(rect=[0, 0, 1, 0.96])
 
             period_name_clean = period['name'].replace('-', '_')
             filename_pct = f'plots/eu_monthly_renewable_vs_nonrenewable_mean_{period_name_clean}_percentage.png'
@@ -685,7 +685,7 @@ def create_all_charts(all_data):
             fig2.text(0.93, 0.02, f"Generated: {timestamp}",
                      ha='right', va='bottom', fontsize=11, color='#666', style='italic')
 
-            plt.tight_layout()
+            plt.tight_layout(rect=[0, 0, 1, 0.96])
 
             filename_abs = f'plots/eu_monthly_renewable_vs_nonrenewable_mean_{period_name_clean}_absolute.png'
             plt.savefig(filename_abs, dpi=150, bbox_inches='tight')
@@ -744,8 +744,8 @@ def create_all_charts(all_data):
                     percentage = (source_value / total_value) * 100
                     max_annual_pct = max(max_annual_pct, percentage)
 
-    max_annual_twh *= 1.1
-    max_annual_pct *= 1.1
+    max_annual_twh *= 1.2  # 20% margin
+    max_annual_pct *= 1.2  # 20% margin
 
     # Chart: All Sources Annual Trends (combines renewables + non-renewables)
     all_sources = available_renewables + available_non_renewables
@@ -827,7 +827,7 @@ def create_all_charts(all_data):
             fig1.text(0.93, 0.02, f"Generated: {timestamp}",
                      ha='right', va='bottom', fontsize=11, color='#666', style='italic')
 
-            plt.tight_layout()
+            plt.tight_layout(rect=[0, 0, 1, 0.96])
 
             filename_pct = 'plots/eu_annual_all_sources_percentage.png'
             plt.savefig(filename_pct, dpi=150, bbox_inches='tight')
@@ -890,7 +890,7 @@ def create_all_charts(all_data):
             fig2.text(0.93, 0.02, f"Generated: {timestamp}",
                      ha='right', va='bottom', fontsize=11, color='#666', style='italic')
 
-            plt.tight_layout()
+            plt.tight_layout(rect=[0, 0, 1, 0.96])
 
             filename_abs = 'plots/eu_annual_all_sources_absolute.png'
             plt.savefig(filename_abs, dpi=150, bbox_inches='tight')
@@ -951,7 +951,7 @@ def create_all_charts(all_data):
             fig1.text(0.93, 0.02, f"Generated: {timestamp}",
                      ha='right', va='bottom', fontsize=11, color='#666', style='italic')
 
-            plt.tight_layout()
+            plt.tight_layout(rect=[0, 0, 1, 0.96])
 
             filename_pct = 'plots/eu_annual_renewable_vs_nonrenewable_percentage.png'
             plt.savefig(filename_pct, dpi=150, bbox_inches='tight')
@@ -990,7 +990,7 @@ def create_all_charts(all_data):
             fig2.text(0.93, 0.02, f"Generated: {timestamp}",
                      ha='right', va='bottom', fontsize=11, color='#666', style='italic')
 
-            plt.tight_layout()
+            plt.tight_layout(rect=[0, 0, 1, 0.96])
 
             filename_abs = 'plots/eu_annual_renewable_vs_nonrenewable_absolute.png'
             plt.savefig(filename_abs, dpi=150, bbox_inches='tight')
@@ -1095,7 +1095,7 @@ def create_all_charts(all_data):
             fig1.text(0.93, 0.02, f"Generated: {timestamp}",
                      ha='right', va='bottom', fontsize=11, color='#666', style='italic')
 
-            plt.tight_layout()
+            plt.tight_layout(rect=[0, 0, 1, 0.96])
 
             filename_yoy_all = 'plots/eu_annual_yoy_all_sources_vs_2015.png'
             plt.savefig(filename_yoy_all, dpi=150, bbox_inches='tight')
@@ -1160,7 +1160,7 @@ def create_all_charts(all_data):
         fig2.text(0.93, 0.02, f"Generated: {timestamp}",
                  ha='right', va='bottom', fontsize=11, color='#666', style='italic')
 
-        plt.tight_layout()
+        plt.tight_layout(rect=[0, 0, 1, 0.96])
 
         filename_yoy_agg = 'plots/eu_annual_yoy_aggregates_vs_2015.png'
         plt.savefig(filename_yoy_agg, dpi=150, bbox_inches='tight')
