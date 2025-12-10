@@ -180,7 +180,7 @@
         
         <!-- Download button -->
         <div class="chart-info-bar">
-            <span id="plot-timestamp" class="timestamp">Plots generated: Loading...</span>
+            <span id="plot-timestamp" class="timestamp">Loading...</span>
             <button id="download-btn" class="download-btn" onclick="downloadChart()" title="Download current chart">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
@@ -222,27 +222,17 @@
             showMonthlyChart(sourceId, countryId);
         }
         
-        // Update plot timestamp by fetching image Last-Modified header
-        async function updatePlotTimestamp(imageSrc) {
-            try {
-                const response = await fetch(imageSrc, { method: 'HEAD' });
-                const lastModified = response.headers.get('Last-Modified');
-                
-                if (lastModified) {
-                    const date = new Date(lastModified);
-                    const formattedDate = date.toISOString().slice(0, 16).replace('T', ' ') + ' UTC';
-                    document.getElementById('plot-timestamp').textContent = `Plots generated: ${formattedDate}`;
-                } else {
-                    // Fallback to current date if Last-Modified not available
-                    const now = new Date();
-                    const formattedDate = now.toISOString().slice(0, 10);
-                    document.getElementById('plot-timestamp').textContent = `Plots generated: ${formattedDate}`;
-                }
-            } catch (error) {
-                console.error('Failed to fetch timestamp:', error);
-                // Show generic message on error
-                document.getElementById('plot-timestamp').textContent = 'Monthly Generation Trends';
-            }
+        // Update plot timestamp by reading timestamp file
+        function updatePlotTimestamp() {
+            fetch('plots/last_update_monthly.html')
+                .then(response => response.text())
+                .then(html => {
+                    document.getElementById('plot-timestamp').innerHTML = html;
+                })
+                .catch(error => {
+                    console.error('Failed to fetch timestamp:', error);
+                    document.getElementById('plot-timestamp').innerHTML = '<p>Plots generated: Unavailable</p>';
+                });
         }
 
         // Show monthly chart function - displays one plot at a time based on toggle
@@ -275,7 +265,7 @@
                     <img src="plots/${prefix}_${cleanId}_percentage_10years.png" 
                          alt="${sourceName} Percentage" 
                          class="chart-img"
-                         onload="updatePlotTimestamp(this.src)"
+                         
                          onerror="this.src='plots/${prefix}_${cleanId}_combined_10years.png'; this.onerror=null;">
                 </div>
                 <div id="absolute-plot-container" style="display: none;">
@@ -297,6 +287,9 @@
             if (window.pageYOffset > 0 || document.documentElement.scrollTop > 0) {
                 display.scrollIntoView({ behavior: 'smooth', block: 'start' });
             }
+            
+            // Update timestamp
+            updatePlotTimestamp();
         }
 
         // Toggle functions for plot type
@@ -492,6 +485,16 @@
             background: #f0f4f8;
         }
         
+        .chart-container {
+            margin-bottom: 8px;
+            padding-bottom: 0;
+        }
+        
+        .chart-img {
+            display: block;
+            margin-bottom: 0;
+        }
+        
         /* Chart info bar with download button */
         .chart-info-bar {
             display: flex;
@@ -500,9 +503,9 @@
             background: #f7fafc;
             border-top: 1px solid #e2e8f0;
             border-bottom: 1px solid #e2e8f0;
-            padding: 12px 24px;
-            margin-top: 12px;
-            margin-bottom: 12px;
+            padding: 6px 24px;
+            margin-top: 0px;
+            margin-bottom: 8px;
             gap: 20px;
         }
         
