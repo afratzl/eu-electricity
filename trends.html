@@ -178,7 +178,7 @@
 
         <!-- Download button with timestamp -->
         <div id="chart-info-bar" class="chart-info-bar">
-            <span id="plot-timestamp" class="timestamp">Plots generated: Loading...</span>
+            <span id="plot-timestamp" class="timestamp">Loading...</span>
             <button class="download-btn" onclick="downloadChart()">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
@@ -265,22 +265,16 @@
         }
 
         // Update plot timestamp by reading timestamp file
-        async function updatePlotTimestamp() {
-            try {
-                const response = await fetch('plots/plot_generation_timestamp.txt');
-                if (response.ok) {
-                    const timestamp = await response.text();
-                    document.getElementById('plot-timestamp').textContent = `Plots generated: ${timestamp.trim()}`;
-                } else {
-                    // Fallback to current date if file not found
-                    const now = new Date();
-                    const formattedDate = now.toISOString().slice(0, 16).replace('T', ' ') + ' UTC';
-                    document.getElementById('plot-timestamp').textContent = `Plots generated: ${formattedDate}`;
-                }
-            } catch (error) {
-                console.error('Failed to fetch timestamp:', error);
-                document.getElementById('plot-timestamp').textContent = 'Long-term Trends';
-            }
+        function updatePlotTimestamp() {
+            fetch('plots/last_update_trends.html')
+                .then(response => response.text())
+                .then(html => {
+                    document.getElementById('plot-timestamp').innerHTML = html;
+                })
+                .catch(error => {
+                    console.error('Failed to fetch timestamp:', error);
+                    document.getElementById('plot-timestamp').innerHTML = '<p>Plots generated: Unavailable</p>';
+                });
         }
 
         // Show plot function
@@ -465,7 +459,9 @@
         .selector-item label {
             font-weight: 500;
             font-size: 0.95em;
-            color: #2c3e50;
+            color: #4a5568;
+            display: flex;
+            align-items: center;
         }
         
         .selector-item select {
@@ -479,14 +475,6 @@
         
         .selector-item-toggle {
             min-width: 200px;
-        }
-        
-        .selector-item-toggle label {
-            font-weight: 500;
-            font-size: 0.95em;
-            color: #2c3e50;
-            margin-bottom: 8px;
-            display: block;
         }
         
         .toggle-group-compact {
