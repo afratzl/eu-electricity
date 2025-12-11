@@ -179,7 +179,15 @@
         <!-- Download button with timestamp -->
         <div id="chart-info-bar" class="chart-info-bar">
             <span id="plot-timestamp" class="timestamp">Loading...</span>
-            <button class="download-btn" onclick="downloadChart()">
+            <button class="refresh-btn" onclick="refreshChart()" title="Refresh chart">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="23 4 23 10 17 10"></polyline>
+                    <polyline points="1 20 1 14 7 14"></polyline>
+                    <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+                </svg>
+                Refresh
+            </button>
+            <button class="download-btn" onclick="downloadChart()" title="Download current chart">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
                     <polyline points="7 10 12 15 17 10"></polyline>
@@ -352,6 +360,37 @@
             document.getElementById('toggle-absolute').classList.add('active');
         }
 
+        // Refresh current chart
+        function refreshChart() {
+            const countryId = document.getElementById('country-select').value;
+            const plotId = document.getElementById('plot-select').value;
+            
+            // Get current plot containers
+            const percentageContainer = document.getElementById('percentage-plot-container');
+            const absoluteContainer = document.getElementById('absolute-plot-container');
+            
+            if (percentageContainer) {
+                const percentageImg = percentageContainer.querySelector('img');
+                if (percentageImg) {
+                    // Add timestamp to force reload
+                    const src = percentageImg.src.split('?')[0];
+                    percentageImg.src = src + '?t=' + new Date().getTime();
+                }
+            }
+            
+            if (absoluteContainer) {
+                const absoluteImg = absoluteContainer.querySelector('img');
+                if (absoluteImg) {
+                    // Add timestamp to force reload
+                    const src = absoluteImg.src.split('?')[0];
+                    absoluteImg.src = src + '?t=' + new Date().getTime();
+                }
+            }
+            
+            // Also reload timestamp
+            updatePlotTimestamp();
+        }
+
         // Download current chart
         function downloadChart() {
             const countryId = document.getElementById('country-select').value;
@@ -519,6 +558,27 @@
             border-color: #003399;
         }
         
+        .refresh-btn {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 16px;
+            background: white;
+            border: 1px solid #cbd5e0;
+            border-radius: 4px;
+            color: #4a5568;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .refresh-btn:hover {
+            background: #003399;
+            color: white;
+            border-color: #003399;
+        }
+        
         .download-btn svg {
             width: 16px;
             height: 16px;
@@ -531,7 +591,7 @@
         /* Mobile: Stack selector vertically */
         @media (max-width: 768px) {
             .compact-selector-box {
-                grid-template-columns: 1fr;
+                grid-template-columns: 1fr !important;
                 gap: 16px;
                 padding: 16px;
             }
@@ -555,6 +615,12 @@
             }
             
             .download-btn {
+                width: 100%;
+                max-width: 300px;
+                justify-content: center;
+            }
+            
+            .refresh-btn {
                 width: 100%;
                 max-width: 300px;
                 justify-content: center;
