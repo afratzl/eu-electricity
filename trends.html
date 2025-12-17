@@ -285,14 +285,56 @@
                 });
         }
 
+        // Load Drive links from JSON
+        let driveLinks = null;
+        async function loadDriveLinks() {
+            if (driveLinks) return driveLinks;
+            
+            try {
+                const response = await fetch('plots/drive_links_monthly_trends.json');
+                driveLinks = await response.json();
+                return driveLinks;
+            } catch (error) {
+                console.error('Failed to load Drive links:', error);
+                return null;
+            }
+        }
+
         // Show plot function
-        function showPlot(plotId, countryId = 'EU') {
+        async function showPlot(plotId, countryId = 'EU') {
             const config = plotConfigs[plotId];
             const display = document.getElementById('chart-display');
             
             if (!config) {
                 console.error('Plot config not found:', plotId);
                 return;
+            }
+
+            // Get Drive URLs
+            const links = await loadDriveLinks();
+            let percentageUrl = config.percentage; // fallback
+            let absoluteUrl = config.absolute; // fallback
+            
+            if (links && links[countryId] && (links[countryId].Monthly || links[countryId].Trends)) {
+                // Determine which folder to check (Monthly or Trends)
+                const folder = plotId.includes('annual') || plotId.includes('yoy') ? 'Trends' : 'Monthly';
+                const plots = links[countryId][folder];
+                
+                if (plots) {
+                    // Try to find matching plot in Drive links
+                    // Plot keys might have variations, so try multiple patterns
+                    for (const key in plots) {
+                        if (key.includes(plotId.replace('-', '_'))) {
+                            if (plots[key].percentage) {
+                                percentageUrl = plots[key].percentage.direct_url;
+                            }
+                            if (plots[key].absolute) {
+                                absoluteUrl = plots[key].absolute.direct_url;
+                            }
+                            break;
+                        }
+                    }
+                }
             }
 
             // Handle toggle state - all plots now support toggle
@@ -305,15 +347,16 @@
             // Update display with both plot containers
             display.innerHTML = `
                 <div id="percentage-plot-container">
-                    <img src="${config.percentage}" 
+                    <img src="${percentageUrl}" 
                          alt="Percentage plot" 
                          class="chart-img"
-                         >
+                         onerror="this.style.display='none';">
                 </div>
                 <div id="absolute-plot-container" style="display: none;">
-                    <img src="${config.absolute}" 
+                    <img src="${absoluteUrl}" 
                          alt="Absolute plot" 
-                         class="chart-img">
+                         class="chart-img"
+                         onerror="this.style.display='none';">
                 </div>
             `;
             
