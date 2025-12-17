@@ -102,11 +102,40 @@ def upload_plot_to_drive(service, file_path, plot_type='Monthly', country='EU'):
             file = service.files().create(body=file_metadata, media_body=media, fields='id').execute()
             file_id = file.get('id')
         
-        # Make file publicly accessible
-        service.permissions().create(
-            fileId=file_id,
-            body={'type': 'anyone', 'role': 'reader'}
-        ).execute()
+        # Set permissions to "Anyone with the link can view"
+        # Check if permission already exists
+        try:
+            existing_perms = service.permissions().list(
+                fileId=file_id,
+                fields='permissions(id,type)'
+            ).execute()
+            
+            # Check if 'anyone' permission exists
+            anyone_perm = None
+            for perm in existing_perms.get('permissions', []):
+                if perm.get('type') == 'anyone':
+                    anyone_perm = perm
+                    break
+            
+            if anyone_perm:
+                # Update existing permission
+                service.permissions().update(
+                    fileId=file_id,
+                    permissionId=anyone_perm['id'],
+                    body={'role': 'reader'}
+                ).execute()
+            else:
+                # Create new permission
+                permission = {
+                    'type': 'anyone',
+                    'role': 'reader'
+                }
+                service.permissions().create(
+                    fileId=file_id,
+                    body=permission
+                ).execute()
+        except Exception as e:
+            print(f"  ⚠ Warning: Could not set permissions on {os.path.basename(file_path)}: {e}")
         
         return {
             'file_id': file_id,
@@ -1466,8 +1495,11 @@ def create_all_charts(all_data):
         print("UPLOADING PLOTS TO GOOGLE DRIVE")
         print("=" * 60)
         
-        # Scan plots directory for all PNG files
-        plot_files = [f for f in os.listdir('plots') if f.endswith('.png') and f.startswith('eu_')]
+        # Scan plots directory for all PNG files (exclude old combined plots)
+        plot_files = [f for f in os.listdir('plots') 
+                      if f.endswith('.png') 
+                      and f.startswith('eu_')
+                      and '_combined' not in f]  # Exclude old combined plots
         
         for plot_file in plot_files:
             file_path = os.path.join('plots', plot_file)
