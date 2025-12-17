@@ -8,10 +8,11 @@ from datetime import datetime
 import os
 import json
 
-# Google Drive imports for plot uploading
+# Google Drive imports (for plot hosting)
 try:
     from googleapiclient.discovery import build
     from googleapiclient.http import MediaFileUpload
+    from google.oauth2.service_account import Credentials as ServiceAccountCredentials
     GDRIVE_AVAILABLE = True
 except ImportError:
     GDRIVE_AVAILABLE = False
@@ -130,9 +131,8 @@ def initialize_drive_service():
             print("  ⚠ GOOGLE_CREDENTIALS_JSON not set")
             return None
         
-        import json
         creds_dict = json.loads(google_creds_json)
-        credentials = Credentials.from_service_account_info(
+        credentials = ServiceAccountCredentials.from_service_account_info(
             creds_dict,
             scopes=['https://www.googleapis.com/auth/drive.file']
         )
@@ -1572,7 +1572,7 @@ def update_summary_table_historical_data(all_data):
                 f'Yesterday_Change_{two_years_ago}_%', f'LastWeek_Change_{two_years_ago}_%',
                 f'YTD{current_year}_Change_{two_years_ago}_%', f'{previous_year}_Change_{two_years_ago}_%'
             ]
-            worksheet.update('A1:V1', [headers])
+            worksheet.update(values=[headers], range_name='A1:V1')
             worksheet.format('A1:V1', {'textFormat': {'bold': True}})
             print("  ✓ Header row updated")
                 
