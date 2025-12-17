@@ -34,6 +34,6 @@ jobs:
     - name: Commit and push plots
       run: |
         git config --local user.email "github-actions[bot]@users.noreply.github.com"
-        git config --local user.name "github-actions[bot]"
-        git add plots/*.png plots/*.html plots/energy_summary_table.json
+        git config --local user.name "github-actions[bot]"  
+        git add plots/
         git diff --quiet && git diff --staged --quiet || (git commit -m "Generate historical plots and summary JSON" && git push)
