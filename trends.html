@@ -315,25 +315,34 @@
             let percentageUrl = config.percentage; // fallback
             let absoluteUrl = config.absolute; // fallback
             
-            if (links && links[countryId] && (links[countryId].Monthly || links[countryId].Trends)) {
-                // Determine which folder to check (Monthly or Trends)
+            if (links && links[countryId]) {
+                // Map plotId to JSON key
+                const plotIdToKey = {
+                    // Annual trends
+                    'annual-all': 'all_sources',
+                    'annual-agg': 'renewable_vs_nonrenewable',
+                    // YoY plots
+                    'yoy-all': 'yoy_all_sources_vs_2015',
+                    'yoy-agg': 'yoy_aggregates_vs_2015',
+                    // Period comparisons - all sources
+                    'period-2015-2019-all': 'energy_sources_mean_2015_2019',
+                    'period-2020-2024-all': 'energy_sources_mean_2020_2024',
+                    'period-2025-2029-all': 'energy_sources_mean_2025_2029',
+                    // Period comparisons - aggregates
+                    'period-2015-2019-agg': 'renewable_vs_nonrenewable_mean_2015_2019',
+                    'period-2020-2024-agg': 'renewable_vs_nonrenewable_mean_2020_2024',
+                    'period-2025-2029-agg': 'renewable_vs_nonrenewable_mean_2025_2029'
+                };
+                
+                const baseKey = plotIdToKey[plotId];
+                
+                // Determine folder (Monthly or Trends)
                 const folder = plotId.includes('annual') || plotId.includes('yoy') ? 'Trends' : 'Monthly';
                 const plots = links[countryId][folder];
                 
-                if (plots) {
-                    // Try to find matching plot in Drive links
-                    // Plot keys might have variations, so try multiple patterns
-                    for (const key in plots) {
-                        if (key.includes(plotId.replace('-', '_'))) {
-                            if (plots[key].percentage) {
-                                percentageUrl = plots[key].percentage.direct_url;
-                            }
-                            if (plots[key].absolute) {
-                                absoluteUrl = plots[key].absolute.direct_url;
-                            }
-                            break;
-                        }
-                    }
+                if (plots && baseKey && plots[baseKey]) {
+                    percentageUrl = plots[baseKey].percentage?.direct_url || percentageUrl;
+                    absoluteUrl = plots[baseKey].absolute?.direct_url || absoluteUrl;
                 }
             }
 
