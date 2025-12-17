@@ -243,8 +243,23 @@
                 });
         }
 
+        // Load Drive links from JSON
+        let driveLinks = null;
+        async function loadDriveLinks() {
+            if (driveLinks) return driveLinks;
+            
+            try {
+                const response = await fetch('plots/drive_links_monthly_trends.json');
+                driveLinks = await response.json();
+                return driveLinks;
+            } catch (error) {
+                console.error('Failed to load Drive links:', error);
+                return null;
+            }
+        }
+
         // Show monthly chart function - displays one plot at a time based on toggle
-        function showMonthlyChart(sourceId, countryId = 'EU') {
+        async function showMonthlyChart(sourceId, countryId = 'EU') {
             const sourceName = sources[sourceId];
             const display = document.getElementById('chart-display');
             
@@ -260,8 +275,45 @@
             // Clean source ID for filename
             const cleanId = sourceId.replace(/-/g, '_');
             
-            // Construct filenames based on country
-            const prefix = countryId === 'EU' ? 'eu_monthly' : `${countryId.toLowerCase()}_monthly`;
+            // Get Drive URLs
+            const links = await loadDriveLinks();
+            let percentageUrl, absoluteUrl;
+            
+            if (links && links[countryId] && links[countryId].Monthly) {
+                // Try to find the plot in Drive links
+                // The plot key format is like: "wind_percentage_10years"
+                const plotKey = `${cleanId}_percentage_10years`;
+                const plotKeyAbs = `${cleanId}_absolute_10years`;
+                
+                // Search for matching keys
+                const monthlyPlots = links[countryId].Monthly;
+                let foundPlot = null;
+                
+                // Try exact match first
+                if (monthlyPlots[plotKey]) {
+                    foundPlot = plotKey.replace('_percentage_10years', '');
+                } else {
+                    // Try without suffix
+                    for (const key in monthlyPlots) {
+                        if (key.includes(cleanId) && key.includes('10years')) {
+                            foundPlot = key.replace('_percentage_10years', '').replace('_absolute_10years', '');
+                            break;
+                        }
+                    }
+                }
+                
+                if (foundPlot && monthlyPlots[`${foundPlot}_percentage_10years`]) {
+                    percentageUrl = monthlyPlots[`${foundPlot}_percentage_10years`].percentage?.direct_url;
+                    absoluteUrl = monthlyPlots[`${foundPlot}_absolute_10years`]?.absolute?.direct_url;
+                }
+            }
+            
+            // Fallback to local files if Drive links not found
+            if (!percentageUrl || !absoluteUrl) {
+                const prefix = countryId === 'EU' ? 'eu_monthly' : `${countryId.toLowerCase()}_monthly`;
+                percentageUrl = `plots/${prefix}_${cleanId}_percentage_10years.png`;
+                absoluteUrl = `plots/${prefix}_${cleanId}_absolute_10years.png`;
+            }
             
             // Check CURRENT toggle state before regenerating HTML (preserve user's viewing preference)
             const absoluteBtn = document.getElementById('toggle-absolute');
@@ -270,14 +322,13 @@
             // Update chart display - two separate divs that can be toggled
             display.innerHTML = `
                 <div id="percentage-plot-container">
-                    <img src="plots/${prefix}_${cleanId}_percentage_10years.png" 
+                    <img src="${percentageUrl}" 
                          alt="${sourceName} Percentage" 
                          class="chart-img"
-                         
-                         onerror="this.src='plots/${prefix}_${cleanId}_combined_10years.png'; this.onerror=null;">
+                         onerror="this.style.display='none';">
                 </div>
                 <div id="absolute-plot-container" style="display: none;">
-                    <img src="plots/${prefix}_${cleanId}_absolute_10years.png" 
+                    <img src="${absoluteUrl}" 
                          alt="${sourceName} Absolute Generation" 
                          class="chart-img"
                          onerror="this.style.display='none';">
