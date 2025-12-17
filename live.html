@@ -386,27 +386,8 @@
             const countryId = document.getElementById('country-select').value;
             const sourceId = document.getElementById('source-select').value;
             
-            // Get current plot containers
-            const percentageContainer = document.getElementById('percentage-plot-container');
-            const absoluteContainer = document.getElementById('absolute-plot-container');
-            
-            if (percentageContainer) {
-                const percentageImg = percentageContainer.querySelector('img');
-                if (percentageImg) {
-                    // Add timestamp to force reload (handles Google Drive URLs with existing params)
-                    const originalSrc = percentageImg.src.split('&t=')[0];
-                    percentageImg.src = originalSrc + '&t=' + Date.now();
-                }
-            }
-            
-            if (absoluteContainer) {
-                const absoluteImg = absoluteContainer.querySelector('img');
-                if (absoluteImg) {
-                    // Add timestamp to force reload (handles Google Drive URLs with existing params)
-                    const originalSrc = absoluteImg.src.split('&t=')[0];
-                    absoluteImg.src = originalSrc + '&t=' + Date.now();
-                }
-            }
+            // Simply reload the current source (this will fetch fresh images)
+            showSource(sourceId, countryId);
             
             // Also reload timestamp
             loadTimestamp();
