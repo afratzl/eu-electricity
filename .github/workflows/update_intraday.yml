@@ -70,7 +70,7 @@ jobs:
           cp /tmp/plots_backup/* plots/ 2>/dev/null || true
           
           # Add and commit
-          git add plots/*_analysis.png plots/last_update.html plots/energy_summary_table.json plots/drive_links.json
+          git add plots/*.html plots/*.json
           
           # Only commit if there are changes
           if ! git diff --staged --quiet; then
