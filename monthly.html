@@ -280,31 +280,13 @@
             let percentageUrl, absoluteUrl;
             
             if (links && links[countryId] && links[countryId].Monthly) {
-                // Try to find the plot in Drive links
-                // The plot key format is like: "wind_percentage_10years"
-                const plotKey = `${cleanId}_percentage_10years`;
-                const plotKeyAbs = `${cleanId}_absolute_10years`;
-                
-                // Search for matching keys
                 const monthlyPlots = links[countryId].Monthly;
-                let foundPlot = null;
                 
-                // Try exact match first
-                if (monthlyPlots[plotKey]) {
-                    foundPlot = plotKey.replace('_percentage_10years', '');
-                } else {
-                    // Try without suffix
-                    for (const key in monthlyPlots) {
-                        if (key.includes(cleanId) && key.includes('10years')) {
-                            foundPlot = key.replace('_percentage_10years', '').replace('_absolute_10years', '');
-                            break;
-                        }
-                    }
-                }
-                
-                if (foundPlot && monthlyPlots[`${foundPlot}_percentage_10years`]) {
-                    percentageUrl = monthlyPlots[`${foundPlot}_percentage_10years`].percentage?.direct_url;
-                    absoluteUrl = monthlyPlots[`${foundPlot}_absolute_10years`]?.absolute?.direct_url;
+                // Look for the source directly in Monthly plots
+                // JSON structure: "wind": { "percentage": {...}, "absolute": {...} }
+                if (monthlyPlots[cleanId]) {
+                    percentageUrl = monthlyPlots[cleanId].percentage?.direct_url;
+                    absoluteUrl = monthlyPlots[cleanId].absolute?.direct_url;
                 }
             }
             
