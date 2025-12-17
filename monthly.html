@@ -332,27 +332,8 @@
             const countryId = document.getElementById('country-select').value;
             const sourceId = document.getElementById('source-select').value;
             
-            // Get current plot containers
-            const percentageContainer = document.getElementById('percentage-plot-container');
-            const absoluteContainer = document.getElementById('absolute-plot-container');
-            
-            if (percentageContainer) {
-                const percentageImg = percentageContainer.querySelector('img');
-                if (percentageImg) {
-                    // Add timestamp to force reload
-                    const src = percentageImg.src.split('?')[0];
-                    percentageImg.src = src + '?t=' + new Date().getTime();
-                }
-            }
-            
-            if (absoluteContainer) {
-                const absoluteImg = absoluteContainer.querySelector('img');
-                if (absoluteImg) {
-                    // Add timestamp to force reload
-                    const src = absoluteImg.src.split('?')[0];
-                    absoluteImg.src = src + '?t=' + new Date().getTime();
-                }
-            }
+            // Simply reload the current chart (this will fetch fresh images)
+            showMonthlyChart(sourceId, countryId);
             
             // Also reload timestamp
             updatePlotTimestamp();
@@ -607,8 +588,11 @@
         /* Mobile: Center download button */
         @media (max-width: 768px) {
             .chart-info-bar {
+                flex-direction: column;
+                text-align: center;
                 justify-content: center;
                 padding: 12px 16px;
+                gap: 12px;
             }
             
             .download-btn {
