@@ -16,7 +16,7 @@ jobs:
         
     - name: Install dependencies
       run: |
-        pip install pandas matplotlib numpy gspread google-auth google-auth-oauthlib google-auth-httplib2
+        pip install pandas matplotlib numpy gspread google-auth google-auth-oauthlib google-auth-httplib2 google-api-python-client
         
     - name: Generate historical plots
       env:
