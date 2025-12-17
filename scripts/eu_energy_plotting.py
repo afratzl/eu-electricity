@@ -8,6 +8,15 @@ from datetime import datetime
 import os
 import json
 
+# Google Drive imports for plot uploading
+try:
+    from googleapiclient.discovery import build
+    from googleapiclient.http import MediaFileUpload
+    GDRIVE_AVAILABLE = True
+except ImportError:
+    GDRIVE_AVAILABLE = False
+    print("⚠ Google Drive API not available - plots will not be uploaded to Drive")
+
 # ENTSO-E COLOR PALETTE
 ENTSOE_COLORS = {
     # Renewables
@@ -30,6 +39,108 @@ ENTSOE_COLORS = {
     'All Renewables': '#00CED1',  # Dark Turquoise
     'All Non-Renewables': '#000000'  # Black
 }
+
+
+# === GOOGLE DRIVE UPLOAD FUNCTIONS ===
+
+def get_or_create_drive_folder(service, folder_name, parent_id=None):
+    """Get or create a folder in Google Drive. Returns folder ID."""
+    query = f"name='{folder_name}' and mimeType='application/vnd.google-apps.folder' and trashed=false"
+    if parent_id:
+        query += f" and '{parent_id}' in parents"
+    
+    results = service.files().list(q=query, spaces='drive', fields='files(id, name)').execute()
+    existing_folders = results.get('files', [])
+    
+    if existing_folders:
+        return existing_folders[0]['id']
+    
+    # Create new folder
+    file_metadata = {
+        'name': folder_name,
+        'mimeType': 'application/vnd.google-apps.folder'
+    }
+    if parent_id:
+        file_metadata['parents'] = [parent_id]
+    
+    folder = service.files().create(body=file_metadata, fields='id').execute()
+    return folder.get('id')
+
+
+def upload_plot_to_drive(service, file_path, plot_type='Monthly', country='EU'):
+    """
+    Upload a plot to Google Drive with geography-first structure.
+    Structure: EU-Electricity-Plots/[Country]/[Monthly|Trends]/[plot].png
+    Returns: dict with file_id, view_url, direct_url or None if failed
+    """
+    if not GDRIVE_AVAILABLE:
+        return None
+    
+    try:
+        # Create folder structure: EU-Electricity-Plots/[Country]/[Monthly|Trends]/
+        root_folder_id = get_or_create_drive_folder(service, 'EU-Electricity-Plots')
+        country_folder_id = get_or_create_drive_folder(service, country, root_folder_id)
+        type_folder_id = get_or_create_drive_folder(service, plot_type, country_folder_id)
+        
+        filename = os.path.basename(file_path)
+        
+        # Check if file already exists
+        query = f"name='{filename}' and '{type_folder_id}' in parents and trashed=false"
+        results = service.files().list(q=query, spaces='drive', fields='files(id, name)').execute()
+        existing_files = results.get('files', [])
+        
+        if existing_files:
+            # Update existing file
+            file_id = existing_files[0]['id']
+            media = MediaFileUpload(file_path, mimetype='image/png')
+            service.files().update(fileId=file_id, media_body=media).execute()
+        else:
+            # Create new file
+            file_metadata = {'name': filename, 'parents': [type_folder_id]}
+            media = MediaFileUpload(file_path, mimetype='image/png')
+            file = service.files().create(body=file_metadata, media_body=media, fields='id').execute()
+            file_id = file.get('id')
+        
+        # Make file publicly accessible
+        service.permissions().create(
+            fileId=file_id,
+            body={'type': 'anyone', 'role': 'reader'}
+        ).execute()
+        
+        return {
+            'file_id': file_id,
+            'view_url': f'https://drive.google.com/file/d/{file_id}/view',
+            'direct_url': f'https://drive.google.com/uc?export=view&id={file_id}',
+            'updated': datetime.now().isoformat()
+        }
+        
+    except Exception as e:
+        print(f"  ⚠ Drive upload failed for {os.path.basename(file_path)}: {e}")
+        return None
+
+
+def initialize_drive_service():
+    """Initialize Google Drive service using credentials from environment."""
+    if not GDRIVE_AVAILABLE:
+        return None
+    
+    try:
+        google_creds_json = os.getenv('GOOGLE_CREDENTIALS_JSON')
+        if not google_creds_json:
+            print("  ⚠ GOOGLE_CREDENTIALS_JSON not set")
+            return None
+        
+        import json
+        creds_dict = json.loads(google_creds_json)
+        credentials = Credentials.from_service_account_info(
+            creds_dict,
+            scopes=['https://www.googleapis.com/auth/drive.file']
+        )
+        
+        return build('drive', 'v3', credentials=credentials)
+    except Exception as e:
+        print(f"  ⚠ Failed to initialize Drive service: {e}")
+        return None
 
 
 def format_change_percentage(value):
@@ -126,6 +237,10 @@ def create_all_charts(all_data):
     print("\n" + "=" * 60)
     print("CREATING MOBILE-OPTIMIZED CHARTS")
     print("=" * 60)
+    
+    # Initialize Google Drive service for uploading plots
+    drive_service = initialize_drive_service()
+    plot_links = {'EU': {'Monthly': {}, 'Trends': {}}}
 
     first_source = list(all_data.keys())[0]
     years_available = sorted(all_data[first_source]['year_data'].keys())
@@ -1344,6 +1459,56 @@ def create_all_charts(all_data):
     with open(timestamp_file, 'w') as f:
         f.write(f'<p>Plots generated: {generation_time}</p>')
     print(f"\n✓ Timestamp written to {timestamp_file}: {generation_time}")
+    
+    # Upload all plots to Google Drive
+    if drive_service:
+        print("\n" + "=" * 60)
+        print("UPLOADING PLOTS TO GOOGLE DRIVE")
+        print("=" * 60)
+        
+        # Scan plots directory for all PNG files
+        plot_files = [f for f in os.listdir('plots') if f.endswith('.png') and f.startswith('eu_')]
+        
+        for plot_file in plot_files:
+            file_path = os.path.join('plots', plot_file)
+            
+            # Determine plot type based on filename pattern
+            if 'annual' in plot_file or 'yoy' in plot_file:
+                plot_type = 'Trends'
+            else:
+                plot_type = 'Monthly'
+            
+            # Upload to Drive
+            result = upload_plot_to_drive(drive_service, file_path, plot_type=plot_type, country='EU')
+            
+            if result:
+                # Parse filename to create structured keys
+                # Remove prefix and suffix to get core name
+                core_name = plot_file.replace('eu_monthly_', '').replace('eu_annual_', '').replace('.png', '')
+                
+                # Determine if it's percentage or absolute
+                if '_percentage' in core_name:
+                    view_type = 'percentage'
+                    plot_key = core_name.replace('_percentage', '').replace('_10years', '')
+                elif '_absolute' in core_name:
+                    view_type = 'absolute'
+                    plot_key = core_name.replace('_absolute', '').replace('_10years', '')
+                else:
+                    view_type = 'default'
+                    plot_key = core_name
+                
+                # Store in nested structure
+                if plot_key not in plot_links['EU'][plot_type]:
+                    plot_links['EU'][plot_type][plot_key] = {}
+                
+                plot_links['EU'][plot_type][plot_key][view_type] = result
+        
+        # Save drive_links.json
+        drive_links_file = 'plots/drive_links_monthly_trends.json'
+        with open(drive_links_file, 'w') as f:
+            json.dump(plot_links, f, indent=2)
+        print(f"\n✓ Drive links saved to: {drive_links_file}")
+        print(f"✓ Uploaded {len(plot_files)} plots to Google Drive")
 
     print("\n" + "=" * 60)
     print("ALL MOBILE-OPTIMIZED PLOTS GENERATED")
