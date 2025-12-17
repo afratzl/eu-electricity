@@ -1,0 +1,21 @@
+name: Cleanup PNG Files
+on:
+  workflow_dispatch:  # Manual trigger only
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Remove PNG files
+        run: |
+          git rm plots/*.png || true
+          git rm plots/*.txt || true
+
+      - name: Commit changes
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git commit -m "Remove PNG files (moved to Google Drive)" || echo "No PNGs to remove"
+          git push
