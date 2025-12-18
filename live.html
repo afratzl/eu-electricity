@@ -307,48 +307,29 @@
                 if (urlParams.has('refresh')) {
                     console.log('🎯 REFRESH DETECTED - Using timestamp-based size');
                     
-                    // Generate size based on day of month + hour
+                    // Generate size based on day of year (odd/even) + hour
                     const now = new Date();
-                    const dayOfMonth = now.getDate();  // 1-31
-                    const hour = now.getHours();  // 0-23
-                    const size = 2000 + dayOfMonth + (hour / 100);
+                    const startOfYear = new Date(now.getFullYear(), 0, 0);
+                    const diff = now - startOfYear;
+                    const oneDay = 1000 * 60 * 60 * 24;
+                    const dayOfYear = Math.floor(diff / oneDay);  // 1-365
                     
-                    console.log(`🕐 Current time: Day ${dayOfMonth}, Hour ${hour}`);
-                    console.log(`🔄 Using timestamp size: w${size.toFixed(2)}`);
+                    const hour = now.getHours();  // 0-23
+                    const isOddDay = dayOfYear % 2 === 1;
+                    
+                    // Odd days: 2000-2023, Even days: 2024-2047
+                    const size = 2000 + (isOddDay ? 0 : 24) + hour;
+                    
+                    console.log(`🕐 Day of year: ${dayOfYear} (${isOddDay ? 'odd' : 'even'}), Hour: ${hour}`);
+                    console.log(`🔄 Using timestamp size: w${size}`);
+                    console.log(`   Range: ${isOddDay ? '2000-2023 (odd days)' : '2024-2047 (even days)'}`);
                     console.log('Original URL:', percentageUrl);
                     
                     // Replace size in URL
-                    percentageUrl = percentageUrl.replace(/sz=w[\d.]+/, `sz=w${size.toFixed(2)}`);
-                    absoluteUrl = absoluteUrl.replace(/sz=w[\d.]+/, `sz=w${size.toFixed(2)}`);
+                    percentageUrl = percentageUrl.replace(/sz=w[\d.]+/, `sz=w${size}`);
+                    absoluteUrl = absoluteUrl.replace(/sz=w[\d.]+/, `sz=w${size}`);
                     
                     console.log('Modified URL:', percentageUrl);
-                    
-                    // Show user the timestamp-based size
-                    const indicator = document.createElement('div');
-                    indicator.id = 'size-indicator';
-                    indicator.style.cssText = 'position: fixed; top: 10px; right: 10px; background: #333; color: #fff; padding: 15px 20px; border-radius: 8px; z-index: 999999; font-size: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.5); cursor: pointer;';
-                    indicator.innerHTML = `
-                        <strong>🔄 Refreshed</strong><br>
-                        <small>Using size: w${size.toFixed(2)}</small><br>
-                        <small style="color: #aaa;">Timestamp-based (resets hourly)</small><br>
-                        <small style="color: #aaa;">Click to dismiss</small>
-                    `;
-                    
-                    // Click to dismiss
-                    indicator.onclick = () => indicator.remove();
-                    
-                    // Remove old indicator if exists
-                    const oldIndicator = document.getElementById('size-indicator');
-                    if (oldIndicator) {
-                        console.log('Removing old indicator');
-                        oldIndicator.remove();
-                    }
-                    
-                    document.body.appendChild(indicator);
-                    console.log('✅ Visual indicator added to body at:', new Date().toLocaleTimeString());
-                    
-                    // Auto-dismiss after 3 seconds
-                    setTimeout(() => indicator.remove(), 3000);
                 } else {
                     console.log('ℹ️ No refresh param - using exact URL from JSON (size: w' + jsonSize + ')');
                     // Use exact URL from JSON on normal load
