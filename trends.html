@@ -291,10 +291,20 @@
         // Fetch image bypassing cache (for mobile refresh)
         async function fetchImageAsDataURL(url) {
             try {
-                const response = await fetch(url, {
-                    cache: 'no-store',  // Force bypass all caches
+                // Triple-aggressive cache busting:
+                // 1. Vary size parameter (cycles through 1998-2002)
+                const randomSize = (Date.now() % 5) + 1998;
+                let fetchUrl = url.replace(/sz=w\d+/, `sz=w${randomSize}`);
+                
+                // 2. Add timestamp parameter (browser sees as completely new URL)
+                fetchUrl += `&v=${Date.now()}`;
+                
+                // 3. Fetch with no-store (prevents caching the response)
+                const response = await fetch(fetchUrl, {
+                    cache: 'no-store',
                     mode: 'cors'
                 });
+                
                 const blob = await response.blob();
                 return new Promise((resolve, reject) => {
                     const reader = new FileReader();
