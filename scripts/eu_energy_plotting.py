@@ -140,7 +140,7 @@ def upload_plot_to_drive(service, file_path, plot_type='Monthly', country='EU'):
         return {
             'file_id': file_id,
             'view_url': f'https://drive.google.com/file/d/{file_id}/view',
-            'direct_url': f'https://drive.google.com/uc?export=view&id={file_id}',
+            'direct_url': f'https://drive.google.com/thumbnail?id={file_id}&sz=w2000',
             'updated': datetime.now().isoformat()
         }
         
