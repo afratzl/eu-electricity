@@ -289,16 +289,15 @@
                 if (monthlyPlots[cleanId]) {
                     percentageUrl = monthlyPlots[cleanId].percentage?.direct_url;
                     absoluteUrl = monthlyPlots[cleanId].absolute?.direct_url;
-                    
-                    // Only vary size when user explicitly clicks refresh
-                    if (window.isRefreshing && percentageUrl && absoluteUrl) {
-                        const sizes = [1998, 1999, 2000, 2001, 2002];
-                        const randomSize = sizes[Math.floor(Math.random() * sizes.length)];
-                        percentageUrl = percentageUrl.replace(/sz=w\d+/, `sz=w${randomSize}`);
-                        absoluteUrl = absoluteUrl.replace(/sz=w\d+/, `sz=w${randomSize}`);
-                        window.isRefreshing = false; // Clear flag
-                    }
                 }
+            }
+            
+            // Force mobile browser cache break: clear display first
+            if (window.isRefreshing) {
+                display.innerHTML = '';  // Clear completely
+                // Force reflow to break cache reference
+                void(display.offsetHeight);
+                window.isRefreshing = false;
             }
             
             // Fallback to local files if Drive links not found
