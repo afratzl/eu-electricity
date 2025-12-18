@@ -344,13 +344,8 @@
                     percentageUrl = plots[baseKey].percentage?.direct_url || percentageUrl;
                     absoluteUrl = plots[baseKey].absolute?.direct_url || absoluteUrl;
                     
-                    // Google Drive cache-buster: vary the sz parameter (1998-2002)
-                    if (percentageUrl && absoluteUrl) {
-                        const sizes = [1998, 1999, 2000, 2001, 2002];
-                        const randomSize = sizes[Math.floor(Math.random() * sizes.length)];
-                        percentageUrl = percentageUrl.replace(/sz=w\d+/, `sz=w${randomSize}`);
-                        absoluteUrl = absoluteUrl.replace(/sz=w\d+/, `sz=w${randomSize}`);
-                    }
+                    // Note: Python script handles cache-busting via size randomization on upload
+                    // We use the exact URL from JSON, which is always the most recent upload
                 }
             }
 
@@ -425,7 +420,10 @@
             const countryId = document.getElementById('country-select').value;
             const plotId = document.getElementById('plot-select').value;
             
-            // Simply reload the current plot (this will fetch fresh images)
+            // Clear cached JSON to force reload of latest URLs
+            driveLinks = null;
+            
+            // Simply reload the current plot (this will fetch fresh JSON and images)
             showPlot(plotId, countryId);
             
             // Also reload timestamp
