@@ -284,18 +284,9 @@
             let percentageUrl, absoluteUrl;
             
             if (links && links[countryId] && links[countryId].Intraday && links[countryId].Intraday[sourceId]) {
-                // Use Drive direct URLs (JSON always has latest upload URL)
+                // Use Drive direct URLs - exact URL from JSON (which has latest upload)
                 percentageUrl = links[countryId].Intraday[sourceId].percentage.direct_url;
                 absoluteUrl = links[countryId].Intraday[sourceId].absolute.direct_url;
-                
-                // Only vary size when user explicitly clicks refresh (not on normal navigation)
-                if (window.isRefreshing) {
-                    const sizes = [1998, 1999, 2000, 2001, 2002];
-                    const randomSize = sizes[Math.floor(Math.random() * sizes.length)];
-                    percentageUrl = percentageUrl.replace(/sz=w\d+/, `sz=w${randomSize}`);
-                    absoluteUrl = absoluteUrl.replace(/sz=w\d+/, `sz=w${randomSize}`);
-                    window.isRefreshing = false; // Clear flag
-                }
             } else {
                 // Fallback to GitHub plots (backward compatibility)
                 percentageUrl = `plots/${cleanId}_analysis_percentage.png`;
@@ -307,6 +298,14 @@
                 absoluteUrl += `?t=${cacheBuster}`;
                 
                 console.warn(`Drive link not found for ${countryId}/${sourceId}, using GitHub fallback`);
+            }
+            
+            // Force mobile browser cache break: clear display first
+            if (window.isRefreshing) {
+                display.innerHTML = '';  // Clear completely
+                // Force reflow to break cache reference
+                void(display.offsetHeight);
+                window.isRefreshing = false;
             }
             
             // Clear the flag after first load
