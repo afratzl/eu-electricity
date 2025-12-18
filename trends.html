@@ -346,11 +346,13 @@
                     percentageUrl = plots[baseKey].percentage?.direct_url || percentageUrl;
                     absoluteUrl = plots[baseKey].absolute?.direct_url || absoluteUrl;
                     
-                    // Add timestamp to force browser to treat as new URL
-                    if (percentageUrl && absoluteUrl) {
-                        const timestamp = Date.now();
-                        percentageUrl += `&v=${timestamp}`;
-                        absoluteUrl += `&v=${timestamp}`;
+                    // Only vary size when user explicitly clicks refresh
+                    if (window.isRefreshing && percentageUrl && absoluteUrl) {
+                        const sizes = [1998, 1999, 2000, 2001, 2002];
+                        const randomSize = sizes[Math.floor(Math.random() * sizes.length)];
+                        percentageUrl = percentageUrl.replace(/sz=w\d+/, `sz=w${randomSize}`);
+                        absoluteUrl = absoluteUrl.replace(/sz=w\d+/, `sz=w${randomSize}`);
+                        window.isRefreshing = false; // Clear flag
                     }
                 }
             }
@@ -428,6 +430,9 @@
             
             // Clear cached JSON to force reload of latest URLs
             driveLinks = null;
+            
+            // Set flag to trigger size variation (cache-busting)
+            window.isRefreshing = true;
             
             // Simply reload the current plot (this will fetch fresh JSON and images)
             showPlot(plotId, countryId);
