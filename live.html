@@ -303,37 +303,32 @@
                 const jsonSize = jsonSizeMatch ? parseInt(jsonSizeMatch[1]) : 2000;
                 console.log('📌 Size from JSON:', jsonSize);
                 
-                // Use timestamp-based size when refresh is used
-                if (urlParams.has('refresh')) {
-                    console.log('🎯 REFRESH DETECTED - Using timestamp-based size');
-                    
-                    // Generate size based on day of year (odd/even) + hour
-                    const now = new Date();
-                    const startOfYear = new Date(now.getFullYear(), 0, 0);
-                    const diff = now - startOfYear;
-                    const oneDay = 1000 * 60 * 60 * 24;
-                    const dayOfYear = Math.floor(diff / oneDay);  // 1-365
-                    
-                    const hour = now.getHours();  // 0-23
-                    const isOddDay = dayOfYear % 2 === 1;
-                    
-                    // Odd days: 2000-2023, Even days: 2024-2047
-                    const size = 2000 + (isOddDay ? 0 : 24) + hour;
-                    
-                    console.log(`🕐 Day of year: ${dayOfYear} (${isOddDay ? 'odd' : 'even'}), Hour: ${hour}`);
-                    console.log(`🔄 Using timestamp size: w${size}`);
-                    console.log(`   Range: ${isOddDay ? '2000-2023 (odd days)' : '2024-2047 (even days)'}`);
-                    console.log('Original URL:', percentageUrl);
-                    
-                    // Replace size in URL
-                    percentageUrl = percentageUrl.replace(/sz=w[\d.]+/, `sz=w${size}`);
-                    absoluteUrl = absoluteUrl.replace(/sz=w[\d.]+/, `sz=w${size}`);
-                    
-                    console.log('Modified URL:', percentageUrl);
-                } else {
-                    console.log('ℹ️ No refresh param - using exact URL from JSON (size: w' + jsonSize + ')');
-                    // Use exact URL from JSON on normal load
-                }
+                // ALWAYS use timestamp-based size (not just on refresh)
+                console.log('🎯 Using timestamp-based size');
+                
+                // Generate size based on day of year (odd/even) + hour
+                const now = new Date();
+                const startOfYear = new Date(now.getFullYear(), 0, 0);
+                const diff = now - startOfYear;
+                const oneDay = 1000 * 60 * 60 * 24;
+                const dayOfYear = Math.floor(diff / oneDay);  // 1-365
+                
+                const hour = now.getHours();  // 0-23
+                const isOddDay = dayOfYear % 2 === 1;
+                
+                // Odd days: 2000-2023, Even days: 2024-2047
+                const size = 2000 + (isOddDay ? 0 : 24) + hour;
+                
+                console.log(`🕐 Day of year: ${dayOfYear} (${isOddDay ? 'odd' : 'even'}), Hour: ${hour}`);
+                console.log(`🔄 Using timestamp size: w${size}`);
+                console.log(`   Range: ${isOddDay ? '2000-2023 (odd days)' : '2024-2047 (even days)'}`);
+                console.log('Original URL:', percentageUrl);
+                
+                // Replace size in URL
+                percentageUrl = percentageUrl.replace(/sz=w[\d.]+/, `sz=w${size}`);
+                absoluteUrl = absoluteUrl.replace(/sz=w[\d.]+/, `sz=w${size}`);
+                
+                console.log('Modified URL:', percentageUrl);
             } else {
                 // Fallback to GitHub plots (backward compatibility)
                 percentageUrl = `plots/${cleanId}_analysis_percentage.png`;
