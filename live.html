@@ -293,9 +293,15 @@
                 percentageUrl = links[countryId].Intraday[sourceId].percentage.direct_url;
                 absoluteUrl = links[countryId].Intraday[sourceId].absolute.direct_url;
                 
-                // Cycle through sizes deliberately when refresh is used
+                // Check for refresh parameter
                 const urlParams = new URLSearchParams(window.location.search);
+                console.log('Current URL params:', window.location.search);
+                console.log('Has refresh param?', urlParams.has('refresh'));
+                
+                // Cycle through sizes deliberately when refresh is used
                 if (urlParams.has('refresh')) {
+                    console.log('🎯 REFRESH DETECTED - Starting size cycling');
+                    
                     // Initialize size index if not exists
                     if (!window.sizeIndex) window.sizeIndex = 0;
                     
@@ -320,6 +326,8 @@
                     indicator.innerHTML = `Testing cache version ${window.sizeIndex === 0 ? 5 : window.sizeIndex}/5 (w${size})`;
                     document.body.appendChild(indicator);
                     setTimeout(() => indicator.remove(), 3000);
+                } else {
+                    console.log('ℹ️ No refresh param - using URL from JSON as-is');
                 }
             } else {
                 // Fallback to GitHub plots (backward compatibility)
@@ -548,7 +556,7 @@
         }
 
         // Load default source on page load
-        window.addEventListener('DOMContentLoaded', () => {
+        window.addEventListener('DOMContentLoaded', async () => {
             // Check URL params for refresh-preserved selection
             const urlParams = new URLSearchParams(window.location.search);
             const paramCountry = urlParams.get('country');
@@ -566,12 +574,16 @@
                 document.getElementById('country-select').value = country;
                 document.getElementById('source-select').value = source;
                 
-                // Clean URL (remove params)
-                window.history.replaceState({}, '', window.location.pathname);
+                // DON'T clean URL yet - showSource needs to check for refresh param first
             }
             
-            showSource(source, country);
+            await showSource(source, country);  // Wait for showSource to finish
             loadTimestamp();
+            
+            // NOW clean URL after showSource has checked params
+            if (paramCountry && paramSource) {
+                window.history.replaceState({}, '', window.location.pathname);
+            }
             
             // Always start with percentage view (no localStorage persistence)
             // This ensures button state and content are always in sync
