@@ -235,7 +235,9 @@
             if (driveLinks) return driveLinks;
             
             try {
-                const response = await fetch('plots/drive_links.json');
+                // Add cache-buster to force reload of JSON
+                const cacheBuster = Date.now();
+                const response = await fetch(`plots/drive_links.json?t=${cacheBuster}`);
                 driveLinks = await response.json();
                 return driveLinks;
             } catch (error) {
@@ -286,8 +288,10 @@
                 percentageUrl = links[countryId].Intraday[sourceId].percentage.direct_url;
                 absoluteUrl = links[countryId].Intraday[sourceId].absolute.direct_url;
                 
-                // Note: Python script handles cache-busting via size randomization on upload
-                // We use the exact URL from JSON, which is always the most recent upload
+                // Add timestamp to force browser to treat as new URL (even if Drive ignores it)
+                const timestamp = Date.now();
+                percentageUrl += `&v=${timestamp}`;
+                absoluteUrl += `&v=${timestamp}`;
             } else {
                 // Fallback to GitHub plots (backward compatibility)
                 percentageUrl = `plots/${cleanId}_analysis_percentage.png`;
