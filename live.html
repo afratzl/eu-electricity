@@ -230,46 +230,6 @@
         // Drive links cache
         let driveLinks = null;
 
-        // Fetch image bypassing cache (for mobile refresh)
-        async function fetchImageAsDataURL(url) {
-            try {
-                console.log('🔄 Fetching fresh image:', url);
-                
-                // Triple-aggressive cache busting:
-                // 1. Vary size parameter (cycles through 1998-2002)
-                const randomSize = (Date.now() % 5) + 1998;
-                let fetchUrl = url.replace(/sz=w\d+/, `sz=w${randomSize}`);
-                
-                // 2. Add timestamp parameter (browser sees as completely new URL)
-                fetchUrl += `&v=${Date.now()}`;
-                
-                console.log('📡 Modified URL:', fetchUrl);
-                
-                // 3. Fetch with no-store (prevents caching the response)
-                const response = await fetch(fetchUrl, {
-                    cache: 'no-store',
-                    mode: 'cors'
-                });
-                
-                console.log('✓ Fetch successful, converting to data URL...');
-                
-                const blob = await response.blob();
-                return new Promise((resolve, reject) => {
-                    const reader = new FileReader();
-                    reader.onloadend = () => {
-                        console.log('✓ Converted to data URL');
-                        resolve(reader.result);
-                    };
-                    reader.onerror = reject;
-                    reader.readAsDataURL(blob);
-                });
-            } catch (error) {
-                console.error('❌ Failed to fetch image:', error);
-                console.log('⚠️ Falling back to original URL');
-                return url;  // Fallback to original URL
-            }
-        }
-
         // Load Drive links from JSON
         async function loadDriveLinks() {
             if (driveLinks) return driveLinks;
@@ -327,13 +287,6 @@
                 // Use Drive direct URLs - exact URL from JSON (which has latest upload)
                 percentageUrl = links[countryId].Intraday[sourceId].percentage.direct_url;
                 absoluteUrl = links[countryId].Intraday[sourceId].absolute.direct_url;
-                
-                // Force mobile browser cache break: fetch as data URL when refreshing
-                if (window.isRefreshing) {
-                    percentageUrl = await fetchImageAsDataURL(percentageUrl);
-                    absoluteUrl = await fetchImageAsDataURL(absoluteUrl);
-                    window.isRefreshing = false;
-                }
             } else {
                 // Fallback to GitHub plots (backward compatibility)
                 percentageUrl = `plots/${cleanId}_analysis_percentage.png`;
@@ -426,24 +379,13 @@
             const countryId = document.getElementById('country-select').value;
             const sourceId = document.getElementById('source-select').value;
             
-            // Show loading indicator
-            const display = document.getElementById('chart-display');
-            display.innerHTML = '<div style="text-align: center; padding: 50px; font-size: 20px;">🔄 Refreshing...</div>';
+            // Reload page with cache bypass, preserve selection via URL params
+            const url = new URL(window.location);
+            url.searchParams.set('country', countryId);
+            url.searchParams.set('source', sourceId);
+            url.searchParams.set('refresh', Date.now()); // Force cache bypass
             
-            // Clear cached JSON to force reload of latest URLs
-            driveLinks = null;
-            
-            // Set flag to trigger aggressive cache-busting
-            window.isRefreshing = true;
-            
-            // Simply reload the current source (this will fetch fresh JSON and images)
-            showSource(sourceId, countryId);
-            
-            // Also reload timestamp
-            loadTimestamp();
-            
-            // Force button to lose focus (prevents staying blue on mobile)
-            document.activeElement.blur();
+            window.location.href = url.toString();
         }
 
         // Download current chart
@@ -552,7 +494,28 @@
 
         // Load default source on page load
         window.addEventListener('DOMContentLoaded', () => {
-            showSource('all-renewables', 'EU');  // Default: EU + All Renewables
+            // Check URL params for refresh-preserved selection
+            const urlParams = new URLSearchParams(window.location.search);
+            const paramCountry = urlParams.get('country');
+            const paramSource = urlParams.get('source');
+            
+            let country = 'EU';
+            let source = 'all-renewables';
+            
+            if (paramCountry && paramSource) {
+                // Restore from URL params (after refresh button)
+                country = paramCountry;
+                source = paramSource;
+                
+                // Update dropdowns to match
+                document.getElementById('country-select').value = country;
+                document.getElementById('source-select').value = source;
+                
+                // Clean URL (remove params)
+                window.history.replaceState({}, '', window.location.pathname);
+            }
+            
+            showSource(source, country);
             loadTimestamp();
             
             // Always start with percentage view (no localStorage persistence)
