@@ -307,32 +307,44 @@
             const absoluteBtn = document.getElementById('toggle-absolute');
             const isAbsoluteActive = absoluteBtn && absoluteBtn.classList.contains('active');
             
-            // Update chart display - two separate divs that can be toggled
-            display.innerHTML = `
-                <div id="percentage-plot-container">
-                    <img src="${percentageUrl}" 
-                         alt="${sourceName} Percentage" 
-                         class="chart-img"
-                         onerror="handleImageError(this, '${sourceName}', '${cleanId}', 'percentage')">
-                </div>
-                <div id="absolute-plot-container" style="display: none;">
-                    <img src="${absoluteUrl}" 
-                         alt="${sourceName} Absolute Generation" 
-                         class="chart-img"
-                         onerror="handleImageError(this, '${sourceName}', '${cleanId}', 'absolute')">
-                </div>
-            `;
+            // FORCE IMAGE RECREATION: Destroy and recreate DOM elements to bypass cache
+            // Clear display completely
+            display.innerHTML = '';
             
-            // Force browser to reload images on initial page load (bypass cache)
-            if (isInitialPageLoad) {
-                setTimeout(() => {
-                    const imgs = display.querySelectorAll('img');
-                    imgs.forEach(img => {
-                        const originalSrc = img.src.split('?')[0].split('&t=')[0];
-                        img.src = originalSrc + (originalSrc.includes('?') ? '&' : '?') + 't=' + Date.now();
-                    });
-                }, 100);
-            }
+            // Create percentage plot container
+            const percentageContainer = document.createElement('div');
+            percentageContainer.id = 'percentage-plot-container';
+            
+            // Create fresh percentage image element
+            const percentageImg = document.createElement('img');
+            percentageImg.src = percentageUrl;
+            percentageImg.alt = `${sourceName} Percentage`;
+            percentageImg.className = 'chart-img';
+            percentageImg.crossOrigin = 'anonymous';  // Different cache key
+            percentageImg.onerror = function() {
+                handleImageError(this, sourceName, cleanId, 'percentage');
+            };
+            
+            percentageContainer.appendChild(percentageImg);
+            display.appendChild(percentageContainer);
+            
+            // Create absolute plot container
+            const absoluteContainer = document.createElement('div');
+            absoluteContainer.id = 'absolute-plot-container';
+            absoluteContainer.style.display = 'none';
+            
+            // Create fresh absolute image element
+            const absoluteImg = document.createElement('img');
+            absoluteImg.src = absoluteUrl;
+            absoluteImg.alt = `${sourceName} Absolute Generation`;
+            absoluteImg.className = 'chart-img';
+            absoluteImg.crossOrigin = 'anonymous';  // Different cache key
+            absoluteImg.onerror = function() {
+                handleImageError(this, sourceName, cleanId, 'absolute');
+            };
+            
+            absoluteContainer.appendChild(absoluteImg);
+            display.appendChild(absoluteContainer);
             
             // Restore previous toggle state (preserve user's viewing preference)
             if (isAbsoluteActive) {
@@ -379,11 +391,16 @@
             const countryId = document.getElementById('country-select').value;
             const sourceId = document.getElementById('source-select').value;
             
-            // Reload page with cache bypass, preserve selection via URL params
+            // Note: Due to Google Drive's aggressive caching and CORS restrictions,
+            // a page reload may still show cached images. For absolutely latest version:
+            // - Desktop: Ctrl+Shift+R (force refresh)
+            // - Mobile: Clear browser cache
+            
+            // Reload page with params to try cache bypass
             const url = new URL(window.location);
             url.searchParams.set('country', countryId);
             url.searchParams.set('source', sourceId);
-            url.searchParams.set('refresh', Date.now()); // Force cache bypass
+            url.searchParams.set('refresh', Date.now());
             
             window.location.href = url.toString();
         }
