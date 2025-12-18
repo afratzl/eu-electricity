@@ -302,13 +302,14 @@
                 if (urlParams.has('refresh')) {
                     console.log('🎯 REFRESH DETECTED - Starting size cycling');
                     
-                    // Initialize size index if not exists
-                    if (!window.sizeIndex) window.sizeIndex = 0;
+                    // Get size index from sessionStorage (persists across reloads)
+                    let sizeIndex = parseInt(sessionStorage.getItem('sizeIndex') || '0');
+                    console.log('Current size index from session:', sizeIndex);
                     
                     const sizes = [1998, 1999, 2000, 2001, 2002];
-                    const size = sizes[window.sizeIndex];
+                    const size = sizes[sizeIndex];
                     
-                    console.log(`🔄 Trying size: w${size} (${window.sizeIndex + 1}/5)`);
+                    console.log(`🔄 Trying size: w${size} (${sizeIndex + 1}/5)`);
                     console.log('Original URL:', percentageUrl);
                     
                     // Replace size in URL
@@ -317,21 +318,35 @@
                     
                     console.log('Modified URL:', percentageUrl);
                     
-                    // Move to next size for next refresh
-                    window.sizeIndex = (window.sizeIndex + 1) % sizes.length;
+                    // Move to next size for next refresh and save to sessionStorage
+                    sizeIndex = (sizeIndex + 1) % sizes.length;
+                    sessionStorage.setItem('sizeIndex', sizeIndex.toString());
+                    console.log('Next refresh will use index:', sizeIndex);
                     
                     // Show user which size they're viewing - persistent indicator
                     const indicator = document.createElement('div');
                     indicator.id = 'size-indicator';
                     indicator.style.cssText = 'position: fixed; top: 10px; right: 10px; background: #333; color: #fff; padding: 15px 20px; border-radius: 8px; z-index: 999999; font-size: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.5); cursor: pointer;';
                     indicator.innerHTML = `
-                        <strong>Testing Cache Version ${window.sizeIndex === 0 ? 5 : window.sizeIndex}/5</strong><br>
+                        <strong>Testing Cache Version ${sizeIndex === 0 ? 5 : sizeIndex}/5</strong><br>
                         <small>Using size: w${size}</small><br>
-                        <small style="color: #aaa;">Click here to dismiss</small>
+                        <small style="color: #aaa;">Click: dismiss | Double-click: reset cycle</small>
                     `;
                     
                     // Click to dismiss
                     indicator.onclick = () => indicator.remove();
+                    
+                    // Double-click to reset cycle
+                    indicator.ondblclick = (e) => {
+                        e.stopPropagation();
+                        sessionStorage.setItem('sizeIndex', '0');
+                        console.log('🔄 Cycle reset! Next refresh starts at w1998');
+                        indicator.innerHTML = `
+                            <strong>Cycle Reset!</strong><br>
+                            <small>Next refresh starts at w1998 (1/5)</small>
+                        `;
+                        setTimeout(() => indicator.remove(), 2000);
+                    };
                     
                     // Remove old indicator if exists
                     const oldIndicator = document.getElementById('size-indicator');
