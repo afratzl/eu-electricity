@@ -320,7 +320,6 @@
             percentageImg.src = percentageUrl;
             percentageImg.alt = `${sourceName} Percentage`;
             percentageImg.className = 'chart-img';
-            percentageImg.crossOrigin = 'anonymous';  // Different cache key
             percentageImg.onerror = function() {
                 handleImageError(this, sourceName, cleanId, 'percentage');
             };
@@ -338,7 +337,6 @@
             absoluteImg.src = absoluteUrl;
             absoluteImg.alt = `${sourceName} Absolute Generation`;
             absoluteImg.className = 'chart-img';
-            absoluteImg.crossOrigin = 'anonymous';  // Different cache key
             absoluteImg.onerror = function() {
                 handleImageError(this, sourceName, cleanId, 'absolute');
             };
