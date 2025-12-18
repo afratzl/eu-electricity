@@ -239,6 +239,11 @@
                 const cacheBuster = Date.now();
                 const response = await fetch(`plots/drive_links.json?t=${cacheBuster}`);
                 driveLinks = await response.json();
+                
+                // Log JSON info for debugging
+                console.log('📄 JSON loaded at:', new Date().toLocaleTimeString());
+                console.log('Sample URL from JSON:', driveLinks?.EU?.Intraday?.['all-renewables']?.percentage?.direct_url);
+                
                 return driveLinks;
             } catch (error) {
                 console.error('Failed to load Drive links:', error);
@@ -287,6 +292,35 @@
                 // Use Drive direct URLs - exact URL from JSON (which has latest upload)
                 percentageUrl = links[countryId].Intraday[sourceId].percentage.direct_url;
                 absoluteUrl = links[countryId].Intraday[sourceId].absolute.direct_url;
+                
+                // Cycle through sizes deliberately when refresh is used
+                const urlParams = new URLSearchParams(window.location.search);
+                if (urlParams.has('refresh')) {
+                    // Initialize size index if not exists
+                    if (!window.sizeIndex) window.sizeIndex = 0;
+                    
+                    const sizes = [1998, 1999, 2000, 2001, 2002];
+                    const size = sizes[window.sizeIndex];
+                    
+                    console.log(`🔄 Trying size: w${size} (${window.sizeIndex + 1}/5)`);
+                    console.log('Original URL:', percentageUrl);
+                    
+                    // Replace size in URL
+                    percentageUrl = percentageUrl.replace(/sz=w\d+/, `sz=w${size}`);
+                    absoluteUrl = absoluteUrl.replace(/sz=w\d+/, `sz=w${size}`);
+                    
+                    console.log('Modified URL:', percentageUrl);
+                    
+                    // Move to next size for next refresh
+                    window.sizeIndex = (window.sizeIndex + 1) % sizes.length;
+                    
+                    // Show user which size they're viewing
+                    const indicator = document.createElement('div');
+                    indicator.style.cssText = 'position: fixed; top: 10px; right: 10px; background: #333; color: #fff; padding: 10px; border-radius: 5px; z-index: 10000; font-size: 14px;';
+                    indicator.innerHTML = `Testing cache version ${window.sizeIndex === 0 ? 5 : window.sizeIndex}/5 (w${size})`;
+                    document.body.appendChild(indicator);
+                    setTimeout(() => indicator.remove(), 3000);
+                }
             } else {
                 // Fallback to GitHub plots (backward compatibility)
                 percentageUrl = `plots/${cleanId}_analysis_percentage.png`;
