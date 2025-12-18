@@ -286,23 +286,19 @@
                 percentageUrl = links[countryId].Intraday[sourceId].percentage.direct_url;
                 absoluteUrl = links[countryId].Intraday[sourceId].absolute.direct_url;
                 
-                // Add cache-buster ONLY on initial page load (forces mobile to refresh)
-                if (isInitialPageLoad) {
-                    const cacheBuster = Date.now();
-                    percentageUrl += `&t=${cacheBuster}`;
-                    absoluteUrl += `&t=${cacheBuster}`;
-                }
+                // Always add cache-buster for Drive URLs (mobile browsers cache aggressively)
+                const cacheBuster = Date.now();
+                percentageUrl += `&t=${cacheBuster}`;
+                absoluteUrl += `&t=${cacheBuster}`;
             } else {
                 // Fallback to GitHub plots (backward compatibility)
                 percentageUrl = `plots/${cleanId}_analysis_percentage.png`;
                 absoluteUrl = `plots/${cleanId}_analysis_absolute.png`;
                 
-                // Add cache-buster ONLY on initial page load
-                if (isInitialPageLoad) {
-                    const cacheBuster = Date.now();
-                    percentageUrl += `?t=${cacheBuster}`;
-                    absoluteUrl += `?t=${cacheBuster}`;
-                }
+                // Add cache-buster for GitHub fallback too
+                const cacheBuster = Date.now();
+                percentageUrl += `?t=${cacheBuster}`;
+                absoluteUrl += `?t=${cacheBuster}`;
                 
                 console.warn(`Drive link not found for ${countryId}/${sourceId}, using GitHub fallback`);
             }
