@@ -298,15 +298,32 @@
                 console.log('Current URL params:', window.location.search);
                 console.log('Has refresh param?', urlParams.has('refresh'));
                 
+                // Extract the size from JSON URL - this is the size from latest upload
+                const jsonSizeMatch = percentageUrl.match(/sz=w(\d+)/);
+                const jsonSize = jsonSizeMatch ? parseInt(jsonSizeMatch[1]) : 2000;
+                console.log('📌 Size from JSON (latest upload):', jsonSize, '→ This should be correct!');
+                
                 // Cycle through sizes deliberately when refresh is used
                 if (urlParams.has('refresh')) {
                     console.log('🎯 REFRESH DETECTED - Starting size cycling');
                     
-                    // Get size index from sessionStorage (persists across reloads)
-                    let sizeIndex = parseInt(sessionStorage.getItem('sizeIndex') || '0');
-                    console.log('Current size index from session:', sizeIndex);
-                    
                     const sizes = [1998, 1999, 2000, 2001, 2002];
+                    
+                    // Get size index from sessionStorage, or find JSON size index if first time
+                    let sizeIndex;
+                    const storedIndex = sessionStorage.getItem('sizeIndex');
+                    
+                    if (storedIndex === null) {
+                        // First refresh - start at JSON size
+                        sizeIndex = sizes.indexOf(jsonSize);
+                        if (sizeIndex === -1) sizeIndex = 0; // Fallback if JSON size not in array
+                        console.log('🎯 First refresh! Starting at JSON size w' + jsonSize + ' (index: ' + sizeIndex + ')');
+                    } else {
+                        // Subsequent refresh - use stored index
+                        sizeIndex = parseInt(storedIndex);
+                        console.log('Current size index from session:', sizeIndex);
+                    }
+                    
                     const size = sizes[sizeIndex];
                     
                     console.log(`🔄 Trying size: w${size} (${sizeIndex + 1}/5)`);
@@ -327,23 +344,26 @@
                     const indicator = document.createElement('div');
                     indicator.id = 'size-indicator';
                     indicator.style.cssText = 'position: fixed; top: 10px; right: 10px; background: #333; color: #fff; padding: 15px 20px; border-radius: 8px; z-index: 999999; font-size: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.5); cursor: pointer;';
+                    
+                    const isJsonSize = (size === jsonSize);
                     indicator.innerHTML = `
                         <strong>Testing Cache Version ${sizeIndex === 0 ? 5 : sizeIndex}/5</strong><br>
-                        <small>Using size: w${size}</small><br>
-                        <small style="color: #aaa;">Click: dismiss | Double-click: reset cycle</small>
+                        <small>Using size: w${size}</small>
+                        ${isJsonSize ? '<br><strong style="color: #0f0;">⭐ JSON recommended!</strong>' : ''}<br>
+                        <small style="color: #aaa;">Click: dismiss | Double-click: reset to JSON size</small>
                     `;
                     
                     // Click to dismiss
                     indicator.onclick = () => indicator.remove();
                     
-                    // Double-click to reset cycle
+                    // Double-click to reset cycle to JSON size
                     indicator.ondblclick = (e) => {
                         e.stopPropagation();
-                        sessionStorage.setItem('sizeIndex', '0');
-                        console.log('🔄 Cycle reset! Next refresh starts at w1998');
+                        sessionStorage.removeItem('sizeIndex'); // Clear so next refresh starts at JSON size
+                        console.log('🔄 Cycle reset! Next refresh starts at JSON size w' + jsonSize);
                         indicator.innerHTML = `
                             <strong>Cycle Reset!</strong><br>
-                            <small>Next refresh starts at w1998 (1/5)</small>
+                            <small>Next refresh starts at JSON size (w${jsonSize})</small>
                         `;
                         setTimeout(() => indicator.remove(), 2000);
                     };
@@ -360,7 +380,8 @@
                     console.log('Indicator element:', indicator);
                     console.log('Body children count:', document.body.children.length);
                 } else {
-                    console.log('ℹ️ No refresh param - using URL from JSON as-is');
+                    console.log('ℹ️ No refresh param - using exact URL from JSON (size: w' + jsonSize + ')');
+                    // Use exact URL from JSON on normal load
                 }
             } else {
                 // Fallback to GitHub plots (backward compatibility)
@@ -468,10 +489,10 @@
             
             console.log('Current selection:', countryId, sourceId);
             
-            // Note: Due to Google Drive's aggressive caching and CORS restrictions,
-            // a page reload may still show cached images. For absolutely latest version:
-            // - Desktop: Ctrl+Shift+R (force refresh)
-            // - Mobile: Clear browser cache
+            // Check if this is first refresh (no sizeIndex set yet)
+            if (!sessionStorage.getItem('sizeIndex')) {
+                console.log('🎯 First refresh - will use JSON recommended size');
+            }
             
             // Reload page with params to try cache bypass
             const url = new URL(window.location);
