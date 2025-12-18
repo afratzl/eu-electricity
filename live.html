@@ -320,12 +320,30 @@
                     // Move to next size for next refresh
                     window.sizeIndex = (window.sizeIndex + 1) % sizes.length;
                     
-                    // Show user which size they're viewing
+                    // Show user which size they're viewing - persistent indicator
                     const indicator = document.createElement('div');
-                    indicator.style.cssText = 'position: fixed; top: 10px; right: 10px; background: #333; color: #fff; padding: 10px; border-radius: 5px; z-index: 10000; font-size: 14px;';
-                    indicator.innerHTML = `Testing cache version ${window.sizeIndex === 0 ? 5 : window.sizeIndex}/5 (w${size})`;
+                    indicator.id = 'size-indicator';
+                    indicator.style.cssText = 'position: fixed; top: 10px; right: 10px; background: #333; color: #fff; padding: 15px 20px; border-radius: 8px; z-index: 999999; font-size: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.5); cursor: pointer;';
+                    indicator.innerHTML = `
+                        <strong>Testing Cache Version ${window.sizeIndex === 0 ? 5 : window.sizeIndex}/5</strong><br>
+                        <small>Using size: w${size}</small><br>
+                        <small style="color: #aaa;">Click here to dismiss</small>
+                    `;
+                    
+                    // Click to dismiss
+                    indicator.onclick = () => indicator.remove();
+                    
+                    // Remove old indicator if exists
+                    const oldIndicator = document.getElementById('size-indicator');
+                    if (oldIndicator) {
+                        console.log('Removing old indicator');
+                        oldIndicator.remove();
+                    }
+                    
                     document.body.appendChild(indicator);
-                    setTimeout(() => indicator.remove(), 3000);
+                    console.log('✅ Visual indicator added to body at:', new Date().toLocaleTimeString());
+                    console.log('Indicator element:', indicator);
+                    console.log('Body children count:', document.body.children.length);
                 } else {
                     console.log('ℹ️ No refresh param - using URL from JSON as-is');
                 }
@@ -557,6 +575,11 @@
 
         // Load default source on page load
         window.addEventListener('DOMContentLoaded', async () => {
+            // Track page loads to detect loops
+            let loadCount = parseInt(sessionStorage.getItem('loadCount') || '0') + 1;
+            sessionStorage.setItem('loadCount', loadCount.toString());
+            console.log(`📊 Page load #${loadCount} in this session`);
+            
             // Check URL params for refresh-preserved selection
             const urlParams = new URLSearchParams(window.location.search);
             const paramCountry = urlParams.get('country');
@@ -582,7 +605,9 @@
             
             // NOW clean URL after showSource has checked params
             if (paramCountry && paramSource) {
+                console.log('🧹 Cleaning URL params...');
                 window.history.replaceState({}, '', window.location.pathname);
+                console.log('✅ URL cleaned, new URL:', window.location.href);
             }
             
             // Always start with percentage view (no localStorage persistence)
