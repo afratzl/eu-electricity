@@ -249,6 +249,8 @@
         // Fetch image bypassing cache (for mobile refresh)
         async function fetchImageAsDataURL(url) {
             try {
+                console.log('🔄 Fetching fresh image:', url);
+                
                 // Triple-aggressive cache busting:
                 // 1. Vary size parameter (cycles through 1998-2002)
                 const randomSize = (Date.now() % 5) + 1998;
@@ -257,21 +259,29 @@
                 // 2. Add timestamp parameter (browser sees as completely new URL)
                 fetchUrl += `&v=${Date.now()}`;
                 
+                console.log('📡 Modified URL:', fetchUrl);
+                
                 // 3. Fetch with no-store (prevents caching the response)
                 const response = await fetch(fetchUrl, {
                     cache: 'no-store',
                     mode: 'cors'
                 });
                 
+                console.log('✓ Fetch successful, converting to data URL...');
+                
                 const blob = await response.blob();
                 return new Promise((resolve, reject) => {
                     const reader = new FileReader();
-                    reader.onloadend = () => resolve(reader.result);
+                    reader.onloadend = () => {
+                        console.log('✓ Converted to data URL');
+                        resolve(reader.result);
+                    };
                     reader.onerror = reject;
                     reader.readAsDataURL(blob);
                 });
             } catch (error) {
-                console.error('Failed to fetch image:', error);
+                console.error('❌ Failed to fetch image:', error);
+                console.log('⚠️ Falling back to original URL');
                 return url;  // Fallback to original URL
             }
         }
@@ -405,10 +415,14 @@
             const countryId = document.getElementById('country-select').value;
             const sourceId = document.getElementById('source-select').value;
             
+            // Show loading indicator
+            const display = document.getElementById('chart-display');
+            display.innerHTML = '<div style="text-align: center; padding: 50px; font-size: 20px;">🔄 Refreshing...</div>';
+            
             // Clear cached JSON to force reload of latest URLs
             driveLinks = null;
             
-            // Set flag to trigger size variation (cache-busting)
+            // Set flag to trigger aggressive cache-busting
             window.isRefreshing = true;
             
             // Simply reload the current chart (this will fetch fresh JSON and images)
