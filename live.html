@@ -391,6 +391,9 @@
             
             // Also reload timestamp
             loadTimestamp();
+            
+            // Force button to lose focus (prevents staying blue on mobile)
+            document.activeElement.blur();
         }
 
         // Download current chart
