@@ -518,8 +518,21 @@ def apply_corrections_for_period(data_matrix, target_period, reference_period):
             if timestamp in target_atomic[source].index:
                 source_row = target_atomic[source].loc[timestamp]
                 
-                for country in source_row.index:
-                    actual_val = source_row[country]
+                # Get weekly hourly average for this source and time
+                countries_to_check = set()
+                if source in weekly_hourly_avgs and time_str in weekly_hourly_avgs[source].index:
+                    # Check all countries that have weekly averages
+                    countries_to_check.update(weekly_hourly_avgs[source].columns)
+                # Also check countries that are present in current data
+                countries_to_check.update(source_row.index)
+                
+                for country in countries_to_check:
+                    # Get actual value if country exists in current timestamp
+                    if country in source_row.index:
+                        actual_val = source_row[country]
+                    else:
+                        # Country completely missing from this timestamp
+                        actual_val = np.nan
                     
                     # Store actual (uncorrected) value
                     actual_sources[source][timestamp][country] = actual_val if not pd.isna(actual_val) else 0
