@@ -282,24 +282,18 @@
             let percentageUrl, absoluteUrl;
             
             if (links && links[countryId] && links[countryId].Intraday && links[countryId].Intraday[sourceId]) {
-                // Use Drive direct URLs
+                // Use Drive direct URLs (JSON always has latest upload URL)
                 percentageUrl = links[countryId].Intraday[sourceId].percentage.direct_url;
                 absoluteUrl = links[countryId].Intraday[sourceId].absolute.direct_url;
                 
-                // Google Drive cache-buster: vary the sz parameter (1998-2002)
-                // Google CDN respects sz changes but might ignore query params
-                const sizes = [1998, 1999, 2000, 2001, 2002];
-                const randomSize = sizes[Math.floor(Math.random() * sizes.length)];
-                
-                // Replace the sz parameter in the URL
-                percentageUrl = percentageUrl.replace(/sz=w\d+/, `sz=w${randomSize}`);
-                absoluteUrl = absoluteUrl.replace(/sz=w\d+/, `sz=w${randomSize}`);
+                // Note: Python script handles cache-busting via size randomization on upload
+                // We use the exact URL from JSON, which is always the most recent upload
             } else {
                 // Fallback to GitHub plots (backward compatibility)
                 percentageUrl = `plots/${cleanId}_analysis_percentage.png`;
                 absoluteUrl = `plots/${cleanId}_analysis_absolute.png`;
                 
-                // Add cache-buster for GitHub fallback too
+                // Add cache-buster for GitHub fallback
                 const cacheBuster = Date.now();
                 percentageUrl += `?t=${cacheBuster}`;
                 absoluteUrl += `?t=${cacheBuster}`;
@@ -386,7 +380,10 @@
             const countryId = document.getElementById('country-select').value;
             const sourceId = document.getElementById('source-select').value;
             
-            // Simply reload the current source (this will fetch fresh images)
+            // Clear cached JSON to force reload of latest URLs
+            driveLinks = null;
+            
+            // Simply reload the current source (this will fetch fresh JSON and images)
             showSource(sourceId, countryId);
             
             // Also reload timestamp
