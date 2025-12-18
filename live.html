@@ -230,6 +230,26 @@
         // Drive links cache
         let driveLinks = null;
 
+        // Fetch image bypassing cache (for mobile refresh)
+        async function fetchImageAsDataURL(url) {
+            try {
+                const response = await fetch(url, {
+                    cache: 'no-store',  // Force bypass all caches
+                    mode: 'cors'
+                });
+                const blob = await response.blob();
+                return new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onloadend = () => resolve(reader.result);
+                    reader.onerror = reject;
+                    reader.readAsDataURL(blob);
+                });
+            } catch (error) {
+                console.error('Failed to fetch image:', error);
+                return url;  // Fallback to original URL
+            }
+        }
+
         // Load Drive links from JSON
         async function loadDriveLinks() {
             if (driveLinks) return driveLinks;
@@ -287,6 +307,13 @@
                 // Use Drive direct URLs - exact URL from JSON (which has latest upload)
                 percentageUrl = links[countryId].Intraday[sourceId].percentage.direct_url;
                 absoluteUrl = links[countryId].Intraday[sourceId].absolute.direct_url;
+                
+                // Force mobile browser cache break: fetch as data URL when refreshing
+                if (window.isRefreshing) {
+                    percentageUrl = await fetchImageAsDataURL(percentageUrl);
+                    absoluteUrl = await fetchImageAsDataURL(absoluteUrl);
+                    window.isRefreshing = false;
+                }
             } else {
                 // Fallback to GitHub plots (backward compatibility)
                 percentageUrl = `plots/${cleanId}_analysis_percentage.png`;
@@ -298,14 +325,6 @@
                 absoluteUrl += `?t=${cacheBuster}`;
                 
                 console.warn(`Drive link not found for ${countryId}/${sourceId}, using GitHub fallback`);
-            }
-            
-            // Force mobile browser cache break: clear display first
-            if (window.isRefreshing) {
-                display.innerHTML = '';  // Clear completely
-                // Force reflow to break cache reference
-                void(display.offsetHeight);
-                window.isRefreshing = false;
             }
             
             // Clear the flag after first load
