@@ -420,8 +420,12 @@
 
         // Refresh current chart
         function refreshChart() {
+            console.log('🔄 Refresh button clicked!');
+            
             const countryId = document.getElementById('country-select').value;
             const sourceId = document.getElementById('source-select').value;
+            
+            console.log('Current selection:', countryId, sourceId);
             
             // Note: Due to Google Drive's aggressive caching and CORS restrictions,
             // a page reload may still show cached images. For absolutely latest version:
@@ -433,6 +437,8 @@
             url.searchParams.set('country', countryId);
             url.searchParams.set('source', sourceId);
             url.searchParams.set('refresh', Date.now());
+            
+            console.log('Reloading to:', url.toString());
             
             window.location.href = url.toString();
         }
