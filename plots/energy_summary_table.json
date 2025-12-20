@@ -1,11 +1,11 @@
 {
-  "last_updated": "2025-12-20 06:02:09 UTC",
+  "last_updated": "2025-12-20 07:16:38 UTC",
   "sources": [
     {
       "source": "All Renewables",
       "category": "aggregate-renewable",
       "yesterday": {
-        "gwh": 3153.9,
+        "gwh": 3153.6,
         "twh": 3.15,
         "percentage": 40.97,
         "change_from_2015": "+60%",
@@ -41,9 +41,9 @@
       "source": "Wind",
       "category": "renewable",
       "yesterday": {
-        "gwh": 1690.0,
+        "gwh": 1690.1,
         "twh": 1.69,
-        "percentage": 21.95,
+        "percentage": 21.96,
         "change_from_2015": "+87%",
         "change_from_2024": "+1.4%",
         "change_from_2023": "+0.2%"
@@ -77,9 +77,9 @@
       "source": "Hydro",
       "category": "renewable",
       "yesterday": {
-        "gwh": 1002.5,
+        "gwh": 1002.8,
         "twh": 1.0,
-        "percentage": 13.02,
+        "percentage": 13.03,
         "change_from_2015": "+35%",
         "change_from_2024": "+6.8%",
         "change_from_2023": "-20%"
@@ -113,7 +113,7 @@
       "source": "Solar",
       "category": "renewable",
       "yesterday": {
-        "gwh": 208.5,
+        "gwh": 208.6,
         "twh": 0.21,
         "percentage": 2.71,
         "change_from_2015": "+133%",
@@ -149,7 +149,7 @@
       "source": "Biomass",
       "category": "renewable",
       "yesterday": {
-        "gwh": 223.3,
+        "gwh": 223.2,
         "twh": 0.22,
         "percentage": 2.9,
         "change_from_2015": "+12%",
@@ -185,10 +185,10 @@
       "source": "Geothermal",
       "category": "renewable",
       "yesterday": {
-        "gwh": 14.9,
+        "gwh": 14.8,
         "twh": 0.01,
         "percentage": 0.19,
-        "change_from_2015": "-8.2%",
+        "change_from_2015": "-8.7%",
         "change_from_2024": "+324%",
         "change_from_2023": "-0.1%"
       },
@@ -221,10 +221,10 @@
       "source": "All Non-Renewables",
       "category": "aggregate-non-renewable",
       "yesterday": {
-        "gwh": 4560.2,
+        "gwh": 4556.2,
         "twh": 4.56,
-        "percentage": 59.24,
-        "change_from_2015": "-8.6%",
+        "percentage": 59.19,
+        "change_from_2015": "-8.7%",
         "change_from_2024": "+6.3%",
         "change_from_2023": "+13%"
       },
@@ -293,8 +293,8 @@
       "source": "Gas",
       "category": "non-renewable",
       "yesterday": {
-        "gwh": 1675.3,
-        "twh": 1.68,
+        "gwh": 1674.7,
+        "twh": 1.67,
         "percentage": 21.76,
         "change_from_2015": "+91%",
         "change_from_2024": "+31%",
@@ -329,7 +329,7 @@
       "source": "Coal",
       "category": "non-renewable",
       "yesterday": {
-        "gwh": 684.7,
+        "gwh": 684.4,
         "twh": 0.68,
         "percentage": 8.89,
         "change_from_2015": "-57%",
@@ -365,7 +365,7 @@
       "source": "Waste",
       "category": "non-renewable",
       "yesterday": {
-        "gwh": 156.1,
+        "gwh": 156.0,
         "twh": 0.16,
         "percentage": 2.03,
         "change_from_2015": "-43%",
@@ -401,10 +401,10 @@
       "source": "Oil",
       "category": "non-renewable",
       "yesterday": {
-        "gwh": 41.3,
+        "gwh": 41.0,
         "twh": 0.04,
-        "percentage": 0.54,
-        "change_from_2015": "-30%",
+        "percentage": 0.53,
+        "change_from_2015": "-31%",
         "change_from_2024": "+50%",
         "change_from_2023": "+6.7%"
       },
