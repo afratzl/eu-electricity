@@ -131,9 +131,12 @@ def format_change_percentage(value):
         return f"{value:+.1f}%"
 
 
-def load_data_from_google_sheets():
+def load_data_from_google_sheets(country_code='EU'):
     """
     Load all energy data from Google Sheets using environment variables
+    
+    Args:
+        country_code: Country code ('EU' for aggregate, 'DE' for Germany, etc.)
     """
     try:
         google_creds_json = os.environ.get('GOOGLE_CREDENTIALS_JSON')
@@ -149,9 +152,9 @@ def load_data_from_google_sheets():
         # Initialize drive service for sheet organization
         drive_service = initialize_drive_service()
         
-        # Get or create country sheet (EU by default, parameterizable for future)
-        spreadsheet = get_or_create_country_sheet(gc, drive_service, country_code='EU')
-        print(f"✓ Connected to Google Sheets: {spreadsheet.url}")
+        # Get or create country sheet
+        spreadsheet = get_or_create_country_sheet(gc, drive_service, country_code=country_code)
+        print(f"✓ Connected to Google Sheets ({country_code}): {spreadsheet.url}")
 
         worksheets = spreadsheet.worksheets()
         print(f"✓ Found {len(worksheets)} worksheets")
@@ -1118,10 +1121,14 @@ def create_all_charts(all_data):
     print("=" * 60)
 
 
-def update_summary_table_historical_data(all_data):
+def update_summary_table_historical_data(all_data, country_code='EU'):
     """
     Update Google Sheets "Summary Table Data" with current year YTD and previous year data
     This fills in the columns that the intraday script leaves empty
+    
+    Args:
+        all_data: Historical data from load_data_from_google_sheets
+        country_code: Country code for the sheet (EU, DE, etc.)
     """
     print("\n" + "=" * 60)
     print("UPDATING SUMMARY TABLE (HISTORICAL DATA)")
@@ -1148,9 +1155,9 @@ def update_summary_table_historical_data(all_data):
         )
         drive_service = build('drive', 'v3', credentials=credentials_drive)
         
-        # Get or create country sheet (EU by default, parameterizable for future)
-        spreadsheet = get_or_create_country_sheet(gc, drive_service, country_code='EU')
-        print("✓ Connected to spreadsheet")
+        # Get or create country sheet
+        spreadsheet = get_or_create_country_sheet(gc, drive_service, country_code=country_code)
+        print(f"✓ Connected to spreadsheet ({country_code})")
         
         # Get current date info (needed for headers)
         current_date = datetime.now()
@@ -1852,9 +1859,24 @@ def main():
     """
     Main function
     """
+    import argparse
+    
+    parser = argparse.ArgumentParser(description='Generate EU energy plots')
+    parser.add_argument('--country', default=None, 
+                       help='Country code (EU, DE, FR, etc.). If not specified, processes all countries.')
+    args = parser.parse_args()
+    
+    # Define countries to process (should match data collection script)
+    countries_to_process = ['EU', 'DE']
+    
+    # If specific country requested, only process that one
+    if args.country:
+        countries_to_process = [args.country.upper()]
+    
     print("=" * 60)
-    print("EU ENERGY PLOTTER - MOBILE OPTIMIZED + ALL CHARTS")
+    print(f"ENERGY PLOTTER - MOBILE OPTIMIZED + ALL CHARTS")
     print("=" * 60)
+    print(f"Countries to process: {', '.join(countries_to_process)}")
     print("\nFEATURES:")
     print("  ✓ ALL plots are VERTICAL (2 rows, 1 column)")
     print("  ✓ Individual source plots (titles IN the PNG)")
@@ -1870,19 +1892,27 @@ def main():
         print("\n⚠️  WARNING: GOOGLE_CREDENTIALS_JSON not set!")
         return
 
-    all_data = load_data_from_google_sheets()
+    # Process each country
+    for country_code in countries_to_process:
+        print(f"\n{'='*60}")
+        print(f"PROCESSING {country_code}")
+        print(f"{'='*60}")
+        
+        all_data = load_data_from_google_sheets(country_code=country_code)
 
-    if not all_data:
-        print("Failed to load data.")
-        return
+        if not all_data:
+            print(f"Failed to load data for {country_code}.")
+            continue
 
-    create_all_charts(all_data)
-    
-    # Update summary table with historical data
-    update_summary_table_historical_data(all_data)
+        create_all_charts(all_data)
+        
+        # Update summary table with historical data
+        update_summary_table_historical_data(all_data, country_code=country_code)
+
+        print(f"\n✓ {country_code} complete!")
 
     print("\n" + "=" * 60)
-    print("COMPLETE!")
+    print("ALL COUNTRIES COMPLETE!")
     print("=" * 60)
 
 
