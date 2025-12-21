@@ -152,6 +152,93 @@ DISPLAY_NAMES = {
 }
 
 
+def get_or_create_country_sheet(gc, drive_service, country_code='EU'):
+    """
+    Get or create country-specific electricity data sheet
+    Structure: EU-Electricity-Plots/[Country]/[Country] Electricity Production Data
+    
+    Args:
+        gc: gspread client
+        drive_service: Google Drive API service (or None)
+        country_code: Country code (EU, DE, FR, etc.)
+    
+    Returns: gspread Spreadsheet object
+    """
+    import json
+    import os
+    
+    sheet_name = f'{country_code} Electricity Production Data'
+    
+    # Try to get from JSON first
+    drive_links_file = 'plots/drive_links.json'
+    if os.path.exists(drive_links_file):
+        try:
+            with open(drive_links_file, 'r') as f:
+                links = json.load(f)
+                
+            # Check if we have this country's sheet ID
+            if country_code in links and 'data_sheet_id' in links[country_code]:
+                sheet_id = links[country_code]['data_sheet_id']
+                try:
+                    spreadsheet = gc.open_by_key(sheet_id)
+                    print(f"✓ Opened existing sheet: {sheet_name}")
+                    return spreadsheet
+                except:
+                    print(f"  ⚠ Sheet ID in JSON is invalid, will create new")
+        except:
+            pass
+    
+    # Sheet doesn't exist or JSON doesn't have it - create new
+    print(f"  Creating new sheet: {sheet_name}")
+    spreadsheet = gc.create(sheet_name)
+    
+    # Move to correct Drive folder structure if drive_service provided
+    if drive_service:
+        try:
+            # Get or create: EU-Electricity-Plots/[Country]/
+            root_folder_id = get_or_create_drive_folder(drive_service, 'EU-Electricity-Plots')
+            country_folder_id = get_or_create_drive_folder(drive_service, country_code, root_folder_id)
+            
+            # Move spreadsheet to country folder
+            file = drive_service.files().get(fileId=spreadsheet.id, fields='parents').execute()
+            previous_parents = ",".join(file.get('parents', []))
+            
+            drive_service.files().update(
+                fileId=spreadsheet.id,
+                addParents=country_folder_id,
+                removeParents=previous_parents,
+                fields='id, parents'
+            ).execute()
+            
+            print(f"  ✓ Moved sheet to: EU-Electricity-Plots/{country_code}/")
+        except Exception as e:
+            print(f"  ⚠ Could not organize in Drive: {e}")
+    
+    # Save sheet ID to JSON
+    try:
+        # Load existing links
+        links = {}
+        if os.path.exists(drive_links_file):
+            with open(drive_links_file, 'r') as f:
+                links = json.load(f)
+        
+        # Update with sheet ID
+        if country_code not in links:
+            links[country_code] = {}
+        links[country_code]['data_sheet_id'] = spreadsheet.id
+        
+        # Save back
+        os.makedirs('plots', exist_ok=True)
+        with open(drive_links_file, 'w') as f:
+            json.dump(links, f, indent=2)
+        
+        print(f"  ✓ Saved sheet ID to drive_links.json")
+    except Exception as e:
+        print(f"  ⚠ Could not save to JSON: {e}")
+    
+    return spreadsheet
+
+
 def format_change_percentage(value):
     """
     Format change percentage with smart decimal handling
@@ -315,10 +402,6 @@ def collect_all_data(api_key):
     print("PHASE 1: DATA COLLECTION")
     print("=" * 80)
     
-    # Cache fetch time at start for consistent cutoff across all sources
-    fetch_time = pd.Timestamp.now(tz='Europe/Brussels')
-    print(f"🕐 Reference fetch time: {fetch_time.strftime('%Y-%m-%d %H:%M:%S %Z')}")
-    
     # Define periods
     today = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
     yesterday = today - timedelta(days=1)
@@ -403,7 +486,7 @@ def collect_all_data(api_key):
             print(f"  {period_name}: ✗ No data")
     
     print("\n✓ Data collection complete!")
-    return data_matrix, periods, fetch_time
+    return data_matrix, periods
 
 
 # ============================================================================
@@ -453,10 +536,7 @@ def apply_projections_and_corrections(data_matrix):
 def apply_corrections_for_period(data_matrix, target_period, reference_period):
     """
     Apply component-level corrections for a specific period
-    Projects ALL timestamps from 00:00 to fetch_time for consistency
-    Uses hybrid approach for aggregates:
-      - Today: safe summation (avoid race condition)
-      - Yesterday+: delta correction (preserve untracked sources)
+    Uses weekly hourly averages for threshold comparison
     Returns BOTH actual (uncorrected) and corrected versions
     """
     print(f"  Analyzing {target_period} against {reference_period}...")
@@ -474,6 +554,14 @@ def apply_corrections_for_period(data_matrix, target_period, reference_period):
             # Group by time to get hourly averages across the week
             weekly_hourly_avgs[source] = ref_data_with_time.groupby('time').mean(numeric_only=True)
     
+    # Build weekly hourly average for total generation
+    total_gen_weekly_avg = None
+    if reference_period in data_matrix['total_generation']:
+        ref_total_gen = data_matrix['total_generation'][reference_period]
+        ref_total_gen_with_time = ref_total_gen.copy()
+        ref_total_gen_with_time['time'] = ref_total_gen_with_time.index.strftime('%H:%M')
+        total_gen_weekly_avg = ref_total_gen_with_time.groupby('time').mean(numeric_only=True)
+    
     # Get target period data
     target_atomic = {src: data_matrix['atomic_sources'][src].get(target_period) 
                      for src in ATOMIC_SOURCES if src in data_matrix['atomic_sources']}
@@ -482,110 +570,69 @@ def apply_corrections_for_period(data_matrix, target_period, reference_period):
     if target_total_gen is None:
         return {}
     
-    # Get timestamp range for TARGET period (one day: 96 timestamps)
-    # Create proper range from 00:00 to 23:45 of target day
-    # This ensures we project all time slots, even if some data is missing
-    start_date = target_total_gen.index[0].normalize()  # Midnight of target day
-    end_date = start_date + pd.Timedelta(days=1)
-    full_timestamp_range = pd.date_range(start_date, end_date, freq='15min', inclusive='left', tz=target_total_gen.index.tz)
-    
     # Build BOTH corrected and actual (uncorrected) data
     corrected_sources = {}
-    actual_sources = {}
+    actual_sources = {}  # NEW: Store uncorrected versions
     correction_log = []
     
     for source in ATOMIC_SOURCES + AGGREGATE_SOURCES:
         corrected_sources[source] = {}
         actual_sources[source] = {}
     
-    # Process ALL timestamps in full range (00:00 to 23:45)
-    # This ensures consistent time coverage across all sources
-    for timestamp in full_timestamp_range:
+    # Process each timestamp
+    for timestamp in target_total_gen.index:
         time_str = timestamp.strftime('%H:%M')
         
-        # Project atomic sources for this timestamp
+        # Correct atomic sources
         for source in ATOMIC_SOURCES:
             if source not in target_atomic or target_atomic[source] is None:
                 continue
             
+            if timestamp not in target_atomic[source].index:
+                continue
+            
+            source_row = target_atomic[source].loc[timestamp]
+            
             # Initialize this timestamp for this source
             if timestamp not in corrected_sources[source]:
                 corrected_sources[source][timestamp] = {}
-            if timestamp not in actual_sources[source]:
                 actual_sources[source][timestamp] = {}
             
-            # Check if we have actual data for this timestamp
-            if timestamp in target_atomic[source].index:
-                source_row = target_atomic[source].loc[timestamp]
+            for country in source_row.index:
+                actual_val = source_row[country]
                 
-                # Get weekly hourly average for this source and time
-                countries_to_check = set()
-                if source in weekly_hourly_avgs and time_str in weekly_hourly_avgs[source].index:
-                    # Check all countries that have weekly averages
-                    countries_to_check.update(weekly_hourly_avgs[source].columns)
-                # Also check countries that are present in current data
-                countries_to_check.update(source_row.index)
+                # Store actual (uncorrected) value
+                actual_sources[source][timestamp][country] = actual_val if not pd.isna(actual_val) else 0
                 
-                for country in countries_to_check:
-                    # Get actual value if country exists in current timestamp
-                    if country in source_row.index:
-                        actual_val = source_row[country]
-                    else:
-                        # Country completely missing from this timestamp
-                        actual_val = np.nan
-                    
-                    # Store actual (uncorrected) value
-                    actual_sources[source][timestamp][country] = actual_val if not pd.isna(actual_val) else 0
-                    
-                    # Default: use actual value
-                    corrected_val = actual_val if not pd.isna(actual_val) else 0
-                    
-                    # Get weekly hourly average for this source-country-time
-                    if source in weekly_hourly_avgs and time_str in weekly_hourly_avgs[source].index:
-                        if country in weekly_hourly_avgs[source].columns:
-                            week_avg = weekly_hourly_avgs[source].loc[time_str, country]
-                            
-                            if not pd.isna(week_avg) and week_avg > 0:
-                                threshold = 0.1 * week_avg
-                                
-                                # Check if below threshold
-                                if pd.isna(actual_val) or actual_val < threshold:
-                                    correction_log.append({
-                                        'time': time_str,
-                                        'source': source,
-                                        'country': country,
-                                        'actual': actual_val if not pd.isna(actual_val) else 0,
-                                        'expected': week_avg,
-                                        'threshold': threshold
-                                    })
-                                    corrected_val = week_avg
-                    
-                    # Store corrected value
-                    corrected_sources[source][timestamp][country] = corrected_val
-            
-            else:
-                # No actual data for this timestamp - use weekly average for ALL countries
+                # Default: use actual value
+                corrected_val = actual_val if not pd.isna(actual_val) else 0
+                
+                # Get weekly hourly average for this source-country-time
                 if source in weekly_hourly_avgs and time_str in weekly_hourly_avgs[source].index:
-                    for country in weekly_hourly_avgs[source].columns:
+                    if country in weekly_hourly_avgs[source].columns:
                         week_avg = weekly_hourly_avgs[source].loc[time_str, country]
                         
                         if not pd.isna(week_avg) and week_avg > 0:
-                            # No actual data - store 0 for actual, weekly avg for projected
-                            actual_sources[source][timestamp][country] = 0
-                            corrected_sources[source][timestamp][country] = week_avg
+                            threshold = 0.1 * week_avg
                             
-                            correction_log.append({
-                                'time': time_str,
-                                'source': source,
-                                'country': country,
-                                'actual': 0,
-                                'expected': week_avg,
-                                'threshold': 0
-                            })
+                            # Check if below threshold
+                            if pd.isna(actual_val) or actual_val < threshold:
+                                correction_log.append({
+                                    'time': time_str,
+                                    'source': source,
+                                    'country': country,
+                                    'actual': actual_val if not pd.isna(actual_val) else 0,
+                                    'expected': week_avg,
+                                    'threshold': threshold
+                                })
+                                corrected_val = week_avg
+                
+                # Store corrected value
+                corrected_sources[source][timestamp][country] = corrected_val
     
     # Print correction log
     if correction_log:
-        print(f"\n  Detected {len(correction_log)} corrections (missing data + threshold violations):")
+        print(f"\n  🚨 Detected {len(correction_log)} values below 10% threshold:")
         for log in correction_log[:20]:  # Print first 20
             print(f"    {log['time']} | {log['country']}-{log['source']}: "
                   f"{log['actual']:.1f} MW < 10% of {log['expected']:.1f} MW "
@@ -595,65 +642,29 @@ def apply_corrections_for_period(data_matrix, target_period, reference_period):
     else:
         print("  ✓ No corrections needed")
     
-    # Build aggregates using HYBRID APPROACH
-    # TODAY: Safe summation (avoid 90-minute race condition)
-    # YESTERDAY+: Delta correction (preserve untracked sources)
+    # Build aggregate sources from corrected atomic sources
     for agg_source in AGGREGATE_SOURCES:
         components = AGGREGATE_DEFINITIONS[agg_source]
-        measured_aggregate = data_matrix['aggregates'].get(agg_source, {}).get(target_period)
         
-        if target_period == 'today':
-            # SAFE SUMMATION for today (high race condition risk)
-            print(f"  Using safe summation for {agg_source} (today)")
+        for timestamp in target_total_gen.index:
+            # Corrected aggregate
+            total_corrected = 0
+            for component in components:
+                if timestamp in corrected_sources[component]:
+                    total_corrected += sum(corrected_sources[component][timestamp].values())
+            corrected_sources[agg_source][timestamp] = {'EU': total_corrected}
             
-            for timestamp in full_timestamp_range:
-                # Sum actual components
-                actual_agg_value = 0
-                for component in components:
-                    if timestamp in actual_sources[component]:
-                        actual_agg_value += sum(actual_sources[component][timestamp].values())
-                actual_sources[agg_source][timestamp] = {'EU': actual_agg_value}
-                
-                # Sum projected components
-                projected_agg_value = 0
-                for component in components:
-                    if timestamp in corrected_sources[component]:
-                        projected_agg_value += sum(corrected_sources[component][timestamp].values())
-                corrected_sources[agg_source][timestamp] = {'EU': projected_agg_value}
-        
-        else:
-            # DELTA CORRECTION for yesterday+ (stable data, preserve untracked sources)
-            print(f"  Using delta correction for {agg_source} ({target_period})")
-            
-            for timestamp in full_timestamp_range:
-                # Actual: use measured aggregate directly
-                if measured_aggregate is not None and timestamp in measured_aggregate.index:
-                    actual_agg_value = measured_aggregate[timestamp]
-                else:
-                    actual_agg_value = 0
-                actual_sources[agg_source][timestamp] = {'EU': actual_agg_value}
-                
-                # Projected: start with measured, add component corrections
-                corrected_agg_value = actual_agg_value
-                
-                for component in components:
-                    projected_component = 0
-                    if timestamp in corrected_sources[component]:
-                        projected_component = sum(corrected_sources[component][timestamp].values())
-                    
-                    actual_component = 0
-                    if timestamp in actual_sources[component]:
-                        actual_component = sum(actual_sources[component][timestamp].values())
-                    
-                    correction = projected_component - actual_component
-                    corrected_agg_value += correction
-                
-                corrected_sources[agg_source][timestamp] = {'EU': corrected_agg_value}
+            # Actual (uncorrected) aggregate
+            total_actual = 0
+            for component in components:
+                if timestamp in actual_sources[component]:
+                    total_actual += sum(actual_sources[component][timestamp].values())
+            actual_sources[agg_source][timestamp] = {'EU': total_actual}
     
     # Build corrected and actual total generation
     corrected_total_gen = {}
     actual_total_gen = {}
-    for timestamp in full_timestamp_range:
+    for timestamp in target_total_gen.index:
         # Corrected total
         total_corrected = 0
         for source in ATOMIC_SOURCES:
@@ -822,7 +833,7 @@ def create_time_axis():
     return times
 
 
-def calculate_daily_statistics(data_dict, fetch_time=None):
+def calculate_daily_statistics(data_dict):
     """
     Calculate daily statistics for plotting
     """
@@ -840,11 +851,7 @@ def calculate_daily_statistics(data_dict, fetch_time=None):
             aligned_percentage = time_indexed['energy_percentage'].reindex(standard_times)
 
             if period_name in ['today', 'today_projected']:
-                # Use cached fetch_time for consistent cutoff across all sources
-                if fetch_time is None:
-                    current_time = pd.Timestamp.now(tz='Europe/Brussels')
-                else:
-                    current_time = fetch_time
+                current_time = pd.Timestamp.now(tz='Europe/Brussels')
                 cutoff_time = current_time - timedelta(hours=2)
                 cutoff_time = cutoff_time.floor('15T')
 
@@ -934,8 +941,8 @@ def plot_analysis(stats_data, source_type, output_file_base):
         'week_ago': '-',
         'year_ago': '-',
         'two_years_ago': '-',
-        'today_projected': (0, (2, 2)),  # Equal: 2pt dash, 2pt gap (tighter pattern)
-        'yesterday_projected': (0, (2, 2))  # Equal: 2pt dash, 2pt gap
+        'today_projected': '--',
+        'yesterday_projected': '--'
     }
 
     labels = {
@@ -950,12 +957,9 @@ def plot_analysis(stats_data, source_type, output_file_base):
 
     time_labels = create_time_axis()
     
-    # Calculate x-axis tick positions (every 4 hours) + add 24:00 at end
+    # Calculate x-axis tick positions (every 4 hours) for both plots
     tick_positions = list(range(0, len(time_labels), 16))  # Every 4 hours (16 * 15min = 4h)
-    tick_positions.append(len(time_labels))  # Add position for 24:00
-    
-    tick_labels_axis = [time_labels[i] if i < len(time_labels) else '' for i in tick_positions[:-1]]
-    tick_labels_axis.append('24:00')  # Add 24:00 label at the end
+    tick_labels_axis = [time_labels[i] if i < len(time_labels) else '' for i in tick_positions]
     
     source_name = DISPLAY_NAMES[source_type]
     
@@ -982,8 +986,8 @@ def plot_analysis(stats_data, source_type, output_file_base):
     
     fig1.suptitle(f'{source_name} Electricity Generation (EU)', fontsize=34, fontweight='bold', x=0.5, y=0.98, ha="center")
     ax1.set_title('Fraction of Total Generation', fontsize=26, fontweight='normal', pad=15)
-    ax1.set_xlabel('Time of Day (Brussels)', fontsize=28, fontweight='bold', labelpad=25)
-    ax1.set_ylabel('Electrical Power (%)', fontsize=28, fontweight='bold', labelpad=30)
+    ax1.set_xlabel('Time of Day (Brussels)', fontsize=28, fontweight='bold', labelpad=15)
+    ax1.set_ylabel('Electrical Power (%)', fontsize=28, fontweight='bold', labelpad=15)
 
     max_percentage = 0
 
@@ -1011,7 +1015,7 @@ def plot_analysis(stats_data, source_type, output_file_base):
             else:
                 continue
 
-        ax1.plot(x_values, y_values, color=color, linestyle=linestyle, linewidth=6, label=label, marker='')
+        ax1.plot(x_values, y_values, color=color, linestyle=linestyle, linewidth=6, label=label)
 
         if period_name in ['week_ago', 'year_ago', 'two_years_ago'] and 'percentage_std' in data:
             std_values = data['percentage_std'][:len(x_values)]
@@ -1020,7 +1024,7 @@ def plot_analysis(stats_data, source_type, output_file_base):
             max_percentage = max(max_percentage, np.nanmax(upper_bound))
             ax1.fill_between(x_values, lower_bound, upper_bound, color=color, alpha=0.2)
 
-    ax1.tick_params(axis='both', labelsize=22, length=8, pad=8)
+    ax1.tick_params(axis='both', labelsize=22)
     ax1.set_ylim(0, max_percentage * 1.20 if max_percentage > 0 else 50)  # 20% headroom
     
     # Set x-axis time labels
@@ -1030,14 +1034,11 @@ def plot_analysis(stats_data, source_type, output_file_base):
     
     ax1.grid(True, alpha=0.3, linewidth=1.5)
     
-    # Reorder legend for 3-2-2 layout:
-    # Row 1: Previous Week, Last Year, Two Years Ago
-    # Row 2: Yesterday, Yesterday (Projected), [empty]
-    # Row 3: Today, Today (Projected), [empty]
+    # Reorder legend to show today/yesterday first, then historical
+    # (even though plotting order is reversed for proper z-layering)
     handles, labels_list = ax1.get_legend_handles_labels()
-    legend_order = ['week_ago', 'year_ago', 'two_years_ago',
-                    'yesterday', 'yesterday_projected',
-                    'today', 'today_projected']
+    legend_order = ['today', 'today_projected', 'yesterday', 'yesterday_projected',
+                    'week_ago', 'year_ago', 'two_years_ago']
     
     # Create ordered handles/labels matching desired legend layout
     ordered_handles = []
@@ -1051,16 +1052,8 @@ def plot_analysis(stats_data, source_type, output_file_base):
             ordered_labels.append(period_label)
     
     ax1.legend(ordered_handles, ordered_labels, 
-              loc='upper center', bbox_to_anchor=(0.45, -0.25), 
-              ncol=3, fontsize=20, frameon=False)
-    
-    # Add timestamp below legend (bottom-right, using figure coordinates)
-    from datetime import datetime
-    timestamp = datetime.now().strftime('%Y-%m-%d %H:%M UTC')
-    fig1.text(0.93, 0.02, f"Generated: {timestamp}",
-              ha='right', va='bottom',
-              fontsize=11, color='#666',
-              style='italic')
+              loc='upper center', bbox_to_anchor=(0.5, -0.18), 
+              ncol=2, fontsize=20, frameon=False)
     
     plt.tight_layout()
     
@@ -1075,8 +1068,8 @@ def plot_analysis(stats_data, source_type, output_file_base):
     
     fig2.suptitle(f'{source_name} Electricity Generation (EU)', fontsize=34, fontweight='bold', x=0.5, y=0.98, ha="center")
     ax2.set_title('Absolute Generation', fontsize=26, fontweight='normal', pad=15)
-    ax2.set_xlabel('Time of Day (Brussels)', fontsize=28, fontweight='bold', labelpad=25)
-    ax2.set_ylabel('Electrical Power (GW)', fontsize=28, fontweight='bold', labelpad=30)
+    ax2.set_xlabel('Time of Day (Brussels)', fontsize=28, fontweight='bold', labelpad=15)
+    ax2.set_ylabel('Electrical Power (GW)', fontsize=28, fontweight='bold', labelpad=15)
 
     max_energy = 0
 
@@ -1105,7 +1098,7 @@ def plot_analysis(stats_data, source_type, output_file_base):
             else:
                 continue
 
-        ax2.plot(x_values, y_values, color=color, linestyle=linestyle, linewidth=6, label=label, marker='')
+        ax2.plot(x_values, y_values, color=color, linestyle=linestyle, linewidth=6, label=label)
 
         if period_name in ['week_ago', 'year_ago', 'two_years_ago'] and 'energy_std' in data:
             # Convert MW to GW for std as well
@@ -1115,7 +1108,7 @@ def plot_analysis(stats_data, source_type, output_file_base):
             max_energy = max(max_energy, np.nanmax(upper_bound))
             ax2.fill_between(x_values, lower_bound, upper_bound, color=color, alpha=0.2)
 
-    ax2.tick_params(axis='both', labelsize=22, length=8, pad=8)
+    ax2.tick_params(axis='both', labelsize=22)
     ax2.set_ylim(0, max_energy * 1.20)  # 20% headroom
     
     # Set x-axis time labels
@@ -1125,7 +1118,7 @@ def plot_analysis(stats_data, source_type, output_file_base):
     
     ax2.grid(True, alpha=0.3, linewidth=1.5)
     
-    # Reorder legend to match percentage plot (3-2-2 layout)
+    # Reorder legend to show today/yesterday first, then historical
     handles2, labels_list2 = ax2.get_legend_handles_labels()
     
     ordered_handles2 = []
@@ -1139,14 +1132,8 @@ def plot_analysis(stats_data, source_type, output_file_base):
             ordered_labels2.append(period_label)
     
     ax2.legend(ordered_handles2, ordered_labels2,
-              loc='upper center', bbox_to_anchor=(0.45, -0.25),
-              ncol=3, fontsize=20, frameon=False)
-    
-    # Add timestamp below legend (bottom-right, using figure coordinates)
-    fig2.text(0.93, 0.02, f"Generated: {timestamp}",
-              ha='right', va='bottom',
-              fontsize=11, color='#666',
-              style='italic')
+              loc='upper center', bbox_to_anchor=(0.5, -0.18),
+              ncol=2, fontsize=20, frameon=False)
     
     plt.tight_layout()
     
@@ -1157,7 +1144,7 @@ def plot_analysis(stats_data, source_type, output_file_base):
     return output_file_percentage, output_file_absolute
 
 
-def generate_plot_for_source(source_type, corrected_data, output_file_base, fetch_time=None):
+def generate_plot_for_source(source_type, corrected_data, output_file_base):
     """
     Phase 3: Generate plot for a specific source from corrected data
     """
@@ -1172,8 +1159,8 @@ def generate_plot_for_source(source_type, corrected_data, output_file_base, fetc
         print(f"✗ No data available for {source_type}")
         return
     
-    # Calculate statistics (pass fetch_time for consistent cutoff)
-    stats_data = calculate_daily_statistics(plot_data, fetch_time=fetch_time)
+    # Calculate statistics
+    stats_data = calculate_daily_statistics(plot_data)
     
     # Create plots (returns percentage and absolute files)
     percentage_file, absolute_file = plot_analysis(stats_data, source_type, output_file_base)
@@ -1271,8 +1258,18 @@ def update_summary_table_worksheet(corrected_data):
         credentials = Credentials.from_service_account_info(creds_dict, scopes=scope)
         gc = gspread.authorize(credentials)
         
-        # Open spreadsheet
-        spreadsheet = gc.open('EU Electricity Production Data')
+        # Initialize drive service for sheet organization
+        from googleapiclient.discovery import build
+        from google.oauth2.service_account import Credentials as ServiceAccountCredentials
+        
+        credentials_drive = ServiceAccountCredentials.from_service_account_info(
+            creds_dict,
+            scopes=['https://www.googleapis.com/auth/drive.file']
+        )
+        drive_service = build('drive', 'v3', credentials=credentials_drive)
+        
+        # Get or create country sheet (EU by default, parameterizable for future)
+        spreadsheet = get_or_create_country_sheet(gc, drive_service, country_code='EU')
         print("✓ Connected to spreadsheet")
         
         # Get or create worksheet
@@ -1720,7 +1717,7 @@ def main():
     
     try:
         # Phase 1: Collect all data ONCE
-        data_matrix, periods, fetch_time = collect_all_data(api_key)
+        data_matrix, periods = collect_all_data(api_key)
         
         # Phase 2: Apply projections and corrections ONCE
         corrected_data = apply_projections_and_corrections(data_matrix)
@@ -1732,7 +1729,7 @@ def main():
             print(f"PHASE 3: GENERATING {DISPLAY_NAMES[args.source].upper()} PLOTS")
             print("=" * 80)
             output_file_base = f'plots/{args.source.replace("-", "_")}_analysis.png'
-            percentage_file, absolute_file = generate_plot_for_source(args.source, corrected_data, output_file_base, fetch_time=fetch_time)
+            percentage_file, absolute_file = generate_plot_for_source(args.source, corrected_data, output_file_base)
             
             # Upload both to Google Drive
             print(f"\n📤 Uploading to Google Drive...")
@@ -1752,7 +1749,7 @@ def main():
             for i, source in enumerate(all_sources, 1):
                 print(f"\n[{i}/{len(all_sources)}] Processing {DISPLAY_NAMES[source]}...")
                 output_file_base = f'plots/{source.replace("-", "_")}_analysis.png'
-                percentage_file, absolute_file = generate_plot_for_source(source, corrected_data, output_file_base, fetch_time=fetch_time)
+                percentage_file, absolute_file = generate_plot_for_source(source, corrected_data, output_file_base)
                 
                 # Upload both to Google Drive
                 perc_id = upload_plot_to_drive(percentage_file, country='EU')
