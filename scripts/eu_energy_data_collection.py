@@ -103,6 +103,22 @@ def get_or_create_country_sheet(gc, drive_service, country_code='EU'):
             ).execute()
             
             print(f"  ✓ Moved sheet to: EU-Electricity-Plots/{country_code}/")
+            
+            # Set permissions: Anyone with link can view
+            try:
+                permission = {
+                    'type': 'anyone',
+                    'role': 'reader'
+                }
+                drive_service.permissions().create(
+                    fileId=spreadsheet.id,
+                    body=permission,
+                    fields='id'
+                ).execute()
+                print(f"  ✓ Set permissions: Anyone with link can view")
+            except Exception as e:
+                print(f"  ⚠ Could not set permissions: {e}")
+                
         except Exception as e:
             print(f"  ⚠ Could not organize in Drive: {e}")
     
@@ -463,7 +479,8 @@ def process_all_countries_and_years(client, years_to_analyze):
     for source_name in energy_sources.keys():
         all_results[source_name] = {
             'year_data': {year: {month: 0 for month in range(1, 13)} for year in years_to_analyze},
-            'country_data': {year: {} for year in years_to_analyze}
+            'country_data': {year: {} for year in years_to_analyze},
+            'country_monthly_data': {}  # NEW: Store monthly data per country
         }
 
     # Process each country-year combination
@@ -485,8 +502,17 @@ def process_all_countries_and_years(client, years_to_analyze):
                 for source_name in energy_sources.keys():
                     source_data = country_year_data[source_name]
 
-                    # Add to country totals
+                    # Add to country yearly totals
                     all_results[source_name]['country_data'][year][country] = source_data['total']
+
+                    # NEW: Store monthly data per country
+                    if country not in all_results[source_name]['country_monthly_data']:
+                        all_results[source_name]['country_monthly_data'][country] = {}
+                    if year not in all_results[source_name]['country_monthly_data'][country]:
+                        all_results[source_name]['country_monthly_data'][country][year] = {}
+                    
+                    for month in range(1, 13):
+                        all_results[source_name]['country_monthly_data'][country][year][month] = source_data['monthly'][month]
 
                     # Add to EU totals (monthly aggregation)
                     for month in range(1, 13):
@@ -495,15 +521,28 @@ def process_all_countries_and_years(client, years_to_analyze):
                 # Handle missing data
                 for source_name in energy_sources.keys():
                     all_results[source_name]['country_data'][year][country] = 0
+                    
+                    # NEW: Store zero monthly data for missing countries
+                    if country not in all_results[source_name]['country_monthly_data']:
+                        all_results[source_name]['country_monthly_data'][country] = {}
+                    if year not in all_results[source_name]['country_monthly_data'][country]:
+                        all_results[source_name]['country_monthly_data'][country][year] = {}
+                    for month in range(1, 13):
+                        all_results[source_name]['country_monthly_data'][country][year][month] = 0
 
     return all_results
 
 
-def save_all_data_to_google_sheets_with_merge(all_data, month_names):
+def save_all_data_to_google_sheets_with_merge(all_data, month_names, country_code='EU'):
     """
     Save all energy source data to Google Sheets with merge capability
     Only updates the years being processed, preserves existing data
     Uses environment variables for credentials
+    
+    Args:
+        all_data: Dictionary with all collected data
+        month_names: List of month abbreviations
+        country_code: Country code ('EU' for aggregate, 'DE' for Germany, etc.)
     """
     try:
         # Get Google credentials from environment variable
@@ -531,11 +570,24 @@ def save_all_data_to_google_sheets_with_merge(all_data, month_names):
         )
         drive_service = build('drive', 'v3', credentials=credentials_drive)
         
-        # Get or create country sheet (EU by default, parameterizable for future)
-        spreadsheet = get_or_create_country_sheet(gc, drive_service, country_code='EU')
+        # Get or create country-specific sheet
+        spreadsheet = get_or_create_country_sheet(gc, drive_service, country_code=country_code)
+        
+        print(f"\n{'='*80}")
+        print(f"SAVING DATA FOR: {country_code}")
+        print(f"{'='*80}")
 
         for source_name, source_data in all_data.items():
-            year_data = source_data['year_data']
+            # Extract the appropriate data based on country_code
+            if country_code == 'EU':
+                # Use EU aggregated data
+                year_data = source_data['year_data']
+            else:
+                # Extract this specific country's monthly data
+                if country_code not in source_data.get('country_monthly_data', {}):
+                    print(f"  ⚠ No data for {country_code} in {source_name}, skipping...")
+                    continue
+                year_data = source_data['country_monthly_data'][country_code]
 
             worksheet_title = f'{source_name} Monthly Production'
 
@@ -678,7 +730,7 @@ def save_all_data_to_google_sheets_with_merge(all_data, month_names):
                 [str(year) for year in sorted(updating_years, reverse=True)]) if updating_years else 'None'
             print(f"  ✓ Updated {source_name}: Added years [{new_years_str}], Updated years [{updated_years_str}]")
 
-        print(f"\n✓ All data saved to Google Sheets: 'EU Electricity Production Data'")
+        print(f"\n✓ All data saved to Google Sheets: '{country_code} Electricity Production Data'")
         print(f"URL: {spreadsheet.url}")
         return spreadsheet.url
 
@@ -776,15 +828,24 @@ def main():
     print("SAVING TO GOOGLE SHEETS (WITH MERGE)")
     print("=" * 80)
     
-    sheet_url = save_all_data_to_google_sheets_with_merge(all_data, month_names)
+    # Define countries to save (EU aggregate + individual countries)
+    countries_to_save = ['EU', 'DE']
+    saved_urls = {}
+    
+    for country in countries_to_save:
+        print(f"\n📊 Saving {country} data...")
+        sheet_url = save_all_data_to_google_sheets_with_merge(all_data, month_names, country_code=country)
+        if sheet_url:
+            saved_urls[country] = sheet_url
     
     print(f"\n" + "=" * 80)
     print("DATA COLLECTION COMPLETE!")
     print("=" * 80)
     print(f"Update type: {update_type}")
     print(f"Processed years: {list(years_to_analyze)}")
-    if sheet_url:
-        print(f"Google Sheets URL: {sheet_url}")
+    print(f"\nSaved {len(saved_urls)} countries:")
+    for country, url in saved_urls.items():
+        print(f"  {country}: {url}")
     print("\nUse the plotting script (eu_energy_plotting.py) to generate charts from this data.")
 
 
