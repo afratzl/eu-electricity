@@ -44,6 +44,157 @@ energy_sources = {
 }
 
 
+def get_or_create_country_sheet(gc, drive_service, country_code='EU'):
+    """
+    Get or create country-specific electricity data sheet
+    Structure: EU-Electricity-Plots/[Country]/[Country] Electricity Production Data
+    
+    Args:
+        gc: gspread client
+        drive_service: Google Drive API service (or None)
+        country_code: Country code (EU, DE, FR, etc.)
+    
+    Returns: gspread Spreadsheet object
+    """
+    import json
+    import os
+    
+    sheet_name = f'{country_code} Electricity Production Data'
+    
+    # Try to get from JSON first
+    drive_links_file = 'plots/drive_links.json'
+    if os.path.exists(drive_links_file):
+        try:
+            with open(drive_links_file, 'r') as f:
+                links = json.load(f)
+                
+            # Check if we have this country's sheet ID
+            if country_code in links and 'data_sheet_id' in links[country_code]:
+                sheet_id = links[country_code]['data_sheet_id']
+                try:
+                    spreadsheet = gc.open_by_key(sheet_id)
+                    print(f"✓ Opened existing sheet: {sheet_name}")
+                    return spreadsheet
+                except:
+                    print(f"  ⚠ Sheet ID in JSON is invalid, will create new")
+        except:
+            pass
+    
+    # Sheet doesn't exist or JSON doesn't have it - create new
+    print(f"  Creating new sheet: {sheet_name}")
+    spreadsheet = gc.create(sheet_name)
+    
+    # Move to correct Drive folder structure if drive_service provided
+    if drive_service:
+        try:
+            # Get or create: EU-Electricity-Plots/[Country]/
+            root_folder_id = get_or_create_drive_folder(drive_service, 'EU-Electricity-Plots')
+            country_folder_id = get_or_create_drive_folder(drive_service, country_code, root_folder_id)
+            
+            # Move spreadsheet to country folder
+            file = drive_service.files().get(fileId=spreadsheet.id, fields='parents').execute()
+            previous_parents = ",".join(file.get('parents', []))
+            
+            drive_service.files().update(
+                fileId=spreadsheet.id,
+                addParents=country_folder_id,
+                removeParents=previous_parents,
+                fields='id, parents'
+            ).execute()
+            
+            print(f"  ✓ Moved sheet to: EU-Electricity-Plots/{country_code}/")
+        except Exception as e:
+            print(f"  ⚠ Could not organize in Drive: {e}")
+    
+    # Save sheet ID to JSON
+    try:
+        # Load existing links
+        links = {}
+        if os.path.exists(drive_links_file):
+            with open(drive_links_file, 'r') as f:
+                links = json.load(f)
+        
+        # Update with sheet ID
+        if country_code not in links:
+            links[country_code] = {}
+        links[country_code]['data_sheet_id'] = spreadsheet.id
+        
+        # Save back
+        os.makedirs('plots', exist_ok=True)
+        with open(drive_links_file, 'w') as f:
+            json.dump(links, f, indent=2)
+        
+        print(f"  ✓ Saved sheet ID to drive_links.json")
+    except Exception as e:
+        print(f"  ⚠ Could not save to JSON: {e}")
+    
+    return spreadsheet
+
+
+def get_or_create_drive_folder(service, folder_name, parent_id=None, share_with_email=None):
+    """
+    Get or create a folder in Google Drive
+    Optionally shares with specified email
+    Returns folder ID
+    """
+    # Search for existing folder
+    query = f"name='{folder_name}' and mimeType='application/vnd.google-apps.folder' and trashed=false"
+    if parent_id:
+        query += f" and '{parent_id}' in parents"
+    
+    results = service.files().list(
+        q=query,
+        spaces='drive',
+        fields='files(id, name)'
+    ).execute()
+    
+    folders = results.get('files', [])
+    
+    if folders:
+        folder_id = folders[0]['id']
+        folder_already_existed = True
+    else:
+        # Create folder if it doesn't exist
+        file_metadata = {
+            'name': folder_name,
+            'mimeType': 'application/vnd.google-apps.folder'
+        }
+        if parent_id:
+            file_metadata['parents'] = [parent_id]
+        
+        folder = service.files().create(body=file_metadata, fields='id').execute()
+        folder_id = folder.get('id')
+        print(f"  Created Drive folder: {folder_name}")
+        folder_already_existed = False
+    
+    # Share with email if provided (do this regardless of whether folder existed)
+    if share_with_email:
+        try:
+            # Check if already shared with this email
+            permissions = service.permissions().list(fileId=folder_id, fields='permissions(emailAddress)').execute()
+            existing_emails = [p.get('emailAddress') for p in permissions.get('permissions', [])]
+            
+            if share_with_email not in existing_emails:
+                permission = {
+                    'type': 'user',
+                    'role': 'writer',  # Or 'reader' if you only want view access
+                    'emailAddress': share_with_email
+                }
+                service.permissions().create(
+                    fileId=folder_id,
+                    body=permission,
+                    sendNotificationEmail=False  # Don't spam with emails
+                ).execute()
+                print(f"  ✓ Shared folder '{folder_name}' with {share_with_email}")
+            else:
+                if folder_already_existed:
+                    print(f"  ✓ Folder '{folder_name}' already shared with {share_with_email}")
+        except Exception as e:
+            print(f"  ⚠ Could not share folder '{folder_name}': {e}")
+    
+    return folder_id
+
+
 def generate_10day_chunks(year, current_year, current_date):
     """
     Generate 10-day chunks for a year to avoid ENTSO-E's 1000-row API limit
@@ -370,13 +521,18 @@ def save_all_data_to_google_sheets_with_merge(all_data, month_names):
         credentials = Credentials.from_service_account_info(creds_dict, scopes=scope)
         gc = gspread.authorize(credentials)
 
-        try:
-            spreadsheet = gc.open('EU Electricity Production Data')
-            print(f"✓ Connected to existing spreadsheet")
-        except gspread.SpreadsheetNotFound:
-            spreadsheet = gc.create('EU Electricity Production Data')
-            # Note: You may want to share with your email - but we don't hardcode emails
-            print(f"✓ Created new spreadsheet")
+        # Initialize drive service for sheet organization
+        from googleapiclient.discovery import build
+        from google.oauth2.service_account import Credentials as ServiceAccountCredentials
+        
+        credentials_drive = ServiceAccountCredentials.from_service_account_info(
+            creds_dict,
+            scopes=['https://www.googleapis.com/auth/drive.file']
+        )
+        drive_service = build('drive', 'v3', credentials=credentials_drive)
+        
+        # Get or create country sheet (EU by default, parameterizable for future)
+        spreadsheet = get_or_create_country_sheet(gc, drive_service, country_code='EU')
 
         for source_name, source_data in all_data.items():
             year_data = source_data['year_data']
