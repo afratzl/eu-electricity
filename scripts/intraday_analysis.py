@@ -355,10 +355,20 @@ def interpolate_country_data(country_series, country_name, mark_extrapolated=Fal
     return interpolated
 
 
-def aggregate_eu_data(countries, start_date, end_date, client, source_keywords, data_type='generation', mark_extrapolated=False):
+def aggregate_eu_data(countries, start_date, end_date, client, source_keywords, data_type='generation', mark_extrapolated=False, country_code='EU'):
     """
-    Aggregate energy data across EU countries
-    Returns: (eu_total, country_data_df, successful_countries)
+    Aggregate energy data across EU countries OR extract single country
+    
+    Args:
+        country_code: 
+            - 'EU' = sum all countries
+            - 'DE' = extract just DE
+            - None = return raw dataframe without aggregation
+    
+    Returns: (total_series, country_data_df, successful_countries)
+        - If country_code='EU': total_series is sum of all countries
+        - If country_code='DE': total_series is just DE column
+        - If country_code=None: total_series is empty, just returns raw country_df
     """
     all_interpolated_data = []
     successful_countries = []
@@ -382,9 +392,23 @@ def aggregate_eu_data(countries, start_date, end_date, client, source_keywords, 
         return pd.Series(dtype=float), pd.DataFrame(), []
 
     combined_df = pd.concat(all_interpolated_data, axis=1)
-    eu_total = combined_df.sum(axis=1, skipna=True)
+    
+    # Extract or aggregate based on country_code
+    if country_code is None:
+        # Raw mode: return empty series, full dataframe
+        total = pd.Series(dtype=float)
+    elif country_code == 'EU':
+        # Aggregate: sum all countries
+        total = combined_df.sum(axis=1, skipna=True)
+    else:
+        # Single country: extract that column
+        if country_code in combined_df.columns:
+            total = combined_df[country_code]
+        else:
+            # Country not in data
+            total = pd.Series(0, index=combined_df.index if not combined_df.empty else [])
 
-    return eu_total, combined_df, successful_countries
+    return total, combined_df, successful_countries
 
 
 # ============================================================================
@@ -393,13 +417,18 @@ def aggregate_eu_data(countries, start_date, end_date, client, source_keywords, 
 
 def collect_all_data(api_key):
     """
-    Phase 1: Collect ALL data for all atomic sources, aggregates, and total generation
-    Returns a structured data object with everything we need
+    Phase 1: Collect ALL data for all atomic sources and total generation
+    Fetches all 27 EU countries ONCE - no aggregation yet
+    Returns raw country-level data that can be extracted/aggregated later
     """
     client = EntsoePandasClient(api_key=api_key)
     
+    # Cache fetch time at start for consistent cutoff across all sources
+    fetch_time = pd.Timestamp.now(tz='Europe/Brussels')
+    print(f"🕐 Reference fetch time: {fetch_time.strftime('%Y-%m-%d %H:%M:%S %Z')}")
+    
     print("=" * 80)
-    print("PHASE 1: DATA COLLECTION")
+    print("PHASE 1: DATA COLLECTION (ALL COUNTRIES)")
     print("=" * 80)
     
     # Define periods
@@ -420,15 +449,14 @@ def collect_all_data(api_key):
         'two_years_ago': (two_years_ago_start, two_years_ago_end)
     }
     
-    # Data storage
+    # Data storage - raw country dataframes
     data_matrix = {
-        'atomic_sources': {},  # source -> period -> country_df
-        'aggregates': {},      # source -> period -> eu_total_series
-        'total_generation': {} # period -> country_df
+        'atomic_sources': {},  # source -> period -> country_df (all 27 countries as columns)
+        'total_generation': {} # period -> country_df (all 27 countries as columns)
     }
     
     # Fetch atomic sources (with country breakdown)
-    print("\n📊 Fetching 10 Atomic Sources (with country data)...")
+    print("\n📊 Fetching 10 Atomic Sources (all 27 countries)...")
     for source in ATOMIC_SOURCES:
         print(f"\n  {DISPLAY_NAMES[source]}:")
         data_matrix['atomic_sources'][source] = {}
@@ -436,9 +464,11 @@ def collect_all_data(api_key):
         for period_name, (start_date, end_date) in periods.items():
             mark_extrap = (period_name in ['today', 'yesterday'])
             
-            eu_total, country_df, countries = aggregate_eu_data(
+            # Fetch WITHOUT aggregation - get raw country dataframe
+            _, country_df, countries = aggregate_eu_data(
                 EU_COUNTRIES, start_date, end_date, client,
-                SOURCE_KEYWORDS[source], 'generation', mark_extrapolated=mark_extrap
+                SOURCE_KEYWORDS[source], 'generation', mark_extrapolated=mark_extrap,
+                country_code=None  # None = return raw dataframe without aggregation
             )
             
             if not country_df.empty:
@@ -447,36 +477,17 @@ def collect_all_data(api_key):
             else:
                 print(f"    {period_name}: ✗ No data")
     
-    # Fetch aggregates (EU totals only, no country breakdown needed)
-    print("\n📊 Fetching 2 Aggregate Sources (EU totals only)...")
+    # Fetch Total Generation (with country breakdown)
+    print("\n📊 Fetching Total Generation (all 27 countries)...")
     all_gen_keywords = SOURCE_KEYWORDS['all-renewables'] + SOURCE_KEYWORDS['all-non-renewables']
-    
-    for source in AGGREGATE_SOURCES:
-        print(f"\n  {DISPLAY_NAMES[source]}:")
-        data_matrix['aggregates'][source] = {}
-        
-        for period_name, (start_date, end_date) in periods.items():
-            mark_extrap = (period_name in ['today', 'yesterday'])
-            
-            eu_total, _, countries = aggregate_eu_data(
-                EU_COUNTRIES, start_date, end_date, client,
-                SOURCE_KEYWORDS[source], 'generation', mark_extrapolated=mark_extrap
-            )
-            
-            if not eu_total.empty:
-                data_matrix['aggregates'][source][period_name] = eu_total
-                print(f"    {period_name}: ✓ {len(eu_total)} timestamps")
-            else:
-                print(f"    {period_name}: ✗ No data")
-    
-    # Fetch Total Generation (with country breakdown for denominator correction)
-    print("\n📊 Fetching Total Generation (with country data)...")
     for period_name, (start_date, end_date) in periods.items():
         mark_extrap = (period_name in ['today', 'yesterday'])
         
-        eu_total, country_df, countries = aggregate_eu_data(
+        # Fetch WITHOUT aggregation - get raw country dataframe
+        _, country_df, countries = aggregate_eu_data(
             EU_COUNTRIES, start_date, end_date, client,
-            all_gen_keywords, 'generation', mark_extrapolated=mark_extrap
+            all_gen_keywords, 'generation', mark_extrapolated=mark_extrap,
+            country_code=None  # None = return raw dataframe without aggregation
         )
         
         if not country_df.empty:
@@ -486,7 +497,93 @@ def collect_all_data(api_key):
             print(f"  {period_name}: ✗ No data")
     
     print("\n✓ Data collection complete!")
-    return data_matrix, periods
+    return data_matrix, periods, fetch_time
+
+
+def extract_country_from_raw_data(raw_data_matrix, country_code):
+    """
+    Extract or aggregate data for a specific country from raw data matrix
+    
+    Args:
+        raw_data_matrix: Result from collect_all_data() - contains all 27 countries
+        country_code: 'EU' to aggregate all, 'DE' for Germany, etc.
+    
+    Returns: data_matrix in same format as old collect_all_data() but for specific country
+    """
+    print(f"\n📊 Extracting data for: {country_code}")
+    
+    processed_data = {
+        'atomic_sources': {},
+        'aggregates': {},
+        'total_generation': {}
+    }
+    
+    # Process atomic sources
+    for source in ATOMIC_SOURCES:
+        processed_data['atomic_sources'][source] = {}
+        
+        for period_name, country_df in raw_data_matrix['atomic_sources'][source].items():
+            if country_df.empty:
+                continue
+            
+            if country_code == 'EU':
+                # Sum all countries
+                aggregated = country_df.sum(axis=1, skipna=True)
+            else:
+                # Extract single country
+                if country_code in country_df.columns:
+                    aggregated = country_df[country_code]
+                else:
+                    # Country not in data - create zeros
+                    aggregated = pd.Series(0, index=country_df.index)
+            
+            # Store back as single-column dataframe for compatibility
+            processed_data['atomic_sources'][source][period_name] = pd.DataFrame({
+                country_code: aggregated
+            })
+    
+    # Compute aggregates from atomic sources
+    for agg_source in AGGREGATE_SOURCES:
+        processed_data['aggregates'][agg_source] = {}
+        components = AGGREGATE_DEFINITIONS[agg_source]
+        
+        for period_name in raw_data_matrix['atomic_sources'][ATOMIC_SOURCES[0]].keys():
+            # Sum the components
+            agg_total = None
+            for component in components:
+                if component in processed_data['atomic_sources']:
+                    if period_name in processed_data['atomic_sources'][component]:
+                        component_data = processed_data['atomic_sources'][component][period_name]
+                        if not component_data.empty:
+                            if agg_total is None:
+                                agg_total = component_data[country_code].copy()
+                            else:
+                                agg_total += component_data[country_code]
+            
+            if agg_total is not None:
+                processed_data['aggregates'][agg_source][period_name] = agg_total
+    
+    # Process total generation
+    for period_name, country_df in raw_data_matrix['total_generation'].items():
+        if country_df.empty:
+            continue
+        
+        if country_code == 'EU':
+            # Sum all countries
+            total = country_df.sum(axis=1, skipna=True)
+        else:
+            # Extract single country
+            if country_code in country_df.columns:
+                total = country_df[country_code]
+            else:
+                total = pd.Series(0, index=country_df.index)
+        
+        # Store back as single-column dataframe
+        processed_data['total_generation'][period_name] = pd.DataFrame({
+            country_code: total
+        })
+    
+    return processed_data
 
 
 # ============================================================================
@@ -647,19 +744,25 @@ def apply_corrections_for_period(data_matrix, target_period, reference_period):
         components = AGGREGATE_DEFINITIONS[agg_source]
         
         for timestamp in target_total_gen.index:
-            # Corrected aggregate
-            total_corrected = 0
+            # Corrected aggregate - collect all countries
+            corrected_by_country = {}
             for component in components:
                 if timestamp in corrected_sources[component]:
-                    total_corrected += sum(corrected_sources[component][timestamp].values())
-            corrected_sources[agg_source][timestamp] = {'EU': total_corrected}
+                    for country, val in corrected_sources[component][timestamp].items():
+                        if country not in corrected_by_country:
+                            corrected_by_country[country] = 0
+                        corrected_by_country[country] += val
+            corrected_sources[agg_source][timestamp] = corrected_by_country
             
-            # Actual (uncorrected) aggregate
-            total_actual = 0
+            # Actual (uncorrected) aggregate - collect all countries  
+            actual_by_country = {}
             for component in components:
                 if timestamp in actual_sources[component]:
-                    total_actual += sum(actual_sources[component][timestamp].values())
-            actual_sources[agg_source][timestamp] = {'EU': total_actual}
+                    for country, val in actual_sources[component][timestamp].items():
+                        if country not in actual_by_country:
+                            actual_by_country[country] = 0
+                        actual_by_country[country] += val
+            actual_sources[agg_source][timestamp] = actual_by_country
     
     # Build corrected and actual total generation
     corrected_total_gen = {}
@@ -731,11 +834,15 @@ def build_period_data_no_projection(data_matrix, period):
                 all_timestamps.update(atomic_sources_data[component].keys())
         
         for timestamp in all_timestamps:
-            total = 0
+            # Collect by country
+            by_country = {}
             for component in components:
                 if component in atomic_sources_data and timestamp in atomic_sources_data[component]:
-                    total += sum(atomic_sources_data[component][timestamp].values())
-            aggregate_sources_data[agg_source][timestamp] = {'EU': total}
+                    for country, val in atomic_sources_data[component][timestamp].items():
+                        if country not in by_country:
+                            by_country[country] = 0
+                        by_country[country] += val
+            aggregate_sources_data[agg_source][timestamp] = by_country
     
     # Total generation from all atomic sources
     total_generation_data = {}
@@ -1233,10 +1340,14 @@ def calculate_period_totals(period_data, period_name):
     return totals
 
 
-def update_summary_table_worksheet(corrected_data):
+def update_summary_table_worksheet(corrected_data, country_code='EU'):
     """
     Update Google Sheets "Summary Table Data" worksheet with yesterday/last week data
     Uses PROJECTED (corrected) data for accuracy
+    
+    Args:
+        corrected_data: Processed data from apply_projections_and_corrections
+        country_code: Country code for the sheet (EU, DE, etc.)
     """
     if not GSPREAD_AVAILABLE:
         print("\n⚠ Skipping Google Sheets update - gspread not available")
@@ -1268,9 +1379,9 @@ def update_summary_table_worksheet(corrected_data):
         )
         drive_service = build('drive', 'v3', credentials=credentials_drive)
         
-        # Get or create country sheet (EU by default, parameterizable for future)
-        spreadsheet = get_or_create_country_sheet(gc, drive_service, country_code='EU')
-        print("✓ Connected to spreadsheet")
+        # Get or create country sheet
+        spreadsheet = get_or_create_country_sheet(gc, drive_service, country_code=country_code)
+        print(f"✓ Connected to spreadsheet ({country_code})")
         
         # Get or create worksheet
         try:
@@ -1689,25 +1800,35 @@ def main():
     """
     Main function - orchestrates the 3 phases
     Generates ALL 12 plots by default, or single plot if --source specified
+    Processes all countries by default, or single country if --country specified
+    
+    OPTIMIZED: Fetches all 27 EU countries ONCE, then extracts/aggregates for each country
     """
     parser = argparse.ArgumentParser(description='EU Energy Intraday Analysis v2')
     parser.add_argument('--source', 
                        choices=ATOMIC_SOURCES + AGGREGATE_SOURCES,
                        help='Optional: Generate only this source (default: all sources)')
+    parser.add_argument('--country', default=None,
+                       help='Country code (EU, DE, FR, etc.). If not specified, processes all countries.')
     
     args = parser.parse_args()
     
+    # Define countries to process (should match data collection script)
+    countries_to_process = ['EU', 'DE']
+    
+    # If specific country requested, only process that one
+    if args.country:
+        countries_to_process = [args.country.upper()]
+    
+    print("\n" + "=" * 80)
+    print("ENERGY INTRADAY ANALYSIS - OPTIMIZED")
+    print("=" * 80)
+    print(f"Countries to process: {', '.join(countries_to_process)}")
     if args.source:
-        # Single source mode (for testing or backward compatibility)
-        print("\n" + "=" * 80)
-        print(f"{DISPLAY_NAMES[args.source].upper()} INTRADAY ANALYSIS")
-        print("=" * 80)
+        print(f"Source filter: {DISPLAY_NAMES[args.source]} only")
     else:
-        # Batch mode (default)
-        print("\n" + "=" * 80)
-        print("EU ENERGY INTRADAY ANALYSIS - BATCH MODE")
-        print("Generating all 12 source plots from single data collection")
-        print("=" * 80)
+        print("Processing: All 12 sources")
+    print("=" * 80)
     
     # Get API key
     api_key = os.environ.get('ENTSOE_API_KEY')
@@ -1716,176 +1837,191 @@ def main():
         sys.exit(1)
     
     try:
-        # Phase 1: Collect all data ONCE
-        data_matrix, periods = collect_all_data(api_key)
+        # Phase 1: Collect all data ONCE (all 27 countries)
+        print(f"\n⚡ OPTIMIZATION: Fetching all 27 EU countries ONCE for all {len(countries_to_process)} target countries")
+        raw_data_matrix, periods, fetch_time = collect_all_data(api_key)
         
-        # Phase 2: Apply projections and corrections ONCE
-        corrected_data = apply_projections_and_corrections(data_matrix)
+        # Process each country using the SAME raw data
+        for country_code in countries_to_process:
+            print(f"\n{'='*80}")
+            print(f"PROCESSING {country_code} (extracting from shared data)")
+            print(f"{'='*80}")
+            
+            try:
+                # Extract/aggregate this country's data from raw data
+                data_matrix = extract_country_from_raw_data(raw_data_matrix, country_code)
         
-        # Phase 3: Generate plots
-        if args.source:
-            # Single plot mode
-            print("\n" + "=" * 80)
-            print(f"PHASE 3: GENERATING {DISPLAY_NAMES[args.source].upper()} PLOTS")
-            print("=" * 80)
-            output_file_base = f'plots/{args.source.replace("-", "_")}_analysis.png'
-            percentage_file, absolute_file = generate_plot_for_source(args.source, corrected_data, output_file_base)
-            
-            # Upload both to Google Drive
-            print(f"\n📤 Uploading to Google Drive...")
-            perc_id = upload_plot_to_drive(percentage_file, country='EU')
-            abs_id = upload_plot_to_drive(absolute_file, country='EU')
-            if perc_id and abs_id:
-                print(f"  ✓ Uploaded both plots to EU/Intraday/")
-        else:
-            # Batch mode - generate all plots
-            print("\n" + "=" * 80)
-            print("PHASE 3: GENERATING ALL 12 PLOTS (24 files: percentage + absolute)")
-            print("=" * 80)
-            
-            all_sources = ATOMIC_SOURCES + AGGREGATE_SOURCES
-            drive_file_ids = {}
-            
-            for i, source in enumerate(all_sources, 1):
-                print(f"\n[{i}/{len(all_sources)}] Processing {DISPLAY_NAMES[source]}...")
-                output_file_base = f'plots/{source.replace("-", "_")}_analysis.png'
-                percentage_file, absolute_file = generate_plot_for_source(source, corrected_data, output_file_base)
+                # Phase 2: Apply projections and corrections ONCE
+                corrected_data = apply_projections_and_corrections(data_matrix)
                 
-                # Upload both to Google Drive
-                perc_id = upload_plot_to_drive(percentage_file, country='EU')
-                abs_id = upload_plot_to_drive(absolute_file, country='EU')
-                if perc_id and abs_id:
-                    drive_file_ids[source] = {
-                        'percentage': perc_id,
-                        'absolute': abs_id
-                    }
-                    print(f"  ✓ Uploaded both plots to Drive: EU/Intraday/")
-            
-            # Save Drive file IDs to JSON
-            if drive_file_ids:
-                print(f"\n📤 Saving Drive links for {len(drive_file_ids)} sources...")
-                print(f"   Sources: {', '.join(drive_file_ids.keys())}")
-                drive_links_file = 'plots/drive_links.json'
-                drive_links = {}
-                
-                # Load existing links
-                if os.path.exists(drive_links_file):
-                    try:
-                        with open(drive_links_file, 'r') as f:
-                            drive_links = json.load(f)
-                    except:
-                        pass
-                
-                # Update with new file IDs
-                if 'EU' not in drive_links:
-                    drive_links['EU'] = {}
-                if 'Intraday' not in drive_links['EU']:
-                    drive_links['EU']['Intraday'] = {}
-                
-                # Random thumbnail size to bypass mobile browser cache
-                # Rotates between 5 sizes: each new URL forces browser to fetch fresh image
-                thumbnail_size = random.choice([1998, 1999, 2000, 2001, 2002])
-                print(f"  📐 Using thumbnail size: w{thumbnail_size} (cache-busting)")
-                
-                for source, file_ids in drive_file_ids.items():
-                    drive_links['EU']['Intraday'][source] = {
-                        'percentage': {
-                            'file_id': file_ids['percentage'],
-                            'view_url': f'https://drive.google.com/file/d/{file_ids["percentage"]}/view',
-                            'direct_url': f'https://drive.google.com/thumbnail?id={file_ids["percentage"]}&sz=w{thumbnail_size}'
-                        },
-                        'absolute': {
-                            'file_id': file_ids['absolute'],
-                            'view_url': f'https://drive.google.com/file/d/{file_ids["absolute"]}/view',
-                            'direct_url': f'https://drive.google.com/thumbnail?id={file_ids["absolute"]}&sz=w{thumbnail_size}'
-                        },
-                        'updated': datetime.now().isoformat()
-                    }
-                
-                # Save back to file (atomic write with validation)
-                drive_links_file_path = os.path.abspath(drive_links_file)
-                temp_file = drive_links_file + '.tmp'
-                
-                # Check if file exists and is writable
-                if os.path.exists(drive_links_file):
-                    if not os.access(drive_links_file, os.W_OK):
-                        print(f"  ⚠ Warning: {drive_links_file} exists but is not writable!")
-                    else:
-                        print(f"  Overwriting existing file: {drive_links_file}")
-                
-                try:
-                    # Write to temporary file first
-                    with open(temp_file, 'w') as f:
-                        json.dump(drive_links, f, indent=2)
+                # Phase 3: Generate plots
+                if args.source:
+                    # Single plot mode
+                    print("\n" + "=" * 80)
+                    print(f"PHASE 3: GENERATING {DISPLAY_NAMES[args.source].upper()} PLOTS")
+                    print("=" * 80)
+                    output_file_base = f'plots/{args.source.replace("-", "_")}_analysis.png'
+                    percentage_file, absolute_file = generate_plot_for_source(args.source, corrected_data, output_file_base)
                     
-                    # Validate the JSON by reading it back
-                    with open(temp_file, 'r') as f:
-                        content = f.read()
-                        # Check for git conflict markers
-                        if '<<<<<<< ' in content or '=======' in content or '>>>>>>> ' in content:
-                            raise ValueError("Git conflict markers detected in JSON file!")
-                        # Validate it's valid JSON and structure
-                        saved_data = json.loads(content)
+                    # Upload both to Google Drive
+                    print(f"\n📤 Uploading to Google Drive...")
+                    perc_id = upload_plot_to_drive(percentage_file, country=country_code)
+                    abs_id = upload_plot_to_drive(absolute_file, country=country_code)
+                    if perc_id and abs_id:
+                        print(f"  ✓ Uploaded both plots to {country_code}/Intraday/")
+                else:
+                    # Batch mode - generate all plots
+                    print("\n" + "=" * 80)
+                    print("PHASE 3: GENERATING ALL 12 PLOTS (24 files: percentage + absolute)")
+                    print("=" * 80)
                     
-                    # If validation passes, atomically replace the file
-                    os.replace(temp_file, drive_links_file)
+                    all_sources = ATOMIC_SOURCES + AGGREGATE_SOURCES
+                    drive_file_ids = {}
                     
-                    # Verify structure
-                    sample_source = list(drive_file_ids.keys())[0] if drive_file_ids else None
-                    if sample_source:
-                        if 'EU' in saved_data and 'Intraday' in saved_data['EU']:
-                            if sample_source in saved_data['EU']['Intraday']:
-                                source_data = saved_data['EU']['Intraday'][sample_source]
-                                if 'percentage' in source_data and 'absolute' in source_data:
-                                    file_size = os.path.getsize(drive_links_file)
-                                    print(f"  ✓ Drive links saved to {drive_links_file}")
-                                    print(f"     Full path: {drive_links_file_path}")
-                                    print(f"     File size: {file_size} bytes")
-                                    print(f"     ✓ Verified NEW structure (percentage/absolute)")
-                                else:
-                                    print(f"  ⚠ WARNING: OLD structure detected! Missing percentage/absolute")
+                    for i, source in enumerate(all_sources, 1):
+                        print(f"\n[{i}/{len(all_sources)}] Processing {DISPLAY_NAMES[source]}...")
+                        output_file_base = f'plots/{source.replace("-", "_")}_analysis.png'
+                        percentage_file, absolute_file = generate_plot_for_source(source, corrected_data, output_file_base)
+                        
+                        # Upload both to Google Drive
+                        perc_id = upload_plot_to_drive(percentage_file, country=country_code)
+                        abs_id = upload_plot_to_drive(absolute_file, country=country_code)
+                        if perc_id and abs_id:
+                            drive_file_ids[source] = {
+                                'percentage': perc_id,
+                                'absolute': abs_id
+                            }
+                            print(f"  ✓ Uploaded both plots to Drive: {country_code}/Intraday/")
+                    
+                    # Save Drive file IDs to JSON
+                    if drive_file_ids:
+                        print(f"\n📤 Saving Drive links for {len(drive_file_ids)} sources...")
+                        print(f"   Sources: {', '.join(drive_file_ids.keys())}")
+                        drive_links_file = 'plots/drive_links.json'
+                        drive_links = {}
+                        
+                        # Load existing links
+                        if os.path.exists(drive_links_file):
+                            try:
+                                with open(drive_links_file, 'r') as f:
+                                    drive_links = json.load(f)
+                            except:
+                                pass
+                        
+                        # Update with new file IDs
+                        if country_code not in drive_links:
+                            drive_links[country_code] = {}
+                        if 'Intraday' not in drive_links[country_code]:
+                            drive_links[country_code]['Intraday'] = {}
+                        
+                        # Random thumbnail size to bypass mobile browser cache
+                        # Rotates between 5 sizes: each new URL forces browser to fetch fresh image
+                        thumbnail_size = random.choice([1998, 1999, 2000, 2001, 2002])
+                        print(f"  📐 Using thumbnail size: w{thumbnail_size} (cache-busting)")
+                        
+                        for source, file_ids in drive_file_ids.items():
+                            drive_links[country_code]['Intraday'][source] = {
+                                'percentage': {
+                                    'file_id': file_ids['percentage'],
+                                    'view_url': f'https://drive.google.com/file/d/{file_ids["percentage"]}/view',
+                                    'direct_url': f'https://drive.google.com/thumbnail?id={file_ids["percentage"]}&sz=w{thumbnail_size}'
+                                },
+                                'absolute': {
+                                    'file_id': file_ids['absolute'],
+                                    'view_url': f'https://drive.google.com/file/d/{file_ids["absolute"]}/view',
+                                    'direct_url': f'https://drive.google.com/thumbnail?id={file_ids["absolute"]}&sz=w{thumbnail_size}'
+                                },
+                                'updated': datetime.now().isoformat()
+                            }
+                        
+                        # Save back to file (atomic write with validation)
+                        drive_links_file_path = os.path.abspath(drive_links_file)
+                        temp_file = drive_links_file + '.tmp'
+                        
+                        # Check if file exists and is writable
+                        if os.path.exists(drive_links_file):
+                            if not os.access(drive_links_file, os.W_OK):
+                                print(f"  ⚠ Warning: {drive_links_file} exists but is not writable!")
                             else:
-                                print(f"  ⚠ WARNING: Source {sample_source} not in saved JSON")
-                    
-                except ValueError as e:
-                    print(f"  ✗ JSON validation error: {e}")
-                    if os.path.exists(temp_file):
-                        os.remove(temp_file)
-                    raise
-                except PermissionError as e:
-                    print(f"  ✗ Permission error: {e}")
-                    if os.path.exists(temp_file):
-                        os.remove(temp_file)
-                    raise
-                except Exception as e:
-                    print(f"  ✗ Error writing file: {e}")
-                    if os.path.exists(temp_file):
-                        os.remove(temp_file)
-                    raise
-            else:
-                print("\n⚠ Warning: No Drive file IDs collected - JSON not updated")
-                print("   Check if uploads succeeded above")
+                                print(f"  Overwriting existing file: {drive_links_file}")
+                        
+                        try:
+                            # Write to temporary file first
+                            with open(temp_file, 'w') as f:
+                                json.dump(drive_links, f, indent=2)
+                            
+                            # Validate the JSON by reading it back
+                            with open(temp_file, 'r') as f:
+                                content = f.read()
+                                # Check for git conflict markers
+                                if '<<<<<<< ' in content or '=======' in content or '>>>>>>> ' in content:
+                                    raise ValueError("Git conflict markers detected in JSON file!")
+                                # Validate it's valid JSON and structure
+                                saved_data = json.loads(content)
+                            
+                            # If validation passes, atomically replace the file
+                            os.replace(temp_file, drive_links_file)
+                            
+                            # Verify structure
+                            sample_source = list(drive_file_ids.keys())[0] if drive_file_ids else None
+                            if sample_source:
+                                if country_code in saved_data and 'Intraday' in saved_data[country_code]:
+                                    if sample_source in saved_data[country_code]['Intraday']:
+                                        source_data = saved_data[country_code]['Intraday'][sample_source]
+                                        if 'percentage' in source_data and 'absolute' in source_data:
+                                            file_size = os.path.getsize(drive_links_file)
+                                            print(f"  ✓ Drive links saved to {drive_links_file}")
+                                            print(f"     Full path: {drive_links_file_path}")
+                                            print(f"     File size: {file_size} bytes")
+                                            print(f"     ✓ Verified NEW structure (percentage/absolute)")
+                                        else:
+                                            print(f"  ⚠ WARNING: OLD structure detected! Missing percentage/absolute")
+                                    else:
+                                        print(f"  ⚠ WARNING: Source {sample_source} not in saved JSON")
+                            
+                        except ValueError as e:
+                            print(f"  ✗ JSON validation error: {e}")
+                            if os.path.exists(temp_file):
+                                os.remove(temp_file)
+                            raise
+                        except PermissionError as e:
+                            print(f"  ✗ Permission error: {e}")
+                            if os.path.exists(temp_file):
+                                os.remove(temp_file)
+                            raise
+                        except Exception as e:
+                            print(f"  ✗ Error writing file: {e}")
+                            if os.path.exists(temp_file):
+                                os.remove(temp_file)
+                            raise
+                    else:
+                        print("\n⚠ Warning: No Drive file IDs collected - JSON not updated")
+                        print("   Check if uploads succeeded above")
+                
+                # Create timestamp file
+                timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S UTC')
+                with open('plots/last_update.html', 'w') as f:
+                    f.write(f'<p>Last updated: {timestamp}</p>')
+                
+                # Phase 4: Update Summary Table in Google Sheets
+                update_summary_table_worksheet(corrected_data, country_code=country_code)
+                
+                print(f"\n✓ {country_code} COMPLETE!")
+                
+            except Exception as e:
+                print(f"✗ Error processing {country_code}: {e}")
+                import traceback
+                traceback.print_exc()
+                continue
         
-        # Create timestamp file
-        timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S UTC')
-        with open('plots/last_update.html', 'w') as f:
-            f.write(f'<p>Last updated: {timestamp}</p>')
-        
-        # Phase 4: Update Summary Table in Google Sheets
-        update_summary_table_worksheet(corrected_data)
-        
+        # Final summary
         print(f"\n" + "=" * 80)
-        if args.source:
-            print(f"✓ COMPLETE! {DISPLAY_NAMES[args.source]} plot generated")
-        else:
-            print(f"✓ COMPLETE! All 12 plots generated successfully")
-            print(f"   - 10 atomic sources")
-            print(f"   - 2 aggregates")
-            print(f"   - Summary table updated in Google Sheets")
+        print(f"ALL COUNTRIES COMPLETE!")
+        print(f"Processed: {', '.join(countries_to_process)}")
         print("=" * 80)
         
     except Exception as e:
-        print(f"✗ Error: {e}")
+        print(f"✗ Fatal error during data collection: {e}")
         import traceback
         traceback.print_exc()
         sys.exit(1)
