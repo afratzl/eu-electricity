@@ -8,16 +8,6 @@ from datetime import datetime
 import os
 import json
 
-# Google Drive imports (for plot hosting)
-try:
-    from googleapiclient.discovery import build
-    from googleapiclient.http import MediaFileUpload
-    from google.oauth2.service_account import Credentials as ServiceAccountCredentials
-    GDRIVE_AVAILABLE = True
-except ImportError:
-    GDRIVE_AVAILABLE = False
-    print("⚠ Google Drive API not available - plots will not be uploaded to Drive")
-
 # ENTSO-E COLOR PALETTE
 ENTSOE_COLORS = {
     # Renewables
@@ -42,134 +32,91 @@ ENTSOE_COLORS = {
 }
 
 
-# === GOOGLE DRIVE UPLOAD FUNCTIONS ===
-
-def get_or_create_drive_folder(service, folder_name, parent_id=None):
-    """Get or create a folder in Google Drive. Returns folder ID."""
-    query = f"name='{folder_name}' and mimeType='application/vnd.google-apps.folder' and trashed=false"
-    if parent_id:
-        query += f" and '{parent_id}' in parents"
-    
-    results = service.files().list(q=query, spaces='drive', fields='files(id, name)').execute()
-    existing_folders = results.get('files', [])
-    
-    if existing_folders:
-        return existing_folders[0]['id']
-    
-    # Create new folder
-    file_metadata = {
-        'name': folder_name,
-        'mimeType': 'application/vnd.google-apps.folder'
-    }
-    if parent_id:
-        file_metadata['parents'] = [parent_id]
-    
-    folder = service.files().create(body=file_metadata, fields='id').execute()
-    return folder.get('id')
-
-
-def upload_plot_to_drive(service, file_path, plot_type='Monthly', country='EU'):
+def get_or_create_country_sheet(gc, drive_service, country_code='EU'):
     """
-    Upload a plot to Google Drive with geography-first structure.
-    Structure: EU-Electricity-Plots/[Country]/[Monthly|Trends]/[plot].png
-    Returns: dict with file_id, view_url, direct_url or None if failed
-    """
-    if not GDRIVE_AVAILABLE:
-        return None
+    Get or create country-specific electricity data sheet
+    Structure: EU-Electricity-Plots/[Country]/[Country] Electricity Production Data
     
-    try:
-        # Create folder structure: EU-Electricity-Plots/[Country]/[Monthly|Trends]/
-        root_folder_id = get_or_create_drive_folder(service, 'EU-Electricity-Plots')
-        country_folder_id = get_or_create_drive_folder(service, country, root_folder_id)
-        type_folder_id = get_or_create_drive_folder(service, plot_type, country_folder_id)
-        
-        filename = os.path.basename(file_path)
-        
-        # Check if file already exists
-        query = f"name='{filename}' and '{type_folder_id}' in parents and trashed=false"
-        results = service.files().list(q=query, spaces='drive', fields='files(id, name)').execute()
-        existing_files = results.get('files', [])
-        
-        if existing_files:
-            # Update existing file
-            file_id = existing_files[0]['id']
-            media = MediaFileUpload(file_path, mimetype='image/png')
-            service.files().update(fileId=file_id, media_body=media).execute()
-        else:
-            # Create new file
-            file_metadata = {'name': filename, 'parents': [type_folder_id]}
-            media = MediaFileUpload(file_path, mimetype='image/png')
-            file = service.files().create(body=file_metadata, media_body=media, fields='id').execute()
-            file_id = file.get('id')
-        
-        # Set permissions to "Anyone with the link can view"
-        # Check if permission already exists
+    Args:
+        gc: gspread client
+        drive_service: Google Drive API service (or None)
+        country_code: Country code (EU, DE, FR, etc.)
+    
+    Returns: gspread Spreadsheet object
+    """
+    import json
+    import os
+    
+    sheet_name = f'{country_code} Electricity Production Data'
+    
+    # Try to get from JSON first
+    drive_links_file = 'plots/drive_links.json'
+    if os.path.exists(drive_links_file):
         try:
-            existing_perms = service.permissions().list(
-                fileId=file_id,
-                fields='permissions(id,type)'
+            with open(drive_links_file, 'r') as f:
+                links = json.load(f)
+                
+            # Check if we have this country's sheet ID
+            if country_code in links and 'data_sheet_id' in links[country_code]:
+                sheet_id = links[country_code]['data_sheet_id']
+                try:
+                    spreadsheet = gc.open_by_key(sheet_id)
+                    print(f"✓ Opened existing sheet: {sheet_name}")
+                    return spreadsheet
+                except:
+                    print(f"  ⚠ Sheet ID in JSON is invalid, will create new")
+        except:
+            pass
+    
+    # Sheet doesn't exist or JSON doesn't have it - create new
+    print(f"  Creating new sheet: {sheet_name}")
+    spreadsheet = gc.create(sheet_name)
+    
+    # Move to correct Drive folder structure if drive_service provided
+    if drive_service:
+        try:
+            # Get or create: EU-Electricity-Plots/[Country]/
+            root_folder_id = get_or_create_drive_folder(drive_service, 'EU-Electricity-Plots')
+            country_folder_id = get_or_create_drive_folder(drive_service, country_code, root_folder_id)
+            
+            # Move spreadsheet to country folder
+            file = drive_service.files().get(fileId=spreadsheet.id, fields='parents').execute()
+            previous_parents = ",".join(file.get('parents', []))
+            
+            drive_service.files().update(
+                fileId=spreadsheet.id,
+                addParents=country_folder_id,
+                removeParents=previous_parents,
+                fields='id, parents'
             ).execute()
             
-            # Check if 'anyone' permission exists
-            anyone_perm = None
-            for perm in existing_perms.get('permissions', []):
-                if perm.get('type') == 'anyone':
-                    anyone_perm = perm
-                    break
-            
-            if anyone_perm:
-                # Update existing permission
-                service.permissions().update(
-                    fileId=file_id,
-                    permissionId=anyone_perm['id'],
-                    body={'role': 'reader'}
-                ).execute()
-            else:
-                # Create new permission
-                permission = {
-                    'type': 'anyone',
-                    'role': 'reader'
-                }
-                service.permissions().create(
-                    fileId=file_id,
-                    body=permission
-                ).execute()
+            print(f"  ✓ Moved sheet to: EU-Electricity-Plots/{country_code}/")
         except Exception as e:
-            print(f"  ⚠ Warning: Could not set permissions on {os.path.basename(file_path)}: {e}")
-        
-        return {
-            'file_id': file_id,
-            'view_url': f'https://drive.google.com/file/d/{file_id}/view',
-            'direct_url': f'https://drive.google.com/thumbnail?id={file_id}&sz=w2000',
-            'updated': datetime.now().isoformat()
-        }
-        
-    except Exception as e:
-        print(f"  ⚠ Drive upload failed for {os.path.basename(file_path)}: {e}")
-        return None
-
-
-def initialize_drive_service():
-    """Initialize Google Drive service using credentials from environment."""
-    if not GDRIVE_AVAILABLE:
-        return None
+            print(f"  ⚠ Could not organize in Drive: {e}")
     
+    # Save sheet ID to JSON
     try:
-        google_creds_json = os.getenv('GOOGLE_CREDENTIALS_JSON')
-        if not google_creds_json:
-            print("  ⚠ GOOGLE_CREDENTIALS_JSON not set")
-            return None
+        # Load existing links
+        links = {}
+        if os.path.exists(drive_links_file):
+            with open(drive_links_file, 'r') as f:
+                links = json.load(f)
         
-        creds_dict = json.loads(google_creds_json)
-        credentials = ServiceAccountCredentials.from_service_account_info(
-            creds_dict,
-            scopes=['https://www.googleapis.com/auth/drive.file']
-        )
+        # Update with sheet ID
+        if country_code not in links:
+            links[country_code] = {}
+        links[country_code]['data_sheet_id'] = spreadsheet.id
         
-        return build('drive', 'v3', credentials=credentials)
+        # Save back
+        os.makedirs('plots', exist_ok=True)
+        with open(drive_links_file, 'w') as f:
+            json.dump(links, f, indent=2)
+        
+        print(f"  ✓ Saved sheet ID to drive_links.json")
     except Exception as e:
-        print(f"  ⚠ Failed to initialize Drive service: {e}")
-        return None
+        print(f"  ⚠ Could not save to JSON: {e}")
+    
+    return spreadsheet
 
 
 def format_change_percentage(value):
@@ -199,7 +146,11 @@ def load_data_from_google_sheets():
         credentials = Credentials.from_service_account_info(creds_dict, scopes=scope)
         gc = gspread.authorize(credentials)
 
-        spreadsheet = gc.open('EU Electricity Production Data')
+        # Initialize drive service for sheet organization
+        drive_service = initialize_drive_service()
+        
+        # Get or create country sheet (EU by default, parameterizable for future)
+        spreadsheet = get_or_create_country_sheet(gc, drive_service, country_code='EU')
         print(f"✓ Connected to Google Sheets: {spreadsheet.url}")
 
         worksheets = spreadsheet.worksheets()
@@ -266,10 +217,6 @@ def create_all_charts(all_data):
     print("\n" + "=" * 60)
     print("CREATING MOBILE-OPTIMIZED CHARTS")
     print("=" * 60)
-    
-    # Initialize Google Drive service for uploading plots
-    drive_service = initialize_drive_service()
-    plot_links = {'EU': {'Monthly': {}, 'Trends': {}}}
 
     first_source = list(all_data.keys())[0]
     years_available = sorted(all_data[first_source]['year_data'].keys())
@@ -380,36 +327,22 @@ def create_all_charts(all_data):
                 ax1.plot(months, percentages, marker='o', color=color, 
                         linewidth=6, markersize=13, label=str(year))
 
-        # Title and labels - match intraday format
-        # Clean up display name for aggregates
-        display_name = source_name
-        if source_name == 'All Renewables':
-            display_name = 'Renewable'
-        elif source_name == 'All Non-Renewables':
-            display_name = 'Non-Renewable'
-        
-        fig1.suptitle(f'{display_name} Electricity Generation (EU)', fontsize=34, fontweight='bold', x=0.55, y=0.96, ha='center')
-        ax1.set_title('Fraction of Total Generation', fontsize=26, fontweight='normal', pad=10, ha='center')
+        # Title with bold source name ONLY (no confusing subtitle)
+        fig1.suptitle(source_name, fontsize=34, fontweight='bold', x=0.5, y=0.98, ha="center")
+        ax1.set_title('Percentage of EU Production', fontsize=26, fontweight='normal', pad=15)
         ax1.set_xlabel('Month', fontsize=28, fontweight='bold', labelpad=15)
-        ax1.set_ylabel('Electricity Generation (%)', fontsize=28, fontweight='bold', labelpad=15)
+        ax1.set_ylabel('Electricity production (%)', fontsize=28, fontweight='bold', labelpad=15)
         
         # NO RESTRICTION - let it scale to data
-        ax1.set_ylim(0, max_pct_value * 1.2 if max_pct_value > 0 else 10)  # 20% margin
+        ax1.set_ylim(0, max_pct_value * 1.1 if max_pct_value > 0 else 10)
             
         ax1.tick_params(axis='both', labelsize=22)
         ax1.grid(True, alpha=0.3, linewidth=1.5)
 
-        ax1.legend(loc='upper center', bbox_to_anchor=(0.5, -0.20), 
+        ax1.legend(loc='upper center', bbox_to_anchor=(0.5, -0.15), 
                   ncol=5, fontsize=20, frameon=False)
 
-        # Add timestamp
-        timestamp = datetime.now().strftime('%Y-%m-%d %H:%M UTC')
-        fig1.text(0.93, 0.04, f"Generated: {timestamp}",
-                  ha='right', va='bottom',
-                  fontsize=11, color='#666',
-                  style='italic')
-
-        plt.tight_layout(rect=[0, 0, 1, 0.96])
+        plt.tight_layout()
 
         percentage_filename = f'plots/eu_monthly_{source_name.lower().replace(" ", "_")}_percentage_10years.png'
         plt.savefig(percentage_filename, dpi=150, bbox_inches='tight')
@@ -444,35 +377,22 @@ def create_all_charts(all_data):
             ax2.plot(months, values_twh, marker='o', color=color,
                     linewidth=6, markersize=13, label=str(year))
 
-        # Title and labels - match intraday format
-        # Clean up display name for aggregates
-        display_name = source_name
-        if source_name == 'All Renewables':
-            display_name = 'Renewable'
-        elif source_name == 'All Non-Renewables':
-            display_name = 'Non-Renewable'
-        
-        fig2.suptitle(f'{display_name} Electricity Generation (EU)', fontsize=34, fontweight='bold', x=0.55, y=0.96, ha='center')
-        ax2.set_title('Absolute Generation', fontsize=26, fontweight='normal', pad=10, ha='center')
+        # Title with bold source name ONLY (no confusing subtitle)
+        fig2.suptitle(source_name, fontsize=34, fontweight='bold', x=0.5, y=0.98, ha="center")
+        ax2.set_title('Absolute Production', fontsize=26, fontweight='normal', pad=15)
         ax2.set_xlabel('Month', fontsize=28, fontweight='bold', labelpad=15)
-        ax2.set_ylabel('Electricity Generation (TWh)', fontsize=28, fontweight='bold', labelpad=15)
+        ax2.set_ylabel('Electricity production (TWh)', fontsize=28, fontweight='bold', labelpad=15)
         
         # NO RESTRICTION - let it scale to data
-        ax2.set_ylim(0, max_abs_value * 1.2 if max_abs_value > 0 else 10)  # 20% margin
+        ax2.set_ylim(0, max_abs_value * 1.1 if max_abs_value > 0 else 10)
             
         ax2.tick_params(axis='both', labelsize=22)
         ax2.grid(True, alpha=0.3, linewidth=1.5)
 
-        ax2.legend(loc='upper center', bbox_to_anchor=(0.5, -0.20),
+        ax2.legend(loc='upper center', bbox_to_anchor=(0.5, -0.15),
                   ncol=5, fontsize=20, frameon=False)
 
-        # Add timestamp (reuse from percentage plot)
-        fig2.text(0.93, 0.04, f"Generated: {timestamp}",
-                  ha='right', va='bottom',
-                  fontsize=11, color='#666',
-                  style='italic')
-
-        plt.tight_layout(rect=[0, 0, 1, 0.96])
+        plt.tight_layout()
 
         absolute_filename = f'plots/eu_monthly_{source_name.lower().replace(" ", "_")}_absolute_10years.png'
         plt.savefig(absolute_filename, dpi=150, bbox_inches='tight')
@@ -524,8 +444,8 @@ def create_all_charts(all_data):
                                 percentage = (source_val / total_val) * 100
                                 max_pct_all_periods = max(max_pct_all_periods, percentage)
 
-        max_abs_all_periods *= 1.2  # 20% margin
-        max_pct_all_periods *= 1.2  # 20% margin
+        max_abs_all_periods *= 1.1
+        max_pct_all_periods *= 1.1
 
         for period in periods:
             print(f"\nCreating Monthly Mean chart for {period['name']}...")
@@ -580,124 +500,60 @@ def create_all_charts(all_data):
                     else:
                         monthly_means_pct[source_name].append(0)
 
-            # Generate timestamp once for both plots
-            timestamp = datetime.now().strftime('%Y-%m-%d %H:%M UTC')
-            
-            # PERCENTAGE PLOT
-            fig1, ax1 = plt.subplots(figsize=(12, 10))
+            fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(12, 20))
+            # Increase vertical spacing between subplots for better readability
+            fig.subplots_adjust(hspace=1.0)
 
-            # Plot sources and track handles for legend reordering
-            from matplotlib.lines import Line2D
-            line_handles = {}
-            
             for source_name in available_sources:
                 color = ENTSOE_COLORS.get(source_name, 'black')
-                line, = ax1.plot(months, monthly_means_pct[source_name], marker='o', color=color,
+
+                # ax1 = PERCENTAGE (top)
+                ax1.plot(months, monthly_means_pct[source_name], marker='o', color=color,
                          linewidth=6, markersize=13, label=source_name)
-                line_handles[source_name] = line
+                
+                # ax2 = ABSOLUTE (bottom)
+                values_twh = [val / 1000 for val in monthly_means_abs[source_name]]
+                ax2.plot(months, values_twh, marker='o', color=color,
+                         linewidth=6, markersize=13, label=source_name)
 
-            # Title and labels - clean format
-            fig1.suptitle('Electricity Generation (EU)', 
-                         fontsize=34, fontweight='bold', x=0.55, y=0.96, ha='center')
-            ax1.set_title(f'Fraction of Total Generation ({period["name"]})', fontsize=26, fontweight='normal', pad=10, ha='center')
+            # Bold main title above top subplot
+            fig.text(0.5, 0.98, f'All Electricity Sources: {period["name"]}', 
+                    ha='center', fontsize=34, fontweight='bold')
+            
+            # Subtitle for top plot
+            ax1.set_title('Percentage of EU Production', fontsize=26, fontweight='normal', pad=60)
             ax1.set_xlabel('Month', fontsize=28, fontweight='bold', labelpad=15)
-            ax1.set_ylabel('Electricity Generation (%)', fontsize=28, fontweight='bold', labelpad=15)
+            ax1.set_ylabel('Electricity production (%)', fontsize=28, fontweight='bold', labelpad=15)
             ax1.set_ylim(0, max_pct_all_periods)
-            ax1.tick_params(axis='both', labelsize=22, length=8, pad=8)
-            ax1.grid(True, alpha=0.3, linewidth=1.5)
+            ax1.tick_params(axis='both', labelsize=22)
+            ax1.grid(True, linestyle='--', alpha=0.7)
 
-            # Create legend with spacers for centered row 3 (renewables left, non-renewables right)
-            spacer = Line2D([0], [0], color='none', label=' ')
-            # ncol=4 fills by COLUMN, so order: col1, col2, col3, col4
-            legend_order = [
-                'Wind', 'Solar', '_SPACER_',              # Column 1: renewables
-                'Hydro', 'Biomass', 'Geothermal',         # Column 2: renewables
-                'Nuclear', 'Coal', 'Oil',                 # Column 3: non-renewables
-                'Gas', 'Waste', '_SPACER_'                # Column 4: non-renewables
-            ]
+            # Bold main title above bottom subplot  
+            fig.text(0.5, 0.44, f'All Electricity Sources: {period["name"]}', 
+                    ha='center', fontsize=34, fontweight='bold')
             
-            legend_handles = []
-            legend_labels = []
-            for item in legend_order:
-                if item == '_SPACER_':
-                    legend_handles.append(spacer)
-                    legend_labels.append(' ')
-                elif item in line_handles:
-                    legend_handles.append(line_handles[item])
-                    legend_labels.append(item)
-            
-            ax1.legend(legend_handles, legend_labels,
-                       loc='upper center', bbox_to_anchor=(0.45, -0.25), ncol=4,
+            # Subtitle for bottom plot
+            ax2.set_title('Absolute Production', fontsize=26, fontweight='normal', pad=60)
+            ax2.set_xlabel('Month', fontsize=28, fontweight='bold', labelpad=15)
+            ax2.set_ylabel('Electricity production (TWh)', fontsize=28, fontweight='bold', labelpad=15)
+            ax2.set_ylim(0, max_abs_all_periods)
+            ax2.tick_params(axis='both', labelsize=22)
+            ax2.grid(True, linestyle='--', alpha=0.7)
+
+            # Double legend - one per subplot, positioned lower for more space
+            ax1.legend(loc='upper center', bbox_to_anchor=(0.5, -0.15), ncol=5,
+                       fontsize=20, frameon=False)
+            ax2.legend(loc='upper center', bbox_to_anchor=(0.5, -0.15), ncol=5,
                        fontsize=20, frameon=False)
 
-            # Add timestamp
-            fig1.text(0.93, 0.04, f"Generated: {timestamp}",
-                     ha='right', va='bottom', fontsize=11, color='#666', style='italic')
+            # No main suptitle needed since we repeat title on each subplot
 
-            plt.tight_layout(rect=[0, 0, 1, 0.96])
+            plt.tight_layout(rect=[0, 0.02, 1, 0.985])
 
             period_name_clean = period['name'].replace('-', '_')
-            filename_pct = f'plots/eu_monthly_energy_sources_mean_{period_name_clean}_percentage.png'
-            plt.savefig(filename_pct, dpi=150, bbox_inches='tight')
-            print(f"  ✓ Saved percentage: {filename_pct}")
-            plt.close()
-
-            # ABSOLUTE PLOT
-            fig2, ax2 = plt.subplots(figsize=(12, 10))
-
-            # Plot sources and track handles for legend reordering
-            line_handles = {}
-            
-            for source_name in available_sources:
-                color = ENTSOE_COLORS.get(source_name, 'black')
-                values_twh = [val / 1000 for val in monthly_means_abs[source_name]]
-                line, = ax2.plot(months, values_twh, marker='o', color=color,
-                         linewidth=6, markersize=13, label=source_name)
-                line_handles[source_name] = line
-
-            # Title and labels - clean format
-            fig2.suptitle('Electricity Generation (EU)', 
-                         fontsize=34, fontweight='bold', x=0.55, y=0.96, ha='center')
-            ax2.set_title(f'Absolute Generation ({period["name"]})', fontsize=26, fontweight='normal', pad=10, ha='center')
-            ax2.set_xlabel('Month', fontsize=28, fontweight='bold', labelpad=15)
-            ax2.set_ylabel('Electricity Generation (TWh)', fontsize=28, fontweight='bold', labelpad=15)
-            ax2.set_ylim(0, max_abs_all_periods)
-            ax2.tick_params(axis='both', labelsize=22, length=8, pad=8)
-            ax2.grid(True, alpha=0.3, linewidth=1.5)
-
-            # Create legend with spacers for centered row 3 (renewables left, non-renewables right)
-            spacer = Line2D([0], [0], color='none', label=' ')
-            # ncol=4 fills by COLUMN, so order: col1, col2, col3, col4
-            legend_order = [
-                'Wind', 'Solar', '_SPACER_',              # Column 1: renewables
-                'Hydro', 'Biomass', 'Geothermal',         # Column 2: renewables
-                'Nuclear', 'Coal', 'Oil',                 # Column 3: non-renewables
-                'Gas', 'Waste', '_SPACER_'                # Column 4: non-renewables
-            ]
-            
-            legend_handles = []
-            legend_labels = []
-            for item in legend_order:
-                if item == '_SPACER_':
-                    legend_handles.append(spacer)
-                    legend_labels.append(' ')
-                elif item in line_handles:
-                    legend_handles.append(line_handles[item])
-                    legend_labels.append(item)
-            
-            ax2.legend(legend_handles, legend_labels,
-                       loc='upper center', bbox_to_anchor=(0.45, -0.25), ncol=4,
-                       fontsize=20, frameon=False)
-
-            # Add timestamp (reuse same timestamp)
-            fig2.text(0.93, 0.04, f"Generated: {timestamp}",
-                     ha='right', va='bottom', fontsize=11, color='#666', style='italic')
-
-            plt.tight_layout(rect=[0, 0, 1, 0.96])
-
-            filename_abs = f'plots/eu_monthly_energy_sources_mean_{period_name_clean}_absolute.png'
-            plt.savefig(filename_abs, dpi=150, bbox_inches='tight')
-            print(f"  ✓ Saved absolute: {filename_abs}")
+            filename = f'plots/eu_monthly_energy_sources_mean_{period_name_clean}_combined.png'
+            plt.savefig(filename, dpi=150, bbox_inches='tight')
+            print(f"  Chart saved as: {filename}")
             plt.close()
 
     # Renewable vs Non-Renewable by Period
@@ -726,7 +582,7 @@ def create_all_charts(all_data):
                             category_val = category_monthly.get(month, 0)
                             max_abs_renewable_periods = max(max_abs_renewable_periods, category_val / 1000)
 
-        max_abs_renewable_periods *= 1.2  # 20% margin
+        max_abs_renewable_periods *= 1.1
 
         for period in periods:
             print(f"\nCreating Renewable vs Non-Renewable chart for {period['name']}...")
@@ -781,73 +637,60 @@ def create_all_charts(all_data):
                     else:
                         monthly_means_pct[category_name].append(0)
 
-            # Generate timestamp once for both plots
-            timestamp = datetime.now().strftime('%Y-%m-%d %H:%M UTC')
-            
-            # PERCENTAGE PLOT
-            fig1, ax1 = plt.subplots(figsize=(12, 10))
+            fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(12, 20))
+            # Increase vertical spacing between subplots for better readability
+            fig.subplots_adjust(hspace=1.0)
 
             for category_name in ['All Renewables', 'All Non-Renewables']:
                 color = ENTSOE_COLORS[category_name]
+
+                # ax1 = PERCENTAGE (top)
                 ax1.plot(month_names_abbr, monthly_means_pct[category_name], marker='o', color=color,
                          linewidth=6, markersize=13, label=category_name)
-
-            # Title and labels - clean format
-            fig1.suptitle('Electricity Generation (EU)', 
-                         fontsize=34, fontweight='bold', x=0.55, y=0.96, ha='center')
-            ax1.set_title(f'Fraction of Total Generation ({period["name"]})', fontsize=26, fontweight='normal', pad=10, ha='center')
-            ax1.set_xlabel('Month', fontsize=28, fontweight='bold', labelpad=15)
-            ax1.set_ylabel('Electricity Generation (%)', fontsize=28, fontweight='bold', labelpad=15)
-            ax1.set_ylim(0, 100)
-            ax1.tick_params(axis='both', labelsize=22, length=8, pad=8)
-            ax1.grid(True, alpha=0.3, linewidth=1.5)
-
-            ax1.legend(loc='upper center', bbox_to_anchor=(0.45, -0.20), ncol=2,
-                       fontsize=22, frameon=False)
-
-            # Add timestamp
-            fig1.text(0.93, 0.04, f"Generated: {timestamp}",
-                     ha='right', va='bottom', fontsize=11, color='#666', style='italic')
-
-            plt.tight_layout(rect=[0, 0, 1, 0.96])
-
-            period_name_clean = period['name'].replace('-', '_')
-            filename_pct = f'plots/eu_monthly_renewable_vs_nonrenewable_mean_{period_name_clean}_percentage.png'
-            plt.savefig(filename_pct, dpi=150, bbox_inches='tight')
-            print(f"  ✓ Saved percentage: {filename_pct}")
-            plt.close()
-
-            # ABSOLUTE PLOT
-            fig2, ax2 = plt.subplots(figsize=(12, 10))
-
-            for category_name in ['All Renewables', 'All Non-Renewables']:
-                color = ENTSOE_COLORS[category_name]
+                
+                # ax2 = ABSOLUTE (bottom)
                 values_twh = [val / 1000 for val in monthly_means_abs[category_name]]
                 ax2.plot(month_names_abbr, values_twh, marker='o', color=color,
                          linewidth=6, markersize=13, label=category_name)
 
-            # Title and labels - clean format
-            fig2.suptitle('Electricity Generation (EU)', 
-                         fontsize=34, fontweight='bold', x=0.55, y=0.96, ha='center')
-            ax2.set_title(f'Absolute Generation ({period["name"]})', fontsize=26, fontweight='normal', pad=10, ha='center')
-            ax2.set_xlabel('Month', fontsize=28, fontweight='bold', labelpad=15)
-            ax2.set_ylabel('Electricity Generation (TWh)', fontsize=28, fontweight='bold', labelpad=15)
-            ax2.set_ylim(0, max_abs_renewable_periods)
-            ax2.tick_params(axis='both', labelsize=22, length=8, pad=8)
-            ax2.grid(True, alpha=0.3, linewidth=1.5)
+            # Bold main title above top subplot
+            fig.text(0.5, 0.98, f'Renewables vs Non-Renewables: {period["name"]}', 
+                    ha='center', fontsize=34, fontweight='bold')
+            
+            # Subtitle for top plot
+            ax1.set_title('Percentage of EU Production', fontsize=26, fontweight='normal', pad=60)
+            ax1.set_xlabel('Month', fontsize=28, fontweight='bold', labelpad=15)
+            ax1.set_ylabel('Electricity production (%)', fontsize=28, fontweight='bold', labelpad=15)
+            ax1.set_ylim(0, 100)
+            ax1.tick_params(axis='both', labelsize=22)
+            ax1.grid(True, linestyle='--', alpha=0.7)
 
-            ax2.legend(loc='upper center', bbox_to_anchor=(0.45, -0.20), ncol=2,
+            # Bold main title above bottom subplot
+            fig.text(0.5, 0.44, f'Renewables vs Non-Renewables: {period["name"]}', 
+                    ha='center', fontsize=34, fontweight='bold')
+            
+            # Subtitle for bottom plot
+            ax2.set_title('Absolute Production', fontsize=26, fontweight='normal', pad=60)
+            ax2.set_xlabel('Month', fontsize=28, fontweight='bold', labelpad=15)
+            ax2.set_ylabel('Electricity production (TWh)', fontsize=28, fontweight='bold', labelpad=15)
+            ax2.set_ylim(0, max_abs_renewable_periods)
+            ax2.tick_params(axis='both', labelsize=22)
+            ax2.grid(True, linestyle='--', alpha=0.7)
+
+            # Double legend - one per subplot, positioned lower for more space
+            ax1.legend(loc='upper center', bbox_to_anchor=(0.5, -0.15), ncol=2,
+                       fontsize=22, frameon=False)
+            ax2.legend(loc='upper center', bbox_to_anchor=(0.5, -0.15), ncol=2,
                        fontsize=22, frameon=False)
 
-            # Add timestamp (reuse same timestamp)
-            fig2.text(0.93, 0.04, f"Generated: {timestamp}",
-                     ha='right', va='bottom', fontsize=11, color='#666', style='italic')
+            # No main suptitle needed since we use fig.text
 
-            plt.tight_layout(rect=[0, 0, 1, 0.96])
+            plt.tight_layout(rect=[0, 0.02, 1, 0.985])
 
-            filename_abs = f'plots/eu_monthly_renewable_vs_nonrenewable_mean_{period_name_clean}_absolute.png'
-            plt.savefig(filename_abs, dpi=150, bbox_inches='tight')
-            print(f"  ✓ Saved absolute: {filename_abs}")
+            period_name_clean = period['name'].replace('-', '_')
+            filename = f'plots/eu_monthly_renewable_vs_nonrenewable_mean_{period_name_clean}_combined.png'
+            plt.savefig(filename, dpi=150, bbox_inches='tight')
+            print(f"  Chart saved as: {filename}")
             plt.close()
 
     # Annual Trend Charts
@@ -902,175 +745,25 @@ def create_all_charts(all_data):
                     percentage = (source_value / total_value) * 100
                     max_annual_pct = max(max_annual_pct, percentage)
 
-    max_annual_twh *= 1.2  # 20% margin
-    max_annual_pct *= 1.2  # 20% margin
+    max_annual_twh *= 1.1
+    max_annual_pct *= 1.1
 
-    # Chart: All Sources Annual Trends (combines renewables + non-renewables)
-    all_sources = available_renewables + available_non_renewables
-    if all_sources and 'Total Generation' in annual_totals:
-        print("\nCreating Annual Trends: All Sources...")
+    # Chart: Renewable Trends
+    if available_renewables and 'Total Generation' in annual_totals:
+        print("\nCreating Annual Renewable Trends...")
 
-        # Generate timestamp once for both plots
-        timestamp = datetime.now().strftime('%Y-%m-%d %H:%M UTC')
-        
-        # PERCENTAGE PLOT
-        fig1, ax1 = plt.subplots(figsize=(12, 10))
+        fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(12, 20))
+        # Add more vertical spacing between subplots
+        fig.subplots_adjust(hspace=1.0)
 
         lines_plotted = 0
-        line_handles = {}
-        
-        for source_name in all_sources:
+        for source_name in available_renewables:
             if source_name in annual_totals and len(annual_totals[source_name]) > 0:
                 years_list = sorted(annual_totals[source_name].keys())
+
                 color = ENTSOE_COLORS.get(source_name, 'black')
                 
-                source_years = set(annual_totals[source_name].keys())
-                total_years = set(annual_totals['Total Generation'].keys())
-                overlapping_years = source_years & total_years & set(years_list)
-
-                if overlapping_years:
-                    pct_years = sorted(overlapping_years)
-                    percentages = []
-                    for year in pct_years:
-                        source_value = annual_totals[source_name][year]
-                        total_value = annual_totals['Total Generation'][year]
-                        if total_value > 0:
-                            percentage = (source_value / total_value) * 100
-                            percentages.append(percentage)
-                        else:
-                            percentages.append(0)
-
-                    line, = ax1.plot(pct_years, percentages, marker='o', color=color,
-                             linewidth=6, markersize=13, label=source_name)
-                    line_handles[source_name] = line
-                    lines_plotted += 1
-
-        if lines_plotted > 0:
-            # Title and labels - clean format
-            fig1.suptitle('Electricity Generation (EU)', 
-                         fontsize=34, fontweight='bold', x=0.55, y=0.96, ha='center')
-            ax1.set_title('Fraction of Total Generation', fontsize=26, fontweight='normal', pad=10, ha='center')
-            ax1.set_xlabel('Year', fontsize=28, fontweight='bold', labelpad=15)
-            ax1.set_ylabel('Electricity Generation (%)', fontsize=28, fontweight='bold', labelpad=15)
-            ax1.set_ylim(0, max_annual_pct)
-            ax1.tick_params(axis='both', labelsize=22, length=8, pad=8)
-            ax1.grid(True, alpha=0.3, linewidth=1.5)
-
-            # Create legend with spacers for centered row 3 (renewables left, non-renewables right)
-            from matplotlib.lines import Line2D
-            spacer = Line2D([0], [0], color='none', label=' ')
-            # ncol=4 fills by COLUMN, so order: col1, col2, col3, col4
-            legend_order = [
-                'Wind', 'Solar', '_SPACER_',              # Column 1: renewables
-                'Hydro', 'Biomass', 'Geothermal',         # Column 2: renewables
-                'Nuclear', 'Coal', 'Oil',                 # Column 3: non-renewables
-                'Gas', 'Waste', '_SPACER_'                # Column 4: non-renewables
-            ]
-            
-            legend_handles = []
-            legend_labels = []
-            for item in legend_order:
-                if item == '_SPACER_':
-                    legend_handles.append(spacer)
-                    legend_labels.append(' ')
-                elif item in line_handles:
-                    legend_handles.append(line_handles[item])
-                    legend_labels.append(item)
-            
-            ax1.legend(legend_handles, legend_labels,
-                       loc='upper center', bbox_to_anchor=(0.45, -0.25), ncol=4,
-                       fontsize=20, frameon=False)
-
-            # Add timestamp
-            fig1.text(0.93, 0.04, f"Generated: {timestamp}",
-                     ha='right', va='bottom', fontsize=11, color='#666', style='italic')
-
-            plt.tight_layout(rect=[0, 0, 1, 0.96])
-
-            filename_pct = 'plots/eu_annual_all_sources_percentage.png'
-            plt.savefig(filename_pct, dpi=150, bbox_inches='tight')
-            print(f"  ✓ Saved percentage: {filename_pct}")
-            plt.close()
-
-        # ABSOLUTE PLOT
-        fig2, ax2 = plt.subplots(figsize=(12, 10))
-
-        lines_plotted = 0
-        line_handles = {}
-        
-        for source_name in all_sources:
-            if source_name in annual_totals and len(annual_totals[source_name]) > 0:
-                years_list = sorted(annual_totals[source_name].keys())
-                color = ENTSOE_COLORS.get(source_name, 'black')
-                
-                values_twh = [annual_totals[source_name][year] / 1000 for year in years_list]
-                line, = ax2.plot(years_list, values_twh, marker='o', color=color,
-                         linewidth=6, markersize=13, label=source_name)
-                line_handles[source_name] = line
-                lines_plotted += 1
-
-        if lines_plotted > 0:
-            # Title and labels - clean format
-            fig2.suptitle('Electricity Generation (EU)', 
-                         fontsize=34, fontweight='bold', x=0.55, y=0.96, ha='center')
-            ax2.set_title('Absolute Generation', fontsize=26, fontweight='normal', pad=10, ha='center')
-            ax2.set_xlabel('Year', fontsize=28, fontweight='bold', labelpad=15)
-            ax2.set_ylabel('Electricity Generation (TWh)', fontsize=28, fontweight='bold', labelpad=15)
-            ax2.set_ylim(0, max_annual_twh)
-            ax2.tick_params(axis='both', labelsize=22, length=8, pad=8)
-            ax2.grid(True, alpha=0.3, linewidth=1.5)
-
-            # Create legend with spacers for centered row 3 (renewables left, non-renewables right)
-            spacer = Line2D([0], [0], color='none', label=' ')
-            # ncol=4 fills by COLUMN, so order: col1, col2, col3, col4
-            legend_order = [
-                'Wind', 'Solar', '_SPACER_',              # Column 1: renewables
-                'Hydro', 'Biomass', 'Geothermal',         # Column 2: renewables
-                'Nuclear', 'Coal', 'Oil',                 # Column 3: non-renewables
-                'Gas', 'Waste', '_SPACER_'                # Column 4: non-renewables
-            ]
-            
-            legend_handles = []
-            legend_labels = []
-            for item in legend_order:
-                if item == '_SPACER_':
-                    legend_handles.append(spacer)
-                    legend_labels.append(' ')
-                elif item in line_handles:
-                    legend_handles.append(line_handles[item])
-                    legend_labels.append(item)
-            
-            ax2.legend(legend_handles, legend_labels,
-                       loc='upper center', bbox_to_anchor=(0.45, -0.25), ncol=4,
-                       fontsize=20, frameon=False)
-
-            # Add timestamp (reuse same timestamp)
-            fig2.text(0.93, 0.04, f"Generated: {timestamp}",
-                     ha='right', va='bottom', fontsize=11, color='#666', style='italic')
-
-            plt.tight_layout(rect=[0, 0, 1, 0.96])
-
-            filename_abs = 'plots/eu_annual_all_sources_absolute.png'
-            plt.savefig(filename_abs, dpi=150, bbox_inches='tight')
-            print(f"  ✓ Saved absolute: {filename_abs}")
-            plt.close()
-
-    # Chart: Aggregates Annual Trends (Renewables vs Non-Renewables)
-    if available_totals and 'Total Generation' in annual_totals:
-        print("\nCreating Annual Trends: Aggregates...")
-
-        # Generate timestamp once for both plots
-        timestamp = datetime.now().strftime('%Y-%m-%d %H:%M UTC')
-        
-        # PERCENTAGE PLOT
-        fig1, ax1 = plt.subplots(figsize=(12, 10))
-
-        lines_plotted = 0
-        for source_name in available_totals:
-            if source_name in annual_totals and len(annual_totals[source_name]) > 0:
-                years_list = sorted(annual_totals[source_name].keys())
-                color = ENTSOE_COLORS[source_name]
-                
+                # ax1 = PERCENTAGE (top)
                 source_years = set(annual_totals[source_name].keys())
                 total_years = set(annual_totals['Total Generation'].keys())
                 overlapping_years = source_years & total_years & set(years_list)
@@ -1089,70 +782,216 @@ def create_all_charts(all_data):
 
                     ax1.plot(pct_years, percentages, marker='o', color=color,
                              linewidth=6, markersize=13, label=source_name)
-                    lines_plotted += 1
+                
+                # ax2 = ABSOLUTE (bottom)
+                values_twh = [annual_totals[source_name][year] / 1000 for year in years_list]
+                ax2.plot(years_list, values_twh, marker='o', color=color,
+                         linewidth=6, markersize=13, label=source_name)
+
+                lines_plotted += 1
 
         if lines_plotted > 0:
-            # Title and labels - clean format
-            fig1.suptitle('Electricity Generation (EU)', 
-                         fontsize=34, fontweight='bold', x=0.55, y=0.96, ha='center')
-            ax1.set_title('Fraction of Total Generation', fontsize=26, fontweight='normal', pad=10, ha='center')
+            # Bold main title above top subplot
+            fig.text(0.5, 0.98, 'Annual Renewable Trends', 
+                    ha='center', fontsize=34, fontweight='bold')
+            
+            # Subtitle for top plot
+            ax1.set_title('Percentage of EU Production', fontsize=26, fontweight='normal', pad=60)
             ax1.set_xlabel('Year', fontsize=28, fontweight='bold', labelpad=15)
-            ax1.set_ylabel('Electricity Generation (%)', fontsize=28, fontweight='bold', labelpad=15)
-            ax1.set_ylim(0, 100)
-            ax1.tick_params(axis='both', labelsize=22, length=8, pad=8)
-            ax1.grid(True, alpha=0.3, linewidth=1.5)
+            ax1.set_ylabel('Electricity production (%)', fontsize=28, fontweight='bold', labelpad=15)
+            ax1.set_ylim(0, max_annual_pct)
+            ax1.tick_params(axis='both', labelsize=22)
+            ax1.grid(True, linestyle='--', alpha=0.7)
 
-            ax1.legend(loc='upper center', bbox_to_anchor=(0.45, -0.20), ncol=2,
-                       fontsize=22, frameon=False)
+            # Bold main title above bottom subplot
+            fig.text(0.5, 0.44, 'Annual Renewable Trends', 
+                    ha='center', fontsize=34, fontweight='bold')
+            
+            # Subtitle for bottom plot
+            ax2.set_title('Absolute Production', fontsize=26, fontweight='normal', pad=60)
+            ax2.set_xlabel('Year', fontsize=28, fontweight='bold', labelpad=15)
+            ax2.set_ylabel('Electricity production (TWh)', fontsize=28, fontweight='bold', labelpad=15)
+            ax2.set_ylim(0, max_annual_twh)
+            ax2.tick_params(axis='both', labelsize=22)
+            ax2.grid(True, linestyle='--', alpha=0.7)
 
-            # Add timestamp
-            fig1.text(0.93, 0.04, f"Generated: {timestamp}",
-                     ha='right', va='bottom', fontsize=11, color='#666', style='italic')
+            # Double legend - one per subplot, positioned lower for more space
+            ax1.legend(loc='upper center', bbox_to_anchor=(0.5, -0.15), ncol=len(available_renewables),
+                       fontsize=20, frameon=False)
+            ax2.legend(loc='upper center', bbox_to_anchor=(0.5, -0.15), ncol=len(available_renewables),
+                       fontsize=20, frameon=False)
 
-            plt.tight_layout(rect=[0, 0, 1, 0.96])
+            # No main suptitle needed since we repeat title on each subplot
 
-            filename_pct = 'plots/eu_annual_renewable_vs_nonrenewable_percentage.png'
-            plt.savefig(filename_pct, dpi=150, bbox_inches='tight')
-            print(f"  ✓ Saved percentage: {filename_pct}")
+            plt.tight_layout(rect=[0, 0.02, 1, 0.985])
+
+            filename = 'plots/eu_annual_renewable_trends_combined.png'
+            plt.savefig(filename, dpi=150, bbox_inches='tight')
+            print(f"  Chart saved as: {filename}")
             plt.close()
 
-        # ABSOLUTE PLOT
-        fig2, ax2 = plt.subplots(figsize=(12, 10))
+    # Chart: Non-Renewable Trends
+    if available_non_renewables and 'Total Generation' in annual_totals:
+        print("\nCreating Annual Non-Renewable Trends...")
+
+        fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(12, 20))
+        # Add more vertical spacing between subplots
+        fig.subplots_adjust(hspace=1.0)
+
+        lines_plotted = 0
+        for source_name in available_non_renewables:
+            if source_name in annual_totals and len(annual_totals[source_name]) > 0:
+                years_list = sorted(annual_totals[source_name].keys())
+
+                color = ENTSOE_COLORS.get(source_name, 'black')
+                
+                # ax1 = PERCENTAGE (top)
+                source_years = set(annual_totals[source_name].keys())
+                total_years = set(annual_totals['Total Generation'].keys())
+                overlapping_years = source_years & total_years & set(years_list)
+
+                if overlapping_years:
+                    pct_years = sorted(overlapping_years)
+                    percentages = []
+                    for year in pct_years:
+                        source_value = annual_totals[source_name][year]
+                        total_value = annual_totals['Total Generation'][year]
+                        if total_value > 0:
+                            percentage = (source_value / total_value) * 100
+                            percentages.append(percentage)
+                        else:
+                            percentages.append(0)
+
+                    ax1.plot(pct_years, percentages, marker='o', color=color,
+                             linewidth=6, markersize=13, label=source_name)
+                
+                # ax2 = ABSOLUTE (bottom)
+                values_twh = [annual_totals[source_name][year] / 1000 for year in years_list]
+                ax2.plot(years_list, values_twh, marker='o', color=color,
+                         linewidth=6, markersize=13, label=source_name)
+
+                lines_plotted += 1
+
+        if lines_plotted > 0:
+            # Bold main title above top subplot
+            fig.text(0.5, 0.98, 'Annual Non-Renewable Trends', 
+                    ha='center', fontsize=34, fontweight='bold')
+            
+            # Subtitle for top plot
+            ax1.set_title('Percentage of EU Production', fontsize=26, fontweight='normal', pad=60)
+            ax1.set_xlabel('Year', fontsize=28, fontweight='bold', labelpad=15)
+            ax1.set_ylabel('Electricity production (%)', fontsize=28, fontweight='bold', labelpad=15)
+            ax1.set_ylim(0, max_annual_pct)
+            ax1.tick_params(axis='both', labelsize=22)
+            ax1.grid(True, linestyle='--', alpha=0.7)
+
+            # Bold main title above bottom subplot
+            fig.text(0.5, 0.44, 'Annual Non-Renewable Trends', 
+                    ha='center', fontsize=34, fontweight='bold')
+            
+            # Subtitle for bottom plot
+            ax2.set_title('Absolute Production', fontsize=26, fontweight='normal', pad=60)
+            ax2.set_xlabel('Year', fontsize=28, fontweight='bold', labelpad=15)
+            ax2.set_ylabel('Electricity production (TWh)', fontsize=28, fontweight='bold', labelpad=15)
+            ax2.set_ylim(0, max_annual_twh)
+            ax2.tick_params(axis='both', labelsize=22)
+            ax2.grid(True, linestyle='--', alpha=0.7)
+
+            # Double legend - one per subplot, positioned lower for more space
+            ax1.legend(loc='upper center', bbox_to_anchor=(0.5, -0.15),
+                       ncol=len(available_non_renewables), fontsize=20, frameon=False)
+            ax2.legend(loc='upper center', bbox_to_anchor=(0.5, -0.15),
+                       ncol=len(available_non_renewables), fontsize=20, frameon=False)
+
+            # No main suptitle needed since we repeat title on each subplot
+
+            plt.tight_layout(rect=[0, 0.02, 1, 0.985])
+
+            filename = 'plots/eu_annual_non_renewable_trends_combined.png'
+            plt.savefig(filename, dpi=150, bbox_inches='tight')
+            print(f"  Chart saved as: {filename}")
+            plt.close()
+
+    # Chart: Renewables vs Non-Renewables Totals
+    if available_totals and 'Total Generation' in annual_totals:
+        print("\nCreating Annual Renewables vs Non-Renewables...")
+
+        fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(12, 20))
+        # Add more vertical spacing between subplots
+        fig.subplots_adjust(hspace=1.0)
 
         lines_plotted = 0
         for source_name in available_totals:
             if source_name in annual_totals and len(annual_totals[source_name]) > 0:
                 years_list = sorted(annual_totals[source_name].keys())
+
                 color = ENTSOE_COLORS[source_name]
                 
+                # ax1 = PERCENTAGE (top)
+                source_years = set(annual_totals[source_name].keys())
+                total_years = set(annual_totals['Total Generation'].keys())
+                overlapping_years = source_years & total_years & set(years_list)
+
+                if overlapping_years:
+                    pct_years = sorted(overlapping_years)
+                    percentages = []
+                    for year in pct_years:
+                        source_value = annual_totals[source_name][year]
+                        total_value = annual_totals['Total Generation'][year]
+                        if total_value > 0:
+                            percentage = (source_value / total_value) * 100
+                            percentages.append(percentage)
+                        else:
+                            percentages.append(0)
+
+                    ax1.plot(pct_years, percentages, marker='o', color=color,
+                             linewidth=6, markersize=13, label=source_name)
+                
+                # ax2 = ABSOLUTE (bottom)
                 values_twh = [annual_totals[source_name][year] / 1000 for year in years_list]
                 ax2.plot(years_list, values_twh, marker='o', color=color,
                          linewidth=6, markersize=13, label=source_name)
+
                 lines_plotted += 1
 
         if lines_plotted > 0:
-            # Title and labels - clean format
-            fig2.suptitle('Electricity Generation (EU)', 
-                         fontsize=34, fontweight='bold', x=0.55, y=0.96, ha='center')
-            ax2.set_title('Absolute Generation', fontsize=26, fontweight='normal', pad=10, ha='center')
-            ax2.set_xlabel('Year', fontsize=28, fontweight='bold', labelpad=15)
-            ax2.set_ylabel('Electricity Generation (TWh)', fontsize=28, fontweight='bold', labelpad=15)
-            ax2.set_ylim(bottom=0)
-            ax2.tick_params(axis='both', labelsize=22, length=8, pad=8)
-            ax2.grid(True, alpha=0.3, linewidth=1.5)
+            # Bold main title above top subplot
+            fig.text(0.5, 0.98, 'Renewables vs Non-Renewables', 
+                    ha='center', fontsize=34, fontweight='bold')
+            
+            # Subtitle for top plot
+            ax1.set_title('Percentage of EU Production', fontsize=26, fontweight='normal', pad=60)
+            ax1.set_xlabel('Year', fontsize=28, fontweight='bold', labelpad=15)
+            ax1.set_ylabel('Electricity production (%)', fontsize=28, fontweight='bold', labelpad=15)
+            ax1.set_ylim(0, 100)
+            ax1.tick_params(axis='both', labelsize=22)
+            ax1.grid(True, linestyle='--', alpha=0.7)
 
-            ax2.legend(loc='upper center', bbox_to_anchor=(0.45, -0.20), ncol=2,
+            # Bold main title above bottom subplot
+            fig.text(0.5, 0.44, 'Renewables vs Non-Renewables', 
+                    ha='center', fontsize=34, fontweight='bold')
+            
+            # Subtitle for bottom plot
+            ax2.set_title('Absolute Production', fontsize=26, fontweight='normal', pad=60)
+            ax2.set_xlabel('Year', fontsize=28, fontweight='bold', labelpad=15)
+            ax2.set_ylabel('Electricity production (TWh)', fontsize=28, fontweight='bold', labelpad=15)
+            ax2.set_ylim(bottom=0)
+            ax2.tick_params(axis='both', labelsize=22)
+            ax2.grid(True, linestyle='--', alpha=0.7)
+
+            # Double legend - one per subplot, positioned lower for more space
+            ax1.legend(loc='upper center', bbox_to_anchor=(0.5, -0.15), ncol=2,
+                       fontsize=22, frameon=False)
+            ax2.legend(loc='upper center', bbox_to_anchor=(0.5, -0.15), ncol=2,
                        fontsize=22, frameon=False)
 
-            # Add timestamp (reuse same timestamp)
-            fig2.text(0.93, 0.04, f"Generated: {timestamp}",
-                     ha='right', va='bottom', fontsize=11, color='#666', style='italic')
+            # No main suptitle needed since we repeat title on each subplot
 
-            plt.tight_layout(rect=[0, 0, 1, 0.96])
+            plt.tight_layout(rect=[0, 0.02, 1, 0.985])
 
-            filename_abs = 'plots/eu_annual_renewable_vs_nonrenewable_absolute.png'
-            plt.savefig(filename_abs, dpi=150, bbox_inches='tight')
-            print(f"  ✓ Saved absolute: {filename_abs}")
+            filename = 'plots/eu_annual_renewable_vs_non_renewable_combined.png'
+            plt.savefig(filename, dpi=150, bbox_inches='tight')
+            print(f"  Chart saved as: {filename}")
             plt.close()
 
     # Year-over-Year Change vs 2015 Baseline
@@ -1161,30 +1000,29 @@ def create_all_charts(all_data):
     print("=" * 60)
 
     if annual_totals:
+        print("\nCreating YoY change vs 2015 baseline chart...")
+
         baseline_year = 2015
+
         all_sources_for_yoy = available_renewables + available_non_renewables
         totals_for_yoy = ['All Renewables', 'All Non-Renewables']
-        
-        # Generate timestamp once for both plots
-        timestamp = datetime.now().strftime('%Y-%m-%d %H:%M UTC')
 
-        # PLOT 1: ALL SOURCES YoY
-        print("\nCreating YoY All Sources vs 2015...")
-        
-        fig1, ax1 = plt.subplots(figsize=(12, 10))
-        
+        fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(12, 20))
+        # Add more vertical spacing between subplots
+        fig.subplots_adjust(hspace=1.0)
+
         all_yoy_values = []
+
+        # Top plot: All individual sources
         lines_plotted = 0
-        line_handles = {}
-        
         for source_name in all_sources_for_yoy:
             if source_name in annual_totals and baseline_year in annual_totals[source_name]:
                 baseline_value = annual_totals[source_name][baseline_year]
 
                 if baseline_value > 0:
                     years_list = sorted(annual_totals[source_name].keys())
+
                     yoy_changes = []
-                    
                     for year in years_list:
                         if year >= baseline_year:
                             current_value = annual_totals[source_name][year]
@@ -1196,13 +1034,34 @@ def create_all_charts(all_data):
 
                     if len(years_to_plot) > 0:
                         color = ENTSOE_COLORS.get(source_name, 'black')
-                        line, = ax1.plot(years_to_plot, yoy_changes, marker='o', color=color,
+                        ax1.plot(years_to_plot, yoy_changes, marker='o', color=color,
                                  linewidth=6, markersize=13, label=source_name)
-                        line_handles[source_name] = line
                         lines_plotted += 1
 
+        # Bottom plot: Just totals
+        for category_name in totals_for_yoy:
+            if category_name in annual_totals and baseline_year in annual_totals[category_name]:
+                baseline_value = annual_totals[category_name][baseline_year]
+
+                if baseline_value > 0:
+                    years_list = sorted(annual_totals[category_name].keys())
+
+                    yoy_changes = []
+                    for year in years_list:
+                        if year >= baseline_year:
+                            current_value = annual_totals[category_name][year]
+                            pct_change = ((current_value - baseline_value) / baseline_value) * 100
+                            yoy_changes.append(pct_change)
+                            all_yoy_values.append(pct_change)
+
+                    years_to_plot = [year for year in years_list if year >= baseline_year]
+
+                    if len(years_to_plot) > 0:
+                        color = ENTSOE_COLORS[category_name]
+                        ax2.plot(years_to_plot, yoy_changes, marker='o', color=color,
+                                 linewidth=6, markersize=13, label=category_name)
+
         if lines_plotted > 0:
-            # Calculate y-axis limits
             if all_yoy_values:
                 y_min = min(all_yoy_values)
                 y_max = max(all_yoy_values)
@@ -1213,334 +1072,46 @@ def create_all_charts(all_data):
                 y_min_limit = -50
                 y_max_limit = 100
 
-            # Title and labels - clean format
-            fig1.suptitle('Electricity Generation (EU)', 
-                         fontsize=34, fontweight='bold', x=0.55, y=0.96, ha='center')
-            ax1.set_title('Year-over-Year Change since 2015', fontsize=26, fontweight='normal', pad=10, ha='center')
+            # Bold main title above top subplot
+            fig.text(0.5, 0.98, 'Year-over-Year Change vs 2015', 
+                    ha='center', fontsize=34, fontweight='bold')
+            
+            # Subtitle for top plot
+            ax1.set_title('All Electricity Sources', fontsize=26, fontweight='normal', pad=60)
             ax1.set_xlabel('Year', fontsize=28, fontweight='bold', labelpad=15)
-            ax1.set_ylabel('Change vs 2015 (%)', fontsize=28, fontweight='bold', labelpad=15)
+            ax1.set_ylabel('% Change from 2015', fontsize=28, fontweight='bold', labelpad=15)
             ax1.set_ylim(y_min_limit, y_max_limit)
-            ax1.axhline(y=0, color='black', linestyle='--', linewidth=2, alpha=0.5)
-            ax1.tick_params(axis='both', labelsize=22, length=8, pad=8)
-            ax1.grid(True, alpha=0.3, linewidth=1.5)
+            ax1.axhline(y=0, color='black', linestyle='--', linewidth=1, alpha=0.5)
+            ax1.tick_params(axis='both', labelsize=22)
+            ax1.grid(True, linestyle='--', alpha=0.7)
 
-            # Create legend with spacers for centered row 3 (renewables left, non-renewables right)
-            from matplotlib.lines import Line2D
-            spacer = Line2D([0], [0], color='none', label=' ')
-            # ncol=4 fills by COLUMN, so order: col1, col2, col3, col4
-            legend_order = [
-                'Wind', 'Solar', '_SPACER_',              # Column 1: renewables
-                'Hydro', 'Biomass', 'Geothermal',         # Column 2: renewables
-                'Nuclear', 'Coal', 'Oil',                 # Column 3: non-renewables
-                'Gas', 'Waste', '_SPACER_'                # Column 4: non-renewables
-            ]
+            # Bold main title above bottom subplot
+            fig.text(0.5, 0.44, 'Year-over-Year Change vs 2015', 
+                    ha='center', fontsize=34, fontweight='bold')
             
-            legend_handles = []
-            legend_labels = []
-            for item in legend_order:
-                if item == '_SPACER_':
-                    legend_handles.append(spacer)
-                    legend_labels.append(' ')
-                elif item in line_handles:
-                    legend_handles.append(line_handles[item])
-                    legend_labels.append(item)
-            
-            ax1.legend(legend_handles, legend_labels,
-                       loc='upper center', bbox_to_anchor=(0.45, -0.25), ncol=4,
+            # Subtitle for bottom plot
+            ax2.set_title('Renewables vs Non-Renewables', fontsize=26, fontweight='normal', pad=60)
+            ax2.set_xlabel('Year', fontsize=28, fontweight='bold', labelpad=15)
+            ax2.set_ylabel('% Change from 2015', fontsize=28, fontweight='bold', labelpad=15)
+            ax2.set_ylim(y_min_limit, y_max_limit)
+            ax2.axhline(y=0, color='black', linestyle='--', linewidth=1, alpha=0.5)
+            ax2.tick_params(axis='both', labelsize=22)
+            ax2.grid(True, linestyle='--', alpha=0.7)
+
+            # Double legend - one per subplot, positioned lower for more space
+            ax1.legend(loc='upper center', bbox_to_anchor=(0.5, -0.15), ncol=5,
                        fontsize=18, frameon=False)
+            ax2.legend(loc='upper center', bbox_to_anchor=(0.5, -0.15), ncol=2,
+                       fontsize=22, frameon=False)
 
-            # Add timestamp
-            fig1.text(0.93, 0.04, f"Generated: {timestamp}",
-                     ha='right', va='bottom', fontsize=11, color='#666', style='italic')
+            # No main suptitle needed since we repeat title on each subplot
 
-            plt.tight_layout(rect=[0, 0, 1, 0.96])
+            plt.tight_layout(rect=[0, 0.02, 1, 0.985])
 
-            filename_yoy_all_pct = 'plots/eu_annual_yoy_all_sources_vs_2015_percentage.png'
-            plt.savefig(filename_yoy_all_pct, dpi=150, bbox_inches='tight')
-            print(f"  ✓ Saved percentage: {filename_yoy_all_pct}")
+            filename = 'plots/eu_annual_yoy_change_vs_2015.png'
+            plt.savefig(filename, dpi=150, bbox_inches='tight')
+            print(f"  Chart saved as: {filename}")
             plt.close()
-            
-        # PLOT 1B: ALL SOURCES YoY ABSOLUTE
-        print("\nCreating YoY All Sources vs 2015 (Absolute)...")
-        
-        fig1b, ax1b = plt.subplots(figsize=(12, 10))
-        
-        all_yoy_abs_values = []
-        lines_plotted_abs = 0
-        line_handles_abs = {}
-        
-        for source_name in all_sources_for_yoy:
-            if source_name in annual_totals and baseline_year in annual_totals[source_name]:
-                baseline_value = annual_totals[source_name][baseline_year]
-
-                if baseline_value > 0:
-                    years_list = sorted(annual_totals[source_name].keys())
-                    yoy_abs_changes = []
-                    
-                    for year in years_list:
-                        if year >= baseline_year:
-                            current_value = annual_totals[source_name][year]
-                            abs_change_gwh = current_value - baseline_value
-                            abs_change_twh = abs_change_gwh / 1000
-                            yoy_abs_changes.append(abs_change_twh)
-                            all_yoy_abs_values.append(abs_change_twh)
-
-                    years_to_plot = [year for year in years_list if year >= baseline_year]
-
-                    if len(years_to_plot) > 0:
-                        color = ENTSOE_COLORS.get(source_name, 'black')
-                        line, = ax1b.plot(years_to_plot, yoy_abs_changes, marker='o', color=color,
-                                 linewidth=6, markersize=13, label=source_name)
-                        line_handles_abs[source_name] = line
-                        lines_plotted_abs += 1
-
-        if lines_plotted_abs > 0:
-            # Calculate y-axis limits
-            if all_yoy_abs_values:
-                y_min = min(all_yoy_abs_values)
-                y_max = max(all_yoy_abs_values)
-                y_margin = (y_max - y_min) * 0.1
-                y_min_limit = y_min - y_margin
-                y_max_limit = y_max + y_margin
-            else:
-                y_min_limit = -50
-                y_max_limit = 100
-
-            # Title and labels - clean format
-            fig1b.suptitle('Electricity Generation (EU)', 
-                         fontsize=34, fontweight='bold', x=0.55, y=0.96, ha='center')
-            ax1b.set_title('Year-over-Year Change since 2015', fontsize=26, fontweight='normal', pad=10, ha='center')
-            ax1b.set_xlabel('Year', fontsize=28, fontweight='bold', labelpad=15)
-            ax1b.set_ylabel('Change vs 2015 (TWh)', fontsize=28, fontweight='bold', labelpad=15)
-            ax1b.set_ylim(y_min_limit, y_max_limit)
-            ax1b.axhline(y=0, color='black', linestyle='--', linewidth=2, alpha=0.5)
-            ax1b.tick_params(axis='both', labelsize=22, length=8, pad=8)
-            ax1b.grid(True, alpha=0.3, linewidth=1.5)
-
-            # Create legend with spacers
-            spacer = Line2D([0], [0], color='none', label=' ')
-            legend_order = [
-                'Wind', 'Solar', '_SPACER_',
-                'Hydro', 'Biomass', 'Geothermal',
-                'Nuclear', 'Coal', 'Oil',
-                'Gas', 'Waste', '_SPACER_'
-            ]
-            
-            legend_handles_list = []
-            legend_labels = []
-            for item in legend_order:
-                if item == '_SPACER_':
-                    legend_handles_list.append(spacer)
-                    legend_labels.append(' ')
-                elif item in line_handles_abs:
-                    legend_handles_list.append(line_handles_abs[item])
-                    legend_labels.append(item)
-            
-            ax1b.legend(legend_handles_list, legend_labels,
-                       loc='upper center', bbox_to_anchor=(0.45, -0.25), ncol=4,
-                       fontsize=18, frameon=False)
-
-            # Add timestamp (reuse same timestamp)
-            fig1b.text(0.93, 0.04, f"Generated: {timestamp}",
-                     ha='right', va='bottom', fontsize=11, color='#666', style='italic')
-
-            plt.tight_layout(rect=[0, 0, 1, 0.96])
-
-            filename_yoy_all_abs = 'plots/eu_annual_yoy_all_sources_vs_2015_absolute.png'
-            plt.savefig(filename_yoy_all_abs, dpi=150, bbox_inches='tight')
-            print(f"  ✓ Saved absolute: {filename_yoy_all_abs}")
-            plt.close()
-
-        # PLOT 2: AGGREGATES YoY
-        print("\nCreating YoY Aggregates vs 2015...")
-        
-        fig2, ax2 = plt.subplots(figsize=(12, 10))
-        
-        agg_yoy_values = []
-        
-        for category_name in totals_for_yoy:
-            if category_name in annual_totals and baseline_year in annual_totals[category_name]:
-                baseline_value = annual_totals[category_name][baseline_year]
-
-                if baseline_value > 0:
-                    years_list = sorted(annual_totals[category_name].keys())
-                    yoy_changes = []
-                    
-                    for year in years_list:
-                        if year >= baseline_year:
-                            current_value = annual_totals[category_name][year]
-                            pct_change = ((current_value - baseline_value) / baseline_value) * 100
-                            yoy_changes.append(pct_change)
-                            agg_yoy_values.append(pct_change)
-
-                    years_to_plot = [year for year in years_list if year >= baseline_year]
-
-                    if len(years_to_plot) > 0:
-                        color = ENTSOE_COLORS[category_name]
-                        ax2.plot(years_to_plot, yoy_changes, marker='o', color=color,
-                                 linewidth=6, markersize=13, label=category_name)
-
-        # Calculate y-axis limits
-        if agg_yoy_values:
-            y_min = min(agg_yoy_values)
-            y_max = max(agg_yoy_values)
-            y_margin = (y_max - y_min) * 0.1
-            y_min_limit = y_min - y_margin
-            y_max_limit = y_max + y_margin
-        else:
-            y_min_limit = -50
-            y_max_limit = 100
-
-        # Title and labels - clean format
-        fig2.suptitle('Electricity Generation (EU)', 
-                     fontsize=34, fontweight='bold', x=0.55, y=0.96, ha='center')
-        ax2.set_title('Year-over-Year Change since 2015', fontsize=26, fontweight='normal', pad=10, ha='center')
-        ax2.set_xlabel('Year', fontsize=28, fontweight='bold', labelpad=15)
-        ax2.set_ylabel('Change vs 2015 (%)', fontsize=28, fontweight='bold', labelpad=15)
-        ax2.set_ylim(y_min_limit, y_max_limit)
-        ax2.axhline(y=0, color='black', linestyle='--', linewidth=2, alpha=0.5)
-        ax2.tick_params(axis='both', labelsize=22, length=8, pad=8)
-        ax2.grid(True, alpha=0.3, linewidth=1.5)
-
-        ax2.legend(loc='upper center', bbox_to_anchor=(0.45, -0.20), ncol=2,
-                   fontsize=22, frameon=False)
-
-        # Add timestamp (reuse same timestamp)
-        fig2.text(0.93, 0.04, f"Generated: {timestamp}",
-                 ha='right', va='bottom', fontsize=11, color='#666', style='italic')
-
-        plt.tight_layout(rect=[0, 0, 1, 0.96])
-
-        filename_yoy_agg_pct = 'plots/eu_annual_yoy_aggregates_vs_2015_percentage.png'
-        plt.savefig(filename_yoy_agg_pct, dpi=150, bbox_inches='tight')
-        print(f"  ✓ Saved percentage: {filename_yoy_agg_pct}")
-        plt.close()
-        
-        # PLOT 2B: AGGREGATES YoY ABSOLUTE
-        print("\nCreating YoY Aggregates vs 2015 (Absolute)...")
-        
-        fig2b, ax2b = plt.subplots(figsize=(12, 10))
-        
-        agg_yoy_abs_values = []
-        
-        for category_name in totals_for_yoy:
-            if category_name in annual_totals and baseline_year in annual_totals[category_name]:
-                baseline_value = annual_totals[category_name][baseline_year]
-
-                if baseline_value > 0:
-                    years_list = sorted(annual_totals[category_name].keys())
-                    yoy_abs_changes = []
-                    
-                    for year in years_list:
-                        if year >= baseline_year:
-                            current_value = annual_totals[category_name][year]
-                            abs_change_gwh = current_value - baseline_value
-                            abs_change_twh = abs_change_gwh / 1000
-                            yoy_abs_changes.append(abs_change_twh)
-                            agg_yoy_abs_values.append(abs_change_twh)
-
-                    years_to_plot = [year for year in years_list if year >= baseline_year]
-
-                    if len(years_to_plot) > 0:
-                        color = ENTSOE_COLORS[category_name]
-                        ax2b.plot(years_to_plot, yoy_abs_changes, marker='o', color=color,
-                                 linewidth=6, markersize=13, label=category_name)
-
-        # Calculate y-axis limits
-        if agg_yoy_abs_values:
-            y_min = min(agg_yoy_abs_values)
-            y_max = max(agg_yoy_abs_values)
-            y_margin = (y_max - y_min) * 0.1
-            y_min_limit = y_min - y_margin
-            y_max_limit = y_max + y_margin
-        else:
-            y_min_limit = -50
-            y_max_limit = 100
-
-        # Title and labels - clean format
-        fig2b.suptitle('Electricity Generation (EU)', 
-                     fontsize=34, fontweight='bold', x=0.55, y=0.96, ha='center')
-        ax2b.set_title('Year-over-Year Change since 2015', fontsize=26, fontweight='normal', pad=10, ha='center')
-        ax2b.set_xlabel('Year', fontsize=28, fontweight='bold', labelpad=15)
-        ax2b.set_ylabel('Change vs 2015 (TWh)', fontsize=28, fontweight='bold', labelpad=15)
-        ax2b.set_ylim(y_min_limit, y_max_limit)
-        ax2b.axhline(y=0, color='black', linestyle='--', linewidth=2, alpha=0.5)
-        ax2b.tick_params(axis='both', labelsize=22, length=8, pad=8)
-        ax2b.grid(True, alpha=0.3, linewidth=1.5)
-
-        ax2b.legend(loc='upper center', bbox_to_anchor=(0.45, -0.20), ncol=2,
-                   fontsize=22, frameon=False)
-
-        # Add timestamp (reuse same timestamp)
-        fig2b.text(0.93, 0.04, f"Generated: {timestamp}",
-                 ha='right', va='bottom', fontsize=11, color='#666', style='italic')
-
-        plt.tight_layout(rect=[0, 0, 1, 0.96])
-
-        filename_yoy_agg_abs = 'plots/eu_annual_yoy_aggregates_vs_2015_absolute.png'
-        plt.savefig(filename_yoy_agg_abs, dpi=150, bbox_inches='tight')
-        print(f"  ✓ Saved absolute: {filename_yoy_agg_abs}")
-        plt.close()
-
-    # Write timestamp file for HTML to read
-    timestamp_file = 'plots/last_update_monthly_trends.html'
-    generation_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S UTC')
-    with open(timestamp_file, 'w') as f:
-        f.write(f'<p>Plots generated: {generation_time}</p>')
-    print(f"\n✓ Timestamp written to {timestamp_file}: {generation_time}")
-    
-    # Upload all plots to Google Drive
-    if drive_service:
-        print("\n" + "=" * 60)
-        print("UPLOADING PLOTS TO GOOGLE DRIVE")
-        print("=" * 60)
-        
-        # Scan plots directory for all PNG files (exclude old combined plots)
-        plot_files = [f for f in os.listdir('plots') 
-                      if f.endswith('.png') 
-                      and f.startswith('eu_')
-                      and '_combined' not in f]  # Exclude old combined plots
-        
-        for plot_file in plot_files:
-            file_path = os.path.join('plots', plot_file)
-            
-            # Determine plot type based on filename pattern
-            if 'annual' in plot_file or 'yoy' in plot_file:
-                plot_type = 'Trends'
-            else:
-                plot_type = 'Monthly'
-            
-            # Upload to Drive
-            result = upload_plot_to_drive(drive_service, file_path, plot_type=plot_type, country='EU')
-            
-            if result:
-                # Parse filename to create structured keys
-                # Remove prefix and suffix to get core name
-                core_name = plot_file.replace('eu_monthly_', '').replace('eu_annual_', '').replace('.png', '')
-                
-                # Determine if it's percentage or absolute
-                if '_percentage' in core_name:
-                    view_type = 'percentage'
-                    plot_key = core_name.replace('_percentage', '').replace('_10years', '')
-                elif '_absolute' in core_name:
-                    view_type = 'absolute'
-                    plot_key = core_name.replace('_absolute', '').replace('_10years', '')
-                else:
-                    view_type = 'default'
-                    plot_key = core_name
-                
-                # Store in nested structure
-                if plot_key not in plot_links['EU'][plot_type]:
-                    plot_links['EU'][plot_type][plot_key] = {}
-                
-                plot_links['EU'][plot_type][plot_key][view_type] = result
-        
-        # Save drive_links.json
-        drive_links_file = 'plots/drive_links_monthly_trends.json'
-        with open(drive_links_file, 'w') as f:
-            json.dump(plot_links, f, indent=2)
-        print(f"\n✓ Drive links saved to: {drive_links_file}")
-        print(f"✓ Uploaded {len(plot_files)} plots to Google Drive")
 
     print("\n" + "=" * 60)
     print("ALL MOBILE-OPTIMIZED PLOTS GENERATED")
@@ -1567,7 +1138,18 @@ def update_summary_table_historical_data(all_data):
         credentials = Credentials.from_service_account_info(creds_dict, scopes=scope)
         gc = gspread.authorize(credentials)
         
-        spreadsheet = gc.open('EU Electricity Production Data')
+        # Initialize drive service for sheet organization
+        from googleapiclient.discovery import build
+        from google.oauth2.service_account import Credentials as ServiceAccountCredentials
+        
+        credentials_drive = ServiceAccountCredentials.from_service_account_info(
+            creds_dict,
+            scopes=['https://www.googleapis.com/auth/drive.file']
+        )
+        drive_service = build('drive', 'v3', credentials=credentials_drive)
+        
+        # Get or create country sheet (EU by default, parameterizable for future)
+        spreadsheet = get_or_create_country_sheet(gc, drive_service, country_code='EU')
         print("✓ Connected to spreadsheet")
         
         # Get current date info (needed for headers)
@@ -1604,7 +1186,7 @@ def update_summary_table_historical_data(all_data):
                 f'Yesterday_Change_{two_years_ago}_%', f'LastWeek_Change_{two_years_ago}_%',
                 f'YTD{current_year}_Change_{two_years_ago}_%', f'{previous_year}_Change_{two_years_ago}_%'
             ]
-            worksheet.update(values=[headers], range_name='A1:V1')
+            worksheet.update('A1:V1', [headers])
             worksheet.format('A1:V1', {'textFormat': {'bold': True}})
             print("  ✓ Header row updated")
                 
