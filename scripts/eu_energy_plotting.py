@@ -91,6 +91,22 @@ def get_or_create_country_sheet(gc, drive_service, country_code='EU'):
             ).execute()
             
             print(f"  ✓ Moved sheet to: EU-Electricity-Plots/{country_code}/")
+            
+            # Set permissions: Anyone with link can view
+            try:
+                permission = {
+                    'type': 'anyone',
+                    'role': 'reader'
+                }
+                drive_service.permissions().create(
+                    fileId=spreadsheet.id,
+                    body=permission,
+                    fields='id'
+                ).execute()
+                print(f"  ✓ Set permissions: Anyone with link can view")
+            except Exception as e:
+                print(f"  ⚠ Could not set permissions: {e}")
+                
         except Exception as e:
             print(f"  ⚠ Could not organize in Drive: {e}")
     
