@@ -147,6 +147,29 @@ def format_change_percentage(value):
         return f"{value:+.1f}%"
 
 
+def initialize_drive_service():
+    """
+    Initialize Google Drive service for file operations
+    Returns: Google Drive API service object
+    """
+    import json
+    import os
+    from googleapiclient.discovery import build
+    from google.oauth2.service_account import Credentials as ServiceAccountCredentials
+    
+    google_creds_json = os.environ.get('GOOGLE_CREDENTIALS_JSON')
+    if not google_creds_json:
+        return None
+    
+    creds_dict = json.loads(google_creds_json)
+    credentials_drive = ServiceAccountCredentials.from_service_account_info(
+        creds_dict,
+        scopes=['https://www.googleapis.com/auth/drive.file']
+    )
+    drive_service = build('drive', 'v3', credentials=credentials_drive)
+    return drive_service
+
+
 def load_data_from_google_sheets(country_code='EU'):
     """
     Load all energy data from Google Sheets using environment variables
