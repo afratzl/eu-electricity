@@ -314,7 +314,7 @@ def get_all_energy_data_for_country_year(client, country, year):
                 
             except Exception as e:
                 if attempt < max_retries - 1:
-                    wait_time = 2 ** attempt
+                    wait_time = 0.1
                     print(f"    ⚠ Chunk {chunk_idx} attempt {attempt + 1} failed: {e}")
                     print(f"      Retrying in {wait_time}s...")
                     time.sleep(wait_time)
