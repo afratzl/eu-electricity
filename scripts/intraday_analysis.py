@@ -437,18 +437,15 @@ def extract_country_from_raw_data(raw_data_matrix, country_code):
                 continue
             
             if country_code == 'EU':
-                # Sum all countries - keep as DataFrame with 'EU' column
-                extracted_df = pd.DataFrame({
-                    'EU': country_df.sum(axis=1)
-                })
+                # Keep all 27 countries - threshold detection needs individual country data
+                # Summing happens AFTER correction in apply_corrections_for_period
+                extracted_data['atomic_sources'][source][period_name] = country_df.copy()
             else:
                 # Extract single country - keep as DataFrame with country column
                 if country_code in country_df.columns:
                     extracted_df = country_df[[country_code]].copy()
-                else:
-                    continue
-            
-            extracted_data['atomic_sources'][source][period_name] = extracted_df
+                    extracted_data['atomic_sources'][source][period_name] = extracted_df
+                # Skip if country not in data
     
     # Extract aggregates (already EU totals in raw data, but handle country-specific)
     for agg_source in AGGREGATE_SOURCES:
@@ -488,18 +485,15 @@ def extract_country_from_raw_data(raw_data_matrix, country_code):
             continue
         
         if country_code == 'EU':
-            # Sum all countries - keep as DataFrame with 'EU' column
-            extracted_df = pd.DataFrame({
-                'EU': country_df.sum(axis=1)
-            })
+            # Keep all 27 countries - threshold detection needs individual country data
+            # Summing happens AFTER correction in apply_corrections_for_period
+            extracted_data['total_generation'][period_name] = country_df.copy()
         else:
             # Extract single country - keep as DataFrame with country column
             if country_code in country_df.columns:
                 extracted_df = country_df[[country_code]].copy()
-            else:
-                continue
-        
-        extracted_data['total_generation'][period_name] = extracted_df
+                extracted_data['total_generation'][period_name] = extracted_df
+            # Skip if country not in data
     
     print(f"✓ Extracted data for {country_code}")
     return extracted_data
@@ -1268,8 +1262,8 @@ def generate_plot_for_source(source_type, corrected_data, output_file_base, fetc
     plot_data = convert_corrected_data_to_plot_format(source_type, corrected_data)
     
     if not plot_data:
-        print(f"✗ No data available for {source_type}")
-        return
+        print(f"✗ No data available for {source_type} (skipping)")
+        return None, None
     
     # Calculate statistics (pass fetch_time for consistent cutoff)
     stats_data = calculate_daily_statistics(plot_data, fetch_time=fetch_time)
@@ -1913,6 +1907,7 @@ def main():
         
         # Countries to process
         countries_to_process = ['EU', 'DE']
+        total_plots_generated = {}  # Track plots per country
         
         print(f"\n" + "=" * 80)
         print(f"PROCESSING {len(countries_to_process)} COUNTRIES: {', '.join(countries_to_process)}")
@@ -1938,12 +1933,17 @@ def main():
                 output_file_base = f'plots/{args.source.replace("-", "_")}_analysis.png'
                 percentage_file, absolute_file = generate_plot_for_source(args.source, corrected_data, output_file_base, fetch_time=fetch_time)
                 
-                # Upload both to Google Drive
-                print(f"\n📤 Uploading to Google Drive...")
-                perc_id = upload_plot_to_drive(percentage_file, country=country_code)
-                abs_id = upload_plot_to_drive(absolute_file, country=country_code)
-                if perc_id and abs_id:
-                    print(f"  ✓ Uploaded both plots to {country_code}/Intraday/")
+                # Upload both to Google Drive (if plots were generated)
+                if percentage_file and absolute_file:
+                    print(f"\n📤 Uploading to Google Drive...")
+                    perc_id = upload_plot_to_drive(percentage_file, country=country_code)
+                    abs_id = upload_plot_to_drive(absolute_file, country=country_code)
+                    if perc_id and abs_id:
+                        total_plots_generated[country_code] = 1
+                        print(f"  ✓ Uploaded both plots to {country_code}/Intraday/")
+                else:
+                    total_plots_generated[country_code] = 0
+                    print(f"  ⚠ Skipping upload (no data for {args.source})")
             else:
                 # Batch mode - generate all plots
                 print("\n" + "=" * 80)
@@ -1952,21 +1952,28 @@ def main():
                 
                 all_sources = ATOMIC_SOURCES + AGGREGATE_SOURCES
                 drive_file_ids = {}
+                plots_generated = 0  # Track successful plots
                 
                 for i, source in enumerate(all_sources, 1):
                     print(f"\n[{i}/{len(all_sources)}] Processing {DISPLAY_NAMES[source]}...")
                     output_file_base = f'plots/{source.replace("-", "_")}_analysis.png'
                     percentage_file, absolute_file = generate_plot_for_source(source, corrected_data, output_file_base, fetch_time=fetch_time)
                     
-                    # Upload both to Google Drive
-                    perc_id = upload_plot_to_drive(percentage_file, country=country_code)
-                    abs_id = upload_plot_to_drive(absolute_file, country=country_code)
-                    if perc_id and abs_id:
-                        drive_file_ids[source] = {
-                            'percentage': perc_id,
-                            'absolute': abs_id
-                        }
-                        print(f"  ✓ Uploaded both plots to Drive: {country_code}/Intraday/")
+                    # Upload both to Google Drive (only if plots were generated)
+                    if percentage_file and absolute_file:
+                        perc_id = upload_plot_to_drive(percentage_file, country=country_code)
+                        abs_id = upload_plot_to_drive(absolute_file, country=country_code)
+                        if perc_id and abs_id:
+                            drive_file_ids[source] = {
+                                'percentage': perc_id,
+                                'absolute': abs_id
+                            }
+                            plots_generated += 1
+                            print(f"  ✓ Uploaded both plots to Drive: {country_code}/Intraday/")
+                    else:
+                        print(f"  ⚠ Skipping upload for {source} (no data available)")
+                
+                total_plots_generated[country_code] = plots_generated
                 
                 # Save Drive file IDs to JSON
                 if drive_file_ids:
@@ -2087,11 +2094,16 @@ def main():
         print(f"✓ ALL COUNTRIES COMPLETE!")
         print("=" * 80)
         if args.source:
-            print(f"   - {DISPLAY_NAMES[args.source]} plots generated for {len(countries_to_process)} countries")
+            total_count = sum(total_plots_generated.values())
+            print(f"   - {DISPLAY_NAMES[args.source]} plots: {total_count}/{len(countries_to_process)} countries with data")
+            for country, count in total_plots_generated.items():
+                status = "✓ Generated" if count > 0 else "⚠ No data"
+                print(f"     • {country}: {status}")
         else:
-            print(f"   - 12 plots generated for {len(countries_to_process)} countries")
-            print(f"   - 10 atomic sources")
-            print(f"   - 2 aggregates")
+            total_count = sum(total_plots_generated.values())
+            print(f"   - {total_count} source plots generated across {len(countries_to_process)} countries")
+            for country, count in total_plots_generated.items():
+                print(f"     • {country}: {count}/12 sources")
             print(f"   - Summary tables updated in Google Sheets")
         print("=" * 80)
         
