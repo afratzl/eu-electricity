@@ -8,6 +8,7 @@ import os
 import json
 import sys
 import argparse
+import time
 
 # EU country codes (most countries in the EU)
 eu_countries = [
@@ -729,6 +730,9 @@ def save_all_data_to_google_sheets_with_merge(all_data, month_names, country_cod
             updated_years_str = ', '.join(
                 [str(year) for year in sorted(updating_years, reverse=True)]) if updating_years else 'None'
             print(f"  ✓ Updated {source_name}: Added years [{new_years_str}], Updated years [{updated_years_str}]")
+            
+            # Add delay to prevent rate limiting (Google Sheets: 60 writes/minute)
+            time.sleep(1)
 
         print(f"\n✓ All data saved to Google Sheets: '{country_code} Electricity Production Data'")
         print(f"URL: {spreadsheet.url}")
@@ -837,6 +841,11 @@ def main():
         sheet_url = save_all_data_to_google_sheets_with_merge(all_data, month_names, country_code=country)
         if sheet_url:
             saved_urls[country] = sheet_url
+        
+        # Add delay between countries to prevent rate limiting
+        if country != countries_to_save[-1]:  # Don't delay after last country
+            print(f"  ⏱ Waiting 2 seconds before next country...")
+            time.sleep(2)
     
     print(f"\n" + "=" * 80)
     print("DATA COLLECTION COMPLETE!")
