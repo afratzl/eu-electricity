@@ -724,13 +724,19 @@ def save_all_data_to_google_sheets_with_merge(all_data, month_names, country_cod
 
             final_rows.append(total_row)
 
-            # Clear and update the worksheet
+            # Clear and update the worksheet WITH DELAYS between operations
             worksheet.clear()
+            time.sleep(0.5)  # Delay after clear
+            
             worksheet.update(final_rows)
+            time.sleep(0.5)  # Delay after update
 
             # Format the sheet
             worksheet.format('A1:Z1', {'textFormat': {'bold': True}})
+            time.sleep(0.5)  # Delay after first format
+            
             worksheet.format('A:A', {'textFormat': {'bold': True}})
+            time.sleep(0.5)  # Delay after second format
 
             # Report what was updated
             new_years_str = ', '.join([str(year) for year in sorted(new_years, reverse=True)]) if new_years else 'None'
@@ -738,9 +744,8 @@ def save_all_data_to_google_sheets_with_merge(all_data, month_names, country_cod
                 [str(year) for year in sorted(updating_years, reverse=True)]) if updating_years else 'None'
             print(f"  ✓ Updated {source_name}: Added years [{new_years_str}], Updated years [{updated_years_str}]")
             
-            # Add delay to prevent rate limiting (Google Sheets: 60 writes/minute)
-            # Each worksheet = 4 writes (clear, update, 2× format), so need longer delay
-            time.sleep(3)
+            # Add delay to prevent rate limiting (each worksheet already has 2 sec internal delays)
+            time.sleep(1)
 
         print(f"\n✓ All data saved to Google Sheets: '{country_code} Electricity Production Data'")
         print(f"URL: {spreadsheet.url}")
