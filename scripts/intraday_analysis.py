@@ -315,6 +315,10 @@ def collect_all_data(api_key):
     print("PHASE 1: DATA COLLECTION")
     print("=" * 80)
     
+    # Cache fetch time at start for consistent cutoff across all sources
+    fetch_time = pd.Timestamp.now(tz='Europe/Brussels')
+    print(f"🕐 Reference fetch time: {fetch_time.strftime('%Y-%m-%d %H:%M:%S %Z')}")
+    
     # Define periods
     today = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
     yesterday = today - timedelta(days=1)
@@ -399,7 +403,93 @@ def collect_all_data(api_key):
             print(f"  {period_name}: ✗ No data")
     
     print("\n✓ Data collection complete!")
-    return data_matrix, periods
+    return data_matrix, periods, fetch_time
+
+
+def extract_country_from_raw_data(raw_data_matrix, country_code):
+    """
+    Extract or aggregate data for a specific country from raw multi-country data
+    
+    Args:
+        raw_data_matrix: Full data matrix with all 27 countries
+        country_code: 'EU' for aggregate, 'DE' for Germany, etc.
+    
+    Returns:
+        data_matrix: Same structure but with country-specific data
+    """
+    print(f"\n📊 Extracting data for: {country_code}")
+    
+    extracted_data = {
+        'atomic_sources': {},
+        'aggregates': {},
+        'total_generation': {}
+    }
+    
+    # Extract atomic sources
+    for source in ATOMIC_SOURCES:
+        if source not in raw_data_matrix['atomic_sources']:
+            continue
+        
+        extracted_data['atomic_sources'][source] = {}
+        
+        for period_name, country_df in raw_data_matrix['atomic_sources'][source].items():
+            if country_df is None or country_df.empty:
+                continue
+            
+            if country_code == 'EU':
+                # Sum all countries
+                extracted_series = country_df.sum(axis=1)
+            else:
+                # Extract single country
+                if country_code in country_df.columns:
+                    extracted_series = country_df[country_code]
+                else:
+                    continue
+            
+            extracted_data['atomic_sources'][source][period_name] = extracted_series
+    
+    # Extract aggregates (already EU totals in raw data, but handle country-specific)
+    for agg_source in AGGREGATE_SOURCES:
+        if agg_source not in raw_data_matrix['aggregates']:
+            continue
+        
+        extracted_data['aggregates'][agg_source] = {}
+        
+        for period_name, eu_series in raw_data_matrix['aggregates'][agg_source].items():
+            if eu_series is None or eu_series.empty:
+                continue
+            
+            if country_code == 'EU':
+                # Already EU aggregate
+                extracted_data['aggregates'][agg_source][period_name] = eu_series
+            else:
+                # Build aggregate from atomic sources for this country
+                components = AGGREGATE_DEFINITIONS[agg_source]
+                component_series = []
+                
+                for component in components:
+                    if component in extracted_data['atomic_sources']:
+                        if period_name in extracted_data['atomic_sources'][component]:
+                            component_series.append(extracted_data['atomic_sources'][component][period_name])
+                
+                if component_series:
+                    extracted_data['aggregates'][agg_source][period_name] = sum(component_series)
+    
+    # Extract total generation
+    for period_name, country_df in raw_data_matrix['total_generation'].items():
+        if country_df is None or country_df.empty:
+            continue
+        
+        if country_code == 'EU':
+            # Sum all countries
+            extracted_data['total_generation'][period_name] = country_df.sum(axis=1)
+        else:
+            # Extract single country
+            if country_code in country_df.columns:
+                extracted_data['total_generation'][period_name] = country_df[country_code]
+    
+    print(f"✓ Extracted data for {country_code}")
+    return extracted_data
 
 
 # ============================================================================
@@ -449,7 +539,10 @@ def apply_projections_and_corrections(data_matrix):
 def apply_corrections_for_period(data_matrix, target_period, reference_period):
     """
     Apply component-level corrections for a specific period
-    Uses weekly hourly averages for threshold comparison
+    Projects ALL timestamps from 00:00 to fetch_time for consistency
+    Uses hybrid approach for aggregates:
+      - Today: safe summation (avoid race condition)
+      - Yesterday+: delta correction (preserve untracked sources)
     Returns BOTH actual (uncorrected) and corrected versions
     """
     print(f"  Analyzing {target_period} against {reference_period}...")
@@ -467,14 +560,6 @@ def apply_corrections_for_period(data_matrix, target_period, reference_period):
             # Group by time to get hourly averages across the week
             weekly_hourly_avgs[source] = ref_data_with_time.groupby('time').mean(numeric_only=True)
     
-    # Build weekly hourly average for total generation
-    total_gen_weekly_avg = None
-    if reference_period in data_matrix['total_generation']:
-        ref_total_gen = data_matrix['total_generation'][reference_period]
-        ref_total_gen_with_time = ref_total_gen.copy()
-        ref_total_gen_with_time['time'] = ref_total_gen_with_time.index.strftime('%H:%M')
-        total_gen_weekly_avg = ref_total_gen_with_time.groupby('time').mean(numeric_only=True)
-    
     # Get target period data
     target_atomic = {src: data_matrix['atomic_sources'][src].get(target_period) 
                      for src in ATOMIC_SOURCES if src in data_matrix['atomic_sources']}
@@ -483,69 +568,110 @@ def apply_corrections_for_period(data_matrix, target_period, reference_period):
     if target_total_gen is None:
         return {}
     
+    # Get timestamp range for TARGET period (one day: 96 timestamps)
+    # Create proper range from 00:00 to 23:45 of target day
+    # This ensures we project all time slots, even if some data is missing
+    start_date = target_total_gen.index[0].normalize()  # Midnight of target day
+    end_date = start_date + pd.Timedelta(days=1)
+    full_timestamp_range = pd.date_range(start_date, end_date, freq='15min', inclusive='left', tz=target_total_gen.index.tz)
+    
     # Build BOTH corrected and actual (uncorrected) data
     corrected_sources = {}
-    actual_sources = {}  # NEW: Store uncorrected versions
+    actual_sources = {}
     correction_log = []
     
     for source in ATOMIC_SOURCES + AGGREGATE_SOURCES:
         corrected_sources[source] = {}
         actual_sources[source] = {}
     
-    # Process each timestamp
-    for timestamp in target_total_gen.index:
+    # Process ALL timestamps in full range (00:00 to 23:45)
+    # This ensures consistent time coverage across all sources
+    for timestamp in full_timestamp_range:
         time_str = timestamp.strftime('%H:%M')
         
-        # Correct atomic sources
+        # Project atomic sources for this timestamp
         for source in ATOMIC_SOURCES:
             if source not in target_atomic or target_atomic[source] is None:
                 continue
             
-            if timestamp not in target_atomic[source].index:
-                continue
-            
-            source_row = target_atomic[source].loc[timestamp]
-            
             # Initialize this timestamp for this source
             if timestamp not in corrected_sources[source]:
                 corrected_sources[source][timestamp] = {}
+            if timestamp not in actual_sources[source]:
                 actual_sources[source][timestamp] = {}
             
-            for country in source_row.index:
-                actual_val = source_row[country]
+            # Check if we have actual data for this timestamp
+            if timestamp in target_atomic[source].index:
+                source_row = target_atomic[source].loc[timestamp]
                 
-                # Store actual (uncorrected) value
-                actual_sources[source][timestamp][country] = actual_val if not pd.isna(actual_val) else 0
-                
-                # Default: use actual value
-                corrected_val = actual_val if not pd.isna(actual_val) else 0
-                
-                # Get weekly hourly average for this source-country-time
+                # Get weekly hourly average for this source and time
+                countries_to_check = set()
                 if source in weekly_hourly_avgs and time_str in weekly_hourly_avgs[source].index:
-                    if country in weekly_hourly_avgs[source].columns:
+                    # Check all countries that have weekly averages
+                    countries_to_check.update(weekly_hourly_avgs[source].columns)
+                # Also check countries that are present in current data
+                countries_to_check.update(source_row.index)
+                
+                for country in countries_to_check:
+                    # Get actual value if country exists in current timestamp
+                    if country in source_row.index:
+                        actual_val = source_row[country]
+                    else:
+                        # Country completely missing from this timestamp
+                        actual_val = np.nan
+                    
+                    # Store actual (uncorrected) value
+                    actual_sources[source][timestamp][country] = actual_val if not pd.isna(actual_val) else 0
+                    
+                    # Default: use actual value
+                    corrected_val = actual_val if not pd.isna(actual_val) else 0
+                    
+                    # Get weekly hourly average for this source-country-time
+                    if source in weekly_hourly_avgs and time_str in weekly_hourly_avgs[source].index:
+                        if country in weekly_hourly_avgs[source].columns:
+                            week_avg = weekly_hourly_avgs[source].loc[time_str, country]
+                            
+                            if not pd.isna(week_avg) and week_avg > 0:
+                                threshold = 0.1 * week_avg
+                                
+                                # Check if below threshold
+                                if pd.isna(actual_val) or actual_val < threshold:
+                                    correction_log.append({
+                                        'time': time_str,
+                                        'source': source,
+                                        'country': country,
+                                        'actual': actual_val if not pd.isna(actual_val) else 0,
+                                        'expected': week_avg,
+                                        'threshold': threshold
+                                    })
+                                    corrected_val = week_avg
+                    
+                    # Store corrected value
+                    corrected_sources[source][timestamp][country] = corrected_val
+            
+            else:
+                # No actual data for this timestamp - use weekly average for ALL countries
+                if source in weekly_hourly_avgs and time_str in weekly_hourly_avgs[source].index:
+                    for country in weekly_hourly_avgs[source].columns:
                         week_avg = weekly_hourly_avgs[source].loc[time_str, country]
                         
                         if not pd.isna(week_avg) and week_avg > 0:
-                            threshold = 0.1 * week_avg
+                            # No actual data - store 0 for actual, weekly avg for projected
+                            actual_sources[source][timestamp][country] = 0
+                            corrected_sources[source][timestamp][country] = week_avg
                             
-                            # Check if below threshold
-                            if pd.isna(actual_val) or actual_val < threshold:
-                                correction_log.append({
-                                    'time': time_str,
-                                    'source': source,
-                                    'country': country,
-                                    'actual': actual_val if not pd.isna(actual_val) else 0,
-                                    'expected': week_avg,
-                                    'threshold': threshold
-                                })
-                                corrected_val = week_avg
-                
-                # Store corrected value
-                corrected_sources[source][timestamp][country] = corrected_val
+                            correction_log.append({
+                                'time': time_str,
+                                'source': source,
+                                'country': country,
+                                'actual': 0,
+                                'expected': week_avg,
+                                'threshold': 0
+                            })
     
     # Print correction log
     if correction_log:
-        print(f"\n  🚨 Detected {len(correction_log)} values below 10% threshold:")
+        print(f"\n  Detected {len(correction_log)} corrections (missing data + threshold violations):")
         for log in correction_log[:20]:  # Print first 20
             print(f"    {log['time']} | {log['country']}-{log['source']}: "
                   f"{log['actual']:.1f} MW < 10% of {log['expected']:.1f} MW "
@@ -555,29 +681,65 @@ def apply_corrections_for_period(data_matrix, target_period, reference_period):
     else:
         print("  ✓ No corrections needed")
     
-    # Build aggregate sources from corrected atomic sources
+    # Build aggregates using HYBRID APPROACH
+    # TODAY: Safe summation (avoid 90-minute race condition)
+    # YESTERDAY+: Delta correction (preserve untracked sources)
     for agg_source in AGGREGATE_SOURCES:
         components = AGGREGATE_DEFINITIONS[agg_source]
+        measured_aggregate = data_matrix['aggregates'].get(agg_source, {}).get(target_period)
         
-        for timestamp in target_total_gen.index:
-            # Corrected aggregate
-            total_corrected = 0
-            for component in components:
-                if timestamp in corrected_sources[component]:
-                    total_corrected += sum(corrected_sources[component][timestamp].values())
-            corrected_sources[agg_source][timestamp] = {'EU': total_corrected}
+        if target_period == 'today':
+            # SAFE SUMMATION for today (high race condition risk)
+            print(f"  Using safe summation for {agg_source} (today)")
             
-            # Actual (uncorrected) aggregate
-            total_actual = 0
-            for component in components:
-                if timestamp in actual_sources[component]:
-                    total_actual += sum(actual_sources[component][timestamp].values())
-            actual_sources[agg_source][timestamp] = {'EU': total_actual}
+            for timestamp in full_timestamp_range:
+                # Sum actual components
+                actual_agg_value = 0
+                for component in components:
+                    if timestamp in actual_sources[component]:
+                        actual_agg_value += sum(actual_sources[component][timestamp].values())
+                actual_sources[agg_source][timestamp] = {'EU': actual_agg_value}
+                
+                # Sum projected components
+                projected_agg_value = 0
+                for component in components:
+                    if timestamp in corrected_sources[component]:
+                        projected_agg_value += sum(corrected_sources[component][timestamp].values())
+                corrected_sources[agg_source][timestamp] = {'EU': projected_agg_value}
+        
+        else:
+            # DELTA CORRECTION for yesterday+ (stable data, preserve untracked sources)
+            print(f"  Using delta correction for {agg_source} ({target_period})")
+            
+            for timestamp in full_timestamp_range:
+                # Actual: use measured aggregate directly
+                if measured_aggregate is not None and timestamp in measured_aggregate.index:
+                    actual_agg_value = measured_aggregate[timestamp]
+                else:
+                    actual_agg_value = 0
+                actual_sources[agg_source][timestamp] = {'EU': actual_agg_value}
+                
+                # Projected: start with measured, add component corrections
+                corrected_agg_value = actual_agg_value
+                
+                for component in components:
+                    projected_component = 0
+                    if timestamp in corrected_sources[component]:
+                        projected_component = sum(corrected_sources[component][timestamp].values())
+                    
+                    actual_component = 0
+                    if timestamp in actual_sources[component]:
+                        actual_component = sum(actual_sources[component][timestamp].values())
+                    
+                    correction = projected_component - actual_component
+                    corrected_agg_value += correction
+                
+                corrected_sources[agg_source][timestamp] = {'EU': corrected_agg_value}
     
     # Build corrected and actual total generation
     corrected_total_gen = {}
     actual_total_gen = {}
-    for timestamp in target_total_gen.index:
+    for timestamp in full_timestamp_range:
         # Corrected total
         total_corrected = 0
         for source in ATOMIC_SOURCES:
@@ -746,7 +908,7 @@ def create_time_axis():
     return times
 
 
-def calculate_daily_statistics(data_dict):
+def calculate_daily_statistics(data_dict, fetch_time=None):
     """
     Calculate daily statistics for plotting
     """
@@ -764,7 +926,11 @@ def calculate_daily_statistics(data_dict):
             aligned_percentage = time_indexed['energy_percentage'].reindex(standard_times)
 
             if period_name in ['today', 'today_projected']:
-                current_time = pd.Timestamp.now(tz='Europe/Brussels')
+                # Use cached fetch_time for consistent cutoff across all sources
+                if fetch_time is None:
+                    current_time = pd.Timestamp.now(tz='Europe/Brussels')
+                else:
+                    current_time = fetch_time
                 cutoff_time = current_time - timedelta(hours=2)
                 cutoff_time = cutoff_time.floor('15T')
 
@@ -854,8 +1020,8 @@ def plot_analysis(stats_data, source_type, output_file_base):
         'week_ago': '-',
         'year_ago': '-',
         'two_years_ago': '-',
-        'today_projected': '--',
-        'yesterday_projected': '--'
+        'today_projected': (0, (2, 2)),  # Equal: 2pt dash, 2pt gap (tighter pattern)
+        'yesterday_projected': (0, (2, 2))  # Equal: 2pt dash, 2pt gap
     }
 
     labels = {
@@ -870,9 +1036,12 @@ def plot_analysis(stats_data, source_type, output_file_base):
 
     time_labels = create_time_axis()
     
-    # Calculate x-axis tick positions (every 4 hours) for both plots
+    # Calculate x-axis tick positions (every 4 hours) + add 24:00 at end
     tick_positions = list(range(0, len(time_labels), 16))  # Every 4 hours (16 * 15min = 4h)
-    tick_labels_axis = [time_labels[i] if i < len(time_labels) else '' for i in tick_positions]
+    tick_positions.append(len(time_labels))  # Add position for 24:00
+    
+    tick_labels_axis = [time_labels[i] if i < len(time_labels) else '' for i in tick_positions[:-1]]
+    tick_labels_axis.append('24:00')  # Add 24:00 label at the end
     
     source_name = DISPLAY_NAMES[source_type]
     
@@ -899,8 +1068,8 @@ def plot_analysis(stats_data, source_type, output_file_base):
     
     fig1.suptitle(f'{source_name} Electricity Generation (EU)', fontsize=34, fontweight='bold', x=0.5, y=0.98, ha="center")
     ax1.set_title('Fraction of Total Generation', fontsize=26, fontweight='normal', pad=15)
-    ax1.set_xlabel('Time of Day (Brussels)', fontsize=28, fontweight='bold', labelpad=15)
-    ax1.set_ylabel('Electrical Power (%)', fontsize=28, fontweight='bold', labelpad=15)
+    ax1.set_xlabel('Time of Day (Brussels)', fontsize=28, fontweight='bold', labelpad=25)
+    ax1.set_ylabel('Electrical Power (%)', fontsize=28, fontweight='bold', labelpad=30)
 
     max_percentage = 0
 
@@ -928,7 +1097,7 @@ def plot_analysis(stats_data, source_type, output_file_base):
             else:
                 continue
 
-        ax1.plot(x_values, y_values, color=color, linestyle=linestyle, linewidth=6, label=label)
+        ax1.plot(x_values, y_values, color=color, linestyle=linestyle, linewidth=6, label=label, marker='')
 
         if period_name in ['week_ago', 'year_ago', 'two_years_ago'] and 'percentage_std' in data:
             std_values = data['percentage_std'][:len(x_values)]
@@ -937,7 +1106,7 @@ def plot_analysis(stats_data, source_type, output_file_base):
             max_percentage = max(max_percentage, np.nanmax(upper_bound))
             ax1.fill_between(x_values, lower_bound, upper_bound, color=color, alpha=0.2)
 
-    ax1.tick_params(axis='both', labelsize=22)
+    ax1.tick_params(axis='both', labelsize=22, length=8, pad=8)
     ax1.set_ylim(0, max_percentage * 1.20 if max_percentage > 0 else 50)  # 20% headroom
     
     # Set x-axis time labels
@@ -947,11 +1116,14 @@ def plot_analysis(stats_data, source_type, output_file_base):
     
     ax1.grid(True, alpha=0.3, linewidth=1.5)
     
-    # Reorder legend to show today/yesterday first, then historical
-    # (even though plotting order is reversed for proper z-layering)
+    # Reorder legend for 3-2-2 layout:
+    # Row 1: Previous Week, Last Year, Two Years Ago
+    # Row 2: Yesterday, Yesterday (Projected), [empty]
+    # Row 3: Today, Today (Projected), [empty]
     handles, labels_list = ax1.get_legend_handles_labels()
-    legend_order = ['today', 'today_projected', 'yesterday', 'yesterday_projected',
-                    'week_ago', 'year_ago', 'two_years_ago']
+    legend_order = ['week_ago', 'year_ago', 'two_years_ago',
+                    'yesterday', 'yesterday_projected',
+                    'today', 'today_projected']
     
     # Create ordered handles/labels matching desired legend layout
     ordered_handles = []
@@ -965,8 +1137,16 @@ def plot_analysis(stats_data, source_type, output_file_base):
             ordered_labels.append(period_label)
     
     ax1.legend(ordered_handles, ordered_labels, 
-              loc='upper center', bbox_to_anchor=(0.5, -0.18), 
-              ncol=2, fontsize=20, frameon=False)
+              loc='upper center', bbox_to_anchor=(0.45, -0.25), 
+              ncol=3, fontsize=20, frameon=False)
+    
+    # Add timestamp below legend (bottom-right, using figure coordinates)
+    from datetime import datetime
+    timestamp = datetime.now().strftime('%Y-%m-%d %H:%M UTC')
+    fig1.text(0.93, 0.02, f"Generated: {timestamp}",
+              ha='right', va='bottom',
+              fontsize=11, color='#666',
+              style='italic')
     
     plt.tight_layout()
     
@@ -981,8 +1161,8 @@ def plot_analysis(stats_data, source_type, output_file_base):
     
     fig2.suptitle(f'{source_name} Electricity Generation (EU)', fontsize=34, fontweight='bold', x=0.5, y=0.98, ha="center")
     ax2.set_title('Absolute Generation', fontsize=26, fontweight='normal', pad=15)
-    ax2.set_xlabel('Time of Day (Brussels)', fontsize=28, fontweight='bold', labelpad=15)
-    ax2.set_ylabel('Electrical Power (GW)', fontsize=28, fontweight='bold', labelpad=15)
+    ax2.set_xlabel('Time of Day (Brussels)', fontsize=28, fontweight='bold', labelpad=25)
+    ax2.set_ylabel('Electrical Power (GW)', fontsize=28, fontweight='bold', labelpad=30)
 
     max_energy = 0
 
@@ -1011,7 +1191,7 @@ def plot_analysis(stats_data, source_type, output_file_base):
             else:
                 continue
 
-        ax2.plot(x_values, y_values, color=color, linestyle=linestyle, linewidth=6, label=label)
+        ax2.plot(x_values, y_values, color=color, linestyle=linestyle, linewidth=6, label=label, marker='')
 
         if period_name in ['week_ago', 'year_ago', 'two_years_ago'] and 'energy_std' in data:
             # Convert MW to GW for std as well
@@ -1021,7 +1201,7 @@ def plot_analysis(stats_data, source_type, output_file_base):
             max_energy = max(max_energy, np.nanmax(upper_bound))
             ax2.fill_between(x_values, lower_bound, upper_bound, color=color, alpha=0.2)
 
-    ax2.tick_params(axis='both', labelsize=22)
+    ax2.tick_params(axis='both', labelsize=22, length=8, pad=8)
     ax2.set_ylim(0, max_energy * 1.20)  # 20% headroom
     
     # Set x-axis time labels
@@ -1031,7 +1211,7 @@ def plot_analysis(stats_data, source_type, output_file_base):
     
     ax2.grid(True, alpha=0.3, linewidth=1.5)
     
-    # Reorder legend to show today/yesterday first, then historical
+    # Reorder legend to match percentage plot (3-2-2 layout)
     handles2, labels_list2 = ax2.get_legend_handles_labels()
     
     ordered_handles2 = []
@@ -1045,8 +1225,14 @@ def plot_analysis(stats_data, source_type, output_file_base):
             ordered_labels2.append(period_label)
     
     ax2.legend(ordered_handles2, ordered_labels2,
-              loc='upper center', bbox_to_anchor=(0.5, -0.18),
-              ncol=2, fontsize=20, frameon=False)
+              loc='upper center', bbox_to_anchor=(0.45, -0.25),
+              ncol=3, fontsize=20, frameon=False)
+    
+    # Add timestamp below legend (bottom-right, using figure coordinates)
+    fig2.text(0.93, 0.02, f"Generated: {timestamp}",
+              ha='right', va='bottom',
+              fontsize=11, color='#666',
+              style='italic')
     
     plt.tight_layout()
     
@@ -1057,7 +1243,7 @@ def plot_analysis(stats_data, source_type, output_file_base):
     return output_file_percentage, output_file_absolute
 
 
-def generate_plot_for_source(source_type, corrected_data, output_file_base):
+def generate_plot_for_source(source_type, corrected_data, output_file_base, fetch_time=None):
     """
     Phase 3: Generate plot for a specific source from corrected data
     """
@@ -1072,8 +1258,8 @@ def generate_plot_for_source(source_type, corrected_data, output_file_base):
         print(f"✗ No data available for {source_type}")
         return
     
-    # Calculate statistics
-    stats_data = calculate_daily_statistics(plot_data)
+    # Calculate statistics (pass fetch_time for consistent cutoff)
+    stats_data = calculate_daily_statistics(plot_data, fetch_time=fetch_time)
     
     # Create plots (returns percentage and absolute files)
     percentage_file, absolute_file = plot_analysis(stats_data, source_type, output_file_base)
@@ -1146,7 +1332,86 @@ def calculate_period_totals(period_data, period_name):
     return totals
 
 
-def update_summary_table_worksheet(corrected_data):
+def get_or_create_country_sheet(gc, drive_service, country_code='EU'):
+    """
+    Get or create a country-specific Google Sheet and move to correct Drive folder
+    Sets permissions: Anyone with link can view
+    
+    Args:
+        gc: gspread client
+        drive_service: Google Drive API service
+        country_code: 'EU', 'DE', etc.
+    
+    Returns:
+        spreadsheet: gspread Spreadsheet object
+    """
+    sheet_name = f"{country_code} Electricity Production Data"
+    
+    try:
+        # Try to open existing sheet
+        spreadsheet = gc.open(sheet_name)
+        print(f"✓ Opened existing sheet: {sheet_name}")
+    except gspread.SpreadsheetNotFound:
+        # Create new sheet
+        spreadsheet = gc.create(sheet_name)
+        print(f"✓ Created new sheet: {sheet_name}")
+        
+        # Set permissions: Anyone with link can view
+        permission = {'type': 'anyone', 'role': 'reader'}
+        drive_service.permissions().create(
+            fileId=spreadsheet.id,
+            body=permission,
+            fields='id'
+        ).execute()
+        print(f"  ✓ Set permissions: Anyone with link can view")
+        
+        # Move to correct Drive folder structure
+        # Get or create folder: EU-Electricity-Plots/[Country]/
+        try:
+            # Find root folder
+            query = "name='EU-Electricity-Plots' and mimeType='application/vnd.google-apps.folder' and trashed=false"
+            results = drive_service.files().list(q=query, spaces='drive', fields='files(id)').execute()
+            folders = results.get('files', [])
+            
+            if folders:
+                root_folder_id = folders[0]['id']
+                
+                # Find or create country folder
+                query = f"name='{country_code}' and '{root_folder_id}' in parents and mimeType='application/vnd.google-apps.folder' and trashed=false"
+                results = drive_service.files().list(q=query, spaces='drive', fields='files(id)').execute()
+                country_folders = results.get('files', [])
+                
+                if country_folders:
+                    country_folder_id = country_folders[0]['id']
+                else:
+                    # Create country folder
+                    file_metadata = {
+                        'name': country_code,
+                        'mimeType': 'application/vnd.google-apps.folder',
+                        'parents': [root_folder_id]
+                    }
+                    folder = drive_service.files().create(body=file_metadata, fields='id').execute()
+                    country_folder_id = folder.get('id')
+                    print(f"  ✓ Created folder: EU-Electricity-Plots/{country_code}/")
+                
+                # Move sheet to country folder
+                file = drive_service.files().get(fileId=spreadsheet.id, fields='parents').execute()
+                previous_parents = ",".join(file.get('parents', []))
+                drive_service.files().update(
+                    fileId=spreadsheet.id,
+                    addParents=country_folder_id,
+                    removeParents=previous_parents,
+                    fields='id, parents'
+                ).execute()
+                print(f"  ✓ Moved to: EU-Electricity-Plots/{country_code}/")
+                
+        except Exception as e:
+            print(f"  ⚠ Could not move to Drive folder: {e}")
+    
+    return spreadsheet
+
+
+def update_summary_table_worksheet(corrected_data, country_code='EU'):
     """
     Update Google Sheets "Summary Table Data" worksheet with yesterday/last week data
     Uses PROJECTED (corrected) data for accuracy
@@ -1171,9 +1436,19 @@ def update_summary_table_worksheet(corrected_data):
         credentials = Credentials.from_service_account_info(creds_dict, scopes=scope)
         gc = gspread.authorize(credentials)
         
-        # Open spreadsheet
-        spreadsheet = gc.open('EU Electricity Production Data')
-        print("✓ Connected to spreadsheet")
+        # Initialize drive service for sheet organization
+        from googleapiclient.discovery import build
+        from google.oauth2.service_account import Credentials as ServiceAccountCredentials
+        
+        credentials_drive = ServiceAccountCredentials.from_service_account_info(
+            creds_dict,
+            scopes=['https://www.googleapis.com/auth/drive.file']
+        )
+        drive_service = build('drive', 'v3', credentials=credentials_drive)
+        
+        # Get or create country-specific spreadsheet
+        spreadsheet = get_or_create_country_sheet(gc, drive_service, country_code=country_code)
+        print(f"✓ Connected to Google Sheets ({country_code}): {spreadsheet.url}")
         
         # Get or create worksheet
         try:
@@ -1619,172 +1894,192 @@ def main():
         sys.exit(1)
     
     try:
-        # Phase 1: Collect all data ONCE
-        data_matrix, periods = collect_all_data(api_key)
+        # Phase 1: Collect all data ONCE (all 27 EU countries)
+        print("\n⚡ OPTIMIZATION: Fetching all 27 EU countries ONCE for all target countries")
+        raw_data_matrix, periods, fetch_time = collect_all_data(api_key)
         
-        # Phase 2: Apply projections and corrections ONCE
-        corrected_data = apply_projections_and_corrections(data_matrix)
+        # Countries to process
+        countries_to_process = ['EU', 'DE']
         
-        # Phase 3: Generate plots
-        if args.source:
-            # Single plot mode
-            print("\n" + "=" * 80)
-            print(f"PHASE 3: GENERATING {DISPLAY_NAMES[args.source].upper()} PLOTS")
-            print("=" * 80)
-            output_file_base = f'plots/{args.source.replace("-", "_")}_analysis.png'
-            percentage_file, absolute_file = generate_plot_for_source(args.source, corrected_data, output_file_base)
-            
-            # Upload both to Google Drive
-            print(f"\n📤 Uploading to Google Drive...")
-            perc_id = upload_plot_to_drive(percentage_file, country='EU')
-            abs_id = upload_plot_to_drive(absolute_file, country='EU')
-            if perc_id and abs_id:
-                print(f"  ✓ Uploaded both plots to EU/Intraday/")
-        else:
-            # Batch mode - generate all plots
-            print("\n" + "=" * 80)
-            print("PHASE 3: GENERATING ALL 12 PLOTS (24 files: percentage + absolute)")
+        print(f"\n" + "=" * 80)
+        print(f"PROCESSING {len(countries_to_process)} COUNTRIES: {', '.join(countries_to_process)}")
+        print("=" * 80)
+        
+        for country_idx, country_code in enumerate(countries_to_process, 1):
+            print(f"\n" + "=" * 80)
+            print(f"PROCESSING {country_code} ({country_idx}/{len(countries_to_process)})")
             print("=" * 80)
             
-            all_sources = ATOMIC_SOURCES + AGGREGATE_SOURCES
-            drive_file_ids = {}
+            # Extract data for this country from raw data
+            data_matrix = extract_country_from_raw_data(raw_data_matrix, country_code)
             
-            for i, source in enumerate(all_sources, 1):
-                print(f"\n[{i}/{len(all_sources)}] Processing {DISPLAY_NAMES[source]}...")
-                output_file_base = f'plots/{source.replace("-", "_")}_analysis.png'
-                percentage_file, absolute_file = generate_plot_for_source(source, corrected_data, output_file_base)
+            # Phase 2: Apply projections and corrections for this country
+            corrected_data = apply_projections_and_corrections(data_matrix)
+            
+            # Phase 3: Generate plots
+            if args.source:
+                # Single plot mode
+                print("\n" + "=" * 80)
+                print(f"PHASE 3: GENERATING {DISPLAY_NAMES[args.source].upper()} PLOTS")
+                print("=" * 80)
+                output_file_base = f'plots/{args.source.replace("-", "_")}_analysis.png'
+                percentage_file, absolute_file = generate_plot_for_source(args.source, corrected_data, output_file_base, fetch_time=fetch_time)
                 
                 # Upload both to Google Drive
-                perc_id = upload_plot_to_drive(percentage_file, country='EU')
-                abs_id = upload_plot_to_drive(absolute_file, country='EU')
+                print(f"\n📤 Uploading to Google Drive...")
+                perc_id = upload_plot_to_drive(percentage_file, country=country_code)
+                abs_id = upload_plot_to_drive(absolute_file, country=country_code)
                 if perc_id and abs_id:
-                    drive_file_ids[source] = {
-                        'percentage': perc_id,
-                        'absolute': abs_id
-                    }
-                    print(f"  ✓ Uploaded both plots to Drive: EU/Intraday/")
-            
-            # Save Drive file IDs to JSON
-            if drive_file_ids:
-                print(f"\n📤 Saving Drive links for {len(drive_file_ids)} sources...")
-                print(f"   Sources: {', '.join(drive_file_ids.keys())}")
-                drive_links_file = 'plots/drive_links.json'
-                drive_links = {}
-                
-                # Load existing links
-                if os.path.exists(drive_links_file):
-                    try:
-                        with open(drive_links_file, 'r') as f:
-                            drive_links = json.load(f)
-                    except:
-                        pass
-                
-                # Update with new file IDs
-                if 'EU' not in drive_links:
-                    drive_links['EU'] = {}
-                if 'Intraday' not in drive_links['EU']:
-                    drive_links['EU']['Intraday'] = {}
-                
-                # Random thumbnail size to bypass mobile browser cache
-                # Rotates between 5 sizes: each new URL forces browser to fetch fresh image
-                thumbnail_size = random.choice([1998, 1999, 2000, 2001, 2002])
-                print(f"  📐 Using thumbnail size: w{thumbnail_size} (cache-busting)")
-                
-                for source, file_ids in drive_file_ids.items():
-                    drive_links['EU']['Intraday'][source] = {
-                        'percentage': {
-                            'file_id': file_ids['percentage'],
-                            'view_url': f'https://drive.google.com/file/d/{file_ids["percentage"]}/view',
-                            'direct_url': f'https://drive.google.com/thumbnail?id={file_ids["percentage"]}&sz=w{thumbnail_size}'
-                        },
-                        'absolute': {
-                            'file_id': file_ids['absolute'],
-                            'view_url': f'https://drive.google.com/file/d/{file_ids["absolute"]}/view',
-                            'direct_url': f'https://drive.google.com/thumbnail?id={file_ids["absolute"]}&sz=w{thumbnail_size}'
-                        },
-                        'updated': datetime.now().isoformat()
-                    }
-                
-                # Save back to file (atomic write with validation)
-                drive_links_file_path = os.path.abspath(drive_links_file)
-                temp_file = drive_links_file + '.tmp'
-                
-                # Check if file exists and is writable
-                if os.path.exists(drive_links_file):
-                    if not os.access(drive_links_file, os.W_OK):
-                        print(f"  ⚠ Warning: {drive_links_file} exists but is not writable!")
-                    else:
-                        print(f"  Overwriting existing file: {drive_links_file}")
-                
-                try:
-                    # Write to temporary file first
-                    with open(temp_file, 'w') as f:
-                        json.dump(drive_links, f, indent=2)
-                    
-                    # Validate the JSON by reading it back
-                    with open(temp_file, 'r') as f:
-                        content = f.read()
-                        # Check for git conflict markers
-                        if '<<<<<<< ' in content or '=======' in content or '>>>>>>> ' in content:
-                            raise ValueError("Git conflict markers detected in JSON file!")
-                        # Validate it's valid JSON and structure
-                        saved_data = json.loads(content)
-                    
-                    # If validation passes, atomically replace the file
-                    os.replace(temp_file, drive_links_file)
-                    
-                    # Verify structure
-                    sample_source = list(drive_file_ids.keys())[0] if drive_file_ids else None
-                    if sample_source:
-                        if 'EU' in saved_data and 'Intraday' in saved_data['EU']:
-                            if sample_source in saved_data['EU']['Intraday']:
-                                source_data = saved_data['EU']['Intraday'][sample_source]
-                                if 'percentage' in source_data and 'absolute' in source_data:
-                                    file_size = os.path.getsize(drive_links_file)
-                                    print(f"  ✓ Drive links saved to {drive_links_file}")
-                                    print(f"     Full path: {drive_links_file_path}")
-                                    print(f"     File size: {file_size} bytes")
-                                    print(f"     ✓ Verified NEW structure (percentage/absolute)")
-                                else:
-                                    print(f"  ⚠ WARNING: OLD structure detected! Missing percentage/absolute")
-                            else:
-                                print(f"  ⚠ WARNING: Source {sample_source} not in saved JSON")
-                    
-                except ValueError as e:
-                    print(f"  ✗ JSON validation error: {e}")
-                    if os.path.exists(temp_file):
-                        os.remove(temp_file)
-                    raise
-                except PermissionError as e:
-                    print(f"  ✗ Permission error: {e}")
-                    if os.path.exists(temp_file):
-                        os.remove(temp_file)
-                    raise
-                except Exception as e:
-                    print(f"  ✗ Error writing file: {e}")
-                    if os.path.exists(temp_file):
-                        os.remove(temp_file)
-                    raise
+                    print(f"  ✓ Uploaded both plots to {country_code}/Intraday/")
             else:
-                print("\n⚠ Warning: No Drive file IDs collected - JSON not updated")
-                print("   Check if uploads succeeded above")
+                # Batch mode - generate all plots
+                print("\n" + "=" * 80)
+                print("PHASE 3: GENERATING ALL 12 PLOTS (24 files: percentage + absolute)")
+                print("=" * 80)
+                
+                all_sources = ATOMIC_SOURCES + AGGREGATE_SOURCES
+                drive_file_ids = {}
+                
+                for i, source in enumerate(all_sources, 1):
+                    print(f"\n[{i}/{len(all_sources)}] Processing {DISPLAY_NAMES[source]}...")
+                    output_file_base = f'plots/{source.replace("-", "_")}_analysis.png'
+                    percentage_file, absolute_file = generate_plot_for_source(source, corrected_data, output_file_base, fetch_time=fetch_time)
+                    
+                    # Upload both to Google Drive
+                    perc_id = upload_plot_to_drive(percentage_file, country=country_code)
+                    abs_id = upload_plot_to_drive(absolute_file, country=country_code)
+                    if perc_id and abs_id:
+                        drive_file_ids[source] = {
+                            'percentage': perc_id,
+                            'absolute': abs_id
+                        }
+                        print(f"  ✓ Uploaded both plots to Drive: {country_code}/Intraday/")
+                
+                # Save Drive file IDs to JSON
+                if drive_file_ids:
+                    print(f"\n📤 Saving Drive links for {len(drive_file_ids)} sources...")
+                    print(f"   Sources: {', '.join(drive_file_ids.keys())}")
+                    drive_links_file = 'plots/drive_links.json'
+                    drive_links = {}
+                    
+                    # Load existing links
+                    if os.path.exists(drive_links_file):
+                        try:
+                            with open(drive_links_file, 'r') as f:
+                                drive_links = json.load(f)
+                        except:
+                            pass
+                    
+                    # Update with new file IDs
+                    if country_code not in drive_links:
+                        drive_links[country_code] = {}
+                    if 'Intraday' not in drive_links[country_code]:
+                        drive_links[country_code]['Intraday'] = {}
+                    
+                    # Random thumbnail size to bypass mobile browser cache
+                    # Rotates between 5 sizes: each new URL forces browser to fetch fresh image
+                    thumbnail_size = random.choice([1998, 1999, 2000, 2001, 2002])
+                    print(f"  📐 Using thumbnail size: w{thumbnail_size} (cache-busting)")
+                    
+                    for source, file_ids in drive_file_ids.items():
+                        drive_links[country_code]['Intraday'][source] = {
+                            'percentage': {
+                                'file_id': file_ids['percentage'],
+                                'view_url': f'https://drive.google.com/file/d/{file_ids["percentage"]}/view',
+                                'direct_url': f'https://drive.google.com/thumbnail?id={file_ids["percentage"]}&sz=w{thumbnail_size}'
+                            },
+                            'absolute': {
+                                'file_id': file_ids['absolute'],
+                                'view_url': f'https://drive.google.com/file/d/{file_ids["absolute"]}/view',
+                                'direct_url': f'https://drive.google.com/thumbnail?id={file_ids["absolute"]}&sz=w{thumbnail_size}'
+                            },
+                            'updated': datetime.now().isoformat()
+                        }
+                    
+                    # Save back to file (atomic write with validation)
+                    drive_links_file_path = os.path.abspath(drive_links_file)
+                    temp_file = drive_links_file + '.tmp'
+                    
+                    # Check if file exists and is writable
+                    if os.path.exists(drive_links_file):
+                        if not os.access(drive_links_file, os.W_OK):
+                            print(f"  ⚠ Warning: {drive_links_file} exists but is not writable!")
+                        else:
+                            print(f"  Overwriting existing file: {drive_links_file}")
+                    
+                    try:
+                        # Write to temporary file first
+                        with open(temp_file, 'w') as f:
+                            json.dump(drive_links, f, indent=2)
+                        
+                        # Validate the JSON by reading it back
+                        with open(temp_file, 'r') as f:
+                            content = f.read()
+                            # Check for git conflict markers
+                            if '<<<<<<< ' in content or '=======' in content or '>>>>>>> ' in content:
+                                raise ValueError("Git conflict markers detected in JSON file!")
+                            # Validate it's valid JSON and structure
+                            saved_data = json.loads(content)
+                        
+                        # If validation passes, atomically replace the file
+                        os.replace(temp_file, drive_links_file)
+                        
+                        # Verify structure
+                        sample_source = list(drive_file_ids.keys())[0] if drive_file_ids else None
+                        if sample_source:
+                            if country_code in saved_data and 'Intraday' in saved_data[country_code]:
+                                if sample_source in saved_data[country_code]['Intraday']:
+                                    source_data = saved_data[country_code]['Intraday'][sample_source]
+                                    if 'percentage' in source_data and 'absolute' in source_data:
+                                        file_size = os.path.getsize(drive_links_file)
+                                        print(f"  ✓ Drive links saved to {drive_links_file}")
+                                        print(f"     Full path: {drive_links_file_path}")
+                                        print(f"     File size: {file_size} bytes")
+                                        print(f"     ✓ Verified NEW structure (percentage/absolute)")
+                                    else:
+                                        print(f"  ⚠ WARNING: OLD structure detected! Missing percentage/absolute")
+                                else:
+                                    print(f"  ⚠ WARNING: Source {sample_source} not in saved JSON")
+                        
+                    except ValueError as e:
+                        print(f"  ✗ JSON validation error: {e}")
+                        if os.path.exists(temp_file):
+                            os.remove(temp_file)
+                        raise
+                    except PermissionError as e:
+                        print(f"  ✗ Permission error: {e}")
+                        if os.path.exists(temp_file):
+                            os.remove(temp_file)
+                        raise
+                    except Exception as e:
+                        print(f"  ✗ Error writing file: {e}")
+                        if os.path.exists(temp_file):
+                            os.remove(temp_file)
+                        raise
+                else:
+                    print("\n⚠ Warning: No Drive file IDs collected - JSON not updated")
+                    print("   Check if uploads succeeded above")
+            
+            # Phase 4: Update Summary Table in Google Sheets
+            update_summary_table_worksheet(corrected_data, country_code=country_code)
+            
+            print(f"\n✓ {country_code} COMPLETE!")
         
         # Create timestamp file
         timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S UTC')
         with open('plots/last_update.html', 'w') as f:
             f.write(f'<p>Last updated: {timestamp}</p>')
         
-        # Phase 4: Update Summary Table in Google Sheets
-        update_summary_table_worksheet(corrected_data)
-        
         print(f"\n" + "=" * 80)
+        print(f"✓ ALL COUNTRIES COMPLETE!")
+        print("=" * 80)
         if args.source:
-            print(f"✓ COMPLETE! {DISPLAY_NAMES[args.source]} plot generated")
+            print(f"   - {DISPLAY_NAMES[args.source]} plots generated for {len(countries_to_process)} countries")
         else:
-            print(f"✓ COMPLETE! All 12 plots generated successfully")
+            print(f"   - 12 plots generated for {len(countries_to_process)} countries")
             print(f"   - 10 atomic sources")
             print(f"   - 2 aggregates")
-            print(f"   - Summary table updated in Google Sheets")
+            print(f"   - Summary tables updated in Google Sheets")
         print("=" * 80)
         
     except Exception as e:
