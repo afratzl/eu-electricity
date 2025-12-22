@@ -61,6 +61,8 @@ def get_or_create_country_sheet(gc, drive_service, country_code='EU'):
     import os
     
     sheet_name = f'{country_code} Electricity Production Data'
+    spreadsheet = None
+    is_new_sheet = False
     
     # Try to get from JSON first
     drive_links_file = 'plots/drive_links.json'
@@ -75,37 +77,40 @@ def get_or_create_country_sheet(gc, drive_service, country_code='EU'):
                 try:
                     spreadsheet = gc.open_by_key(sheet_id)
                     print(f"✓ Opened existing sheet: {sheet_name}")
-                    return spreadsheet
                 except:
                     print(f"  ⚠ Sheet ID in JSON is invalid, will create new")
         except:
             pass
     
     # Sheet doesn't exist or JSON doesn't have it - create new
-    print(f"  Creating new sheet: {sheet_name}")
-    spreadsheet = gc.create(sheet_name)
+    if spreadsheet is None:
+        print(f"  Creating new sheet: {sheet_name}")
+        spreadsheet = gc.create(sheet_name)
+        is_new_sheet = True
     
-    # Move to correct Drive folder structure if drive_service provided
+    # Move to correct Drive folder and set permissions (for both new and existing sheets)
     if drive_service:
         try:
-            # Get or create: EU-Electricity-Plots/[Country]/
-            root_folder_id = get_or_create_drive_folder(drive_service, 'EU-Electricity-Plots')
-            country_folder_id = get_or_create_drive_folder(drive_service, country_code, root_folder_id)
+            # Only move if it's a new sheet
+            if is_new_sheet:
+                # Get or create: EU-Electricity-Plots/[Country]/
+                root_folder_id = get_or_create_drive_folder(drive_service, 'EU-Electricity-Plots')
+                country_folder_id = get_or_create_drive_folder(drive_service, country_code, root_folder_id)
+                
+                # Move spreadsheet to country folder
+                file = drive_service.files().get(fileId=spreadsheet.id, fields='parents').execute()
+                previous_parents = ",".join(file.get('parents', []))
+                
+                drive_service.files().update(
+                    fileId=spreadsheet.id,
+                    addParents=country_folder_id,
+                    removeParents=previous_parents,
+                    fields='id, parents'
+                ).execute()
+                
+                print(f"  ✓ Moved sheet to: EU-Electricity-Plots/{country_code}/")
             
-            # Move spreadsheet to country folder
-            file = drive_service.files().get(fileId=spreadsheet.id, fields='parents').execute()
-            previous_parents = ",".join(file.get('parents', []))
-            
-            drive_service.files().update(
-                fileId=spreadsheet.id,
-                addParents=country_folder_id,
-                removeParents=previous_parents,
-                fields='id, parents'
-            ).execute()
-            
-            print(f"  ✓ Moved sheet to: EU-Electricity-Plots/{country_code}/")
-            
-            # Set permissions: Anyone with link can view
+            # Set permissions: Anyone with link can view (ALWAYS, even for existing sheets)
             try:
                 permission = {
                     'type': 'anyone',
@@ -118,7 +123,9 @@ def get_or_create_country_sheet(gc, drive_service, country_code='EU'):
                 ).execute()
                 print(f"  ✓ Set permissions: Anyone with link can view")
             except Exception as e:
-                print(f"  ⚠ Could not set permissions: {e}")
+                # Permission might already exist, that's okay
+                if 'already exists' not in str(e).lower():
+                    print(f"  ⚠ Could not set permissions: {e}")
                 
         except Exception as e:
             print(f"  ⚠ Could not organize in Drive: {e}")
@@ -732,7 +739,8 @@ def save_all_data_to_google_sheets_with_merge(all_data, month_names, country_cod
             print(f"  ✓ Updated {source_name}: Added years [{new_years_str}], Updated years [{updated_years_str}]")
             
             # Add delay to prevent rate limiting (Google Sheets: 60 writes/minute)
-            time.sleep(1)
+            # Each worksheet = 4 writes (clear, update, 2× format), so need longer delay
+            time.sleep(3)
 
         print(f"\n✓ All data saved to Google Sheets: '{country_code} Electricity Production Data'")
         print(f"URL: {spreadsheet.url}")
@@ -844,8 +852,8 @@ def main():
         
         # Add delay between countries to prevent rate limiting
         if country != countries_to_save[-1]:  # Don't delay after last country
-            print(f"  ⏱ Waiting 2 seconds before next country...")
-            time.sleep(2)
+            print(f"  ⏱ Waiting 5 seconds before next country...")
+            time.sleep(5)
     
     print(f"\n" + "=" * 80)
     print("DATA COLLECTION COMPLETE!")
