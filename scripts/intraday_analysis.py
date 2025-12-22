@@ -189,15 +189,15 @@ def get_intraday_data_for_country(country, start_date, end_date, client, data_ty
             elif str(data.index.tz) != 'Europe/Brussels':
                 data.index = data.index.tz_convert('Europe/Brussels')
 
-            time.sleep(0.2)
+            time.sleep(0.1)
             return data
 
         except Exception as e:
             if attempt < max_retries - 1:
-                wait_time = 0.5 * (2 ** attempt)
+                wait_time = 0.1
                 time.sleep(wait_time)
             else:
-                time.sleep(0.5)
+                time.sleep(0.1)
                 return pd.DataFrame()
 
     return pd.DataFrame()
@@ -400,92 +400,6 @@ def collect_all_data(api_key):
     
     print("\n✓ Data collection complete!")
     return data_matrix, periods
-
-
-def extract_country_from_raw_data(raw_data_matrix, country_code):
-    """
-    Extract or aggregate data for a specific country from raw multi-country data
-    
-    Args:
-        raw_data_matrix: Full data matrix with all 27 countries
-        country_code: 'EU' for aggregate, 'DE' for Germany, etc.
-    
-    Returns:
-        data_matrix: Same structure but with country-specific data
-    """
-    print(f"\n📊 Extracting data for: {country_code}")
-    
-    extracted_data = {
-        'atomic_sources': {},
-        'aggregates': {},
-        'total_generation': {}
-    }
-    
-    # Extract atomic sources
-    for source in ATOMIC_SOURCES:
-        if source not in raw_data_matrix['atomic_sources']:
-            continue
-        
-        extracted_data['atomic_sources'][source] = {}
-        
-        for period_name, country_df in raw_data_matrix['atomic_sources'][source].items():
-            if country_df is None or country_df.empty:
-                continue
-            
-            if country_code == 'EU':
-                # Sum all countries
-                extracted_series = country_df.sum(axis=1)
-            else:
-                # Extract single country
-                if country_code in country_df.columns:
-                    extracted_series = country_df[country_code]
-                else:
-                    continue
-            
-            extracted_data['atomic_sources'][source][period_name] = extracted_series
-    
-    # Extract aggregates (already EU totals in raw data, but handle country-specific)
-    for agg_source in AGGREGATE_SOURCES:
-        if agg_source not in raw_data_matrix['aggregates']:
-            continue
-        
-        extracted_data['aggregates'][agg_source] = {}
-        
-        for period_name, eu_series in raw_data_matrix['aggregates'][agg_source].items():
-            if eu_series is None or eu_series.empty:
-                continue
-            
-            if country_code == 'EU':
-                # Already EU aggregate
-                extracted_data['aggregates'][agg_source][period_name] = eu_series
-            else:
-                # Build aggregate from atomic sources for this country
-                components = AGGREGATE_DEFINITIONS[agg_source]
-                component_series = []
-                
-                for component in components:
-                    if component in extracted_data['atomic_sources']:
-                        if period_name in extracted_data['atomic_sources'][component]:
-                            component_series.append(extracted_data['atomic_sources'][component][period_name])
-                
-                if component_series:
-                    extracted_data['aggregates'][agg_source][period_name] = sum(component_series)
-    
-    # Extract total generation
-    for period_name, country_df in raw_data_matrix['total_generation'].items():
-        if country_df is None or country_df.empty:
-            continue
-        
-        if country_code == 'EU':
-            # Sum all countries
-            extracted_data['total_generation'][period_name] = country_df.sum(axis=1)
-        else:
-            # Extract single country
-            if country_code in country_df.columns:
-                extracted_data['total_generation'][period_name] = country_df[country_code]
-    
-    print(f"✓ Extracted data for {country_code}")
-    return extracted_data
 
 
 # ============================================================================
@@ -1232,86 +1146,7 @@ def calculate_period_totals(period_data, period_name):
     return totals
 
 
-def get_or_create_country_sheet(gc, drive_service, country_code='EU'):
-    """
-    Get or create a country-specific Google Sheet and move to correct Drive folder
-    Sets permissions: Anyone with link can view
-    
-    Args:
-        gc: gspread client
-        drive_service: Google Drive API service
-        country_code: 'EU', 'DE', etc.
-    
-    Returns:
-        spreadsheet: gspread Spreadsheet object
-    """
-    sheet_name = f"{country_code} Electricity Production Data"
-    
-    try:
-        # Try to open existing sheet
-        spreadsheet = gc.open(sheet_name)
-        print(f"✓ Opened existing sheet: {sheet_name}")
-    except gspread.SpreadsheetNotFound:
-        # Create new sheet
-        spreadsheet = gc.create(sheet_name)
-        print(f"✓ Created new sheet: {sheet_name}")
-        
-        # Set permissions: Anyone with link can view
-        permission = {'type': 'anyone', 'role': 'reader'}
-        drive_service.permissions().create(
-            fileId=spreadsheet.id,
-            body=permission,
-            fields='id'
-        ).execute()
-        print(f"  ✓ Set permissions: Anyone with link can view")
-        
-        # Move to correct Drive folder structure
-        # Get or create folder: EU-Electricity-Plots/[Country]/
-        try:
-            # Find root folder
-            query = "name='EU-Electricity-Plots' and mimeType='application/vnd.google-apps.folder' and trashed=false"
-            results = drive_service.files().list(q=query, spaces='drive', fields='files(id)').execute()
-            folders = results.get('files', [])
-            
-            if folders:
-                root_folder_id = folders[0]['id']
-                
-                # Find or create country folder
-                query = f"name='{country_code}' and '{root_folder_id}' in parents and mimeType='application/vnd.google-apps.folder' and trashed=false"
-                results = drive_service.files().list(q=query, spaces='drive', fields='files(id)').execute()
-                country_folders = results.get('files', [])
-                
-                if country_folders:
-                    country_folder_id = country_folders[0]['id']
-                else:
-                    # Create country folder
-                    file_metadata = {
-                        'name': country_code,
-                        'mimeType': 'application/vnd.google-apps.folder',
-                        'parents': [root_folder_id]
-                    }
-                    folder = drive_service.files().create(body=file_metadata, fields='id').execute()
-                    country_folder_id = folder.get('id')
-                    print(f"  ✓ Created folder: EU-Electricity-Plots/{country_code}/")
-                
-                # Move sheet to country folder
-                file = drive_service.files().get(fileId=spreadsheet.id, fields='parents').execute()
-                previous_parents = ",".join(file.get('parents', []))
-                drive_service.files().update(
-                    fileId=spreadsheet.id,
-                    addParents=country_folder_id,
-                    removeParents=previous_parents,
-                    fields='id, parents'
-                ).execute()
-                print(f"  ✓ Moved to: EU-Electricity-Plots/{country_code}/")
-                
-        except Exception as e:
-            print(f"  ⚠ Could not move to Drive folder: {e}")
-    
-    return spreadsheet
-
-
-def update_summary_table_worksheet(corrected_data, country_code='EU'):
+def update_summary_table_worksheet(corrected_data):
     """
     Update Google Sheets "Summary Table Data" worksheet with yesterday/last week data
     Uses PROJECTED (corrected) data for accuracy
@@ -1336,19 +1171,9 @@ def update_summary_table_worksheet(corrected_data, country_code='EU'):
         credentials = Credentials.from_service_account_info(creds_dict, scopes=scope)
         gc = gspread.authorize(credentials)
         
-        # Initialize drive service for sheet organization
-        from googleapiclient.discovery import build
-        from google.oauth2.service_account import Credentials as ServiceAccountCredentials
-        
-        credentials_drive = ServiceAccountCredentials.from_service_account_info(
-            creds_dict,
-            scopes=['https://www.googleapis.com/auth/drive.file']
-        )
-        drive_service = build('drive', 'v3', credentials=credentials_drive)
-        
-        # Get or create country-specific spreadsheet
-        spreadsheet = get_or_create_country_sheet(gc, drive_service, country_code=country_code)
-        print(f"✓ Connected to Google Sheets ({country_code}): {spreadsheet.url}")
+        # Open spreadsheet
+        spreadsheet = gc.open('EU Electricity Production Data')
+        print("✓ Connected to spreadsheet")
         
         # Get or create worksheet
         try:
@@ -1794,192 +1619,172 @@ def main():
         sys.exit(1)
     
     try:
-        # Phase 1: Collect all data ONCE (all 27 EU countries)
-        print("\n⚡ OPTIMIZATION: Fetching all 27 EU countries ONCE for all target countries")
-        raw_data_matrix, periods = collect_all_data(api_key)
+        # Phase 1: Collect all data ONCE
+        data_matrix, periods = collect_all_data(api_key)
         
-        # Countries to process
-        countries_to_process = ['EU', 'DE']
+        # Phase 2: Apply projections and corrections ONCE
+        corrected_data = apply_projections_and_corrections(data_matrix)
         
-        print(f"\n" + "=" * 80)
-        print(f"PROCESSING {len(countries_to_process)} COUNTRIES: {', '.join(countries_to_process)}")
-        print("=" * 80)
-        
-        for country_idx, country_code in enumerate(countries_to_process, 1):
-            print(f"\n" + "=" * 80)
-            print(f"PROCESSING {country_code} ({country_idx}/{len(countries_to_process)})")
+        # Phase 3: Generate plots
+        if args.source:
+            # Single plot mode
+            print("\n" + "=" * 80)
+            print(f"PHASE 3: GENERATING {DISPLAY_NAMES[args.source].upper()} PLOTS")
+            print("=" * 80)
+            output_file_base = f'plots/{args.source.replace("-", "_")}_analysis.png'
+            percentage_file, absolute_file = generate_plot_for_source(args.source, corrected_data, output_file_base)
+            
+            # Upload both to Google Drive
+            print(f"\n📤 Uploading to Google Drive...")
+            perc_id = upload_plot_to_drive(percentage_file, country='EU')
+            abs_id = upload_plot_to_drive(absolute_file, country='EU')
+            if perc_id and abs_id:
+                print(f"  ✓ Uploaded both plots to EU/Intraday/")
+        else:
+            # Batch mode - generate all plots
+            print("\n" + "=" * 80)
+            print("PHASE 3: GENERATING ALL 12 PLOTS (24 files: percentage + absolute)")
             print("=" * 80)
             
-            # Extract data for this country from raw data
-            data_matrix = extract_country_from_raw_data(raw_data_matrix, country_code)
+            all_sources = ATOMIC_SOURCES + AGGREGATE_SOURCES
+            drive_file_ids = {}
             
-            # Phase 2: Apply projections and corrections for this country
-            corrected_data = apply_projections_and_corrections(data_matrix)
-            
-            # Phase 3: Generate plots
-            if args.source:
-                # Single plot mode
-                print("\n" + "=" * 80)
-                print(f"PHASE 3: GENERATING {DISPLAY_NAMES[args.source].upper()} PLOTS")
-                print("=" * 80)
-                output_file_base = f'plots/{args.source.replace("-", "_")}_analysis.png'
-                percentage_file, absolute_file = generate_plot_for_source(args.source, corrected_data, output_file_base)
+            for i, source in enumerate(all_sources, 1):
+                print(f"\n[{i}/{len(all_sources)}] Processing {DISPLAY_NAMES[source]}...")
+                output_file_base = f'plots/{source.replace("-", "_")}_analysis.png'
+                percentage_file, absolute_file = generate_plot_for_source(source, corrected_data, output_file_base)
                 
                 # Upload both to Google Drive
-                print(f"\n📤 Uploading to Google Drive...")
-                perc_id = upload_plot_to_drive(percentage_file, country=country_code)
-                abs_id = upload_plot_to_drive(absolute_file, country=country_code)
+                perc_id = upload_plot_to_drive(percentage_file, country='EU')
+                abs_id = upload_plot_to_drive(absolute_file, country='EU')
                 if perc_id and abs_id:
-                    print(f"  ✓ Uploaded both plots to {country_code}/Intraday/")
-            else:
-                # Batch mode - generate all plots
-                print("\n" + "=" * 80)
-                print("PHASE 3: GENERATING ALL 12 PLOTS (24 files: percentage + absolute)")
-                print("=" * 80)
+                    drive_file_ids[source] = {
+                        'percentage': perc_id,
+                        'absolute': abs_id
+                    }
+                    print(f"  ✓ Uploaded both plots to Drive: EU/Intraday/")
+            
+            # Save Drive file IDs to JSON
+            if drive_file_ids:
+                print(f"\n📤 Saving Drive links for {len(drive_file_ids)} sources...")
+                print(f"   Sources: {', '.join(drive_file_ids.keys())}")
+                drive_links_file = 'plots/drive_links.json'
+                drive_links = {}
                 
-                all_sources = ATOMIC_SOURCES + AGGREGATE_SOURCES
-                drive_file_ids = {}
-                
-                for i, source in enumerate(all_sources, 1):
-                    print(f"\n[{i}/{len(all_sources)}] Processing {DISPLAY_NAMES[source]}...")
-                    output_file_base = f'plots/{source.replace("-", "_")}_analysis.png'
-                    percentage_file, absolute_file = generate_plot_for_source(source, corrected_data, output_file_base)
-                    
-                    # Upload both to Google Drive
-                    perc_id = upload_plot_to_drive(percentage_file, country=country_code)
-                    abs_id = upload_plot_to_drive(absolute_file, country=country_code)
-                    if perc_id and abs_id:
-                        drive_file_ids[source] = {
-                            'percentage': perc_id,
-                            'absolute': abs_id
-                        }
-                        print(f"  ✓ Uploaded both plots to Drive: {country_code}/Intraday/")
-                
-                # Save Drive file IDs to JSON
-                if drive_file_ids:
-                    print(f"\n📤 Saving Drive links for {len(drive_file_ids)} sources...")
-                    print(f"   Sources: {', '.join(drive_file_ids.keys())}")
-                    drive_links_file = 'plots/drive_links.json'
-                    drive_links = {}
-                    
-                    # Load existing links
-                    if os.path.exists(drive_links_file):
-                        try:
-                            with open(drive_links_file, 'r') as f:
-                                drive_links = json.load(f)
-                        except:
-                            pass
-                    
-                    # Update with new file IDs
-                    if country_code not in drive_links:
-                        drive_links[country_code] = {}
-                    if 'Intraday' not in drive_links[country_code]:
-                        drive_links[country_code]['Intraday'] = {}
-                    
-                    # Random thumbnail size to bypass mobile browser cache
-                    # Rotates between 5 sizes: each new URL forces browser to fetch fresh image
-                    thumbnail_size = random.choice([1998, 1999, 2000, 2001, 2002])
-                    print(f"  📐 Using thumbnail size: w{thumbnail_size} (cache-busting)")
-                    
-                    for source, file_ids in drive_file_ids.items():
-                        drive_links[country_code]['Intraday'][source] = {
-                            'percentage': {
-                                'file_id': file_ids['percentage'],
-                                'view_url': f'https://drive.google.com/file/d/{file_ids["percentage"]}/view',
-                                'direct_url': f'https://drive.google.com/thumbnail?id={file_ids["percentage"]}&sz=w{thumbnail_size}'
-                            },
-                            'absolute': {
-                                'file_id': file_ids['absolute'],
-                                'view_url': f'https://drive.google.com/file/d/{file_ids["absolute"]}/view',
-                                'direct_url': f'https://drive.google.com/thumbnail?id={file_ids["absolute"]}&sz=w{thumbnail_size}'
-                            },
-                            'updated': datetime.now().isoformat()
-                        }
-                    
-                    # Save back to file (atomic write with validation)
-                    drive_links_file_path = os.path.abspath(drive_links_file)
-                    temp_file = drive_links_file + '.tmp'
-                    
-                    # Check if file exists and is writable
-                    if os.path.exists(drive_links_file):
-                        if not os.access(drive_links_file, os.W_OK):
-                            print(f"  ⚠ Warning: {drive_links_file} exists but is not writable!")
-                        else:
-                            print(f"  Overwriting existing file: {drive_links_file}")
-                    
+                # Load existing links
+                if os.path.exists(drive_links_file):
                     try:
-                        # Write to temporary file first
-                        with open(temp_file, 'w') as f:
-                            json.dump(drive_links, f, indent=2)
-                        
-                        # Validate the JSON by reading it back
-                        with open(temp_file, 'r') as f:
-                            content = f.read()
-                            # Check for git conflict markers
-                            if '<<<<<<< ' in content or '=======' in content or '>>>>>>> ' in content:
-                                raise ValueError("Git conflict markers detected in JSON file!")
-                            # Validate it's valid JSON and structure
-                            saved_data = json.loads(content)
-                        
-                        # If validation passes, atomically replace the file
-                        os.replace(temp_file, drive_links_file)
-                        
-                        # Verify structure
-                        sample_source = list(drive_file_ids.keys())[0] if drive_file_ids else None
-                        if sample_source:
-                            if country_code in saved_data and 'Intraday' in saved_data[country_code]:
-                                if sample_source in saved_data[country_code]['Intraday']:
-                                    source_data = saved_data[country_code]['Intraday'][sample_source]
-                                    if 'percentage' in source_data and 'absolute' in source_data:
-                                        file_size = os.path.getsize(drive_links_file)
-                                        print(f"  ✓ Drive links saved to {drive_links_file}")
-                                        print(f"     Full path: {drive_links_file_path}")
-                                        print(f"     File size: {file_size} bytes")
-                                        print(f"     ✓ Verified NEW structure (percentage/absolute)")
-                                    else:
-                                        print(f"  ⚠ WARNING: OLD structure detected! Missing percentage/absolute")
+                        with open(drive_links_file, 'r') as f:
+                            drive_links = json.load(f)
+                    except:
+                        pass
+                
+                # Update with new file IDs
+                if 'EU' not in drive_links:
+                    drive_links['EU'] = {}
+                if 'Intraday' not in drive_links['EU']:
+                    drive_links['EU']['Intraday'] = {}
+                
+                # Random thumbnail size to bypass mobile browser cache
+                # Rotates between 5 sizes: each new URL forces browser to fetch fresh image
+                thumbnail_size = random.choice([1998, 1999, 2000, 2001, 2002])
+                print(f"  📐 Using thumbnail size: w{thumbnail_size} (cache-busting)")
+                
+                for source, file_ids in drive_file_ids.items():
+                    drive_links['EU']['Intraday'][source] = {
+                        'percentage': {
+                            'file_id': file_ids['percentage'],
+                            'view_url': f'https://drive.google.com/file/d/{file_ids["percentage"]}/view',
+                            'direct_url': f'https://drive.google.com/thumbnail?id={file_ids["percentage"]}&sz=w{thumbnail_size}'
+                        },
+                        'absolute': {
+                            'file_id': file_ids['absolute'],
+                            'view_url': f'https://drive.google.com/file/d/{file_ids["absolute"]}/view',
+                            'direct_url': f'https://drive.google.com/thumbnail?id={file_ids["absolute"]}&sz=w{thumbnail_size}'
+                        },
+                        'updated': datetime.now().isoformat()
+                    }
+                
+                # Save back to file (atomic write with validation)
+                drive_links_file_path = os.path.abspath(drive_links_file)
+                temp_file = drive_links_file + '.tmp'
+                
+                # Check if file exists and is writable
+                if os.path.exists(drive_links_file):
+                    if not os.access(drive_links_file, os.W_OK):
+                        print(f"  ⚠ Warning: {drive_links_file} exists but is not writable!")
+                    else:
+                        print(f"  Overwriting existing file: {drive_links_file}")
+                
+                try:
+                    # Write to temporary file first
+                    with open(temp_file, 'w') as f:
+                        json.dump(drive_links, f, indent=2)
+                    
+                    # Validate the JSON by reading it back
+                    with open(temp_file, 'r') as f:
+                        content = f.read()
+                        # Check for git conflict markers
+                        if '<<<<<<< ' in content or '=======' in content or '>>>>>>> ' in content:
+                            raise ValueError("Git conflict markers detected in JSON file!")
+                        # Validate it's valid JSON and structure
+                        saved_data = json.loads(content)
+                    
+                    # If validation passes, atomically replace the file
+                    os.replace(temp_file, drive_links_file)
+                    
+                    # Verify structure
+                    sample_source = list(drive_file_ids.keys())[0] if drive_file_ids else None
+                    if sample_source:
+                        if 'EU' in saved_data and 'Intraday' in saved_data['EU']:
+                            if sample_source in saved_data['EU']['Intraday']:
+                                source_data = saved_data['EU']['Intraday'][sample_source]
+                                if 'percentage' in source_data and 'absolute' in source_data:
+                                    file_size = os.path.getsize(drive_links_file)
+                                    print(f"  ✓ Drive links saved to {drive_links_file}")
+                                    print(f"     Full path: {drive_links_file_path}")
+                                    print(f"     File size: {file_size} bytes")
+                                    print(f"     ✓ Verified NEW structure (percentage/absolute)")
                                 else:
-                                    print(f"  ⚠ WARNING: Source {sample_source} not in saved JSON")
-                        
-                    except ValueError as e:
-                        print(f"  ✗ JSON validation error: {e}")
-                        if os.path.exists(temp_file):
-                            os.remove(temp_file)
-                        raise
-                    except PermissionError as e:
-                        print(f"  ✗ Permission error: {e}")
-                        if os.path.exists(temp_file):
-                            os.remove(temp_file)
-                        raise
-                    except Exception as e:
-                        print(f"  ✗ Error writing file: {e}")
-                        if os.path.exists(temp_file):
-                            os.remove(temp_file)
-                        raise
-                else:
-                    print("\n⚠ Warning: No Drive file IDs collected - JSON not updated")
-                    print("   Check if uploads succeeded above")
-            
-            # Phase 4: Update Summary Table in Google Sheets
-            update_summary_table_worksheet(corrected_data, country_code=country_code)
-            
-            print(f"\n✓ {country_code} COMPLETE!")
+                                    print(f"  ⚠ WARNING: OLD structure detected! Missing percentage/absolute")
+                            else:
+                                print(f"  ⚠ WARNING: Source {sample_source} not in saved JSON")
+                    
+                except ValueError as e:
+                    print(f"  ✗ JSON validation error: {e}")
+                    if os.path.exists(temp_file):
+                        os.remove(temp_file)
+                    raise
+                except PermissionError as e:
+                    print(f"  ✗ Permission error: {e}")
+                    if os.path.exists(temp_file):
+                        os.remove(temp_file)
+                    raise
+                except Exception as e:
+                    print(f"  ✗ Error writing file: {e}")
+                    if os.path.exists(temp_file):
+                        os.remove(temp_file)
+                    raise
+            else:
+                print("\n⚠ Warning: No Drive file IDs collected - JSON not updated")
+                print("   Check if uploads succeeded above")
         
         # Create timestamp file
         timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S UTC')
         with open('plots/last_update.html', 'w') as f:
             f.write(f'<p>Last updated: {timestamp}</p>')
         
+        # Phase 4: Update Summary Table in Google Sheets
+        update_summary_table_worksheet(corrected_data)
+        
         print(f"\n" + "=" * 80)
-        print(f"✓ ALL COUNTRIES COMPLETE!")
-        print("=" * 80)
         if args.source:
-            print(f"   - {DISPLAY_NAMES[args.source]} plots generated for {len(countries_to_process)} countries")
+            print(f"✓ COMPLETE! {DISPLAY_NAMES[args.source]} plot generated")
         else:
-            print(f"   - 12 plots generated for {len(countries_to_process)} countries")
+            print(f"✓ COMPLETE! All 12 plots generated successfully")
             print(f"   - 10 atomic sources")
             print(f"   - 2 aggregates")
-            print(f"   - Summary tables updated in Google Sheets")
+            print(f"   - Summary table updated in Google Sheets")
         print("=" * 80)
         
     except Exception as e:
