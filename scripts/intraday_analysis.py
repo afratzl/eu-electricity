@@ -437,16 +437,18 @@ def extract_country_from_raw_data(raw_data_matrix, country_code):
                 continue
             
             if country_code == 'EU':
-                # Sum all countries
-                extracted_series = country_df.sum(axis=1)
+                # Sum all countries - keep as DataFrame with 'EU' column
+                extracted_df = pd.DataFrame({
+                    'EU': country_df.sum(axis=1)
+                })
             else:
-                # Extract single country
+                # Extract single country - keep as DataFrame with country column
                 if country_code in country_df.columns:
-                    extracted_series = country_df[country_code]
+                    extracted_df = country_df[[country_code]].copy()
                 else:
                     continue
             
-            extracted_data['atomic_sources'][source][period_name] = extracted_series
+            extracted_data['atomic_sources'][source][period_name] = extracted_df
     
     # Extract aggregates (already EU totals in raw data, but handle country-specific)
     for agg_source in AGGREGATE_SOURCES:
@@ -460,20 +462,25 @@ def extract_country_from_raw_data(raw_data_matrix, country_code):
                 continue
             
             if country_code == 'EU':
-                # Already EU aggregate
+                # Already EU aggregate - keep as Series
                 extracted_data['aggregates'][agg_source][period_name] = eu_series
             else:
                 # Build aggregate from atomic sources for this country
                 components = AGGREGATE_DEFINITIONS[agg_source]
-                component_series = []
+                summed_series = None
                 
                 for component in components:
                     if component in extracted_data['atomic_sources']:
                         if period_name in extracted_data['atomic_sources'][component]:
-                            component_series.append(extracted_data['atomic_sources'][component][period_name])
+                            # Each is a DataFrame with single country column - extract as Series
+                            component_series = extracted_data['atomic_sources'][component][period_name].iloc[:, 0]
+                            if summed_series is None:
+                                summed_series = component_series
+                            else:
+                                summed_series = summed_series + component_series
                 
-                if component_series:
-                    extracted_data['aggregates'][agg_source][period_name] = sum(component_series)
+                if summed_series is not None:
+                    extracted_data['aggregates'][agg_source][period_name] = summed_series
     
     # Extract total generation
     for period_name, country_df in raw_data_matrix['total_generation'].items():
@@ -481,12 +488,18 @@ def extract_country_from_raw_data(raw_data_matrix, country_code):
             continue
         
         if country_code == 'EU':
-            # Sum all countries
-            extracted_data['total_generation'][period_name] = country_df.sum(axis=1)
+            # Sum all countries - keep as DataFrame with 'EU' column
+            extracted_df = pd.DataFrame({
+                'EU': country_df.sum(axis=1)
+            })
         else:
-            # Extract single country
+            # Extract single country - keep as DataFrame with country column
             if country_code in country_df.columns:
-                extracted_data['total_generation'][period_name] = country_df[country_code]
+                extracted_df = country_df[[country_code]].copy()
+            else:
+                continue
+        
+        extracted_data['total_generation'][period_name] = extracted_df
     
     print(f"✓ Extracted data for {country_code}")
     return extracted_data
