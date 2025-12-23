@@ -180,6 +180,16 @@ def format_change_percentage(value):
         return f"{value:+.1f}%"
 
 
+def normalize_source_name(source_name):
+    """
+    Normalize source name to match HTML expectations
+    'All Renewables' -> 'all_renewables'
+    'Wind' -> 'wind'
+    'Solar' -> 'solar'
+    """
+    return source_name.lower().replace(' ', '_').replace('-', '_')
+
+
 def get_or_create_country_sheet(country_code, gc, drive_service):
     """
     Get or create country-specific Google Sheet, and ensure it's in correct Drive folder.
@@ -479,9 +489,10 @@ def create_all_charts(all_data, country_code='EU'):
         if drive_service:
             result = upload_plot_to_drive(drive_service, percentage_filename, plot_type='Monthly', country=country_code)
             if result:
-                if source_name not in plot_links['Monthly']:
-                    plot_links['Monthly'][source_name] = {}
-                plot_links['Monthly'][source_name]['percentage'] = result
+                normalized_key = normalize_source_name(source_name)
+                if normalized_key not in plot_links['Monthly']:
+                    plot_links['Monthly'][normalized_key] = {}
+                plot_links['Monthly'][normalized_key]['percentage'] = result
         
         plt.close()
 
@@ -547,9 +558,10 @@ def create_all_charts(all_data, country_code='EU'):
         if drive_service:
             result = upload_plot_to_drive(drive_service, absolute_filename, plot_type='Monthly', country=country_code)
             if result:
-                if source_name not in plot_links['Monthly']:
-                    plot_links['Monthly'][source_name] = {}
-                plot_links['Monthly'][source_name]['absolute'] = result
+                normalized_key = normalize_source_name(source_name)
+                if normalized_key not in plot_links['Monthly']:
+                    plot_links['Monthly'][normalized_key] = {}
+                plot_links['Monthly'][normalized_key]['absolute'] = result
         
         plt.close()
 
