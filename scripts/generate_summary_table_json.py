@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """
-Generate Summary Table JSON from Google Sheets (Multi-Country)
-Keeps original code structure, just wraps in country loop
+Generate Summary Table JSON from Google Sheets (Multi-Country, Separate Spreadsheets)
+Each country has its own spreadsheet, all with "Summary Table Data" worksheet
+Spreadsheet names/URLs are loaded from a config JSON file
 """
 
 import os
@@ -10,12 +11,38 @@ import gspread
 from google.oauth2.service_account import Credentials
 from datetime import datetime
 
-# Countries to process
-COUNTRIES = ['EU', 'DE']
+# Config file with spreadsheet names per country
+SPREADSHEET_CONFIG_FILE = 'spreadsheet_config.json'
+
+# Fallback: hardcoded spreadsheet names (will be overridden by config if it exists)
+DEFAULT_SPREADSHEET_NAMES = {
+    'EU': 'EU Electricity Production Data',
+    'DE': 'DE Electricity Production Data'
+}
+
+def load_spreadsheet_config():
+    """
+    Load spreadsheet configuration from JSON file.
+    Expected format: {"EU": "spreadsheet_name_or_url", "DE": "spreadsheet_name_or_url"}
+    """
+    if os.path.exists(SPREADSHEET_CONFIG_FILE):
+        try:
+            with open(SPREADSHEET_CONFIG_FILE, 'r') as f:
+                config = json.load(f)
+                print(f"✓ Loaded spreadsheet config from {SPREADSHEET_CONFIG_FILE}")
+                return config
+        except Exception as e:
+            print(f"⚠ Error loading {SPREADSHEET_CONFIG_FILE}: {e}")
+            print(f"  Using default spreadsheet names")
+    else:
+        print(f"⚠ {SPREADSHEET_CONFIG_FILE} not found, using default spreadsheet names")
+    
+    return DEFAULT_SPREADSHEET_NAMES
 
 def generate_summary_json():
     """
-    Read Summary Table Data worksheets from Google Sheets and generate nested JSON
+    Read Summary Table Data worksheets from multiple Google Sheets (one per country)
+    and generate nested JSON
     """
     print("=" * 60)
     print("GENERATING SUMMARY TABLE JSON (MULTI-COUNTRY)")
@@ -33,37 +60,41 @@ def generate_summary_json():
         credentials = Credentials.from_service_account_info(creds_dict, scopes=scope)
         gc = gspread.authorize(credentials)
         
-        # Open spreadsheet
-        spreadsheet = gc.open('EU Electricity Production Data')
-        print(f"✓ Connected to spreadsheet: {spreadsheet.url}")
+        # Load spreadsheet configuration
+        spreadsheet_config = load_spreadsheet_config()
+        print(f"\nProcessing {len(spreadsheet_config)} countries:")
+        for country, name in spreadsheet_config.items():
+            print(f"  {country}: {name}")
         
         # Build nested JSON structure - ONE ENTRY PER COUNTRY
         final_json = {}
         
         # Process each country
-        for country_code in COUNTRIES:
-            print(f"\n--- Processing {country_code} ---")
+        for country_code, spreadsheet_name in spreadsheet_config.items():
+            print(f"\n{'=' * 60}")
+            print(f"PROCESSING: {country_code}")
+            print(f"{'=' * 60}")
             
-            # Try to find worksheet for this country
-            worksheet = None
-            worksheet_name = f'Summary Table Data - {country_code}'
+            # Open the country-specific spreadsheet
+            try:
+                spreadsheet = gc.open(spreadsheet_name)
+                print(f"✓ Opened spreadsheet: {spreadsheet.title}")
+                print(f"  URL: {spreadsheet.url}")
+            except Exception as e:
+                print(f"✗ Failed to open spreadsheet '{spreadsheet_name}': {e}")
+                final_json[country_code] = {
+                    "last_updated": "Data not available",
+                    "sources": []
+                }
+                continue
             
+            # Get the "Summary Table Data" worksheet (same name for all countries)
+            worksheet_name = 'Summary Table Data'
             try:
                 worksheet = spreadsheet.worksheet(worksheet_name)
                 print(f"✓ Found '{worksheet_name}' worksheet")
             except gspread.WorksheetNotFound:
-                # Backward compatibility: try old format for EU
-                if country_code == 'EU':
-                    try:
-                        worksheet_name = 'Summary Table Data'
-                        worksheet = spreadsheet.worksheet(worksheet_name)
-                        print(f"✓ Found '{worksheet_name}' worksheet (using for EU)")
-                    except gspread.WorksheetNotFound:
-                        pass
-            
-            # If no worksheet found, add placeholder
-            if not worksheet:
-                print(f"✗ No worksheet found for {country_code}")
+                print(f"✗ '{worksheet_name}' worksheet not found in {spreadsheet_name}!")
                 final_json[country_code] = {
                     "last_updated": "Data not available",
                     "sources": []
@@ -87,6 +118,7 @@ def generate_summary_json():
             
             # Parse data rows
             data_rows = all_values[1:]
+            print(f"✓ Found {len(data_rows)} data rows")
             
             # Define expected source order
             expected_sources = [
@@ -248,14 +280,15 @@ def generate_summary_json():
                 validated_data = json.loads(content)
                 
                 # Extra validation: check we have the data we expect
-                for country in COUNTRIES:
+                print(f"\nValidating JSON...")
+                for country in spreadsheet_config.keys():
                     if country in validated_data:
                         sources_count = len(validated_data[country].get('sources', []))
-                        print(f"  Validation: {country} has {sources_count} sources in temp file")
+                        print(f"  {country}: {sources_count} sources")
             
             # If validation passes, move temp file to final location
             os.replace(temp_path, output_path)
-            print(f"✓ Moved temp file to final location: {output_path}")
+            print(f"\n✓ Saved to: {output_path}")
             
         except Exception as e:
             print(f"ERROR: JSON validation failed: {e}")
@@ -263,17 +296,16 @@ def generate_summary_json():
                 os.remove(temp_path)
             raise
         
-        print(f"\n✓ Generated and validated JSON for {len(final_json)} countries")
-        print(f"✓ Output: {output_path}")
-        
-        # Print summary
-        print(f"\nCountry Summary:")
+        print(f"\n{'=' * 60}")
+        print("SUMMARY")
+        print(f"{'=' * 60}")
         for country, data in final_json.items():
-            print(f"  {country}: {len(data['sources'])} sources, updated {data['last_updated']}")
+            status = f"{len(data['sources'])} sources" if data['sources'] else "No data"
+            print(f"{country}: {status} - {data['last_updated']}")
         
-        print(f"\n" + "=" * 60)
+        print(f"\n{'=' * 60}")
         print("COMPLETE!")
-        print("=" * 60)
+        print(f"{'=' * 60}")
         
         return True
         
