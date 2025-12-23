@@ -1241,20 +1241,18 @@ def create_all_charts(all_data, country_code='EU'):
                 continue
 
             baseline_value_abs = sum(source_data[baseline_year].values())
-            baseline_total = sum(total_data[baseline_year].values())
-            baseline_value_pct = (baseline_value_abs / baseline_total * 100) if baseline_total > 0 else 0
 
             for year in comparison_years:
-                if year in source_data and year in total_data:
+                if year in source_data:
                     current_value_abs = sum(source_data[year].values())
-                    current_total = sum(total_data[year].values())
 
-                    change_abs = ((current_value_abs - baseline_value_abs) / baseline_value_abs * 100) if baseline_value_abs > 0 else 0
-                    yoy_change_abs[source_name].append(change_abs)
-
-                    current_value_pct = (current_value_abs / current_total * 100) if current_total > 0 else 0
-                    change_pct = current_value_pct - baseline_value_pct
+                    # Percentage: Relative change in production (%)
+                    change_pct = ((current_value_abs - baseline_value_abs) / baseline_value_abs * 100) if baseline_value_abs > 0 else 0
                     yoy_change_pct[source_name].append(change_pct)
+
+                    # Absolute: Change in TWh
+                    change_abs = (current_value_abs - baseline_value_abs) / 1000
+                    yoy_change_abs[source_name].append(change_abs)
 
         timestamp = datetime.now().strftime('%Y-%m-%d %H:%M UTC')
 
@@ -1275,9 +1273,9 @@ def create_all_charts(all_data, country_code='EU'):
 
         fig1.suptitle(f'Electricity Generation ({country_code})', 
                      fontsize=34, fontweight='bold', x=0.55, y=0.96, ha='center')
-        ax1.set_title(f'YoY Change in Share vs {baseline_year} (Percentage Points)', fontsize=26, fontweight='normal', pad=10, ha='center')
+        ax1.set_title(f'YoY Change in Absolute Generation vs {baseline_year} (%)', fontsize=26, fontweight='normal', pad=10, ha='center')
         ax1.set_xlabel('Year', fontsize=28, fontweight='bold', labelpad=15)
-        ax1.set_ylabel('Change in Share (Percentage Points)', fontsize=28, fontweight='bold', labelpad=15)
+        ax1.set_ylabel('Change in Generation (%)', fontsize=28, fontweight='bold', labelpad=15)
         ax1.tick_params(axis='both', labelsize=22, length=8, pad=8)
         ax1.grid(True, alpha=0.3, linewidth=1.5)
 
@@ -1338,9 +1336,9 @@ def create_all_charts(all_data, country_code='EU'):
 
         fig2.suptitle(f'Electricity Generation ({country_code})', 
                      fontsize=34, fontweight='bold', x=0.55, y=0.96, ha='center')
-        ax2.set_title(f'YoY Change in Absolute Generation vs {baseline_year} (%)', fontsize=26, fontweight='normal', pad=10, ha='center')
+        ax2.set_title(f'YoY Change in Absolute Generation vs {baseline_year} (TWh)', fontsize=26, fontweight='normal', pad=10, ha='center')
         ax2.set_xlabel('Year', fontsize=28, fontweight='bold', labelpad=15)
-        ax2.set_ylabel('Change in Generation (%)', fontsize=28, fontweight='bold', labelpad=15)
+        ax2.set_ylabel('Change in Generation (TWh)', fontsize=28, fontweight='bold', labelpad=15)
         ax2.tick_params(axis='both', labelsize=22, length=8, pad=8)
         ax2.grid(True, alpha=0.3, linewidth=1.5)
 
@@ -1397,31 +1395,25 @@ def create_all_charts(all_data, country_code='EU'):
 
         baseline_renewable_abs = sum(renewables_data[baseline_year].values())
         baseline_nonrenewable_abs = sum(nonrenewables_data[baseline_year].values())
-        baseline_total = sum(total_data[baseline_year].values())
-
-        baseline_renewable_pct = (baseline_renewable_abs / baseline_total * 100) if baseline_total > 0 else 0
-        baseline_nonrenewable_pct = (baseline_nonrenewable_abs / baseline_total * 100) if baseline_total > 0 else 0
 
         for year in comparison_years:
-            if year in renewables_data and year in nonrenewables_data and year in total_data:
+            if year in renewables_data and year in nonrenewables_data:
                 current_renewable_abs = sum(renewables_data[year].values())
                 current_nonrenewable_abs = sum(nonrenewables_data[year].values())
-                current_total = sum(total_data[year].values())
 
-                change_renewable_abs = ((current_renewable_abs - baseline_renewable_abs) / baseline_renewable_abs * 100) if baseline_renewable_abs > 0 else 0
-                change_nonrenewable_abs = ((current_nonrenewable_abs - baseline_nonrenewable_abs) / baseline_nonrenewable_abs * 100) if baseline_nonrenewable_abs > 0 else 0
-
-                yoy_renewable_abs.append(change_renewable_abs)
-                yoy_nonrenewable_abs.append(change_nonrenewable_abs)
-
-                current_renewable_pct = (current_renewable_abs / current_total * 100) if current_total > 0 else 0
-                current_nonrenewable_pct = (current_nonrenewable_abs / current_total * 100) if current_total > 0 else 0
-
-                change_renewable_pct = current_renewable_pct - baseline_renewable_pct
-                change_nonrenewable_pct = current_nonrenewable_pct - baseline_nonrenewable_pct
+                # Percentage: Relative change in production (%)
+                change_renewable_pct = ((current_renewable_abs - baseline_renewable_abs) / baseline_renewable_abs * 100) if baseline_renewable_abs > 0 else 0
+                change_nonrenewable_pct = ((current_nonrenewable_abs - baseline_nonrenewable_abs) / baseline_nonrenewable_abs * 100) if baseline_nonrenewable_abs > 0 else 0
 
                 yoy_renewable_pct.append(change_renewable_pct)
                 yoy_nonrenewable_pct.append(change_nonrenewable_pct)
+
+                # Absolute: Change in TWh
+                change_renewable_abs = (current_renewable_abs - baseline_renewable_abs) / 1000
+                change_nonrenewable_abs = (current_nonrenewable_abs - baseline_nonrenewable_abs) / 1000
+
+                yoy_renewable_abs.append(change_renewable_abs)
+                yoy_nonrenewable_abs.append(change_nonrenewable_abs)
 
         timestamp = datetime.now().strftime('%Y-%m-%d %H:%M UTC')
 
@@ -1439,9 +1431,9 @@ def create_all_charts(all_data, country_code='EU'):
 
         fig1.suptitle(f'Electricity Generation ({country_code})', 
                      fontsize=34, fontweight='bold', x=0.55, y=0.96, ha='center')
-        ax1.set_title(f'YoY Change in Share vs {baseline_year} (Percentage Points)', fontsize=26, fontweight='normal', pad=10, ha='center')
+        ax1.set_title(f'YoY Change in Absolute Generation vs {baseline_year} (%)', fontsize=26, fontweight='normal', pad=10, ha='center')
         ax1.set_xlabel('Year', fontsize=28, fontweight='bold', labelpad=15)
-        ax1.set_ylabel('Change in Share (Percentage Points)', fontsize=28, fontweight='bold', labelpad=15)
+        ax1.set_ylabel('Change in Generation (%)', fontsize=28, fontweight='bold', labelpad=15)
         ax1.tick_params(axis='both', labelsize=22, length=8, pad=8)
         ax1.grid(True, alpha=0.3, linewidth=1.5)
 
@@ -1481,9 +1473,9 @@ def create_all_charts(all_data, country_code='EU'):
 
         fig2.suptitle(f'Electricity Generation ({country_code})', 
                      fontsize=34, fontweight='bold', x=0.55, y=0.96, ha='center')
-        ax2.set_title(f'YoY Change in Absolute Generation vs {baseline_year} (%)', fontsize=26, fontweight='normal', pad=10, ha='center')
+        ax2.set_title(f'YoY Change in Absolute Generation vs {baseline_year} (TWh)', fontsize=26, fontweight='normal', pad=10, ha='center')
         ax2.set_xlabel('Year', fontsize=28, fontweight='bold', labelpad=15)
-        ax2.set_ylabel('Change in Generation (%)', fontsize=28, fontweight='bold', labelpad=15)
+        ax2.set_ylabel('Change in Generation (TWh)', fontsize=28, fontweight='bold', labelpad=15)
         ax2.tick_params(axis='both', labelsize=22, length=8, pad=8)
         ax2.grid(True, alpha=0.3, linewidth=1.5)
 
