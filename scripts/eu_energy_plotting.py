@@ -103,14 +103,12 @@ def upload_plot_to_drive(service, file_path, plot_type='Monthly', country='EU'):
             file_id = file.get('id')
         
         # Set permissions to "Anyone with the link can view"
-        # Check if permission already exists
         try:
             existing_perms = service.permissions().list(
                 fileId=file_id,
                 fields='permissions(id,type)'
             ).execute()
             
-            # Check if 'anyone' permission exists
             anyone_perm = None
             for perm in existing_perms.get('permissions', []):
                 if perm.get('type') == 'anyone':
@@ -118,14 +116,12 @@ def upload_plot_to_drive(service, file_path, plot_type='Monthly', country='EU'):
                     break
             
             if anyone_perm:
-                # Update existing permission
                 service.permissions().update(
                     fileId=file_id,
                     permissionId=anyone_perm['id'],
                     body={'role': 'reader'}
                 ).execute()
             else:
-                # Create new permission
                 permission = {
                     'type': 'anyone',
                     'role': 'reader'
@@ -179,14 +175,16 @@ def format_change_percentage(value):
     - If |value| < 10: One decimal (e.g., "+5.8%", "+0.3%", "-2.1%")
     """
     if abs(value) >= 10:
-        return f"{value:+.0f}%"  # + sign for positive, - for negative
+        return f"{value:+.0f}%"
     else:
         return f"{value:+.1f}%"
+
 
 def get_or_create_country_sheet(country_code, gc, drive_service):
     """
     Get or create country-specific Google Sheet, and ensure it's in correct Drive folder.
     Mirror of intraday script logic.
+    Returns: gspread spreadsheet object
     """
     sheet_name = f'{country_code} Electricity Production Data'
     
@@ -198,6 +196,7 @@ def get_or_create_country_sheet(country_code, gc, drive_service):
         print(f"  Note: Monthly data sheets are created by the data fetching process.")
         return None
     
+    # Move to correct Drive folder structure (runs every time)
     try:
         query = "name='EU-Electricity-Plots' and mimeType='application/vnd.google-apps.folder' and trashed=false"
         results = drive_service.files().list(q=query, spaces='drive', fields='files(id)').execute()
@@ -211,7 +210,11 @@ def get_or_create_country_sheet(country_code, gc, drive_service):
             
             country_folder_id = country_folders[0]['id'] if country_folders else None
             if not country_folder_id:
-                file_metadata = {'name': country_code, 'mimeType': 'application/vnd.google-apps.folder', 'parents': [root_folder_id]}
+                file_metadata = {
+                    'name': country_code,
+                    'mimeType': 'application/vnd.google-apps.folder',
+                    'parents': [root_folder_id]
+                }
                 folder = drive_service.files().create(body=file_metadata, fields='id').execute()
                 country_folder_id = folder.get('id')
                 print(f"  ✓ Created folder: EU-Electricity-Plots/{country_code}/")
@@ -221,8 +224,12 @@ def get_or_create_country_sheet(country_code, gc, drive_service):
             
             if country_folder_id not in current_parents:
                 previous_parents = ",".join(current_parents)
-                drive_service.files().update(fileId=spreadsheet.id, addParents=country_folder_id, 
-                                            removeParents=previous_parents, fields='id, parents').execute()
+                drive_service.files().update(
+                    fileId=spreadsheet.id,
+                    addParents=country_folder_id,
+                    removeParents=previous_parents,
+                    fields='id, parents'
+                ).execute()
                 print(f"  ✓ Moved to: EU-Electricity-Plots/{country_code}/")
             else:
                 print(f"  ✓ Already in: EU-Electricity-Plots/{country_code}/")
@@ -232,8 +239,7 @@ def get_or_create_country_sheet(country_code, gc, drive_service):
     return spreadsheet
 
 
-
-def load_data_from_google_sheets(country_code=\'EU\'):
+def load_data_from_google_sheets(country_code='EU'):
     """
     Load all energy data from Google Sheets using environment variables
     """
@@ -310,14 +316,15 @@ def load_data_from_google_sheets(country_code=\'EU\'):
         return None
 
 
-def create_all_charts(all_data, country_code=\'EU\'):
+
+def create_all_charts(all_data, country_code='EU'):
     """
     Create all charts from the loaded data - MOBILE OPTIMIZED
     UPDATED: Larger fonts, thicker lines, clearer titles, no Y-axis restrictions
     """
     if not all_data:
         print("No data available for plotting")
-        return
+        return None, None
 
     print("\n" + "=" * 60)
     print(f"CREATING MOBILE-OPTIMIZED CHARTS FOR {country_code}")
@@ -423,7 +430,7 @@ def create_all_charts(all_data, country_code=\'EU\'):
                 total_monthly = total_data[year]
                 percentages = []
                 for month in months_to_show:
-                    source_val = values_gwh[months_to_show.index(month)]
+                    source_val = values_gwh[list(months_to_show).index(month)]
                     total_val = total_monthly.get(month, 0)
                     if total_val > 0:
                         pct = (source_val / total_val) * 100
@@ -437,7 +444,6 @@ def create_all_charts(all_data, country_code=\'EU\'):
                         linewidth=6, markersize=13, label=str(year))
 
         # Title and labels - match intraday format
-        # Clean up display name for aggregates
         display_name = source_name
         if source_name == 'All Renewables':
             display_name = 'Renewable'
@@ -449,8 +455,7 @@ def create_all_charts(all_data, country_code=\'EU\'):
         ax1.set_xlabel('Month', fontsize=28, fontweight='bold', labelpad=15)
         ax1.set_ylabel('Electricity Generation (%)', fontsize=28, fontweight='bold', labelpad=15)
         
-        # NO RESTRICTION - let it scale to data
-        ax1.set_ylim(0, max_pct_value * 1.2 if max_pct_value > 0 else 10)  # 20% margin
+        ax1.set_ylim(0, max_pct_value * 1.2 if max_pct_value > 0 else 10)
             
         ax1.tick_params(axis='both', labelsize=22)
         ax1.grid(True, alpha=0.3, linewidth=1.5)
@@ -458,7 +463,6 @@ def create_all_charts(all_data, country_code=\'EU\'):
         ax1.legend(loc='upper center', bbox_to_anchor=(0.5, -0.20), 
                   ncol=5, fontsize=20, frameon=False)
 
-        # Add timestamp
         timestamp = datetime.now().strftime('%Y-%m-%d %H:%M UTC')
         fig1.text(0.93, 0.04, f"Generated: {timestamp}",
                   ha='right', va='bottom',
@@ -500,8 +504,6 @@ def create_all_charts(all_data, country_code=\'EU\'):
             ax2.plot(months, values_twh, marker='o', color=color,
                     linewidth=6, markersize=13, label=str(year))
 
-        # Title and labels - match intraday format
-        # Clean up display name for aggregates
         display_name = source_name
         if source_name == 'All Renewables':
             display_name = 'Renewable'
@@ -513,8 +515,7 @@ def create_all_charts(all_data, country_code=\'EU\'):
         ax2.set_xlabel('Month', fontsize=28, fontweight='bold', labelpad=15)
         ax2.set_ylabel('Electricity Generation (TWh)', fontsize=28, fontweight='bold', labelpad=15)
         
-        # NO RESTRICTION - let it scale to data
-        ax2.set_ylim(0, max_abs_value * 1.2 if max_abs_value > 0 else 10)  # 20% margin
+        ax2.set_ylim(0, max_abs_value * 1.2 if max_abs_value > 0 else 10)
             
         ax2.tick_params(axis='both', labelsize=22)
         ax2.grid(True, alpha=0.3, linewidth=1.5)
@@ -522,7 +523,6 @@ def create_all_charts(all_data, country_code=\'EU\'):
         ax2.legend(loc='upper center', bbox_to_anchor=(0.5, -0.20),
                   ncol=5, fontsize=20, frameon=False)
 
-        # Add timestamp (reuse from percentage plot)
         fig2.text(0.93, 0.04, f"Generated: {timestamp}",
                   ha='right', va='bottom',
                   fontsize=11, color='#666',
@@ -534,6 +534,7 @@ def create_all_charts(all_data, country_code=\'EU\'):
         plt.savefig(absolute_filename, dpi=150, bbox_inches='tight')
         print(f"  ✓ Saved: {absolute_filename}")
         plt.close()
+
 
     # Monthly Mean Charts by Period
     print("\n" + "=" * 60)
@@ -580,8 +581,8 @@ def create_all_charts(all_data, country_code=\'EU\'):
                                 percentage = (source_val / total_val) * 100
                                 max_pct_all_periods = max(max_pct_all_periods, percentage)
 
-        max_abs_all_periods *= 1.2  # 20% margin
-        max_pct_all_periods *= 1.2  # 20% margin
+        max_abs_all_periods *= 1.2
+        max_pct_all_periods *= 1.2
 
         for period in periods:
             print(f"\nCreating Monthly Mean chart for {period['name']}...")
@@ -636,13 +637,11 @@ def create_all_charts(all_data, country_code=\'EU\'):
                     else:
                         monthly_means_pct[source_name].append(0)
 
-            # Generate timestamp once for both plots
             timestamp = datetime.now().strftime('%Y-%m-%d %H:%M UTC')
             
             # PERCENTAGE PLOT
             fig1, ax1 = plt.subplots(figsize=(12, 10))
 
-            # Plot sources and track handles for legend reordering
             from matplotlib.lines import Line2D
             line_handles = {}
             
@@ -652,8 +651,7 @@ def create_all_charts(all_data, country_code=\'EU\'):
                          linewidth=6, markersize=13, label=source_name)
                 line_handles[source_name] = line
 
-            # Title and labels - clean format
-            fig1.suptitle('Electricity Generation ({country_code})', 
+            fig1.suptitle(f'Electricity Generation ({country_code})', 
                          fontsize=34, fontweight='bold', x=0.55, y=0.96, ha='center')
             ax1.set_title(f'Fraction of Total Generation ({period["name"]})', fontsize=26, fontweight='normal', pad=10, ha='center')
             ax1.set_xlabel('Month', fontsize=28, fontweight='bold', labelpad=15)
@@ -662,14 +660,12 @@ def create_all_charts(all_data, country_code=\'EU\'):
             ax1.tick_params(axis='both', labelsize=22, length=8, pad=8)
             ax1.grid(True, alpha=0.3, linewidth=1.5)
 
-            # Create legend with spacers for centered row 3 (renewables left, non-renewables right)
             spacer = Line2D([0], [0], color='none', label=' ')
-            # ncol=4 fills by COLUMN, so order: col1, col2, col3, col4
             legend_order = [
-                'Wind', 'Solar', '_SPACER_',              # Column 1: renewables
-                'Hydro', 'Biomass', 'Geothermal',         # Column 2: renewables
-                'Nuclear', 'Coal', 'Oil',                 # Column 3: non-renewables
-                'Gas', 'Waste', '_SPACER_'                # Column 4: non-renewables
+                'Wind', 'Solar', '_SPACER_',
+                'Hydro', 'Biomass', 'Geothermal',
+                'Nuclear', 'Coal', 'Oil',
+                'Gas', 'Waste', '_SPACER_'
             ]
             
             legend_handles = []
@@ -686,7 +682,6 @@ def create_all_charts(all_data, country_code=\'EU\'):
                        loc='upper center', bbox_to_anchor=(0.45, -0.25), ncol=4,
                        fontsize=20, frameon=False)
 
-            # Add timestamp
             fig1.text(0.93, 0.04, f"Generated: {timestamp}",
                      ha='right', va='bottom', fontsize=11, color='#666', style='italic')
 
@@ -701,7 +696,6 @@ def create_all_charts(all_data, country_code=\'EU\'):
             # ABSOLUTE PLOT
             fig2, ax2 = plt.subplots(figsize=(12, 10))
 
-            # Plot sources and track handles for legend reordering
             line_handles = {}
             
             for source_name in available_sources:
@@ -711,8 +705,7 @@ def create_all_charts(all_data, country_code=\'EU\'):
                          linewidth=6, markersize=13, label=source_name)
                 line_handles[source_name] = line
 
-            # Title and labels - clean format
-            fig2.suptitle('Electricity Generation ({country_code})', 
+            fig2.suptitle(f'Electricity Generation ({country_code})', 
                          fontsize=34, fontweight='bold', x=0.55, y=0.96, ha='center')
             ax2.set_title(f'Absolute Generation ({period["name"]})', fontsize=26, fontweight='normal', pad=10, ha='center')
             ax2.set_xlabel('Month', fontsize=28, fontweight='bold', labelpad=15)
@@ -721,16 +714,6 @@ def create_all_charts(all_data, country_code=\'EU\'):
             ax2.tick_params(axis='both', labelsize=22, length=8, pad=8)
             ax2.grid(True, alpha=0.3, linewidth=1.5)
 
-            # Create legend with spacers for centered row 3 (renewables left, non-renewables right)
-            spacer = Line2D([0], [0], color='none', label=' ')
-            # ncol=4 fills by COLUMN, so order: col1, col2, col3, col4
-            legend_order = [
-                'Wind', 'Solar', '_SPACER_',              # Column 1: renewables
-                'Hydro', 'Biomass', 'Geothermal',         # Column 2: renewables
-                'Nuclear', 'Coal', 'Oil',                 # Column 3: non-renewables
-                'Gas', 'Waste', '_SPACER_'                # Column 4: non-renewables
-            ]
-            
             legend_handles = []
             legend_labels = []
             for item in legend_order:
@@ -745,7 +728,6 @@ def create_all_charts(all_data, country_code=\'EU\'):
                        loc='upper center', bbox_to_anchor=(0.45, -0.25), ncol=4,
                        fontsize=20, frameon=False)
 
-            # Add timestamp (reuse same timestamp)
             fig2.text(0.93, 0.04, f"Generated: {timestamp}",
                      ha='right', va='bottom', fontsize=11, color='#666', style='italic')
 
@@ -755,6 +737,7 @@ def create_all_charts(all_data, country_code=\'EU\'):
             plt.savefig(filename_abs, dpi=150, bbox_inches='tight')
             print(f"  ✓ Saved absolute: {filename_abs}")
             plt.close()
+
 
     # Renewable vs Non-Renewable by Period
     print("\n" + "=" * 60)
@@ -782,7 +765,7 @@ def create_all_charts(all_data, country_code=\'EU\'):
                             category_val = category_monthly.get(month, 0)
                             max_abs_renewable_periods = max(max_abs_renewable_periods, category_val / 1000)
 
-        max_abs_renewable_periods *= 1.2  # 20% margin
+        max_abs_renewable_periods *= 1.2
 
         for period in periods:
             print(f"\nCreating Renewable vs Non-Renewable chart for {period['name']}...")
@@ -837,7 +820,6 @@ def create_all_charts(all_data, country_code=\'EU\'):
                     else:
                         monthly_means_pct[category_name].append(0)
 
-            # Generate timestamp once for both plots
             timestamp = datetime.now().strftime('%Y-%m-%d %H:%M UTC')
             
             # PERCENTAGE PLOT
@@ -848,8 +830,7 @@ def create_all_charts(all_data, country_code=\'EU\'):
                 ax1.plot(month_names_abbr, monthly_means_pct[category_name], marker='o', color=color,
                          linewidth=6, markersize=13, label=category_name)
 
-            # Title and labels - clean format
-            fig1.suptitle('Electricity Generation ({country_code})', 
+            fig1.suptitle(f'Electricity Generation ({country_code})', 
                          fontsize=34, fontweight='bold', x=0.55, y=0.96, ha='center')
             ax1.set_title(f'Fraction of Total Generation ({period["name"]})', fontsize=26, fontweight='normal', pad=10, ha='center')
             ax1.set_xlabel('Month', fontsize=28, fontweight='bold', labelpad=15)
@@ -861,7 +842,6 @@ def create_all_charts(all_data, country_code=\'EU\'):
             ax1.legend(loc='upper center', bbox_to_anchor=(0.45, -0.20), ncol=2,
                        fontsize=22, frameon=False)
 
-            # Add timestamp
             fig1.text(0.93, 0.04, f"Generated: {timestamp}",
                      ha='right', va='bottom', fontsize=11, color='#666', style='italic')
 
@@ -882,8 +862,7 @@ def create_all_charts(all_data, country_code=\'EU\'):
                 ax2.plot(month_names_abbr, values_twh, marker='o', color=color,
                          linewidth=6, markersize=13, label=category_name)
 
-            # Title and labels - clean format
-            fig2.suptitle('Electricity Generation ({country_code})', 
+            fig2.suptitle(f'Electricity Generation ({country_code})', 
                          fontsize=34, fontweight='bold', x=0.55, y=0.96, ha='center')
             ax2.set_title(f'Absolute Generation ({period["name"]})', fontsize=26, fontweight='normal', pad=10, ha='center')
             ax2.set_xlabel('Month', fontsize=28, fontweight='bold', labelpad=15)
@@ -895,7 +874,6 @@ def create_all_charts(all_data, country_code=\'EU\'):
             ax2.legend(loc='upper center', bbox_to_anchor=(0.45, -0.20), ncol=2,
                        fontsize=22, frameon=False)
 
-            # Add timestamp (reuse same timestamp)
             fig2.text(0.93, 0.04, f"Generated: {timestamp}",
                      ha='right', va='bottom', fontsize=11, color='#666', style='italic')
 
@@ -906,704 +884,498 @@ def create_all_charts(all_data, country_code=\'EU\'):
             print(f"  ✓ Saved absolute: {filename_abs}")
             plt.close()
 
-    # Annual Trend Charts
+
+    # Annual Trends - All Sources
     print("\n" + "=" * 60)
-    print("CREATING ANNUAL TREND CHARTS")
+    print("CREATING ANNUAL TRENDS - ALL SOURCES")
     print("=" * 60)
 
-    annual_totals = {}
+    if available_sources and 'Total Generation' in all_data:
+        annual_totals_abs = {}
+        annual_totals_pct = {}
 
-    renewable_sources = ['Solar', 'Wind', 'Hydro', 'Biomass', 'Geothermal']
-    non_renewable_sources = ['Gas', 'Coal', 'Nuclear', 'Oil', 'Waste']
-    total_sources = ['All Renewables', 'All Non-Renewables']
+        for source_name in available_sources:
+            annual_totals_abs[source_name] = []
+            annual_totals_pct[source_name] = []
 
-    available_renewables = [s for s in renewable_sources if s in all_data]
-    available_non_renewables = [s for s in non_renewable_sources if s in all_data]
-    available_totals = [s for s in total_sources if s in all_data]
+            source_data = all_data[source_name]['year_data']
+            total_data = all_data['Total Generation']['year_data']
 
-    all_sources = available_renewables + available_non_renewables + available_totals
+            for year in years_available:
+                if year in source_data and year in total_data:
+                    yearly_sum = sum(source_data[year].values())
+                    total_yearly_sum = sum(total_data[year].values())
 
-    for source_name in all_sources:
-        annual_totals[source_name] = {}
-        year_data = all_data[source_name]['year_data']
+                    annual_totals_abs[source_name].append(yearly_sum)
 
-        for year in years_available:
-            if year in year_data:
-                annual_total = sum(year_data[year].get(month, 0) for month in range(1, 13))
-                annual_totals[source_name][year] = annual_total
+                    if total_yearly_sum > 0:
+                        percentage = (yearly_sum / total_yearly_sum) * 100
+                        annual_totals_pct[source_name].append(percentage)
+                    else:
+                        annual_totals_pct[source_name].append(0)
 
-    if 'Total Generation' in all_data:
-        annual_totals['Total Generation'] = {}
-        total_year_data = all_data['Total Generation']['year_data']
-
-        for year in years_available:
-            if year in total_year_data:
-                annual_total = sum(total_year_data[year].get(month, 0) for month in range(1, 13))
-                annual_totals['Total Generation'][year] = annual_total
-
-    # Calculate max values
-    max_annual_twh = 0
-    max_annual_pct = 0
-
-    for source_name in available_renewables + available_non_renewables:
-        if source_name in annual_totals and 'Total Generation' in annual_totals:
-            years_list = sorted(annual_totals[source_name].keys())
-            for year in years_list:
-                val_twh = annual_totals[source_name][year] / 1000
-                max_annual_twh = max(max_annual_twh, val_twh)
-
-                source_value = annual_totals[source_name][year]
-                total_value = annual_totals['Total Generation'][year]
-                if total_value > 0:
-                    percentage = (source_value / total_value) * 100
-                    max_annual_pct = max(max_annual_pct, percentage)
-
-    max_annual_twh *= 1.2  # 20% margin
-    max_annual_pct *= 1.2  # 20% margin
-
-    # Chart: All Sources Annual Trends (combines renewables + non-renewables)
-    all_sources = available_renewables + available_non_renewables
-    if all_sources and 'Total Generation' in annual_totals:
-        print("\nCreating Annual Trends: All Sources...")
-
-        # Generate timestamp once for both plots
         timestamp = datetime.now().strftime('%Y-%m-%d %H:%M UTC')
-        
+
         # PERCENTAGE PLOT
         fig1, ax1 = plt.subplots(figsize=(12, 10))
 
-        lines_plotted = 0
+        from matplotlib.lines import Line2D
         line_handles = {}
-        
-        for source_name in all_sources:
-            if source_name in annual_totals and len(annual_totals[source_name]) > 0:
-                years_list = sorted(annual_totals[source_name].keys())
-                color = ENTSOE_COLORS.get(source_name, 'black')
-                
-                source_years = set(annual_totals[source_name].keys())
-                total_years = set(annual_totals['Total Generation'].keys())
-                overlapping_years = source_years & total_years & set(years_list)
 
-                if overlapping_years:
-                    pct_years = sorted(overlapping_years)
-                    percentages = []
-                    for year in pct_years:
-                        source_value = annual_totals[source_name][year]
-                        total_value = annual_totals['Total Generation'][year]
-                        if total_value > 0:
-                            percentage = (source_value / total_value) * 100
-                            percentages.append(percentage)
-                        else:
-                            percentages.append(0)
+        for source_name in available_sources:
+            color = ENTSOE_COLORS.get(source_name, 'black')
+            line, = ax1.plot(years_available, annual_totals_pct[source_name], marker='o', color=color,
+                     linewidth=6, markersize=13, label=source_name)
+            line_handles[source_name] = line
 
-                    line, = ax1.plot(pct_years, percentages, marker='o', color=color,
-                             linewidth=6, markersize=13, label=source_name)
-                    line_handles[source_name] = line
-                    lines_plotted += 1
-
-        if lines_plotted > 0:
-            # Title and labels - clean format
-            fig1.suptitle('Electricity Generation ({country_code})', 
-                         fontsize=34, fontweight='bold', x=0.55, y=0.96, ha='center')
-            ax1.set_title('Fraction of Total Generation', fontsize=26, fontweight='normal', pad=10, ha='center')
-            ax1.set_xlabel('Year', fontsize=28, fontweight='bold', labelpad=15)
-            ax1.set_ylabel('Electricity Generation (%)', fontsize=28, fontweight='bold', labelpad=15)
-            ax1.set_ylim(0, max_annual_pct)
-            ax1.tick_params(axis='both', labelsize=22, length=8, pad=8)
-            ax1.grid(True, alpha=0.3, linewidth=1.5)
-
-            # Create legend with spacers for centered row 3 (renewables left, non-renewables right)
-            from matplotlib.lines import Line2D
-            spacer = Line2D([0], [0], color='none', label=' ')
-            # ncol=4 fills by COLUMN, so order: col1, col2, col3, col4
-            legend_order = [
-                'Wind', 'Solar', '_SPACER_',              # Column 1: renewables
-                'Hydro', 'Biomass', 'Geothermal',         # Column 2: renewables
-                'Nuclear', 'Coal', 'Oil',                 # Column 3: non-renewables
-                'Gas', 'Waste', '_SPACER_'                # Column 4: non-renewables
-            ]
-            
-            legend_handles = []
-            legend_labels = []
-            for item in legend_order:
-                if item == '_SPACER_':
-                    legend_handles.append(spacer)
-                    legend_labels.append(' ')
-                elif item in line_handles:
-                    legend_handles.append(line_handles[item])
-                    legend_labels.append(item)
-            
-            ax1.legend(legend_handles, legend_labels,
-                       loc='upper center', bbox_to_anchor=(0.45, -0.25), ncol=4,
-                       fontsize=20, frameon=False)
-
-            # Add timestamp
-            fig1.text(0.93, 0.04, f"Generated: {timestamp}",
-                     ha='right', va='bottom', fontsize=11, color='#666', style='italic')
-
-            plt.tight_layout(rect=[0, 0, 1, 0.96])
-
-            filename_pct = 'plots/eu_annual_all_sources_percentage.png'
-            plt.savefig(filename_pct, dpi=150, bbox_inches='tight')
-            print(f"  ✓ Saved percentage: {filename_pct}")
-            plt.close()
-
-        # ABSOLUTE PLOT
-        fig2, ax2 = plt.subplots(figsize=(12, 10))
-
-        lines_plotted = 0
-        line_handles = {}
-        
-        for source_name in all_sources:
-            if source_name in annual_totals and len(annual_totals[source_name]) > 0:
-                years_list = sorted(annual_totals[source_name].keys())
-                color = ENTSOE_COLORS.get(source_name, 'black')
-                
-                values_twh = [annual_totals[source_name][year] / 1000 for year in years_list]
-                line, = ax2.plot(years_list, values_twh, marker='o', color=color,
-                         linewidth=6, markersize=13, label=source_name)
-                line_handles[source_name] = line
-                lines_plotted += 1
-
-        if lines_plotted > 0:
-            # Title and labels - clean format
-            fig2.suptitle('Electricity Generation ({country_code})', 
-                         fontsize=34, fontweight='bold', x=0.55, y=0.96, ha='center')
-            ax2.set_title('Absolute Generation', fontsize=26, fontweight='normal', pad=10, ha='center')
-            ax2.set_xlabel('Year', fontsize=28, fontweight='bold', labelpad=15)
-            ax2.set_ylabel('Electricity Generation (TWh)', fontsize=28, fontweight='bold', labelpad=15)
-            ax2.set_ylim(0, max_annual_twh)
-            ax2.tick_params(axis='both', labelsize=22, length=8, pad=8)
-            ax2.grid(True, alpha=0.3, linewidth=1.5)
-
-            # Create legend with spacers for centered row 3 (renewables left, non-renewables right)
-            spacer = Line2D([0], [0], color='none', label=' ')
-            # ncol=4 fills by COLUMN, so order: col1, col2, col3, col4
-            legend_order = [
-                'Wind', 'Solar', '_SPACER_',              # Column 1: renewables
-                'Hydro', 'Biomass', 'Geothermal',         # Column 2: renewables
-                'Nuclear', 'Coal', 'Oil',                 # Column 3: non-renewables
-                'Gas', 'Waste', '_SPACER_'                # Column 4: non-renewables
-            ]
-            
-            legend_handles = []
-            legend_labels = []
-            for item in legend_order:
-                if item == '_SPACER_':
-                    legend_handles.append(spacer)
-                    legend_labels.append(' ')
-                elif item in line_handles:
-                    legend_handles.append(line_handles[item])
-                    legend_labels.append(item)
-            
-            ax2.legend(legend_handles, legend_labels,
-                       loc='upper center', bbox_to_anchor=(0.45, -0.25), ncol=4,
-                       fontsize=20, frameon=False)
-
-            # Add timestamp (reuse same timestamp)
-            fig2.text(0.93, 0.04, f"Generated: {timestamp}",
-                     ha='right', va='bottom', fontsize=11, color='#666', style='italic')
-
-            plt.tight_layout(rect=[0, 0, 1, 0.96])
-
-            filename_abs = 'plots/eu_annual_all_sources_absolute.png'
-            plt.savefig(filename_abs, dpi=150, bbox_inches='tight')
-            print(f"  ✓ Saved absolute: {filename_abs}")
-            plt.close()
-
-    # Chart: Aggregates Annual Trends (Renewables vs Non-Renewables)
-    if available_totals and 'Total Generation' in annual_totals:
-        print("\nCreating Annual Trends: Aggregates...")
-
-        # Generate timestamp once for both plots
-        timestamp = datetime.now().strftime('%Y-%m-%d %H:%M UTC')
-        
-        # PERCENTAGE PLOT
-        fig1, ax1 = plt.subplots(figsize=(12, 10))
-
-        lines_plotted = 0
-        for source_name in available_totals:
-            if source_name in annual_totals and len(annual_totals[source_name]) > 0:
-                years_list = sorted(annual_totals[source_name].keys())
-                color = ENTSOE_COLORS[source_name]
-                
-                source_years = set(annual_totals[source_name].keys())
-                total_years = set(annual_totals['Total Generation'].keys())
-                overlapping_years = source_years & total_years & set(years_list)
-
-                if overlapping_years:
-                    pct_years = sorted(overlapping_years)
-                    percentages = []
-                    for year in pct_years:
-                        source_value = annual_totals[source_name][year]
-                        total_value = annual_totals['Total Generation'][year]
-                        if total_value > 0:
-                            percentage = (source_value / total_value) * 100
-                            percentages.append(percentage)
-                        else:
-                            percentages.append(0)
-
-                    ax1.plot(pct_years, percentages, marker='o', color=color,
-                             linewidth=6, markersize=13, label=source_name)
-                    lines_plotted += 1
-
-        if lines_plotted > 0:
-            # Title and labels - clean format
-            fig1.suptitle('Electricity Generation ({country_code})', 
-                         fontsize=34, fontweight='bold', x=0.55, y=0.96, ha='center')
-            ax1.set_title('Fraction of Total Generation', fontsize=26, fontweight='normal', pad=10, ha='center')
-            ax1.set_xlabel('Year', fontsize=28, fontweight='bold', labelpad=15)
-            ax1.set_ylabel('Electricity Generation (%)', fontsize=28, fontweight='bold', labelpad=15)
-            ax1.set_ylim(0, 100)
-            ax1.tick_params(axis='both', labelsize=22, length=8, pad=8)
-            ax1.grid(True, alpha=0.3, linewidth=1.5)
-
-            ax1.legend(loc='upper center', bbox_to_anchor=(0.45, -0.20), ncol=2,
-                       fontsize=22, frameon=False)
-
-            # Add timestamp
-            fig1.text(0.93, 0.04, f"Generated: {timestamp}",
-                     ha='right', va='bottom', fontsize=11, color='#666', style='italic')
-
-            plt.tight_layout(rect=[0, 0, 1, 0.96])
-
-            filename_pct = 'plots/eu_annual_renewable_vs_nonrenewable_percentage.png'
-            plt.savefig(filename_pct, dpi=150, bbox_inches='tight')
-            print(f"  ✓ Saved percentage: {filename_pct}")
-            plt.close()
-
-        # ABSOLUTE PLOT
-        fig2, ax2 = plt.subplots(figsize=(12, 10))
-
-        lines_plotted = 0
-        for source_name in available_totals:
-            if source_name in annual_totals and len(annual_totals[source_name]) > 0:
-                years_list = sorted(annual_totals[source_name].keys())
-                color = ENTSOE_COLORS[source_name]
-                
-                values_twh = [annual_totals[source_name][year] / 1000 for year in years_list]
-                ax2.plot(years_list, values_twh, marker='o', color=color,
-                         linewidth=6, markersize=13, label=source_name)
-                lines_plotted += 1
-
-        if lines_plotted > 0:
-            # Title and labels - clean format
-            fig2.suptitle('Electricity Generation ({country_code})', 
-                         fontsize=34, fontweight='bold', x=0.55, y=0.96, ha='center')
-            ax2.set_title('Absolute Generation', fontsize=26, fontweight='normal', pad=10, ha='center')
-            ax2.set_xlabel('Year', fontsize=28, fontweight='bold', labelpad=15)
-            ax2.set_ylabel('Electricity Generation (TWh)', fontsize=28, fontweight='bold', labelpad=15)
-            ax2.set_ylim(bottom=0)
-            ax2.tick_params(axis='both', labelsize=22, length=8, pad=8)
-            ax2.grid(True, alpha=0.3, linewidth=1.5)
-
-            ax2.legend(loc='upper center', bbox_to_anchor=(0.45, -0.20), ncol=2,
-                       fontsize=22, frameon=False)
-
-            # Add timestamp (reuse same timestamp)
-            fig2.text(0.93, 0.04, f"Generated: {timestamp}",
-                     ha='right', va='bottom', fontsize=11, color='#666', style='italic')
-
-            plt.tight_layout(rect=[0, 0, 1, 0.96])
-
-            filename_abs = 'plots/eu_annual_renewable_vs_nonrenewable_absolute.png'
-            plt.savefig(filename_abs, dpi=150, bbox_inches='tight')
-            print(f"  ✓ Saved absolute: {filename_abs}")
-            plt.close()
-
-    # Year-over-Year Change vs 2015 Baseline
-    print("\n" + "=" * 60)
-    print("CREATING YOY CHANGE VS 2015 BASELINE")
-    print("=" * 60)
-
-    if annual_totals:
-        baseline_year = 2015
-        all_sources_for_yoy = available_renewables + available_non_renewables
-        totals_for_yoy = ['All Renewables', 'All Non-Renewables']
-        
-        # Generate timestamp once for both plots
-        timestamp = datetime.now().strftime('%Y-%m-%d %H:%M UTC')
-
-        # PLOT 1: ALL SOURCES YoY
-        print("\nCreating YoY All Sources vs 2015...")
-        
-        fig1, ax1 = plt.subplots(figsize=(12, 10))
-        
-        all_yoy_values = []
-        lines_plotted = 0
-        line_handles = {}
-        
-        for source_name in all_sources_for_yoy:
-            if source_name in annual_totals and baseline_year in annual_totals[source_name]:
-                baseline_value = annual_totals[source_name][baseline_year]
-
-                if baseline_value > 0:
-                    years_list = sorted(annual_totals[source_name].keys())
-                    yoy_changes = []
-                    
-                    for year in years_list:
-                        if year >= baseline_year:
-                            current_value = annual_totals[source_name][year]
-                            pct_change = ((current_value - baseline_value) / baseline_value) * 100
-                            yoy_changes.append(pct_change)
-                            all_yoy_values.append(pct_change)
-
-                    years_to_plot = [year for year in years_list if year >= baseline_year]
-
-                    if len(years_to_plot) > 0:
-                        color = ENTSOE_COLORS.get(source_name, 'black')
-                        line, = ax1.plot(years_to_plot, yoy_changes, marker='o', color=color,
-                                 linewidth=6, markersize=13, label=source_name)
-                        line_handles[source_name] = line
-                        lines_plotted += 1
-
-        if lines_plotted > 0:
-            # Calculate y-axis limits
-            if all_yoy_values:
-                y_min = min(all_yoy_values)
-                y_max = max(all_yoy_values)
-                y_margin = (y_max - y_min) * 0.1
-                y_min_limit = y_min - y_margin
-                y_max_limit = y_max + y_margin
-            else:
-                y_min_limit = -50
-                y_max_limit = 100
-
-            # Title and labels - clean format
-            fig1.suptitle('Electricity Generation ({country_code})', 
-                         fontsize=34, fontweight='bold', x=0.55, y=0.96, ha='center')
-            ax1.set_title('Year-over-Year Change since 2015', fontsize=26, fontweight='normal', pad=10, ha='center')
-            ax1.set_xlabel('Year', fontsize=28, fontweight='bold', labelpad=15)
-            ax1.set_ylabel('Change vs 2015 (%)', fontsize=28, fontweight='bold', labelpad=15)
-            ax1.set_ylim(y_min_limit, y_max_limit)
-            ax1.axhline(y=0, color='black', linestyle='--', linewidth=2, alpha=0.5)
-            ax1.tick_params(axis='both', labelsize=22, length=8, pad=8)
-            ax1.grid(True, alpha=0.3, linewidth=1.5)
-
-            # Create legend with spacers for centered row 3 (renewables left, non-renewables right)
-            from matplotlib.lines import Line2D
-            spacer = Line2D([0], [0], color='none', label=' ')
-            # ncol=4 fills by COLUMN, so order: col1, col2, col3, col4
-            legend_order = [
-                'Wind', 'Solar', '_SPACER_',              # Column 1: renewables
-                'Hydro', 'Biomass', 'Geothermal',         # Column 2: renewables
-                'Nuclear', 'Coal', 'Oil',                 # Column 3: non-renewables
-                'Gas', 'Waste', '_SPACER_'                # Column 4: non-renewables
-            ]
-            
-            legend_handles = []
-            legend_labels = []
-            for item in legend_order:
-                if item == '_SPACER_':
-                    legend_handles.append(spacer)
-                    legend_labels.append(' ')
-                elif item in line_handles:
-                    legend_handles.append(line_handles[item])
-                    legend_labels.append(item)
-            
-            ax1.legend(legend_handles, legend_labels,
-                       loc='upper center', bbox_to_anchor=(0.45, -0.25), ncol=4,
-                       fontsize=18, frameon=False)
-
-            # Add timestamp
-            fig1.text(0.93, 0.04, f"Generated: {timestamp}",
-                     ha='right', va='bottom', fontsize=11, color='#666', style='italic')
-
-            plt.tight_layout(rect=[0, 0, 1, 0.96])
-
-            filename_yoy_all_pct = 'plots/eu_annual_yoy_all_sources_vs_2015_percentage.png'
-            plt.savefig(filename_yoy_all_pct, dpi=150, bbox_inches='tight')
-            print(f"  ✓ Saved percentage: {filename_yoy_all_pct}")
-            plt.close()
-            
-        # PLOT 1B: ALL SOURCES YoY ABSOLUTE
-        print("\nCreating YoY All Sources vs 2015 (Absolute)...")
-        
-        fig1b, ax1b = plt.subplots(figsize=(12, 10))
-        
-        all_yoy_abs_values = []
-        lines_plotted_abs = 0
-        line_handles_abs = {}
-        
-        for source_name in all_sources_for_yoy:
-            if source_name in annual_totals and baseline_year in annual_totals[source_name]:
-                baseline_value = annual_totals[source_name][baseline_year]
-
-                if baseline_value > 0:
-                    years_list = sorted(annual_totals[source_name].keys())
-                    yoy_abs_changes = []
-                    
-                    for year in years_list:
-                        if year >= baseline_year:
-                            current_value = annual_totals[source_name][year]
-                            abs_change_gwh = current_value - baseline_value
-                            abs_change_twh = abs_change_gwh / 1000
-                            yoy_abs_changes.append(abs_change_twh)
-                            all_yoy_abs_values.append(abs_change_twh)
-
-                    years_to_plot = [year for year in years_list if year >= baseline_year]
-
-                    if len(years_to_plot) > 0:
-                        color = ENTSOE_COLORS.get(source_name, 'black')
-                        line, = ax1b.plot(years_to_plot, yoy_abs_changes, marker='o', color=color,
-                                 linewidth=6, markersize=13, label=source_name)
-                        line_handles_abs[source_name] = line
-                        lines_plotted_abs += 1
-
-        if lines_plotted_abs > 0:
-            # Calculate y-axis limits
-            if all_yoy_abs_values:
-                y_min = min(all_yoy_abs_values)
-                y_max = max(all_yoy_abs_values)
-                y_margin = (y_max - y_min) * 0.1
-                y_min_limit = y_min - y_margin
-                y_max_limit = y_max + y_margin
-            else:
-                y_min_limit = -50
-                y_max_limit = 100
-
-            # Title and labels - clean format
-            fig1b.suptitle('Electricity Generation ({country_code})', 
-                         fontsize=34, fontweight='bold', x=0.55, y=0.96, ha='center')
-            ax1b.set_title('Year-over-Year Change since 2015', fontsize=26, fontweight='normal', pad=10, ha='center')
-            ax1b.set_xlabel('Year', fontsize=28, fontweight='bold', labelpad=15)
-            ax1b.set_ylabel('Change vs 2015 (TWh)', fontsize=28, fontweight='bold', labelpad=15)
-            ax1b.set_ylim(y_min_limit, y_max_limit)
-            ax1b.axhline(y=0, color='black', linestyle='--', linewidth=2, alpha=0.5)
-            ax1b.tick_params(axis='both', labelsize=22, length=8, pad=8)
-            ax1b.grid(True, alpha=0.3, linewidth=1.5)
-
-            # Create legend with spacers
-            spacer = Line2D([0], [0], color='none', label=' ')
-            legend_order = [
-                'Wind', 'Solar', '_SPACER_',
-                'Hydro', 'Biomass', 'Geothermal',
-                'Nuclear', 'Coal', 'Oil',
-                'Gas', 'Waste', '_SPACER_'
-            ]
-            
-            legend_handles_list = []
-            legend_labels = []
-            for item in legend_order:
-                if item == '_SPACER_':
-                    legend_handles_list.append(spacer)
-                    legend_labels.append(' ')
-                elif item in line_handles_abs:
-                    legend_handles_list.append(line_handles_abs[item])
-                    legend_labels.append(item)
-            
-            ax1b.legend(legend_handles_list, legend_labels,
-                       loc='upper center', bbox_to_anchor=(0.45, -0.25), ncol=4,
-                       fontsize=18, frameon=False)
-
-            # Add timestamp (reuse same timestamp)
-            fig1b.text(0.93, 0.04, f"Generated: {timestamp}",
-                     ha='right', va='bottom', fontsize=11, color='#666', style='italic')
-
-            plt.tight_layout(rect=[0, 0, 1, 0.96])
-
-            filename_yoy_all_abs = 'plots/eu_annual_yoy_all_sources_vs_2015_absolute.png'
-            plt.savefig(filename_yoy_all_abs, dpi=150, bbox_inches='tight')
-            print(f"  ✓ Saved absolute: {filename_yoy_all_abs}")
-            plt.close()
-
-        # PLOT 2: AGGREGATES YoY
-        print("\nCreating YoY Aggregates vs 2015...")
-        
-        fig2, ax2 = plt.subplots(figsize=(12, 10))
-        
-        agg_yoy_values = []
-        
-        for category_name in totals_for_yoy:
-            if category_name in annual_totals and baseline_year in annual_totals[category_name]:
-                baseline_value = annual_totals[category_name][baseline_year]
-
-                if baseline_value > 0:
-                    years_list = sorted(annual_totals[category_name].keys())
-                    yoy_changes = []
-                    
-                    for year in years_list:
-                        if year >= baseline_year:
-                            current_value = annual_totals[category_name][year]
-                            pct_change = ((current_value - baseline_value) / baseline_value) * 100
-                            yoy_changes.append(pct_change)
-                            agg_yoy_values.append(pct_change)
-
-                    years_to_plot = [year for year in years_list if year >= baseline_year]
-
-                    if len(years_to_plot) > 0:
-                        color = ENTSOE_COLORS[category_name]
-                        ax2.plot(years_to_plot, yoy_changes, marker='o', color=color,
-                                 linewidth=6, markersize=13, label=category_name)
-
-        # Calculate y-axis limits
-        if agg_yoy_values:
-            y_min = min(agg_yoy_values)
-            y_max = max(agg_yoy_values)
-            y_margin = (y_max - y_min) * 0.1
-            y_min_limit = y_min - y_margin
-            y_max_limit = y_max + y_margin
-        else:
-            y_min_limit = -50
-            y_max_limit = 100
-
-        # Title and labels - clean format
-        fig2.suptitle('Electricity Generation ({country_code})', 
+        fig1.suptitle(f'Electricity Generation ({country_code})', 
                      fontsize=34, fontweight='bold', x=0.55, y=0.96, ha='center')
-        ax2.set_title('Year-over-Year Change since 2015', fontsize=26, fontweight='normal', pad=10, ha='center')
+        ax1.set_title('Annual Trends - Fraction of Total Generation', fontsize=26, fontweight='normal', pad=10, ha='center')
+        ax1.set_xlabel('Year', fontsize=28, fontweight='bold', labelpad=15)
+        ax1.set_ylabel('Electricity Generation (%)', fontsize=28, fontweight='bold', labelpad=15)
+        ax1.tick_params(axis='both', labelsize=22, length=8, pad=8)
+        ax1.grid(True, alpha=0.3, linewidth=1.5)
+
+        spacer = Line2D([0], [0], color='none', label=' ')
+        legend_order = [
+            'Wind', 'Solar', '_SPACER_',
+            'Hydro', 'Biomass', 'Geothermal',
+            'Nuclear', 'Coal', 'Oil',
+            'Gas', 'Waste', '_SPACER_'
+        ]
+        
+        legend_handles = []
+        legend_labels = []
+        for item in legend_order:
+            if item == '_SPACER_':
+                legend_handles.append(spacer)
+                legend_labels.append(' ')
+            elif item in line_handles:
+                legend_handles.append(line_handles[item])
+                legend_labels.append(item)
+        
+        ax1.legend(legend_handles, legend_labels,
+                   loc='upper center', bbox_to_anchor=(0.45, -0.25), ncol=4,
+                   fontsize=20, frameon=False)
+
+        fig1.text(0.93, 0.04, f"Generated: {timestamp}",
+                 ha='right', va='bottom', fontsize=11, color='#666', style='italic')
+
+        plt.tight_layout(rect=[0, 0, 1, 0.96])
+
+        filename_pct = f'plots/{country_code.lower()}_annual_all_sources_percentage.png'
+        plt.savefig(filename_pct, dpi=150, bbox_inches='tight')
+        print(f"  ✓ Saved percentage: {filename_pct}")
+        plt.close()
+
+        # ABSOLUTE PLOT
+        fig2, ax2 = plt.subplots(figsize=(12, 10))
+
+        line_handles = {}
+
+        for source_name in available_sources:
+            color = ENTSOE_COLORS.get(source_name, 'black')
+            values_twh = [val / 1000 for val in annual_totals_abs[source_name]]
+            line, = ax2.plot(years_available, values_twh, marker='o', color=color,
+                     linewidth=6, markersize=13, label=source_name)
+            line_handles[source_name] = line
+
+        fig2.suptitle(f'Electricity Generation ({country_code})', 
+                     fontsize=34, fontweight='bold', x=0.55, y=0.96, ha='center')
+        ax2.set_title('Annual Trends - Absolute Generation', fontsize=26, fontweight='normal', pad=10, ha='center')
         ax2.set_xlabel('Year', fontsize=28, fontweight='bold', labelpad=15)
-        ax2.set_ylabel('Change vs 2015 (%)', fontsize=28, fontweight='bold', labelpad=15)
-        ax2.set_ylim(y_min_limit, y_max_limit)
-        ax2.axhline(y=0, color='black', linestyle='--', linewidth=2, alpha=0.5)
+        ax2.set_ylabel('Electricity Generation (TWh)', fontsize=28, fontweight='bold', labelpad=15)
+        ax2.tick_params(axis='both', labelsize=22, length=8, pad=8)
+        ax2.grid(True, alpha=0.3, linewidth=1.5)
+
+        legend_handles = []
+        legend_labels = []
+        for item in legend_order:
+            if item == '_SPACER_':
+                legend_handles.append(spacer)
+                legend_labels.append(' ')
+            elif item in line_handles:
+                legend_handles.append(line_handles[item])
+                legend_labels.append(item)
+        
+        ax2.legend(legend_handles, legend_labels,
+                   loc='upper center', bbox_to_anchor=(0.45, -0.25), ncol=4,
+                   fontsize=20, frameon=False)
+
+        fig2.text(0.93, 0.04, f"Generated: {timestamp}",
+                 ha='right', va='bottom', fontsize=11, color='#666', style='italic')
+
+        plt.tight_layout(rect=[0, 0, 1, 0.96])
+
+        filename_abs = f'plots/{country_code.lower()}_annual_all_sources_absolute.png'
+        plt.savefig(filename_abs, dpi=150, bbox_inches='tight')
+        print(f"  ✓ Saved absolute: {filename_abs}")
+        plt.close()
+
+    # Annual Trends - Renewable vs Non-Renewable
+    print("\n" + "=" * 60)
+    print("CREATING ANNUAL TRENDS - RENEWABLE VS NON-RENEWABLE")
+    print("=" * 60)
+
+    if 'All Renewables' in all_data and 'All Non-Renewables' in all_data and 'Total Generation' in all_data:
+        annual_renewable = []
+        annual_nonrenewable = []
+        annual_renewable_pct = []
+        annual_nonrenewable_pct = []
+
+        renewables_data = all_data['All Renewables']['year_data']
+        nonrenewables_data = all_data['All Non-Renewables']['year_data']
+        total_data = all_data['Total Generation']['year_data']
+
+        for year in years_available:
+            if year in renewables_data and year in nonrenewables_data and year in total_data:
+                yearly_renewable = sum(renewables_data[year].values())
+                yearly_nonrenewable = sum(nonrenewables_data[year].values())
+                yearly_total = sum(total_data[year].values())
+
+                annual_renewable.append(yearly_renewable)
+                annual_nonrenewable.append(yearly_nonrenewable)
+
+                if yearly_total > 0:
+                    annual_renewable_pct.append((yearly_renewable / yearly_total) * 100)
+                    annual_nonrenewable_pct.append((yearly_nonrenewable / yearly_total) * 100)
+                else:
+                    annual_renewable_pct.append(0)
+                    annual_nonrenewable_pct.append(0)
+
+        timestamp = datetime.now().strftime('%Y-%m-%d %H:%M UTC')
+
+        # PERCENTAGE PLOT
+        fig1, ax1 = plt.subplots(figsize=(12, 10))
+
+        ax1.plot(years_available, annual_renewable_pct, marker='o', 
+                color=ENTSOE_COLORS['All Renewables'],
+                linewidth=6, markersize=13, label='All Renewables')
+        ax1.plot(years_available, annual_nonrenewable_pct, marker='o',
+                color=ENTSOE_COLORS['All Non-Renewables'],
+                linewidth=6, markersize=13, label='All Non-Renewables')
+
+        fig1.suptitle(f'Electricity Generation ({country_code})', 
+                     fontsize=34, fontweight='bold', x=0.55, y=0.96, ha='center')
+        ax1.set_title('Annual Trends - Fraction of Total Generation', fontsize=26, fontweight='normal', pad=10, ha='center')
+        ax1.set_xlabel('Year', fontsize=28, fontweight='bold', labelpad=15)
+        ax1.set_ylabel('Electricity Generation (%)', fontsize=28, fontweight='bold', labelpad=15)
+        ax1.set_ylim(0, 100)
+        ax1.tick_params(axis='both', labelsize=22, length=8, pad=8)
+        ax1.grid(True, alpha=0.3, linewidth=1.5)
+
+        ax1.legend(loc='upper center', bbox_to_anchor=(0.45, -0.20), ncol=2,
+                   fontsize=22, frameon=False)
+
+        fig1.text(0.93, 0.04, f"Generated: {timestamp}",
+                 ha='right', va='bottom', fontsize=11, color='#666', style='italic')
+
+        plt.tight_layout(rect=[0, 0, 1, 0.96])
+
+        filename_pct = f'plots/{country_code.lower()}_annual_renewable_vs_nonrenewable_percentage.png'
+        plt.savefig(filename_pct, dpi=150, bbox_inches='tight')
+        print(f"  ✓ Saved percentage: {filename_pct}")
+        plt.close()
+
+        # ABSOLUTE PLOT
+        fig2, ax2 = plt.subplots(figsize=(12, 10))
+
+        renewable_twh = [val / 1000 for val in annual_renewable]
+        nonrenewable_twh = [val / 1000 for val in annual_nonrenewable]
+
+        ax2.plot(years_available, renewable_twh, marker='o',
+                color=ENTSOE_COLORS['All Renewables'],
+                linewidth=6, markersize=13, label='All Renewables')
+        ax2.plot(years_available, nonrenewable_twh, marker='o',
+                color=ENTSOE_COLORS['All Non-Renewables'],
+                linewidth=6, markersize=13, label='All Non-Renewables')
+
+        fig2.suptitle(f'Electricity Generation ({country_code})', 
+                     fontsize=34, fontweight='bold', x=0.55, y=0.96, ha='center')
+        ax2.set_title('Annual Trends - Absolute Generation', fontsize=26, fontweight='normal', pad=10, ha='center')
+        ax2.set_xlabel('Year', fontsize=28, fontweight='bold', labelpad=15)
+        ax2.set_ylabel('Electricity Generation (TWh)', fontsize=28, fontweight='bold', labelpad=15)
         ax2.tick_params(axis='both', labelsize=22, length=8, pad=8)
         ax2.grid(True, alpha=0.3, linewidth=1.5)
 
         ax2.legend(loc='upper center', bbox_to_anchor=(0.45, -0.20), ncol=2,
                    fontsize=22, frameon=False)
 
-        # Add timestamp (reuse same timestamp)
         fig2.text(0.93, 0.04, f"Generated: {timestamp}",
                  ha='right', va='bottom', fontsize=11, color='#666', style='italic')
 
         plt.tight_layout(rect=[0, 0, 1, 0.96])
 
-        filename_yoy_agg_pct = 'plots/eu_annual_yoy_aggregates_vs_2015_percentage.png'
-        plt.savefig(filename_yoy_agg_pct, dpi=150, bbox_inches='tight')
-        print(f"  ✓ Saved percentage: {filename_yoy_agg_pct}")
+        filename_abs = f'plots/{country_code.lower()}_annual_renewable_vs_nonrenewable_absolute.png'
+        plt.savefig(filename_abs, dpi=150, bbox_inches='tight')
+        print(f"  ✓ Saved absolute: {filename_abs}")
         plt.close()
-        
-        # PLOT 2B: AGGREGATES YoY ABSOLUTE
-        print("\nCreating YoY Aggregates vs 2015 (Absolute)...")
-        
-        fig2b, ax2b = plt.subplots(figsize=(12, 10))
-        
-        agg_yoy_abs_values = []
-        
-        for category_name in totals_for_yoy:
-            if category_name in annual_totals and baseline_year in annual_totals[category_name]:
-                baseline_value = annual_totals[category_name][baseline_year]
 
-                if baseline_value > 0:
-                    years_list = sorted(annual_totals[category_name].keys())
-                    yoy_abs_changes = []
-                    
-                    for year in years_list:
-                        if year >= baseline_year:
-                            current_value = annual_totals[category_name][year]
-                            abs_change_gwh = current_value - baseline_value
-                            abs_change_twh = abs_change_gwh / 1000
-                            yoy_abs_changes.append(abs_change_twh)
-                            agg_yoy_abs_values.append(abs_change_twh)
 
-                    years_to_plot = [year for year in years_list if year >= baseline_year]
+    # YoY Change - All Sources vs 2015
+    print("\n" + "=" * 60)
+    print("CREATING YOY CHANGE CHARTS - ALL SOURCES VS 2015")
+    print("=" * 60)
 
-                    if len(years_to_plot) > 0:
-                        color = ENTSOE_COLORS[category_name]
-                        ax2b.plot(years_to_plot, yoy_abs_changes, marker='o', color=color,
-                                 linewidth=6, markersize=13, label=category_name)
+    if 2015 in years_available and available_sources and 'Total Generation' in all_data:
+        yoy_change_abs = {}
+        yoy_change_pct = {}
 
-        # Calculate y-axis limits
-        if agg_yoy_abs_values:
-            y_min = min(agg_yoy_abs_values)
-            y_max = max(agg_yoy_abs_values)
-            y_margin = (y_max - y_min) * 0.1
-            y_min_limit = y_min - y_margin
-            y_max_limit = y_max + y_margin
-        else:
-            y_min_limit = -50
-            y_max_limit = 100
+        baseline_year = 2015
+        comparison_years = [year for year in years_available if year > baseline_year]
 
-        # Title and labels - clean format
-        fig2b.suptitle('Electricity Generation ({country_code})', 
+        for source_name in available_sources:
+            yoy_change_abs[source_name] = []
+            yoy_change_pct[source_name] = []
+
+            source_data = all_data[source_name]['year_data']
+            total_data = all_data['Total Generation']['year_data']
+
+            if baseline_year not in source_data or baseline_year not in total_data:
+                continue
+
+            baseline_value_abs = sum(source_data[baseline_year].values())
+            baseline_total = sum(total_data[baseline_year].values())
+            baseline_value_pct = (baseline_value_abs / baseline_total * 100) if baseline_total > 0 else 0
+
+            for year in comparison_years:
+                if year in source_data and year in total_data:
+                    current_value_abs = sum(source_data[year].values())
+                    current_total = sum(total_data[year].values())
+
+                    change_abs = ((current_value_abs - baseline_value_abs) / baseline_value_abs * 100) if baseline_value_abs > 0 else 0
+                    yoy_change_abs[source_name].append(change_abs)
+
+                    current_value_pct = (current_value_abs / current_total * 100) if current_total > 0 else 0
+                    change_pct = current_value_pct - baseline_value_pct
+                    yoy_change_pct[source_name].append(change_pct)
+
+        timestamp = datetime.now().strftime('%Y-%m-%d %H:%M UTC')
+
+        # PERCENTAGE CHANGE PLOT
+        fig1, ax1 = plt.subplots(figsize=(12, 10))
+
+        from matplotlib.lines import Line2D
+        line_handles = {}
+
+        for source_name in available_sources:
+            if yoy_change_pct[source_name]:
+                color = ENTSOE_COLORS.get(source_name, 'black')
+                line, = ax1.plot(comparison_years, yoy_change_pct[source_name], marker='o', color=color,
+                         linewidth=6, markersize=13, label=source_name)
+                line_handles[source_name] = line
+
+        ax1.axhline(y=0, color='gray', linestyle='--', linewidth=2, alpha=0.7)
+
+        fig1.suptitle(f'Electricity Generation ({country_code})', 
                      fontsize=34, fontweight='bold', x=0.55, y=0.96, ha='center')
-        ax2b.set_title('Year-over-Year Change since 2015', fontsize=26, fontweight='normal', pad=10, ha='center')
-        ax2b.set_xlabel('Year', fontsize=28, fontweight='bold', labelpad=15)
-        ax2b.set_ylabel('Change vs 2015 (TWh)', fontsize=28, fontweight='bold', labelpad=15)
-        ax2b.set_ylim(y_min_limit, y_max_limit)
-        ax2b.axhline(y=0, color='black', linestyle='--', linewidth=2, alpha=0.5)
-        ax2b.tick_params(axis='both', labelsize=22, length=8, pad=8)
-        ax2b.grid(True, alpha=0.3, linewidth=1.5)
+        ax1.set_title(f'YoY Change in Share vs {baseline_year} (Percentage Points)', fontsize=26, fontweight='normal', pad=10, ha='center')
+        ax1.set_xlabel('Year', fontsize=28, fontweight='bold', labelpad=15)
+        ax1.set_ylabel('Change in Share (Percentage Points)', fontsize=28, fontweight='bold', labelpad=15)
+        ax1.tick_params(axis='both', labelsize=22, length=8, pad=8)
+        ax1.grid(True, alpha=0.3, linewidth=1.5)
 
-        ax2b.legend(loc='upper center', bbox_to_anchor=(0.45, -0.20), ncol=2,
-                   fontsize=22, frameon=False)
+        spacer = Line2D([0], [0], color='none', label=' ')
+        legend_order = [
+            'Wind', 'Solar', '_SPACER_',
+            'Hydro', 'Biomass', 'Geothermal',
+            'Nuclear', 'Coal', 'Oil',
+            'Gas', 'Waste', '_SPACER_'
+        ]
+        
+        legend_handles_list = []
+        legend_labels = []
+        for item in legend_order:
+            if item == '_SPACER_':
+                legend_handles_list.append(spacer)
+                legend_labels.append(' ')
+            elif item in line_handles:
+                legend_handles_list.append(line_handles[item])
+                legend_labels.append(item)
+        
+        ax1.legend(legend_handles_list, legend_labels,
+                   loc='upper center', bbox_to_anchor=(0.45, -0.25), ncol=4,
+                   fontsize=20, frameon=False)
 
-        # Add timestamp (reuse same timestamp)
-        fig2b.text(0.93, 0.04, f"Generated: {timestamp}",
+        fig1.text(0.93, 0.04, f"Generated: {timestamp}",
                  ha='right', va='bottom', fontsize=11, color='#666', style='italic')
 
         plt.tight_layout(rect=[0, 0, 1, 0.96])
 
-        filename_yoy_agg_abs = 'plots/eu_annual_yoy_aggregates_vs_2015_absolute.png'
-        plt.savefig(filename_yoy_agg_abs, dpi=150, bbox_inches='tight')
-        print(f"  ✓ Saved absolute: {filename_yoy_agg_abs}")
+        filename_pct = f'plots/{country_code.lower()}_annual_yoy_all_sources_vs_{baseline_year}_percentage.png'
+        plt.savefig(filename_pct, dpi=150, bbox_inches='tight')
+        print(f"  ✓ Saved percentage: {filename_pct}")
         plt.close()
 
-    # Write timestamp file for HTML to read
-    timestamp_file = 'plots/last_update_monthly_trends.html'
-    generation_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S UTC')
-    with open(timestamp_file, 'w') as f:
-        f.write(f'<p>Plots generated: {generation_time}</p>')
-    print(f"\n✓ Timestamp written to {timestamp_file}: {generation_time}")
-    
-    # Upload all plots to Google Drive
-    if drive_service:
-        print("\n" + "=" * 60)
-        print("UPLOADING PLOTS TO GOOGLE DRIVE")
-        print("=" * 60)
+        # ABSOLUTE CHANGE PLOT
+        fig2, ax2 = plt.subplots(figsize=(12, 10))
+
+        line_handles = {}
+
+        for source_name in available_sources:
+            if yoy_change_abs[source_name]:
+                color = ENTSOE_COLORS.get(source_name, 'black')
+                line, = ax2.plot(comparison_years, yoy_change_abs[source_name], marker='o', color=color,
+                         linewidth=6, markersize=13, label=source_name)
+                line_handles[source_name] = line
+
+        ax2.axhline(y=0, color='gray', linestyle='--', linewidth=2, alpha=0.7)
+
+        fig2.suptitle(f'Electricity Generation ({country_code})', 
+                     fontsize=34, fontweight='bold', x=0.55, y=0.96, ha='center')
+        ax2.set_title(f'YoY Change in Absolute Generation vs {baseline_year} (%)', fontsize=26, fontweight='normal', pad=10, ha='center')
+        ax2.set_xlabel('Year', fontsize=28, fontweight='bold', labelpad=15)
+        ax2.set_ylabel('Change in Generation (%)', fontsize=28, fontweight='bold', labelpad=15)
+        ax2.tick_params(axis='both', labelsize=22, length=8, pad=8)
+        ax2.grid(True, alpha=0.3, linewidth=1.5)
+
+        legend_handles_list = []
+        legend_labels = []
+        for item in legend_order:
+            if item == '_SPACER_':
+                legend_handles_list.append(spacer)
+                legend_labels.append(' ')
+            elif item in line_handles:
+                legend_handles_list.append(line_handles[item])
+                legend_labels.append(item)
         
-        # Scan plots directory for all PNG files (exclude old combined plots)
-        plot_files = [f for f in os.listdir('plots') 
-                      if f.endswith('.png') 
-                      and f.startswith('eu_')
-                      and '_combined' not in f]  # Exclude old combined plots
-        
-        for plot_file in plot_files:
-            file_path = os.path.join('plots', plot_file)
-            
-            # Determine plot type based on filename pattern
-            if 'annual' in plot_file or 'yoy' in plot_file:
-                plot_type = 'Trends'
-            else:
-                plot_type = 'Monthly'
-            
-            # Upload to Drive
-            result = upload_plot_to_drive(drive_service, file_path, plot_type=plot_type, country='EU')
-            
-            if result:
-                # Parse filename to create structured keys
-                # Remove prefix and suffix to get core name
-                core_name = plot_file.replace('eu_monthly_', '').replace('eu_annual_', '').replace('.png', '')
-                
-                # Determine if it's percentage or absolute
-                if '_percentage' in core_name:
-                    view_type = 'percentage'
-                    plot_key = core_name.replace('_percentage', '').replace('_10years', '')
-                elif '_absolute' in core_name:
-                    view_type = 'absolute'
-                    plot_key = core_name.replace('_absolute', '').replace('_10years', '')
-                else:
-                    view_type = 'default'
-                    plot_key = core_name
-                
-                # Store in nested structure
-                if plot_key not in plot_links['EU'][plot_type]:
-                    plot_links['EU'][plot_type][plot_key] = {}
-                
-                plot_links['EU'][plot_type][plot_key][view_type] = result
-        
-        # Save drive_links.json
-        drive_links_file = 'plots/drive_links_monthly_trends.json'
-        with open(drive_links_file, 'w') as f:
-            json.dump(plot_links, f, indent=2)
-        print(f"\n✓ Drive links saved to: {drive_links_file}")
-        print(f"✓ Uploaded {len(plot_files)} plots to Google Drive")
+        ax2.legend(legend_handles_list, legend_labels,
+                   loc='upper center', bbox_to_anchor=(0.45, -0.25), ncol=4,
+                   fontsize=20, frameon=False)
+
+        fig2.text(0.93, 0.04, f"Generated: {timestamp}",
+                 ha='right', va='bottom', fontsize=11, color='#666', style='italic')
+
+        plt.tight_layout(rect=[0, 0, 1, 0.96])
+
+        filename_abs = f'plots/{country_code.lower()}_annual_yoy_all_sources_vs_{baseline_year}_absolute.png'
+        plt.savefig(filename_abs, dpi=150, bbox_inches='tight')
+        print(f"  ✓ Saved absolute: {filename_abs}")
+        plt.close()
+
+    # YoY Change - Aggregates vs 2015
+    print("\n" + "=" * 60)
+    print("CREATING YOY CHANGE CHARTS - AGGREGATES VS 2015")
+    print("=" * 60)
+
+    if 2015 in years_available and 'All Renewables' in all_data and 'All Non-Renewables' in all_data and 'Total Generation' in all_data:
+        baseline_year = 2015
+        comparison_years = [year for year in years_available if year > baseline_year]
+
+        yoy_renewable_abs = []
+        yoy_nonrenewable_abs = []
+        yoy_renewable_pct = []
+        yoy_nonrenewable_pct = []
+
+        renewables_data = all_data['All Renewables']['year_data']
+        nonrenewables_data = all_data['All Non-Renewables']['year_data']
+        total_data = all_data['Total Generation']['year_data']
+
+        baseline_renewable_abs = sum(renewables_data[baseline_year].values())
+        baseline_nonrenewable_abs = sum(nonrenewables_data[baseline_year].values())
+        baseline_total = sum(total_data[baseline_year].values())
+
+        baseline_renewable_pct = (baseline_renewable_abs / baseline_total * 100) if baseline_total > 0 else 0
+        baseline_nonrenewable_pct = (baseline_nonrenewable_abs / baseline_total * 100) if baseline_total > 0 else 0
+
+        for year in comparison_years:
+            if year in renewables_data and year in nonrenewables_data and year in total_data:
+                current_renewable_abs = sum(renewables_data[year].values())
+                current_nonrenewable_abs = sum(nonrenewables_data[year].values())
+                current_total = sum(total_data[year].values())
+
+                change_renewable_abs = ((current_renewable_abs - baseline_renewable_abs) / baseline_renewable_abs * 100) if baseline_renewable_abs > 0 else 0
+                change_nonrenewable_abs = ((current_nonrenewable_abs - baseline_nonrenewable_abs) / baseline_nonrenewable_abs * 100) if baseline_nonrenewable_abs > 0 else 0
+
+                yoy_renewable_abs.append(change_renewable_abs)
+                yoy_nonrenewable_abs.append(change_nonrenewable_abs)
+
+                current_renewable_pct = (current_renewable_abs / current_total * 100) if current_total > 0 else 0
+                current_nonrenewable_pct = (current_nonrenewable_abs / current_total * 100) if current_total > 0 else 0
+
+                change_renewable_pct = current_renewable_pct - baseline_renewable_pct
+                change_nonrenewable_pct = current_nonrenewable_pct - baseline_nonrenewable_pct
+
+                yoy_renewable_pct.append(change_renewable_pct)
+                yoy_nonrenewable_pct.append(change_nonrenewable_pct)
+
+        timestamp = datetime.now().strftime('%Y-%m-%d %H:%M UTC')
+
+        # PERCENTAGE CHANGE PLOT
+        fig1, ax1 = plt.subplots(figsize=(12, 10))
+
+        ax1.plot(comparison_years, yoy_renewable_pct, marker='o',
+                color=ENTSOE_COLORS['All Renewables'],
+                linewidth=6, markersize=13, label='All Renewables')
+        ax1.plot(comparison_years, yoy_nonrenewable_pct, marker='o',
+                color=ENTSOE_COLORS['All Non-Renewables'],
+                linewidth=6, markersize=13, label='All Non-Renewables')
+
+        ax1.axhline(y=0, color='gray', linestyle='--', linewidth=2, alpha=0.7)
+
+        fig1.suptitle(f'Electricity Generation ({country_code})', 
+                     fontsize=34, fontweight='bold', x=0.55, y=0.96, ha='center')
+        ax1.set_title(f'YoY Change in Share vs {baseline_year} (Percentage Points)', fontsize=26, fontweight='normal', pad=10, ha='center')
+        ax1.set_xlabel('Year', fontsize=28, fontweight='bold', labelpad=15)
+        ax1.set_ylabel('Change in Share (Percentage Points)', fontsize=28, fontweight='bold', labelpad=15)
+        ax1.tick_params(axis='both', labelsize=22, length=8, pad=8)
+        ax1.grid(True, alpha=0.3, linewidth=1.5)
+
+        ax1.legend(loc='upper center', bbox_to_anchor=(0.45, -0.20), ncol=2,
+                   fontsize=22, frameon=False)
+
+        fig1.text(0.93, 0.04, f"Generated: {timestamp}",
+                 ha='right', va='bottom', fontsize=11, color='#666', style='italic')
+
+        plt.tight_layout(rect=[0, 0, 1, 0.96])
+
+        filename_pct = f'plots/{country_code.lower()}_annual_yoy_aggregates_vs_{baseline_year}_percentage.png'
+        plt.savefig(filename_pct, dpi=150, bbox_inches='tight')
+        print(f"  ✓ Saved percentage: {filename_pct}")
+        plt.close()
+
+        # ABSOLUTE CHANGE PLOT
+        fig2, ax2 = plt.subplots(figsize=(12, 10))
+
+        ax2.plot(comparison_years, yoy_renewable_abs, marker='o',
+                color=ENTSOE_COLORS['All Renewables'],
+                linewidth=6, markersize=13, label='All Renewables')
+        ax2.plot(comparison_years, yoy_nonrenewable_abs, marker='o',
+                color=ENTSOE_COLORS['All Non-Renewables'],
+                linewidth=6, markersize=13, label='All Non-Renewables')
+
+        ax2.axhline(y=0, color='gray', linestyle='--', linewidth=2, alpha=0.7)
+
+        fig2.suptitle(f'Electricity Generation ({country_code})', 
+                     fontsize=34, fontweight='bold', x=0.55, y=0.96, ha='center')
+        ax2.set_title(f'YoY Change in Absolute Generation vs {baseline_year} (%)', fontsize=26, fontweight='normal', pad=10, ha='center')
+        ax2.set_xlabel('Year', fontsize=28, fontweight='bold', labelpad=15)
+        ax2.set_ylabel('Change in Generation (%)', fontsize=28, fontweight='bold', labelpad=15)
+        ax2.tick_params(axis='both', labelsize=22, length=8, pad=8)
+        ax2.grid(True, alpha=0.3, linewidth=1.5)
+
+        ax2.legend(loc='upper center', bbox_to_anchor=(0.45, -0.20), ncol=2,
+                   fontsize=22, frameon=False)
+
+        fig2.text(0.93, 0.04, f"Generated: {timestamp}",
+                 ha='right', va='bottom', fontsize=11, color='#666', style='italic')
+
+        plt.tight_layout(rect=[0, 0, 1, 0.96])
+
+        filename_abs = f'plots/{country_code.lower()}_annual_yoy_aggregates_vs_{baseline_year}_absolute.png'
+        plt.savefig(filename_abs, dpi=150, bbox_inches='tight')
+        print(f"  ✓ Saved absolute: {filename_abs}")
+        plt.close()
 
     print("\n" + "=" * 60)
     print("ALL MOBILE-OPTIMIZED PLOTS GENERATED")
     print("=" * 60)
+    
+    return plot_links, drive_service
 
 
-def update_summary_table_historical_data(all_data, country_code=\'EU\'):
+
+def update_summary_table_historical_data(all_data, country_code='EU'):
     """
     Update Google Sheets "Summary Table Data" with current year YTD and previous year data
     This fills in the columns that the intraday script leaves empty
@@ -1611,717 +1383,189 @@ def update_summary_table_historical_data(all_data, country_code=\'EU\'):
     print("\n" + "=" * 60)
     print(f"UPDATING SUMMARY TABLE (HISTORICAL DATA) FOR {country_code}")
     print("=" * 60)
-    
+
     try:
         google_creds_json = os.environ.get('GOOGLE_CREDENTIALS_JSON')
         if not google_creds_json:
-            print("⚠ GOOGLE_CREDENTIALS_JSON not set - skipping update")
+            print("  ⚠ GOOGLE_CREDENTIALS_JSON not set")
             return
-        
+
         creds_dict = json.loads(google_creds_json)
         scope = ['https://www.googleapis.com/auth/spreadsheets', 'https://www.googleapis.com/auth/drive']
         credentials = Credentials.from_service_account_info(creds_dict, scopes=scope)
         gc = gspread.authorize(credentials)
-        
+
         sheet_name = f'{country_code} Electricity Production Data'
         spreadsheet = gc.open(sheet_name)
         print(f"✓ Connected to spreadsheet: {sheet_name}")
-        
-        # Get current date info (needed for headers)
-        current_date = datetime.now()
-        current_year = current_date.year
-        previous_year = current_year - 1
-        two_years_ago = current_year - 2
-        current_month = current_date.month
-        
-        # Get the Summary Table Data worksheet
+
         try:
             worksheet = spreadsheet.worksheet('Summary Table Data')
-            print("✓ Found 'Summary Table Data' worksheet")
-            
-            # Check if worksheet has enough columns (need 22: A-V)
-            if worksheet.col_count < 22:
-                print(f"  Expanding worksheet from {worksheet.col_count} to 22 columns...")
-                worksheet.resize(rows=worksheet.row_count, cols=22)
-                print("  ✓ Worksheet expanded")
-            
-            # Always update header row to ensure consistency
-            print("  Updating header row...")
-            headers = [
-                'Source', 
-                'Yesterday_GWh', 'Yesterday_%', 
-                'LastWeek_GWh', 'LastWeek_%',
-                f'YTD{current_year}_GWh', f'YTD{current_year}_%',
-                f'{previous_year}_GWh', f'{previous_year}_%',
-                'Last_Updated',
-                'Yesterday_Change_2015_%', 'LastWeek_Change_2015_%',
-                f'YTD{current_year}_Change_2015_%', f'{previous_year}_Change_2015_%',
-                f'Yesterday_Change_{previous_year}_%', f'LastWeek_Change_{previous_year}_%',
-                f'YTD{current_year}_Change_{previous_year}_%', f'{previous_year}_Change_{previous_year}_%',
-                f'Yesterday_Change_{two_years_ago}_%', f'LastWeek_Change_{two_years_ago}_%',
-                f'YTD{current_year}_Change_{two_years_ago}_%', f'{previous_year}_Change_{two_years_ago}_%'
-            ]
-            worksheet.update(values=[headers], range_name='A1:V1')
-            worksheet.format('A1:V1', {'textFormat': {'bold': True}})
-            print("  ✓ Header row updated")
-                
         except gspread.WorksheetNotFound:
-            print("⚠ 'Summary Table Data' worksheet not found - run intraday analysis first")
+            print("  ⚠ 'Summary Table Data' worksheet not found")
             return
-        
-        # Define source categories
-        renewables = ['Solar', 'Wind', 'Hydro', 'Biomass', 'Geothermal']
-        non_renewables = ['Gas', 'Coal', 'Nuclear', 'Oil', 'Waste']
-        all_sources = renewables + non_renewables
-        
-        # Calculate totals for each source
-        source_calcs = {}
-        
-        for source_name in all_sources:
-            if source_name not in all_data:
+
+        print("✓ Found 'Summary Table Data' worksheet")
+
+        current_date = datetime.now()
+        current_year = current_date.year
+        current_month = current_date.month
+        previous_year = current_year - 1
+
+        # Read existing data
+        all_values = worksheet.get_all_values()
+        if len(all_values) < 2:
+            print("  ⚠ Summary table is empty")
+            return
+
+        headers = all_values[0]
+        data_rows = all_values[1:]
+
+        # Find column indices
+        try:
+            source_col_idx = headers.index('Source')
+            ytd_current_col_idx = headers.index('YTD_Current_Year_GWh')
+            ytd_current_pct_idx = headers.index('YTD_Current_Year_%')
+            prev_year_col_idx = headers.index('Previous_Year_GWh')
+            prev_year_pct_idx = headers.index('Previous_Year_%')
+        except ValueError as e:
+            print(f"  ⚠ Required column not found: {e}")
+            return
+
+        # Build dictionary of row numbers by source
+        source_row_map = {}
+        for idx, row in enumerate(data_rows):
+            if row[source_col_idx]:
+                source_name = row[source_col_idx].strip()
+                source_row_map[source_name] = idx + 2  # +2 because sheets are 1-indexed and we skip header
+
+        print(f"  Found {len(source_row_map)} sources in summary table")
+
+        # Calculate values
+        updates = []
+
+        # YTD Current Year (sum months 1 to current_month in current_year)
+        ytd_totals = {}
+        ytd_percentages = {}
+
+        # Previous Year (sum all 12 months of previous_year)
+        prev_year_totals = {}
+        prev_year_percentages = {}
+
+        # Calculate totals first (for percentage calculations)
+        total_ytd_current = 0
+        total_prev_year = 0
+
+        if 'Total Generation' in all_data:
+            total_data = all_data['Total Generation']['year_data']
+
+            if current_year in total_data:
+                for month in range(1, current_month + 1):
+                    total_ytd_current += total_data[current_year].get(month, 0)
+
+            if previous_year in total_data:
+                for month in range(1, 13):
+                    total_prev_year += total_data[previous_year].get(month, 0)
+
+        print(f"  Total YTD {current_year}: {total_ytd_current:.2f} GWh")
+        print(f"  Total {previous_year}: {total_prev_year:.2f} GWh")
+
+        # Calculate for each source
+        for source_name, source_info in all_data.items():
+            if source_name == 'Total Generation':
                 continue
-            
-            year_data = all_data[source_name]['year_data']
-            
-            # Calculate YTD current year
-            ytd_current_gwh = 0
+
+            year_data = source_info['year_data']
+
+            # YTD Current Year
+            ytd_sum = 0
             if current_year in year_data:
                 for month in range(1, current_month + 1):
-                    month_value = year_data[current_year].get(month, 0)
-                    if month < current_month:
-                        # Full month - sheet already has monthly total
-                        ytd_current_gwh += month_value
-                    else:
-                        # Partial month - current month
-                        current_day = current_date.day
-                        days_in_month = calendar.monthrange(current_year, month)[1]
-                        ytd_current_gwh += month_value * (current_day / days_in_month)
-            
-            # Calculate previous year full year
-            year_previous_gwh = 0
+                    ytd_sum += year_data[current_year].get(month, 0)
+
+            ytd_totals[source_name] = ytd_sum
+
+            if total_ytd_current > 0:
+                ytd_percentages[source_name] = (ytd_sum / total_ytd_current) * 100
+            else:
+                ytd_percentages[source_name] = 0
+
+            # Previous Year
+            prev_year_sum = 0
             if previous_year in year_data:
                 for month in range(1, 13):
-                    month_value = year_data[previous_year].get(month, 0)
-                    # Sheet already has monthly total, just sum
-                    year_previous_gwh += month_value
-            
-            # Calculate current month from previous year (e.g., December 2024)
-            # This is needed for accurate "Change from Previous Year" calculations
-            current_month_previous_year_gwh = 0
-            if previous_year in year_data:
-                current_month_previous_year_gwh = year_data[previous_year].get(current_month, 0)
-            
-            source_calcs[source_name] = {
-                'ytd_current_gwh': ytd_current_gwh,
-                'year_previous_gwh': year_previous_gwh,
-                'current_month_previous_year_gwh': current_month_previous_year_gwh
-            }
-        
-        # Calculate 2015 baselines for change calculation
-        baselines_2015 = {}
-        
-        for source_name in all_sources:
-            if source_name not in all_data:
-                continue
-            
-            year_data = all_data[source_name]['year_data']
-            
-            if 2015 not in year_data:
-                continue
-            
-            # YTD 2025 baseline: Same period in 2015 (Jan-current_month, with same days)
-            ytd_baseline = 0
-            for month in range(1, current_month + 1):
-                month_value = year_data[2015].get(month, 0)
-                if month < current_month:
-                    # Full month - sheet already has monthly total
-                    ytd_baseline += month_value
-                else:
-                    # Partial month (up to current day)
-                    current_day = current_date.day
-                    days_in_month = calendar.monthrange(2015, month)[1]
-                    ytd_baseline += month_value * (current_day / days_in_month)
-            
-            # 2015 full year baseline (for comparing to 2024)
-            year_2015_total = 0
-            for month in range(1, 13):
-                month_value = year_data[2015].get(month, 0)
-                # Sheet already has monthly total, just sum
-                year_2015_total += month_value
-            
-            baselines_2015[source_name] = {
-                'ytd': ytd_baseline,
-                'year': year_2015_total
-            }
-        
-        # Calculate aggregates: Use "All Renewables" from sheets if it exists, 
-        # otherwise sum individual sources
-        if 'All Renewables' in all_data:
-            # Read directly from Google Sheets
-            renewables_year_data = all_data['All Renewables']['year_data']
-            
-            renewables_ytd = 0
-            if current_year in renewables_year_data:
-                for month in range(1, current_month + 1):
-                    month_value = renewables_year_data[current_year].get(month, 0)
-                    if month < current_month:
-                        # Full month - sheet already has monthly total
-                        renewables_ytd += month_value
-                    else:
-                        # Partial month - current month
-                        current_day = current_date.day
-                        days_in_month = calendar.monthrange(current_year, month)[1]
-                        renewables_ytd += month_value * (current_day / days_in_month)
-            
-            # Get previous year full year
-            renewables_previous = 0
-            if previous_year in renewables_year_data:
-                for month in range(1, 13):
-                    month_value = renewables_year_data[previous_year].get(month, 0)
-                    # Sheet already has monthly total, just sum
-                    renewables_previous += month_value
-            
-            # Get current month from previous year
-            renewables_current_month_prev = 0
-            if previous_year in renewables_year_data:
-                renewables_current_month_prev = renewables_year_data[previous_year].get(current_month, 0)
-        else:
-            # Fallback: sum individual sources
-            renewables_ytd = sum(source_calcs[s]['ytd_current_gwh'] for s in renewables if s in source_calcs)
-            renewables_previous = sum(source_calcs[s]['year_previous_gwh'] for s in renewables if s in source_calcs)
-            renewables_current_month_prev = sum(source_calcs[s]['current_month_previous_year_gwh'] for s in renewables if s in source_calcs)
-        
-        # Calculate All Non-Renewables from Total Generation - All Renewables
-        # This ensures they sum to exactly 100%
-        if 'Total Generation' in all_data:
-            total_year_data = all_data['Total Generation']['year_data']
-            
-            # YTD current year total
-            total_ytd = 0
-            if current_year in total_year_data:
-                for month in range(1, current_month + 1):
-                    month_value = total_year_data[current_year].get(month, 0)
-                    if month < current_month:
-                        # Full month - sheet already has monthly total
-                        total_ytd += month_value
-                    else:
-                        # Partial month - current month
-                        current_day = current_date.day
-                        days_in_month = calendar.monthrange(current_year, month)[1]
-                        total_ytd += month_value * (current_day / days_in_month)
-            
-            non_renewables_ytd = total_ytd - renewables_ytd
-            
-            # Get previous year full year
-            total_previous = 0
-            if previous_year in total_year_data:
-                for month in range(1, 13):
-                    month_value = total_year_data[previous_year].get(month, 0)
-                    # Sheet already has monthly total, just sum
-                    total_previous += month_value
-            
-            # Get current month from previous year
-            total_current_month_prev = 0
-            if previous_year in total_year_data:
-                total_current_month_prev = total_year_data[previous_year].get(current_month, 0)
-            
-            non_renewables_previous = total_previous - renewables_previous
-            non_renewables_current_month_prev = total_current_month_prev - renewables_current_month_prev
-        else:
-            # Fallback: sum individual sources
-            non_renewables_ytd = sum(source_calcs[s]['ytd_current_gwh'] for s in non_renewables if s in source_calcs)
-            non_renewables_previous = sum(source_calcs[s]['year_previous_gwh'] for s in non_renewables if s in source_calcs)
-            non_renewables_current_month_prev = sum(source_calcs[s]['current_month_previous_year_gwh'] for s in non_renewables if s in source_calcs)
-        
-        source_calcs['All Renewables'] = {
-            'ytd_current_gwh': renewables_ytd,
-            'year_previous_gwh': renewables_previous,
-            'current_month_previous_year_gwh': renewables_current_month_prev
-        }
-        
-        source_calcs['All Non-Renewables'] = {
-            'ytd_current_gwh': non_renewables_ytd,
-            'year_previous_gwh': non_renewables_previous,
-            'current_month_previous_year_gwh': non_renewables_current_month_prev
-        }
-        
-        # Add 2015 baselines for aggregates
-        if 'All Renewables' in all_data:
-            renewables_year_data = all_data['All Renewables']['year_data']
-            if 2015 in renewables_year_data:
-                # YTD baseline
-                ytd_baseline = 0
-                for month in range(1, current_month + 1):
-                    month_value = renewables_year_data[2015].get(month, 0)
-                    if month < current_month:
-                        # Full month - sheet already has monthly total
-                        ytd_baseline += month_value
-                    else:
-                        # Partial month
-                        current_day = current_date.day
-                        days_in_month = calendar.monthrange(2015, month)[1]
-                        ytd_baseline += month_value * (current_day / days_in_month)
-                
-                # Full year baseline
-                year_2015_total = 0
-                for month in range(1, 13):
-                    month_value = renewables_year_data[2015].get(month, 0)
-                    # Sheet already has monthly total, just sum
-                    year_2015_total += month_value
-                
-                baselines_2015['All Renewables'] = {
-                    'ytd': ytd_baseline,
-                    'year': year_2015_total
-                }
-        
-        # All Non-Renewables 2015 baseline from Total - Renewables
-        if 'Total Generation' in all_data and 'All Renewables' in baselines_2015:
-            total_year_data = all_data['Total Generation']['year_data']
-            if 2015 in total_year_data:
-                # YTD baseline
-                total_ytd_2015 = 0
-                for month in range(1, current_month + 1):
-                    month_value = total_year_data[2015].get(month, 0)
-                    if month < current_month:
-                        # Full month - sheet already has monthly total
-                        total_ytd_2015 += month_value
-                    else:
-                        # Partial month
-                        current_day = current_date.day
-                        days_in_month = calendar.monthrange(2015, month)[1]
-                        total_ytd_2015 += month_value * (current_day / days_in_month)
-                
-                # Full year baseline
-                total_year_2015 = 0
-                for month in range(1, 13):
-                    month_value = total_year_data[2015].get(month, 0)
-                    # Sheet already has monthly total, just sum
-                    total_year_2015 += month_value
-                
-                baselines_2015['All Non-Renewables'] = {
-                    'ytd': total_ytd_2015 - baselines_2015['All Renewables']['ytd'],
-                    'year': total_year_2015 - baselines_2015['All Renewables']['year']
-                }
-        
-        # Prepare updates with correct order
-        source_order = [
-            'All Renewables',
-            'Solar', 'Wind', 'Hydro', 'Biomass', 'Geothermal',
-            'All Non-Renewables',
-            'Gas', 'Coal', 'Nuclear', 'Oil', 'Waste'
-        ]
-        
+                    prev_year_sum += year_data[previous_year].get(month, 0)
+
+            prev_year_totals[source_name] = prev_year_sum
+
+            if total_prev_year > 0:
+                prev_year_percentages[source_name] = (prev_year_sum / total_prev_year) * 100
+            else:
+                prev_year_percentages[source_name] = 0
+
         # Prepare updates
-        updates = []
-        
-        for row_idx, source_name in enumerate(source_order, start=2):
-            if source_name not in source_calcs:
+        for source_name in ytd_totals:
+            if source_name not in source_row_map:
                 continue
-            
-            ytd_current_gwh = source_calcs[source_name]['ytd_current_gwh']
-            year_previous_gwh = source_calcs[source_name]['year_previous_gwh']
-            
-            # Calculate total generation for percentages
-            ytd_current_pct = 0
-            year_previous_pct = 0
-            
-            if 'Total Generation' in all_data:
-                total_year_data = all_data['Total Generation']['year_data']
-                
-                # YTD current year percentage
-                ytd_current_total = 0
-                if current_year in total_year_data:
-                    for month in range(1, current_month + 1):
-                        month_value = total_year_data[current_year].get(month, 0)
-                        if month < current_month:
-                            # Full month - sheet already has monthly total
-                            ytd_current_total += month_value
-                        else:
-                            # Partial month
-                            current_day = current_date.day
-                            days_in_month = calendar.monthrange(current_year, month)[1]
-                            ytd_current_total += month_value * (current_day / days_in_month)
-                
-                ytd_current_pct = (ytd_current_gwh / ytd_current_total * 100) if ytd_current_total > 0 else 0
-                
-                # Previous year full year percentage
-                year_previous_total = 0
-                if previous_year in total_year_data:
-                    for month in range(1, 13):
-                        month_value = total_year_data[previous_year].get(month, 0)
-                        # Sheet already has monthly total, just sum
-                        year_previous_total += month_value
-                
-                year_previous_pct = (year_previous_gwh / year_previous_total * 100) if year_previous_total > 0 else 0
-            
-            # Calculate change from 2015
-            ytd_change_2015 = ''
-            year_previous_change_2015 = ''
-            
-            if source_name in baselines_2015:
-                # YTD current year change from 2015
-                baseline_ytd = baselines_2015[source_name]['ytd']
-                if baseline_ytd > 0:
-                    change = (ytd_current_gwh - baseline_ytd) / baseline_ytd * 100
-                    ytd_change_2015 = format_change_percentage(change)
-                
-                # Previous year full year change from 2015
-                baseline_year = baselines_2015[source_name]['year']
-                if baseline_year > 0:
-                    change = (year_previous_gwh - baseline_year) / baseline_year * 100
-                    year_previous_change_2015 = format_change_percentage(change)
-            
-            # Add to updates list (columns F, G, H, I, M, N)
+
+            row_num = source_row_map[source_name]
+
+            # YTD Current Year
+            ytd_value = ytd_totals[source_name]
+            ytd_pct = ytd_percentages[source_name]
+
+            # Previous Year
+            prev_value = prev_year_totals[source_name]
+            prev_pct = prev_year_percentages[source_name]
+
             updates.append({
-                'range_fghi': f'F{row_idx}:I{row_idx}',
-                'values_fghi': [[
-                    f"{ytd_current_gwh:.1f}",
-                    f"{ytd_current_pct:.2f}",
-                    f"{year_previous_gwh:.1f}",
-                    f"{year_previous_pct:.2f}"
-                ]],
-                'range_mn': f'M{row_idx}:N{row_idx}',
-                'values_mn': [[ytd_change_2015, year_previous_change_2015]]
+                'range': f'{chr(65 + ytd_current_col_idx)}{row_num}',
+                'values': [[round(ytd_value, 2)]]
             })
-        
-        # Batch update all rows at once
+            updates.append({
+                'range': f'{chr(65 + ytd_current_pct_idx)}{row_num}',
+                'values': [[round(ytd_pct, 2)]]
+            })
+            updates.append({
+                'range': f'{chr(65 + prev_year_col_idx)}{row_num}',
+                'values': [[round(prev_value, 2)]]
+            })
+            updates.append({
+                'range': f'{chr(65 + prev_year_pct_idx)}{row_num}',
+                'values': [[round(prev_pct, 2)]]
+            })
+
+        # Batch update
         if updates:
-            # Prepare batch updates
-            batch_updates = []
-            for update in updates:
-                batch_updates.append({
-                    'range': update['range_fghi'],
-                    'values': update['values_fghi']
-                })
-                batch_updates.append({
-                    'range': update['range_mn'],
-                    'values': update['values_mn']
-                })
-            
-            worksheet.batch_update(batch_updates)
-            print(f"✓ Updated {len(updates)} sources with YTD {current_year} and {previous_year} data (columns F-I, M-N)")
-            
-            # Update timestamp in last column (batch update)
-            timestamp = current_date.strftime('%Y-%m-%d %H:%M UTC')
-            timestamp_updates = []
-            for row_idx in range(2, 14):
-                timestamp_updates.append({
-                    'range': f'J{row_idx}',
-                    'values': [[timestamp]]
-                })
-            worksheet.batch_update(timestamp_updates)
-            print(f"✓ Updated timestamps")
-            
-            # ===================================================================
-            # Calculate changes from previous year (e.g., 2024)
-            # Read Yesterday/LastWeek values that were written by intraday script
-            # ===================================================================
-            print(f"\nCalculating changes from {previous_year}...")
-            
-            # Read back Yesterday and LastWeek columns (B-E)
-            summary_data = worksheet.get('A2:E13')  # Source, Yesterday_GWh, Yesterday_%, LastWeek_GWh, LastWeek_%
-            
-            # Prepare updates for change from previous year columns
-            change_updates = []
-            
-            for row_idx, row_data in enumerate(summary_data, start=2):
-                source_name = row_data[0]
-                
-                try:
-                    yesterday_gwh = float(row_data[1]) if len(row_data) > 1 and row_data[1] else 0
-                    lastweek_gwh = float(row_data[3]) if len(row_data) > 3 and row_data[3] else 0
-                except (ValueError, IndexError):
-                    yesterday_gwh = 0
-                    lastweek_gwh = 0
-                
-                # Get YTD and full year values from source_calcs
-                if source_name not in source_calcs:
-                    change_updates.append({
-                        'range': f'O{row_idx}:R{row_idx}',
-                        'values': [['', '', '', '']]
-                    })
-                    continue
-                
-                ytd_current_gwh = source_calcs[source_name]['ytd_current_gwh']
-                year_previous_gwh = source_calcs[source_name]['year_previous_gwh']
-                
-                # Get December (current month) from previous year from monthly sheets
-                current_month_prev_year_gwh = 0
-                if source_name in ['All Renewables', 'All Non-Renewables']:
-                    # Use pre-calculated aggregate value
-                    current_month_prev_year_gwh = source_calcs[source_name].get('current_month_previous_year_gwh', 0)
-                elif source_name in all_data:
-                    # Get from monthly data
-                    year_data = all_data[source_name]['year_data']
-                    if previous_year in year_data:
-                        current_month_prev_year_gwh = year_data[previous_year].get(current_month, 0)
-                
-                # Calculate changes
-                yesterday_change_prev = ''
-                lastweek_change_prev = ''
-                ytd_change_prev = ''
-                year_prev_change_prev = '—'  # Previous year compared to itself is always "—"
-                
-                # Yesterday change: compare to average day in December previous_year
-                if current_month_prev_year_gwh > 0:
-                    days_in_current_month = calendar.monthrange(previous_year, current_month)[1]
-                    avg_day_prev_year = current_month_prev_year_gwh / days_in_current_month
-                    if avg_day_prev_year > 0 and yesterday_gwh > 0:
-                        change = (yesterday_gwh - avg_day_prev_year) / avg_day_prev_year * 100
-                        yesterday_change_prev = format_change_percentage(change)
-                
-                # LastWeek change: compare to average week in December previous_year
-                if current_month_prev_year_gwh > 0:
-                    days_in_current_month = calendar.monthrange(previous_year, current_month)[1]
-                    avg_week_prev_year = (current_month_prev_year_gwh / days_in_current_month) * 7
-                    if avg_week_prev_year > 0 and lastweek_gwh > 0:
-                        change = (lastweek_gwh - avg_week_prev_year) / avg_week_prev_year * 100
-                        lastweek_change_prev = format_change_percentage(change)
-                
-                # YTD change: compare to same period in previous year
-                if previous_year in all_data.get(source_name, {}).get('year_data', {}):
-                    ytd_prev_year = 0
-                    year_data = all_data[source_name]['year_data']
-                    for month in range(1, current_month + 1):
-                        month_value = year_data[previous_year].get(month, 0)
-                        if month < current_month:
-                            ytd_prev_year += month_value
-                        else:
-                            # Partial month
-                            current_day = current_date.day
-                            days_in_month = calendar.monthrange(previous_year, month)[1]
-                            ytd_prev_year += month_value * (current_day / days_in_month)
-                    
-                    if ytd_prev_year > 0 and ytd_current_gwh > 0:
-                        change = (ytd_current_gwh - ytd_prev_year) / ytd_prev_year * 100
-                        ytd_change_prev = format_change_percentage(change)
-                
-                # For aggregates, handle YTD calculation differently
-                if source_name in ['All Renewables', 'All Non-Renewables']:
-                    # Need to calculate YTD for previous year from aggregates
-                    if source_name == 'All Renewables' and 'All Renewables' in all_data:
-                        renewables_year_data = all_data['All Renewables']['year_data']
-                        if previous_year in renewables_year_data:
-                            ytd_prev_year = 0
-                            for month in range(1, current_month + 1):
-                                month_value = renewables_year_data[previous_year].get(month, 0)
-                                if month < current_month:
-                                    ytd_prev_year += month_value
-                                else:
-                                    current_day = current_date.day
-                                    days_in_month = calendar.monthrange(previous_year, month)[1]
-                                    ytd_prev_year += month_value * (current_day / days_in_month)
-                            
-                            if ytd_prev_year > 0:
-                                change = (ytd_current_gwh - ytd_prev_year) / ytd_prev_year * 100
-                                ytd_change_prev = format_change_percentage(change)
-                    
-                    elif source_name == 'All Non-Renewables' and 'Total Generation' in all_data:
-                        # Calculate from Total - Renewables
-                        total_year_data = all_data['Total Generation']['year_data']
-                        renewables_year_data = all_data.get('All Renewables', {}).get('year_data', {})
-                        
-                        if previous_year in total_year_data and previous_year in renewables_year_data:
-                            ytd_total_prev = 0
-                            ytd_renewables_prev = 0
-                            
-                            for month in range(1, current_month + 1):
-                                month_total = total_year_data[previous_year].get(month, 0)
-                                month_renewables = renewables_year_data[previous_year].get(month, 0)
-                                
-                                if month < current_month:
-                                    ytd_total_prev += month_total
-                                    ytd_renewables_prev += month_renewables
-                                else:
-                                    current_day = current_date.day
-                                    days_in_month = calendar.monthrange(previous_year, month)[1]
-                                    ytd_total_prev += month_total * (current_day / days_in_month)
-                                    ytd_renewables_prev += month_renewables * (current_day / days_in_month)
-                            
-                            ytd_prev_year = ytd_total_prev - ytd_renewables_prev
-                            if ytd_prev_year > 0:
-                                change = (ytd_current_gwh - ytd_prev_year) / ytd_prev_year * 100
-                                ytd_change_prev = format_change_percentage(change)
-                
-                # Add to change updates list
-                change_updates.append({
-                    'range': f'O{row_idx}:R{row_idx}',
-                    'values': [[yesterday_change_prev, lastweek_change_prev, ytd_change_prev, year_prev_change_prev]]
-                })
-            
-            # Write all change from previous year values in a single batch
-            if change_updates:
-                worksheet.batch_update(change_updates)
-                print(f"✓ Updated {len(change_updates)} sources with changes from {previous_year} (columns O-R)")
-            
-            # ===================================================================
-            # Calculate changes from 2 years ago (e.g., 2023)
-            # Same logic as previous year changes
-            # ===================================================================
-            print(f"\nCalculating changes from {two_years_ago}...")
-            
-            # Prepare updates for change from 2 years ago columns
-            change_2ya_updates = []
-            
-            for row_idx, row_data in enumerate(summary_data, start=2):
-                source_name = row_data[0]
-                
-                try:
-                    yesterday_gwh = float(row_data[1]) if len(row_data) > 1 and row_data[1] else 0
-                    lastweek_gwh = float(row_data[3]) if len(row_data) > 3 and row_data[3] else 0
-                except (ValueError, IndexError):
-                    yesterday_gwh = 0
-                    lastweek_gwh = 0
-                
-                # Get YTD and full year values from source_calcs
-                if source_name not in source_calcs:
-                    change_2ya_updates.append({
-                        'range': f'S{row_idx}:V{row_idx}',
-                        'values': [['', '', '', '']]
-                    })
-                    continue
-                
-                ytd_current_gwh = source_calcs[source_name]['ytd_current_gwh']
-                year_previous_gwh = source_calcs[source_name]['year_previous_gwh']
-                
-                # Get December (current month) from 2 years ago from monthly sheets
-                current_month_2ya_gwh = 0
-                if source_name in ['All Renewables', 'All Non-Renewables']:
-                    # For aggregates, need to calculate
-                    if source_name == 'All Renewables' and 'All Renewables' in all_data:
-                        renewables_year_data = all_data['All Renewables']['year_data']
-                        if two_years_ago in renewables_year_data:
-                            current_month_2ya_gwh = renewables_year_data[two_years_ago].get(current_month, 0)
-                    elif source_name == 'All Non-Renewables' and 'Total Generation' in all_data:
-                        total_year_data = all_data['Total Generation']['year_data']
-                        renewables_year_data = all_data.get('All Renewables', {}).get('year_data', {})
-                        if two_years_ago in total_year_data and two_years_ago in renewables_year_data:
-                            total_month = total_year_data[two_years_ago].get(current_month, 0)
-                            renewables_month = renewables_year_data[two_years_ago].get(current_month, 0)
-                            current_month_2ya_gwh = total_month - renewables_month
-                elif source_name in all_data:
-                    # Get from monthly data
-                    year_data = all_data[source_name]['year_data']
-                    if two_years_ago in year_data:
-                        current_month_2ya_gwh = year_data[two_years_ago].get(current_month, 0)
-                
-                # Get full year 2 years ago
-                year_2ya_gwh = 0
-                if source_name in ['All Renewables', 'All Non-Renewables']:
-                    # For aggregates
-                    if source_name == 'All Renewables' and 'All Renewables' in all_data:
-                        renewables_year_data = all_data['All Renewables']['year_data']
-                        if two_years_ago in renewables_year_data:
-                            for month in range(1, 13):
-                                year_2ya_gwh += renewables_year_data[two_years_ago].get(month, 0)
-                    elif source_name == 'All Non-Renewables' and 'Total Generation' in all_data:
-                        total_year_data = all_data['Total Generation']['year_data']
-                        renewables_year_data = all_data.get('All Renewables', {}).get('year_data', {})
-                        if two_years_ago in total_year_data and two_years_ago in renewables_year_data:
-                            total_2ya = sum(total_year_data[two_years_ago].get(m, 0) for m in range(1, 13))
-                            renewables_2ya = sum(renewables_year_data[two_years_ago].get(m, 0) for m in range(1, 13))
-                            year_2ya_gwh = total_2ya - renewables_2ya
-                elif source_name in all_data:
-                    year_data = all_data[source_name]['year_data']
-                    if two_years_ago in year_data:
-                        for month in range(1, 13):
-                            year_2ya_gwh += year_data[two_years_ago].get(month, 0)
-                
-                # Calculate changes
-                yesterday_change_2ya = ''
-                lastweek_change_2ya = ''
-                ytd_change_2ya = ''
-                year_prev_change_2ya = ''
-                
-                # Yesterday change: compare to average day in December 2 years ago
-                if current_month_2ya_gwh > 0:
-                    days_in_current_month = calendar.monthrange(two_years_ago, current_month)[1]
-                    avg_day_2ya = current_month_2ya_gwh / days_in_current_month
-                    if avg_day_2ya > 0 and yesterday_gwh > 0:
-                        change = (yesterday_gwh - avg_day_2ya) / avg_day_2ya * 100
-                        yesterday_change_2ya = format_change_percentage(change)
-                
-                # LastWeek change: compare to average week in December 2 years ago
-                if current_month_2ya_gwh > 0:
-                    days_in_current_month = calendar.monthrange(two_years_ago, current_month)[1]
-                    avg_week_2ya = (current_month_2ya_gwh / days_in_current_month) * 7
-                    if avg_week_2ya > 0 and lastweek_gwh > 0:
-                        change = (lastweek_gwh - avg_week_2ya) / avg_week_2ya * 100
-                        lastweek_change_2ya = format_change_percentage(change)
-                
-                # YTD change: compare to same period in 2 years ago
-                ytd_2ya = 0
-                if source_name in ['All Renewables', 'All Non-Renewables']:
-                    if source_name == 'All Renewables' and 'All Renewables' in all_data:
-                        renewables_year_data = all_data['All Renewables']['year_data']
-                        if two_years_ago in renewables_year_data:
-                            for month in range(1, current_month + 1):
-                                month_value = renewables_year_data[two_years_ago].get(month, 0)
-                                if month < current_month:
-                                    ytd_2ya += month_value
-                                else:
-                                    current_day = current_date.day
-                                    days_in_month = calendar.monthrange(two_years_ago, month)[1]
-                                    ytd_2ya += month_value * (current_day / days_in_month)
-                    elif source_name == 'All Non-Renewables' and 'Total Generation' in all_data:
-                        total_year_data = all_data['Total Generation']['year_data']
-                        renewables_year_data = all_data.get('All Renewables', {}).get('year_data', {})
-                        if two_years_ago in total_year_data and two_years_ago in renewables_year_data:
-                            ytd_total_2ya = 0
-                            ytd_renewables_2ya = 0
-                            for month in range(1, current_month + 1):
-                                month_total = total_year_data[two_years_ago].get(month, 0)
-                                month_renewables = renewables_year_data[two_years_ago].get(month, 0)
-                                if month < current_month:
-                                    ytd_total_2ya += month_total
-                                    ytd_renewables_2ya += month_renewables
-                                else:
-                                    current_day = current_date.day
-                                    days_in_month = calendar.monthrange(two_years_ago, month)[1]
-                                    ytd_total_2ya += month_total * (current_day / days_in_month)
-                                    ytd_renewables_2ya += month_renewables * (current_day / days_in_month)
-                            ytd_2ya = ytd_total_2ya - ytd_renewables_2ya
-                elif source_name in all_data:
-                    year_data = all_data[source_name]['year_data']
-                    if two_years_ago in year_data:
-                        for month in range(1, current_month + 1):
-                            month_value = year_data[two_years_ago].get(month, 0)
-                            if month < current_month:
-                                ytd_2ya += month_value
-                            else:
-                                current_day = current_date.day
-                                days_in_month = calendar.monthrange(two_years_ago, month)[1]
-                                ytd_2ya += month_value * (current_day / days_in_month)
-                
-                if ytd_2ya > 0 and ytd_current_gwh > 0:
-                    change = (ytd_current_gwh - ytd_2ya) / ytd_2ya * 100
-                    ytd_change_2ya = format_change_percentage(change)
-                
-                # Previous year (2024) change: compare 2024 to 2023
-                if year_2ya_gwh > 0 and year_previous_gwh > 0:
-                    change = (year_previous_gwh - year_2ya_gwh) / year_2ya_gwh * 100
-                    year_prev_change_2ya = format_change_percentage(change)
-                
-                # Add to change updates list
-                change_2ya_updates.append({
-                    'range': f'S{row_idx}:V{row_idx}',
-                    'values': [[yesterday_change_2ya, lastweek_change_2ya, ytd_change_2ya, year_prev_change_2ya]]
-                })
-            
-            # Write all change from 2 years ago values in a single batch
-            if change_2ya_updates:
-                worksheet.batch_update(change_2ya_updates)
-                print(f"✓ Updated {len(change_2ya_updates)} sources with changes from {two_years_ago} (columns S-V)")
-            
-            print(f"   Worksheet: {spreadsheet.url}")
+            worksheet.batch_update(updates)
+            print(f"✓ Updated {len(updates)} cells in Summary Table")
         else:
-            print("⚠ No data to update")
-    
+            print("  ⚠ No updates to make")
+
+        # Update timestamp
+        try:
+            timestamp_col_idx = headers.index('Last_Updated')
+            timestamp_value = current_date.strftime('%Y-%m-%d %H:%M:%S UTC')
+
+            # Update timestamp for all rows
+            timestamp_updates = []
+            for row_num in source_row_map.values():
+                timestamp_updates.append({
+                    'range': f'{chr(65 + timestamp_col_idx)}{row_num}',
+                    'values': [[timestamp_value]]
+                })
+
+            if timestamp_updates:
+                worksheet.batch_update(timestamp_updates)
+                print(f"✓ Updated timestamps")
+
+        except ValueError:
+            print("  ⚠ Last_Updated column not found")
+
     except Exception as e:
         print(f"✗ Error updating summary table: {e}")
         import traceback
         traceback.print_exc()
-
 
 
 
@@ -2332,8 +1576,7 @@ def main():
     print("=" * 60)
     print("EU ENERGY PLOTTER - MOBILE OPTIMIZED + ALL CHARTS")
     print("=" * 60)
-    print("
-FEATURES:")
+    print("\nFEATURES:")
     print("  ✓ ALL plots are VERTICAL (2 rows, 1 column)")
     print("  ✓ Individual source plots (titles IN the PNG)")
     print("  ✓ Monthly mean by period charts")
@@ -2346,8 +1589,7 @@ FEATURES:")
     print("=" * 60)
 
     if not os.environ.get('GOOGLE_CREDENTIALS_JSON'):
-        print("
-⚠️  WARNING: GOOGLE_CREDENTIALS_JSON not set!")
+        print("\n⚠️  WARNING: GOOGLE_CREDENTIALS_JSON not set!")
         return
 
     # Countries to process (expandable list)
@@ -2357,8 +1599,7 @@ FEATURES:")
     all_plot_links = {}
     
     for country_code in countries_to_process:
-        print("
-" + "=" * 80)
+        print("\n" + "=" * 80)
         print(f"PROCESSING COUNTRY: {country_code}")
         print("=" * 80)
         
@@ -2382,8 +1623,7 @@ FEATURES:")
     drive_links_file = 'plots/drive_links_monthly_trends.json'
     with open(drive_links_file, 'w') as f:
         json.dump(all_plot_links, f, indent=2)
-    print(f"
-✓ Drive links saved to: {drive_links_file}")
+    print(f"\n✓ Drive links saved to: {drive_links_file}")
     
     # Write timestamp file for HTML to read
     timestamp_file = 'plots/last_update_monthly_trends.html'
@@ -2392,8 +1632,7 @@ FEATURES:")
         f.write(f'<p>Plots generated: {generation_time}</p>')
     print(f"✓ Timestamp written to {timestamp_file}: {generation_time}")
 
-    print("
-" + "=" * 60)
+    print("\n" + "=" * 60)
     print("COMPLETE!")
     print("=" * 60)
     print(f"   - Processed {len(countries_to_process)} countries: {', '.join(countries_to_process)}")
@@ -2402,4 +1641,3 @@ FEATURES:")
 
 if __name__ == "__main__":
     main()
-
