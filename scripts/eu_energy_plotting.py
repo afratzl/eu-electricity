@@ -474,6 +474,15 @@ def create_all_charts(all_data, country_code='EU'):
         percentage_filename = f'plots/{country_code.lower()}_monthly_{source_name.lower().replace(" ", "_")}_percentage_10years.png'
         plt.savefig(percentage_filename, dpi=150, bbox_inches='tight')
         print(f"  ✓ Saved: {percentage_filename}")
+        
+        # Upload to Drive
+        if drive_service:
+            result = upload_plot_to_drive(drive_service, percentage_filename, plot_type='Monthly', country=country_code)
+            if result:
+                if source_name not in plot_links['Monthly']:
+                    plot_links['Monthly'][source_name] = {}
+                plot_links['Monthly'][source_name]['percentage'] = result
+        
         plt.close()
 
         # PLOT 2: Absolute
@@ -533,6 +542,15 @@ def create_all_charts(all_data, country_code='EU'):
         absolute_filename = f'plots/{country_code.lower()}_monthly_{source_name.lower().replace(" ", "_")}_absolute_10years.png'
         plt.savefig(absolute_filename, dpi=150, bbox_inches='tight')
         print(f"  ✓ Saved: {absolute_filename}")
+        
+        # Upload to Drive
+        if drive_service:
+            result = upload_plot_to_drive(drive_service, absolute_filename, plot_type='Monthly', country=country_code)
+            if result:
+                if source_name not in plot_links['Monthly']:
+                    plot_links['Monthly'][source_name] = {}
+                plot_links['Monthly'][source_name]['absolute'] = result
+        
         plt.close()
 
 
@@ -691,6 +709,16 @@ def create_all_charts(all_data, country_code='EU'):
             filename_pct = f'plots/{country_code.lower()}_monthly_energy_sources_mean_{period_name_clean}_percentage.png'
             plt.savefig(filename_pct, dpi=150, bbox_inches='tight')
             print(f"  ✓ Saved percentage: {filename_pct}")
+            
+            # Upload to Drive
+            if drive_service:
+                result = upload_plot_to_drive(drive_service, filename_pct, plot_type='Monthly', country=country_code)
+                if result:
+                    plot_key = f'energy_sources_mean_{period_name_clean}'
+                    if plot_key not in plot_links['Monthly']:
+                        plot_links['Monthly'][plot_key] = {}
+                    plot_links['Monthly'][plot_key]['percentage'] = result
+            
             plt.close()
 
             # ABSOLUTE PLOT
@@ -736,6 +764,16 @@ def create_all_charts(all_data, country_code='EU'):
             filename_abs = f'plots/{country_code.lower()}_monthly_energy_sources_mean_{period_name_clean}_absolute.png'
             plt.savefig(filename_abs, dpi=150, bbox_inches='tight')
             print(f"  ✓ Saved absolute: {filename_abs}")
+            
+            # Upload to Drive
+            if drive_service:
+                result = upload_plot_to_drive(drive_service, filename_abs, plot_type='Monthly', country=country_code)
+                if result:
+                    plot_key = f'energy_sources_mean_{period_name_clean}'
+                    if plot_key not in plot_links['Monthly']:
+                        plot_links['Monthly'][plot_key] = {}
+                    plot_links['Monthly'][plot_key]['absolute'] = result
+            
             plt.close()
 
 
@@ -851,6 +889,16 @@ def create_all_charts(all_data, country_code='EU'):
             filename_pct = f'plots/{country_code.lower()}_monthly_renewable_vs_nonrenewable_mean_{period_name_clean}_percentage.png'
             plt.savefig(filename_pct, dpi=150, bbox_inches='tight')
             print(f"  ✓ Saved percentage: {filename_pct}")
+            
+            # Upload to Drive
+            if drive_service:
+                result = upload_plot_to_drive(drive_service, filename_pct, plot_type='Monthly', country=country_code)
+                if result:
+                    plot_key = f'renewable_vs_nonrenewable_mean_{period_name_clean}'
+                    if plot_key not in plot_links['Monthly']:
+                        plot_links['Monthly'][plot_key] = {}
+                    plot_links['Monthly'][plot_key]['percentage'] = result
+            
             plt.close()
 
             # ABSOLUTE PLOT
@@ -882,6 +930,16 @@ def create_all_charts(all_data, country_code='EU'):
             filename_abs = f'plots/{country_code.lower()}_monthly_renewable_vs_nonrenewable_mean_{period_name_clean}_absolute.png'
             plt.savefig(filename_abs, dpi=150, bbox_inches='tight')
             print(f"  ✓ Saved absolute: {filename_abs}")
+            
+            # Upload to Drive
+            if drive_service:
+                result = upload_plot_to_drive(drive_service, filename_abs, plot_type='Monthly', country=country_code)
+                if result:
+                    plot_key = f'renewable_vs_nonrenewable_mean_{period_name_clean}'
+                    if plot_key not in plot_links['Monthly']:
+                        plot_links['Monthly'][plot_key] = {}
+                    plot_links['Monthly'][plot_key]['absolute'] = result
+            
             plt.close()
 
 
@@ -966,6 +1024,15 @@ def create_all_charts(all_data, country_code='EU'):
         filename_pct = f'plots/{country_code.lower()}_annual_all_sources_percentage.png'
         plt.savefig(filename_pct, dpi=150, bbox_inches='tight')
         print(f"  ✓ Saved percentage: {filename_pct}")
+        
+        # Upload to Drive
+        if drive_service:
+            result = upload_plot_to_drive(drive_service, filename_pct, plot_type='Trends', country=country_code)
+            if result:
+                if 'all_sources' not in plot_links['Trends']:
+                    plot_links['Trends']['all_sources'] = {}
+                plot_links['Trends']['all_sources']['percentage'] = result
+        
         plt.close()
 
         # ABSOLUTE PLOT
@@ -1010,6 +1077,15 @@ def create_all_charts(all_data, country_code='EU'):
         filename_abs = f'plots/{country_code.lower()}_annual_all_sources_absolute.png'
         plt.savefig(filename_abs, dpi=150, bbox_inches='tight')
         print(f"  ✓ Saved absolute: {filename_abs}")
+        
+        # Upload to Drive
+        if drive_service:
+            result = upload_plot_to_drive(drive_service, filename_abs, plot_type='Trends', country=country_code)
+            if result:
+                if 'all_sources' not in plot_links['Trends']:
+                    plot_links['Trends']['all_sources'] = {}
+                plot_links['Trends']['all_sources']['absolute'] = result
+        
         plt.close()
 
     # Annual Trends - Renewable vs Non-Renewable
@@ -1075,6 +1151,15 @@ def create_all_charts(all_data, country_code='EU'):
         filename_pct = f'plots/{country_code.lower()}_annual_renewable_vs_nonrenewable_percentage.png'
         plt.savefig(filename_pct, dpi=150, bbox_inches='tight')
         print(f"  ✓ Saved percentage: {filename_pct}")
+        
+        # Upload to Drive
+        if drive_service:
+            result = upload_plot_to_drive(drive_service, filename_pct, plot_type='Trends', country=country_code)
+            if result:
+                if 'renewable_vs_nonrenewable' not in plot_links['Trends']:
+                    plot_links['Trends']['renewable_vs_nonrenewable'] = {}
+                plot_links['Trends']['renewable_vs_nonrenewable']['percentage'] = result
+        
         plt.close()
 
         # ABSOLUTE PLOT
@@ -1109,6 +1194,15 @@ def create_all_charts(all_data, country_code='EU'):
         filename_abs = f'plots/{country_code.lower()}_annual_renewable_vs_nonrenewable_absolute.png'
         plt.savefig(filename_abs, dpi=150, bbox_inches='tight')
         print(f"  ✓ Saved absolute: {filename_abs}")
+        
+        # Upload to Drive
+        if drive_service:
+            result = upload_plot_to_drive(drive_service, filename_abs, plot_type='Trends', country=country_code)
+            if result:
+                if 'renewable_vs_nonrenewable' not in plot_links['Trends']:
+                    plot_links['Trends']['renewable_vs_nonrenewable'] = {}
+                plot_links['Trends']['renewable_vs_nonrenewable']['absolute'] = result
+        
         plt.close()
 
 
@@ -1205,6 +1299,15 @@ def create_all_charts(all_data, country_code='EU'):
         filename_pct = f'plots/{country_code.lower()}_annual_yoy_all_sources_vs_{baseline_year}_percentage.png'
         plt.savefig(filename_pct, dpi=150, bbox_inches='tight')
         print(f"  ✓ Saved percentage: {filename_pct}")
+        
+        # Upload to Drive
+        if drive_service:
+            result = upload_plot_to_drive(drive_service, filename_pct, plot_type='Trends', country=country_code)
+            if result:
+                if 'yoy_all_sources_vs_2015' not in plot_links['Trends']:
+                    plot_links['Trends']['yoy_all_sources_vs_2015'] = {}
+                plot_links['Trends']['yoy_all_sources_vs_2015']['percentage'] = result
+        
         plt.close()
 
         # ABSOLUTE CHANGE PLOT
@@ -1251,6 +1354,15 @@ def create_all_charts(all_data, country_code='EU'):
         filename_abs = f'plots/{country_code.lower()}_annual_yoy_all_sources_vs_{baseline_year}_absolute.png'
         plt.savefig(filename_abs, dpi=150, bbox_inches='tight')
         print(f"  ✓ Saved absolute: {filename_abs}")
+        
+        # Upload to Drive
+        if drive_service:
+            result = upload_plot_to_drive(drive_service, filename_abs, plot_type='Trends', country=country_code)
+            if result:
+                if 'yoy_all_sources_vs_2015' not in plot_links['Trends']:
+                    plot_links['Trends']['yoy_all_sources_vs_2015'] = {}
+                plot_links['Trends']['yoy_all_sources_vs_2015']['absolute'] = result
+        
         plt.close()
 
     # YoY Change - Aggregates vs 2015
@@ -1332,6 +1444,15 @@ def create_all_charts(all_data, country_code='EU'):
         filename_pct = f'plots/{country_code.lower()}_annual_yoy_aggregates_vs_{baseline_year}_percentage.png'
         plt.savefig(filename_pct, dpi=150, bbox_inches='tight')
         print(f"  ✓ Saved percentage: {filename_pct}")
+        
+        # Upload to Drive
+        if drive_service:
+            result = upload_plot_to_drive(drive_service, filename_pct, plot_type='Trends', country=country_code)
+            if result:
+                if 'yoy_aggregates_vs_2015' not in plot_links['Trends']:
+                    plot_links['Trends']['yoy_aggregates_vs_2015'] = {}
+                plot_links['Trends']['yoy_aggregates_vs_2015']['percentage'] = result
+        
         plt.close()
 
         # ABSOLUTE CHANGE PLOT
@@ -1365,6 +1486,15 @@ def create_all_charts(all_data, country_code='EU'):
         filename_abs = f'plots/{country_code.lower()}_annual_yoy_aggregates_vs_{baseline_year}_absolute.png'
         plt.savefig(filename_abs, dpi=150, bbox_inches='tight')
         print(f"  ✓ Saved absolute: {filename_abs}")
+        
+        # Upload to Drive
+        if drive_service:
+            result = upload_plot_to_drive(drive_service, filename_abs, plot_type='Trends', country=country_code)
+            if result:
+                if 'yoy_aggregates_vs_2015' not in plot_links['Trends']:
+                    plot_links['Trends']['yoy_aggregates_vs_2015'] = {}
+                plot_links['Trends']['yoy_aggregates_vs_2015']['absolute'] = result
+        
         plt.close()
 
     print("\n" + "=" * 60)
