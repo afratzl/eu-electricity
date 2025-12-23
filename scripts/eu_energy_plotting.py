@@ -1228,7 +1228,7 @@ def create_all_charts(all_data, country_code='EU'):
         yoy_change_pct = {}
 
         baseline_year = 2015
-        comparison_years = [year for year in years_available if year > baseline_year]
+        comparison_years = [year for year in years_available if year >= baseline_year]
 
         for source_name in available_sources:
             yoy_change_abs[source_name] = []
@@ -1382,7 +1382,7 @@ def create_all_charts(all_data, country_code='EU'):
 
     if 2015 in years_available and 'All Renewables' in all_data and 'All Non-Renewables' in all_data and 'Total Generation' in all_data:
         baseline_year = 2015
-        comparison_years = [year for year in years_available if year > baseline_year]
+        comparison_years = [year for year in years_available if year >= baseline_year]
 
         yoy_renewable_abs = []
         yoy_nonrenewable_abs = []
