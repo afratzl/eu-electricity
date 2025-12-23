@@ -445,7 +445,13 @@ def extract_country_from_raw_data(raw_data_matrix, country_code):
                 if country_code in country_df.columns:
                     extracted_df = country_df[[country_code]].copy()
                     extracted_data['atomic_sources'][source][period_name] = extracted_df
-                # Skip if country not in data
+                else:
+                    # Country doesn't have this source - create zero-filled DataFrame
+                    # This ensures plots show 0% rather than failing
+                    zero_df = pd.DataFrame({
+                        country_code: pd.Series(0.0, index=country_df.index)
+                    })
+                    extracted_data['atomic_sources'][source][period_name] = zero_df
     
     # Extract aggregates (already EU totals in raw data, but handle country-specific)
     for agg_source in AGGREGATE_SOURCES:
@@ -493,7 +499,12 @@ def extract_country_from_raw_data(raw_data_matrix, country_code):
             if country_code in country_df.columns:
                 extracted_df = country_df[[country_code]].copy()
                 extracted_data['total_generation'][period_name] = extracted_df
-            # Skip if country not in data
+            else:
+                # Country doesn't have total generation data - create zero-filled DataFrame
+                zero_df = pd.DataFrame({
+                    country_code: pd.Series(0.0, index=country_df.index)
+                })
+                extracted_data['total_generation'][period_name] = zero_df
     
     print(f"✓ Extracted data for {country_code}")
     return extracted_data
@@ -1371,39 +1382,43 @@ def get_or_create_country_sheet(gc, drive_service, country_code='EU'):
             fields='id'
         ).execute()
         print(f"  ✓ Set permissions: Anyone with link can view")
+    
+    # Move to correct Drive folder structure (runs every time)
+    # Get or create folder: EU-Electricity-Plots/[Country]/
+    try:
+        # Find root folder
+        query = "name='EU-Electricity-Plots' and mimeType='application/vnd.google-apps.folder' and trashed=false"
+        results = drive_service.files().list(q=query, spaces='drive', fields='files(id)').execute()
+        folders = results.get('files', [])
         
-        # Move to correct Drive folder structure
-        # Get or create folder: EU-Electricity-Plots/[Country]/
-        try:
-            # Find root folder
-            query = "name='EU-Electricity-Plots' and mimeType='application/vnd.google-apps.folder' and trashed=false"
-            results = drive_service.files().list(q=query, spaces='drive', fields='files(id)').execute()
-            folders = results.get('files', [])
+        if folders:
+            root_folder_id = folders[0]['id']
             
-            if folders:
-                root_folder_id = folders[0]['id']
-                
-                # Find or create country folder
-                query = f"name='{country_code}' and '{root_folder_id}' in parents and mimeType='application/vnd.google-apps.folder' and trashed=false"
-                results = drive_service.files().list(q=query, spaces='drive', fields='files(id)').execute()
-                country_folders = results.get('files', [])
-                
-                if country_folders:
-                    country_folder_id = country_folders[0]['id']
-                else:
-                    # Create country folder
-                    file_metadata = {
-                        'name': country_code,
-                        'mimeType': 'application/vnd.google-apps.folder',
-                        'parents': [root_folder_id]
-                    }
-                    folder = drive_service.files().create(body=file_metadata, fields='id').execute()
-                    country_folder_id = folder.get('id')
-                    print(f"  ✓ Created folder: EU-Electricity-Plots/{country_code}/")
-                
+            # Find or create country folder
+            query = f"name='{country_code}' and '{root_folder_id}' in parents and mimeType='application/vnd.google-apps.folder' and trashed=false"
+            results = drive_service.files().list(q=query, spaces='drive', fields='files(id)').execute()
+            country_folders = results.get('files', [])
+            
+            if country_folders:
+                country_folder_id = country_folders[0]['id']
+            else:
+                # Create country folder
+                file_metadata = {
+                    'name': country_code,
+                    'mimeType': 'application/vnd.google-apps.folder',
+                    'parents': [root_folder_id]
+                }
+                folder = drive_service.files().create(body=file_metadata, fields='id').execute()
+                country_folder_id = folder.get('id')
+                print(f"  ✓ Created folder: EU-Electricity-Plots/{country_code}/")
+            
+            # Check if sheet is already in correct folder
+            file = drive_service.files().get(fileId=spreadsheet.id, fields='parents').execute()
+            current_parents = file.get('parents', [])
+            
+            if country_folder_id not in current_parents:
                 # Move sheet to country folder
-                file = drive_service.files().get(fileId=spreadsheet.id, fields='parents').execute()
-                previous_parents = ",".join(file.get('parents', []))
+                previous_parents = ",".join(current_parents)
                 drive_service.files().update(
                     fileId=spreadsheet.id,
                     addParents=country_folder_id,
@@ -1411,9 +1426,11 @@ def get_or_create_country_sheet(gc, drive_service, country_code='EU'):
                     fields='id, parents'
                 ).execute()
                 print(f"  ✓ Moved to: EU-Electricity-Plots/{country_code}/")
-                
-        except Exception as e:
-            print(f"  ⚠ Could not move to Drive folder: {e}")
+            else:
+                print(f"  ✓ Already in: EU-Electricity-Plots/{country_code}/")
+            
+    except Exception as e:
+        print(f"  ⚠ Could not move to Drive folder: {e}")
     
     return spreadsheet
 
