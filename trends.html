@@ -109,7 +109,7 @@
                         <option value="EE" disabled>Estonia</option>
                         <option value="FI" disabled>Finland</option>
                         <option value="FR" disabled>France</option>
-                        <option value="DE" disabled>Germany</option>
+                        <option value="DE">Germany</option>
                         <option value="GR" disabled>Greece</option>
                         <option value="HU" disabled>Hungary</option>
                         <option value="IE" disabled>Ireland</option>
@@ -288,46 +288,6 @@
         // Load Drive links from JSON
         let driveLinks = null;
         
-        // Fetch image bypassing cache (for mobile refresh)
-        async function fetchImageAsDataURL(url) {
-            try {
-                console.log('🔄 Fetching fresh image:', url);
-                
-                // Triple-aggressive cache busting:
-                // 1. Vary size parameter (cycles through 1998-2002)
-                const randomSize = (Date.now() % 5) + 1998;
-                let fetchUrl = url.replace(/sz=w\d+/, `sz=w${randomSize}`);
-                
-                // 2. Add timestamp parameter (browser sees as completely new URL)
-                fetchUrl += `&v=${Date.now()}`;
-                
-                console.log('📡 Modified URL:', fetchUrl);
-                
-                // 3. Fetch with no-store (prevents caching the response)
-                const response = await fetch(fetchUrl, {
-                    cache: 'no-store',
-                    mode: 'cors'
-                });
-                
-                console.log('✓ Fetch successful, converting to data URL...');
-                
-                const blob = await response.blob();
-                return new Promise((resolve, reject) => {
-                    const reader = new FileReader();
-                    reader.onloadend = () => {
-                        console.log('✓ Converted to data URL');
-                        resolve(reader.result);
-                    };
-                    reader.onerror = reject;
-                    reader.readAsDataURL(blob);
-                });
-            } catch (error) {
-                console.error('❌ Failed to fetch image:', error);
-                console.log('⚠️ Falling back to original URL');
-                return url;  // Fallback to original URL
-            }
-        }
-        
         async function loadDriveLinks() {
             if (driveLinks) return driveLinks;
             
@@ -387,12 +347,31 @@
                     percentageUrl = plots[baseKey].percentage?.direct_url || percentageUrl;
                     absoluteUrl = plots[baseKey].absolute?.direct_url || absoluteUrl;
                     
-                    // Force mobile browser cache break: fetch as data URL when refreshing
-                    if (window.isRefreshing && percentageUrl && absoluteUrl) {
-                        percentageUrl = await fetchImageAsDataURL(percentageUrl);
-                        absoluteUrl = await fetchImageAsDataURL(absoluteUrl);
-                        window.isRefreshing = false;
-                    }
+                    // SOPHISTICATED CACHE BUSTING - same as live.html
+                    console.log('🎯 Using timestamp-based size for cache busting');
+                    
+                    // Generate size based on day of year (odd/even) + hour
+                    const now = new Date();
+                    const startOfYear = new Date(now.getFullYear(), 0, 0);
+                    const diff = now - startOfYear;
+                    const oneDay = 1000 * 60 * 60 * 24;
+                    const dayOfYear = Math.floor(diff / oneDay);  // 1-365
+                    
+                    const hour = now.getHours();  // 0-23
+                    const isOddDay = dayOfYear % 2 === 1;
+                    
+                    // Odd days: 2000-2023, Even days: 2024-2047
+                    const size = 2000 + (isOddDay ? 0 : 24) + hour;
+                    
+                    console.log(`🕐 Day of year: ${dayOfYear} (${isOddDay ? 'odd' : 'even'}), Hour: ${hour}`);
+                    console.log(`🔄 Using timestamp size: w${size}`);
+                    console.log(`   Range: ${isOddDay ? '2000-2023 (odd days)' : '2024-2047 (even days)'}`);
+                    
+                    // Replace size in URL
+                    percentageUrl = percentageUrl.replace(/sz=w[\d.]+/, `sz=w${size}`);
+                    absoluteUrl = absoluteUrl.replace(/sz=w[\d.]+/, `sz=w${size}`);
+                    
+                    console.log('Modified URL:', percentageUrl);
                 }
             }
 
@@ -473,9 +452,6 @@
             
             // Clear cached JSON to force reload of latest URLs
             driveLinks = null;
-            
-            // Set flag to trigger aggressive cache-busting
-            window.isRefreshing = true;
             
             // Simply reload the current plot (this will fetch fresh JSON and images)
             showPlot(plotId, countryId);
