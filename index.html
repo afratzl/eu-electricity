@@ -88,11 +88,25 @@
         <!-- Electricity Mix Summary Table -->
         <section class="summary-table-section-pro">
             <div class="section-header-pro">
-                <h2>EU Electricity Mix</h2>
+                <h2>Electricity Mix</h2>
                 <p class="section-subtitle-pro">Recent generation by source</p>
             </div>
             
             <div class="table-controls-pro">
+                <!-- Country Selector -->
+                <div class="country-selector-group">
+                    <span class="control-label-pro">Country/Region:</span>
+                    <select id="country-select" class="country-select-pro" onchange="updateTable()">
+                        <optgroup label="Region">
+                            <option value="EU" selected>European Union</option>
+                        </optgroup>
+                        <optgroup label="EU Member States">
+                            <option value="DE">Germany</option>
+                        </optgroup>
+                    </select>
+                </div>
+                
+                <!-- Display Toggle -->
                 <span class="control-label-pro">Display:</span>
                 <div class="toggle-group">
                     <button id="toggle-percentage" class="toggle-btn-pro active" onclick="showPercentage()">
@@ -132,18 +146,69 @@
         const previousYear = currentYear - 1;
         const twoYearsAgo = currentYear - 2;
         
-        // Load summary data (timestamp + table) - single fetch
+        // Cache for full JSON data
+        let allCountriesData = null;
+        
+        // Load summary data - loads entire nested JSON once
         function loadSummaryData() {
             fetch('plots/energy_summary_table.json')
                 .then(response => response.json())
                 .then(data => {
-                    // Display table
-                    displaySummaryTable(data);
+                    // Cache the full nested structure
+                    allCountriesData = data;
+                    console.log('Loaded data for countries:', Object.keys(data));
+                    
+                    // Display default country (EU)
+                    updateTable();
                 })
                 .catch(error => {
                     console.error('Error loading summary data:', error);
                     document.getElementById('summary-table-container').innerHTML = '<div class="error-message-pro">Failed to load summary data</div>';
                 });
+        }
+        
+        // Update table based on selected country
+        function updateTable() {
+            if (!allCountriesData) {
+                console.error('Data not loaded yet');
+                return;
+            }
+            
+            const countryId = document.getElementById('country-select').value;
+            const countryData = allCountriesData[countryId];
+            
+            if (!countryData) {
+                console.error(`No data found for country: ${countryId}`);
+                document.getElementById('summary-table-container').innerHTML = 
+                    `<div class="error-message-pro">Data not available for ${countryId}</div>`;
+                return;
+            }
+            
+            // Display table for selected country
+            displaySummaryTable(countryData);
+            
+            // Preserve current toggle state
+            const activeButton = document.querySelector('.toggle-btn-pro.active');
+            if (activeButton) {
+                const buttonId = activeButton.id;
+                switch(buttonId) {
+                    case 'toggle-percentage':
+                        showPercentage();
+                        break;
+                    case 'toggle-absolute':
+                        showAbsolute();
+                        break;
+                    case 'toggle-change':
+                        showChange();
+                        break;
+                    case 'toggle-change-2024':
+                        showChangePreviousYear();
+                        break;
+                    case 'toggle-change-2023':
+                        showChangeTwoYearsAgo();
+                        break;
+                }
+            }
         }
 
         // Display summary table
@@ -296,7 +361,7 @@
             document.getElementById('change-previous-year-label').textContent = `Change from ${previousYear}`;
             document.getElementById('change-two-years-ago-label').textContent = `Change from ${twoYearsAgo}`;
             
-            loadSummaryData();  // Load table (starts with percentage view by default)
+            loadSummaryData();  // Load all country data (starts with EU by default)
         });
     </script>
 
@@ -424,6 +489,32 @@
             gap: var(--spacing-sm);
             margin-bottom: var(--spacing-lg);
             flex-wrap: wrap;
+        }
+        
+        .country-selector-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .country-select-pro {
+            padding: 8px 12px;
+            font-size: 0.9375em;
+            border: 2px solid var(--color-border);
+            border-radius: var(--radius-sm);
+            background: white;
+            color: var(--color-text);
+            cursor: pointer;
+            transition: border-color 0.2s ease;
+        }
+        
+        .country-select-pro:hover {
+            border-color: var(--color-accent);
+        }
+        
+        .country-select-pro:focus {
+            outline: none;
+            border-color: var(--color-primary);
         }
 
         .control-label-pro {
@@ -641,6 +732,16 @@
 
             .table-controls-pro {
                 flex-direction: column;
+            }
+            
+            .country-selector-group {
+                width: 100%;
+                justify-content: center;
+            }
+            
+            .country-select-pro {
+                flex: 1;
+                max-width: 300px;
             }
 
             .toggle-group {
