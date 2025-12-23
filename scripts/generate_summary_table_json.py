@@ -16,6 +16,7 @@ COUNTRIES = ['EU', 'DE']
 def get_worksheet_for_country(spreadsheet, country_code):
     """
     Get the worksheet for a specific country.
+    Tries both new format (with country suffix) and old format (without suffix for EU).
     
     Args:
         spreadsheet: gspread Spreadsheet object
@@ -24,6 +25,7 @@ def get_worksheet_for_country(spreadsheet, country_code):
     Returns:
         gspread Worksheet object or None
     """
+    # Try new format first: "Summary Table Data - {COUNTRY}"
     worksheet_name = f'Summary Table Data - {country_code}'
     
     try:
@@ -31,7 +33,18 @@ def get_worksheet_for_country(spreadsheet, country_code):
         print(f"✓ Found '{worksheet_name}' worksheet")
         return worksheet
     except gspread.WorksheetNotFound:
-        print(f"✗ '{worksheet_name}' worksheet not found!")
+        # For backward compatibility: if EU and new format not found, try old format
+        if country_code == 'EU':
+            try:
+                old_worksheet_name = 'Summary Table Data'
+                worksheet = spreadsheet.worksheet(old_worksheet_name)
+                print(f"✓ Found '{old_worksheet_name}' worksheet (using for {country_code})")
+                return worksheet
+            except gspread.WorksheetNotFound:
+                pass
+        
+        print(f"✗ No worksheet found for {country_code}")
+        print(f"   Tried: '{worksheet_name}'" + (f" and 'Summary Table Data'" if country_code == 'EU' else ""))
         return None
 
 def parse_summary_data(worksheet, country_code):
