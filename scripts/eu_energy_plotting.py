@@ -183,8 +183,57 @@ def format_change_percentage(value):
     else:
         return f"{value:+.1f}%"
 
+def get_or_create_country_sheet(country_code, gc, drive_service):
+    """
+    Get or create country-specific Google Sheet, and ensure it's in correct Drive folder.
+    Mirror of intraday script logic.
+    """
+    sheet_name = f'{country_code} Electricity Production Data'
+    
+    try:
+        spreadsheet = gc.open(sheet_name)
+        print(f"✓ Opened existing sheet: {sheet_name}")
+    except gspread.SpreadsheetNotFound:
+        print(f"✗ Sheet not found: {sheet_name}")
+        print(f"  Note: Monthly data sheets are created by the data fetching process.")
+        return None
+    
+    try:
+        query = "name='EU-Electricity-Plots' and mimeType='application/vnd.google-apps.folder' and trashed=false"
+        results = drive_service.files().list(q=query, spaces='drive', fields='files(id)').execute()
+        folders = results.get('files', [])
+        
+        if folders:
+            root_folder_id = folders[0]['id']
+            query = f"name='{country_code}' and '{root_folder_id}' in parents and mimeType='application/vnd.google-apps.folder' and trashed=false"
+            results = drive_service.files().list(q=query, spaces='drive', fields='files(id)').execute()
+            country_folders = results.get('files', [])
+            
+            country_folder_id = country_folders[0]['id'] if country_folders else None
+            if not country_folder_id:
+                file_metadata = {'name': country_code, 'mimeType': 'application/vnd.google-apps.folder', 'parents': [root_folder_id]}
+                folder = drive_service.files().create(body=file_metadata, fields='id').execute()
+                country_folder_id = folder.get('id')
+                print(f"  ✓ Created folder: EU-Electricity-Plots/{country_code}/")
+            
+            file = drive_service.files().get(fileId=spreadsheet.id, fields='parents').execute()
+            current_parents = file.get('parents', [])
+            
+            if country_folder_id not in current_parents:
+                previous_parents = ",".join(current_parents)
+                drive_service.files().update(fileId=spreadsheet.id, addParents=country_folder_id, 
+                                            removeParents=previous_parents, fields='id, parents').execute()
+                print(f"  ✓ Moved to: EU-Electricity-Plots/{country_code}/")
+            else:
+                print(f"  ✓ Already in: EU-Electricity-Plots/{country_code}/")
+    except Exception as e:
+        print(f"  ⚠ Could not move to Drive folder: {e}")
+    
+    return spreadsheet
 
-def load_data_from_google_sheets():
+
+
+def load_data_from_google_sheets(country_code=\'EU\'):
     """
     Load all energy data from Google Sheets using environment variables
     """
@@ -199,7 +248,14 @@ def load_data_from_google_sheets():
         credentials = Credentials.from_service_account_info(creds_dict, scopes=scope)
         gc = gspread.authorize(credentials)
 
-        spreadsheet = gc.open('EU Electricity Production Data')
+        # Initialize Drive service
+        drive_service = initialize_drive_service()
+        
+        # Get or create sheet and ensure it's in correct folder
+        spreadsheet = get_or_create_country_sheet(country_code, gc, drive_service)
+        if not spreadsheet:
+            return None
+        
         print(f"✓ Connected to Google Sheets: {spreadsheet.url}")
 
         worksheets = spreadsheet.worksheets()
@@ -254,7 +310,7 @@ def load_data_from_google_sheets():
         return None
 
 
-def create_all_charts(all_data):
+def create_all_charts(all_data, country_code=\'EU\'):
     """
     Create all charts from the loaded data - MOBILE OPTIMIZED
     UPDATED: Larger fonts, thicker lines, clearer titles, no Y-axis restrictions
@@ -264,12 +320,12 @@ def create_all_charts(all_data):
         return
 
     print("\n" + "=" * 60)
-    print("CREATING MOBILE-OPTIMIZED CHARTS")
+    print(f"CREATING MOBILE-OPTIMIZED CHARTS FOR {country_code}")
     print("=" * 60)
     
     # Initialize Google Drive service for uploading plots
     drive_service = initialize_drive_service()
-    plot_links = {'EU': {'Monthly': {}, 'Trends': {}}}
+    plot_links = {'Monthly': {}, 'Trends': {}}
 
     first_source = list(all_data.keys())[0]
     years_available = sorted(all_data[first_source]['year_data'].keys())
@@ -388,7 +444,7 @@ def create_all_charts(all_data):
         elif source_name == 'All Non-Renewables':
             display_name = 'Non-Renewable'
         
-        fig1.suptitle(f'{display_name} Electricity Generation (EU)', fontsize=34, fontweight='bold', x=0.55, y=0.96, ha='center')
+        fig1.suptitle(f'{display_name} Electricity Generation ({country_code})', fontsize=34, fontweight='bold', x=0.55, y=0.96, ha='center')
         ax1.set_title('Fraction of Total Generation', fontsize=26, fontweight='normal', pad=10, ha='center')
         ax1.set_xlabel('Month', fontsize=28, fontweight='bold', labelpad=15)
         ax1.set_ylabel('Electricity Generation (%)', fontsize=28, fontweight='bold', labelpad=15)
@@ -411,7 +467,7 @@ def create_all_charts(all_data):
 
         plt.tight_layout(rect=[0, 0, 1, 0.96])
 
-        percentage_filename = f'plots/eu_monthly_{source_name.lower().replace(" ", "_")}_percentage_10years.png'
+        percentage_filename = f'plots/{country_code.lower()}_monthly_{source_name.lower().replace(" ", "_")}_percentage_10years.png'
         plt.savefig(percentage_filename, dpi=150, bbox_inches='tight')
         print(f"  ✓ Saved: {percentage_filename}")
         plt.close()
@@ -452,7 +508,7 @@ def create_all_charts(all_data):
         elif source_name == 'All Non-Renewables':
             display_name = 'Non-Renewable'
         
-        fig2.suptitle(f'{display_name} Electricity Generation (EU)', fontsize=34, fontweight='bold', x=0.55, y=0.96, ha='center')
+        fig2.suptitle(f'{display_name} Electricity Generation ({country_code})', fontsize=34, fontweight='bold', x=0.55, y=0.96, ha='center')
         ax2.set_title('Absolute Generation', fontsize=26, fontweight='normal', pad=10, ha='center')
         ax2.set_xlabel('Month', fontsize=28, fontweight='bold', labelpad=15)
         ax2.set_ylabel('Electricity Generation (TWh)', fontsize=28, fontweight='bold', labelpad=15)
@@ -474,7 +530,7 @@ def create_all_charts(all_data):
 
         plt.tight_layout(rect=[0, 0, 1, 0.96])
 
-        absolute_filename = f'plots/eu_monthly_{source_name.lower().replace(" ", "_")}_absolute_10years.png'
+        absolute_filename = f'plots/{country_code.lower()}_monthly_{source_name.lower().replace(" ", "_")}_absolute_10years.png'
         plt.savefig(absolute_filename, dpi=150, bbox_inches='tight')
         print(f"  ✓ Saved: {absolute_filename}")
         plt.close()
@@ -597,7 +653,7 @@ def create_all_charts(all_data):
                 line_handles[source_name] = line
 
             # Title and labels - clean format
-            fig1.suptitle('Electricity Generation (EU)', 
+            fig1.suptitle('Electricity Generation ({country_code})', 
                          fontsize=34, fontweight='bold', x=0.55, y=0.96, ha='center')
             ax1.set_title(f'Fraction of Total Generation ({period["name"]})', fontsize=26, fontweight='normal', pad=10, ha='center')
             ax1.set_xlabel('Month', fontsize=28, fontweight='bold', labelpad=15)
@@ -637,7 +693,7 @@ def create_all_charts(all_data):
             plt.tight_layout(rect=[0, 0, 1, 0.96])
 
             period_name_clean = period['name'].replace('-', '_')
-            filename_pct = f'plots/eu_monthly_energy_sources_mean_{period_name_clean}_percentage.png'
+            filename_pct = f'plots/{country_code.lower()}_monthly_energy_sources_mean_{period_name_clean}_percentage.png'
             plt.savefig(filename_pct, dpi=150, bbox_inches='tight')
             print(f"  ✓ Saved percentage: {filename_pct}")
             plt.close()
@@ -656,7 +712,7 @@ def create_all_charts(all_data):
                 line_handles[source_name] = line
 
             # Title and labels - clean format
-            fig2.suptitle('Electricity Generation (EU)', 
+            fig2.suptitle('Electricity Generation ({country_code})', 
                          fontsize=34, fontweight='bold', x=0.55, y=0.96, ha='center')
             ax2.set_title(f'Absolute Generation ({period["name"]})', fontsize=26, fontweight='normal', pad=10, ha='center')
             ax2.set_xlabel('Month', fontsize=28, fontweight='bold', labelpad=15)
@@ -695,7 +751,7 @@ def create_all_charts(all_data):
 
             plt.tight_layout(rect=[0, 0, 1, 0.96])
 
-            filename_abs = f'plots/eu_monthly_energy_sources_mean_{period_name_clean}_absolute.png'
+            filename_abs = f'plots/{country_code.lower()}_monthly_energy_sources_mean_{period_name_clean}_absolute.png'
             plt.savefig(filename_abs, dpi=150, bbox_inches='tight')
             print(f"  ✓ Saved absolute: {filename_abs}")
             plt.close()
@@ -793,7 +849,7 @@ def create_all_charts(all_data):
                          linewidth=6, markersize=13, label=category_name)
 
             # Title and labels - clean format
-            fig1.suptitle('Electricity Generation (EU)', 
+            fig1.suptitle('Electricity Generation ({country_code})', 
                          fontsize=34, fontweight='bold', x=0.55, y=0.96, ha='center')
             ax1.set_title(f'Fraction of Total Generation ({period["name"]})', fontsize=26, fontweight='normal', pad=10, ha='center')
             ax1.set_xlabel('Month', fontsize=28, fontweight='bold', labelpad=15)
@@ -812,7 +868,7 @@ def create_all_charts(all_data):
             plt.tight_layout(rect=[0, 0, 1, 0.96])
 
             period_name_clean = period['name'].replace('-', '_')
-            filename_pct = f'plots/eu_monthly_renewable_vs_nonrenewable_mean_{period_name_clean}_percentage.png'
+            filename_pct = f'plots/{country_code.lower()}_monthly_renewable_vs_nonrenewable_mean_{period_name_clean}_percentage.png'
             plt.savefig(filename_pct, dpi=150, bbox_inches='tight')
             print(f"  ✓ Saved percentage: {filename_pct}")
             plt.close()
@@ -827,7 +883,7 @@ def create_all_charts(all_data):
                          linewidth=6, markersize=13, label=category_name)
 
             # Title and labels - clean format
-            fig2.suptitle('Electricity Generation (EU)', 
+            fig2.suptitle('Electricity Generation ({country_code})', 
                          fontsize=34, fontweight='bold', x=0.55, y=0.96, ha='center')
             ax2.set_title(f'Absolute Generation ({period["name"]})', fontsize=26, fontweight='normal', pad=10, ha='center')
             ax2.set_xlabel('Month', fontsize=28, fontweight='bold', labelpad=15)
@@ -845,7 +901,7 @@ def create_all_charts(all_data):
 
             plt.tight_layout(rect=[0, 0, 1, 0.96])
 
-            filename_abs = f'plots/eu_monthly_renewable_vs_nonrenewable_mean_{period_name_clean}_absolute.png'
+            filename_abs = f'plots/{country_code.lower()}_monthly_renewable_vs_nonrenewable_mean_{period_name_clean}_absolute.png'
             plt.savefig(filename_abs, dpi=150, bbox_inches='tight')
             print(f"  ✓ Saved absolute: {filename_abs}")
             plt.close()
@@ -947,7 +1003,7 @@ def create_all_charts(all_data):
 
         if lines_plotted > 0:
             # Title and labels - clean format
-            fig1.suptitle('Electricity Generation (EU)', 
+            fig1.suptitle('Electricity Generation ({country_code})', 
                          fontsize=34, fontweight='bold', x=0.55, y=0.96, ha='center')
             ax1.set_title('Fraction of Total Generation', fontsize=26, fontweight='normal', pad=10, ha='center')
             ax1.set_xlabel('Year', fontsize=28, fontweight='bold', labelpad=15)
@@ -1011,7 +1067,7 @@ def create_all_charts(all_data):
 
         if lines_plotted > 0:
             # Title and labels - clean format
-            fig2.suptitle('Electricity Generation (EU)', 
+            fig2.suptitle('Electricity Generation ({country_code})', 
                          fontsize=34, fontweight='bold', x=0.55, y=0.96, ha='center')
             ax2.set_title('Absolute Generation', fontsize=26, fontweight='normal', pad=10, ha='center')
             ax2.set_xlabel('Year', fontsize=28, fontweight='bold', labelpad=15)
@@ -1093,7 +1149,7 @@ def create_all_charts(all_data):
 
         if lines_plotted > 0:
             # Title and labels - clean format
-            fig1.suptitle('Electricity Generation (EU)', 
+            fig1.suptitle('Electricity Generation ({country_code})', 
                          fontsize=34, fontweight='bold', x=0.55, y=0.96, ha='center')
             ax1.set_title('Fraction of Total Generation', fontsize=26, fontweight='normal', pad=10, ha='center')
             ax1.set_xlabel('Year', fontsize=28, fontweight='bold', labelpad=15)
@@ -1132,7 +1188,7 @@ def create_all_charts(all_data):
 
         if lines_plotted > 0:
             # Title and labels - clean format
-            fig2.suptitle('Electricity Generation (EU)', 
+            fig2.suptitle('Electricity Generation ({country_code})', 
                          fontsize=34, fontweight='bold', x=0.55, y=0.96, ha='center')
             ax2.set_title('Absolute Generation', fontsize=26, fontweight='normal', pad=10, ha='center')
             ax2.set_xlabel('Year', fontsize=28, fontweight='bold', labelpad=15)
@@ -1214,7 +1270,7 @@ def create_all_charts(all_data):
                 y_max_limit = 100
 
             # Title and labels - clean format
-            fig1.suptitle('Electricity Generation (EU)', 
+            fig1.suptitle('Electricity Generation ({country_code})', 
                          fontsize=34, fontweight='bold', x=0.55, y=0.96, ha='center')
             ax1.set_title('Year-over-Year Change since 2015', fontsize=26, fontweight='normal', pad=10, ha='center')
             ax1.set_xlabel('Year', fontsize=28, fontweight='bold', labelpad=15)
@@ -1307,7 +1363,7 @@ def create_all_charts(all_data):
                 y_max_limit = 100
 
             # Title and labels - clean format
-            fig1b.suptitle('Electricity Generation (EU)', 
+            fig1b.suptitle('Electricity Generation ({country_code})', 
                          fontsize=34, fontweight='bold', x=0.55, y=0.96, ha='center')
             ax1b.set_title('Year-over-Year Change since 2015', fontsize=26, fontweight='normal', pad=10, ha='center')
             ax1b.set_xlabel('Year', fontsize=28, fontweight='bold', labelpad=15)
@@ -1392,7 +1448,7 @@ def create_all_charts(all_data):
             y_max_limit = 100
 
         # Title and labels - clean format
-        fig2.suptitle('Electricity Generation (EU)', 
+        fig2.suptitle('Electricity Generation ({country_code})', 
                      fontsize=34, fontweight='bold', x=0.55, y=0.96, ha='center')
         ax2.set_title('Year-over-Year Change since 2015', fontsize=26, fontweight='normal', pad=10, ha='center')
         ax2.set_xlabel('Year', fontsize=28, fontweight='bold', labelpad=15)
@@ -1458,7 +1514,7 @@ def create_all_charts(all_data):
             y_max_limit = 100
 
         # Title and labels - clean format
-        fig2b.suptitle('Electricity Generation (EU)', 
+        fig2b.suptitle('Electricity Generation ({country_code})', 
                      fontsize=34, fontweight='bold', x=0.55, y=0.96, ha='center')
         ax2b.set_title('Year-over-Year Change since 2015', fontsize=26, fontweight='normal', pad=10, ha='center')
         ax2b.set_xlabel('Year', fontsize=28, fontweight='bold', labelpad=15)
@@ -1547,13 +1603,13 @@ def create_all_charts(all_data):
     print("=" * 60)
 
 
-def update_summary_table_historical_data(all_data):
+def update_summary_table_historical_data(all_data, country_code=\'EU\'):
     """
     Update Google Sheets "Summary Table Data" with current year YTD and previous year data
     This fills in the columns that the intraday script leaves empty
     """
     print("\n" + "=" * 60)
-    print("UPDATING SUMMARY TABLE (HISTORICAL DATA)")
+    print(f"UPDATING SUMMARY TABLE (HISTORICAL DATA) FOR {country_code}")
     print("=" * 60)
     
     try:
@@ -1567,8 +1623,9 @@ def update_summary_table_historical_data(all_data):
         credentials = Credentials.from_service_account_info(creds_dict, scopes=scope)
         gc = gspread.authorize(credentials)
         
-        spreadsheet = gc.open('EU Electricity Production Data')
-        print("✓ Connected to spreadsheet")
+        sheet_name = f'{country_code} Electricity Production Data'
+        spreadsheet = gc.open(sheet_name)
+        print(f"✓ Connected to spreadsheet: {sheet_name}")
         
         # Get current date info (needed for headers)
         current_date = datetime.now()
@@ -2266,14 +2323,17 @@ def update_summary_table_historical_data(all_data):
         traceback.print_exc()
 
 
+
+
 def main():
     """
-    Main function
+    Main function - process multiple countries
     """
     print("=" * 60)
     print("EU ENERGY PLOTTER - MOBILE OPTIMIZED + ALL CHARTS")
     print("=" * 60)
-    print("\nFEATURES:")
+    print("
+FEATURES:")
     print("  ✓ ALL plots are VERTICAL (2 rows, 1 column)")
     print("  ✓ Individual source plots (titles IN the PNG)")
     print("  ✓ Monthly mean by period charts")
@@ -2282,27 +2342,64 @@ def main():
     print("  ✓ YoY change vs 2015 baseline")
     print("  ✓ LARGER fonts and THICKER lines for mobile")
     print("  ✓ CLEARER titles (no restrictions on Y-axis)")
+    print("  ✓ MULTI-COUNTRY SUPPORT")
     print("=" * 60)
 
     if not os.environ.get('GOOGLE_CREDENTIALS_JSON'):
-        print("\n⚠️  WARNING: GOOGLE_CREDENTIALS_JSON not set!")
+        print("
+⚠️  WARNING: GOOGLE_CREDENTIALS_JSON not set!")
         return
 
-    all_data = load_data_from_google_sheets()
-
-    if not all_data:
-        print("Failed to load data.")
-        return
-
-    create_all_charts(all_data)
+    # Countries to process (expandable list)
+    countries_to_process = ['EU', 'DE']
     
-    # Update summary table with historical data
-    update_summary_table_historical_data(all_data)
+    # Store all plot links by country
+    all_plot_links = {}
+    
+    for country_code in countries_to_process:
+        print("
+" + "=" * 80)
+        print(f"PROCESSING COUNTRY: {country_code}")
+        print("=" * 80)
+        
+        # Load data for this country
+        all_data = load_data_from_google_sheets(country_code=country_code)
+        
+        if not all_data:
+            print(f"✗ Failed to load data for {country_code} - skipping")
+            continue
+        
+        # Create all charts for this country
+        plot_links, drive_service = create_all_charts(all_data, country_code=country_code)
+        
+        # Store links by country
+        all_plot_links[country_code] = plot_links
+        
+        # Update summary table with historical data
+        update_summary_table_historical_data(all_data, country_code=country_code)
+    
+    # Save combined drive links JSON
+    drive_links_file = 'plots/drive_links_monthly_trends.json'
+    with open(drive_links_file, 'w') as f:
+        json.dump(all_plot_links, f, indent=2)
+    print(f"
+✓ Drive links saved to: {drive_links_file}")
+    
+    # Write timestamp file for HTML to read
+    timestamp_file = 'plots/last_update_monthly_trends.html'
+    generation_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S UTC')
+    with open(timestamp_file, 'w') as f:
+        f.write(f'<p>Plots generated: {generation_time}</p>')
+    print(f"✓ Timestamp written to {timestamp_file}: {generation_time}")
 
-    print("\n" + "=" * 60)
+    print("
+" + "=" * 60)
     print("COMPLETE!")
+    print("=" * 60)
+    print(f"   - Processed {len(countries_to_process)} countries: {', '.join(countries_to_process)}")
     print("=" * 60)
 
 
 if __name__ == "__main__":
     main()
+
