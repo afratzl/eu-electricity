@@ -1,14 +1,14 @@
 {
   "EU": {
-    "last_updated": "2025-12-24 02:32:00 UTC",
+    "last_updated": "2025-12-24 03:59:41 UTC",
     "sources": [
       {
         "source": "All Renewables",
         "category": "aggregate-renewable",
         "yesterday": {
-          "gwh": 3401.8,
+          "gwh": 3403.4,
           "twh": 3.4,
-          "percentage": 44.19,
+          "percentage": 44.21,
           "change_from_2015": "+67%",
           "change_from_2024": "-13%",
           "change_from_2023": "-20%"
@@ -42,10 +42,10 @@
         "source": "Wind",
         "category": "renewable",
         "yesterday": {
-          "gwh": 1885.4,
+          "gwh": 1887.1,
           "twh": 1.89,
-          "percentage": 24.49,
-          "change_from_2015": "+101%",
+          "percentage": 24.51,
+          "change_from_2015": "+102%",
           "change_from_2024": "-20%",
           "change_from_2023": "-22%"
         },
@@ -222,9 +222,9 @@
         "source": "All Non-Renewables",
         "category": "aggregate-non-renewable",
         "yesterday": {
-          "gwh": 4303.4,
+          "gwh": 4302.1,
           "twh": 4.3,
-          "percentage": 55.91,
+          "percentage": 55.89,
           "change_from_2015": "-16%",
           "change_from_2024": "-6.1%",
           "change_from_2023": "+0.4%"
@@ -294,9 +294,9 @@
         "source": "Gas",
         "category": "non-renewable",
         "yesterday": {
-          "gwh": 1368.3,
+          "gwh": 1367.5,
           "twh": 1.37,
-          "percentage": 17.78,
+          "percentage": 17.76,
           "change_from_2015": "+52%",
           "change_from_2024": "-4.3%",
           "change_from_2023": "+15%"
@@ -366,9 +366,9 @@
         "source": "Waste",
         "category": "non-renewable",
         "yesterday": {
-          "gwh": 197.7,
+          "gwh": 197.2,
           "twh": 0.2,
-          "percentage": 2.57,
+          "percentage": 2.56,
           "change_from_2015": "-30%",
           "change_from_2024": "-33%",
           "change_from_2023": "-29%"
@@ -437,7 +437,7 @@
     ]
   },
   "DE": {
-    "last_updated": "2025-12-24 02:32:01 UTC",
+    "last_updated": "2025-12-24 03:59:42 UTC",
     "sources": [
       {
         "source": "All Renewables",
