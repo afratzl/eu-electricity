@@ -1,13 +1,13 @@
 {
   "EU": {
-    "last_updated": "2025-12-25 10:02:21 UTC",
+    "last_updated": "2025-12-25 11:02:03 UTC",
     "sources": [
       {
         "source": "All Renewables",
         "category": "aggregate-renewable",
         "yesterday": {
-          "gwh": 3805.3,
-          "twh": 3.81,
+          "gwh": 3804.6,
+          "twh": 3.8,
           "percentage": 50.44,
           "change_from_2015": "+87%",
           "change_from_2024": "-13%",
@@ -42,9 +42,9 @@
         "source": "Wind",
         "category": "renewable",
         "yesterday": {
-          "gwh": 2348.4,
+          "gwh": 2349.0,
           "twh": 2.35,
-          "percentage": 31.13,
+          "percentage": 31.14,
           "change_from_2015": "+151%",
           "change_from_2024": "-20%",
           "change_from_2023": "-22%"
@@ -78,9 +78,9 @@
         "source": "Hydro",
         "category": "renewable",
         "yesterday": {
-          "gwh": 945.6,
+          "gwh": 945.5,
           "twh": 0.95,
-          "percentage": 12.53,
+          "percentage": 12.54,
           "change_from_2015": "+23%",
           "change_from_2024": "-5.8%",
           "change_from_2023": "-29%"
@@ -150,15 +150,15 @@
         "source": "Biomass",
         "category": "renewable",
         "yesterday": {
-          "gwh": 227.3,
+          "gwh": 226.0,
           "twh": 0.23,
-          "percentage": 3.01,
-          "change_from_2015": "+10%",
+          "percentage": 3.0,
+          "change_from_2015": "+9.8%",
           "change_from_2024": "+1.3%",
           "change_from_2023": "+19%"
         },
         "last_week": {
-          "gwh": 1620.9,
+          "gwh": 1620.8,
           "twh": 1.62,
           "percentage": 3.05,
           "change_from_2015": "+13%",
@@ -222,7 +222,7 @@
         "source": "All Non-Renewables",
         "category": "aggregate-non-renewable",
         "yesterday": {
-          "gwh": 3750.1,
+          "gwh": 3749.8,
           "twh": 3.75,
           "percentage": 49.71,
           "change_from_2015": "-27%",
@@ -294,7 +294,7 @@
         "source": "Gas",
         "category": "non-renewable",
         "yesterday": {
-          "gwh": 1021.5,
+          "gwh": 1021.2,
           "twh": 1.02,
           "percentage": 13.54,
           "change_from_2015": "+13%",
@@ -437,7 +437,7 @@
     ]
   },
   "DE": {
-    "last_updated": "2025-12-25 10:02:22 UTC",
+    "last_updated": "2025-12-25 11:02:04 UTC",
     "sources": [
       {
         "source": "All Renewables",
