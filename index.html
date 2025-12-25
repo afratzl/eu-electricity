@@ -68,6 +68,7 @@
                 <!-- Country Selector -->
                 <div class="country-selector-group">
                     <span class="control-label-pro">Country/Region:</span>
+                    <img id="country-flag" src="flags/EU.svg" width="24" height="16" alt="Country flag" style="margin: 0 8px; vertical-align: middle;">
                     <select id="country-select" class="country-select-pro" onchange="updateTable()">
                         <optgroup label="Region">
                             <option value="EU" selected>European Union</option>
@@ -148,6 +149,13 @@
             
             const countryId = document.getElementById('country-select').value;
             const countryData = allCountriesData[countryId];
+            
+            // Update country flag
+            const flagImg = document.getElementById('country-flag');
+            if (flagImg) {
+                flagImg.src = `flags/${countryId}.svg`;
+                flagImg.alt = `${countryId} flag`;
+            }
             
             if (!countryData) {
                 console.error(`No data found for country: ${countryId}`);
