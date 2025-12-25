@@ -1074,8 +1074,8 @@ def plot_analysis(stats_data, source_type, output_file_base, country_code='EU'):
             country_code: 'EU', 'DE', 'MD', etc.
             size: pixel size (width=height for square)
         """
-        # Create rectangular flag area in top-left (3:2 ratio) - positioned higher
-        ax_flag = fig.add_axes([0.02, 0.93, 0.12, 0.08])  # [x, y, width, height] - moved up
+        # Create rectangular flag area in top-left (3:2 ratio)
+        ax_flag = fig.add_axes([0.02, 0.915, 0.12, 0.08])  # [x, y, width, height] - adjusted position
         
         # Country-specific colors (or default blue)
         colors_map = {
@@ -1108,7 +1108,7 @@ def plot_analysis(stats_data, source_type, output_file_base, country_code='EU'):
     
     def load_flag(fig, country_code):
         """
-        Load real flag SVG or fall back to placeholder
+        Load real flag PNG or fall back to placeholder
         3:2 aspect ratio (standard flag proportion)
         
         Args:
@@ -1121,18 +1121,15 @@ def plot_analysis(stats_data, source_type, output_file_base, country_code='EU'):
         import os
         from matplotlib import image as mpimg
         
-        # Try to load real flag
-        flag_path = f'flags/{country_code}.svg'
+        # Try to load PNG flag (matplotlib compatible)
+        flag_path = f'flags/{country_code}.png'
         
         if os.path.exists(flag_path):
             try:
-                # Create axes for flag in top-left (3:2 ratio) - positioned higher
-                ax_flag = fig.add_axes([0.02, 0.93, 0.12, 0.08])
+                # Create axes for flag in top-left (3:2 ratio)
+                ax_flag = fig.add_axes([0.02, 0.915, 0.12, 0.08])
                 
-                # Load and display SVG
-                # Note: matplotlib can read SVG but rendering might vary
-                # For best results, we'll use cairosvg or PIL for SVG->PNG conversion
-                # For now, try direct load
+                # Load and display PNG
                 flag_img = mpimg.imread(flag_path)
                 ax_flag.imshow(flag_img, aspect='auto')
                 ax_flag.axis('off')
@@ -1144,8 +1141,8 @@ def plot_analysis(stats_data, source_type, output_file_base, country_code='EU'):
                 print(f"  → Using placeholder instead")
                 return draw_flag_placeholder(fig, country_code)
         else:
-            print(f"  ℹ Flag not found: {flag_path}")
-            print(f"  → Using placeholder")
+            print(f"  ℹ Flag PNG not found: {flag_path}")
+            print(f"  → Using placeholder (run GitHub Actions to generate PNGs)")
             return draw_flag_placeholder(fig, country_code)
 
     colors = {
@@ -1210,15 +1207,12 @@ def plot_analysis(stats_data, source_type, output_file_base, country_code='EU'):
     # ========================================================================
     fig1, ax1 = plt.subplots(figsize=(12, 10))
     
-    # Adjust subplot position to move plot down (make room for flag/text at top)
-    plt.subplots_adjust(top=0.85, bottom=0.12, left=0.12, right=0.95)
-    
     # Add flag (top-left) - loads real SVG or uses placeholder
     load_flag(fig1, country_code)
     
-    # Add country name below flag (left-aligned, closer spacing)
+    # Add country name below flag (left-aligned)
     country_display = COUNTRY_DISPLAY_NAMES.get(country_code, country_code)
-    fig1.text(0.02, 0.91, country_display,
+    fig1.text(0.02, 0.905, country_display,
              fontsize=20, fontweight='normal',
              ha='left', va='top',
              color='#333')
@@ -1328,14 +1322,11 @@ def plot_analysis(stats_data, source_type, output_file_base, country_code='EU'):
     # ========================================================================
     fig2, ax2 = plt.subplots(figsize=(12, 10))
     
-    # Adjust subplot position to move plot down (make room for flag/text at top)
-    plt.subplots_adjust(top=0.85, bottom=0.12, left=0.12, right=0.95)
-    
     # Add flag (top-left) - loads real SVG or uses placeholder
     load_flag(fig2, country_code)
     
-    # Add country name below flag (left-aligned, closer spacing)
-    fig2.text(0.02, 0.91, country_display,
+    # Add country name below flag (left-aligned)
+    fig2.text(0.02, 0.905, country_display,
              fontsize=20, fontweight='normal',
              ha='left', va='top',
              color='#333')
