@@ -1074,8 +1074,8 @@ def plot_analysis(stats_data, source_type, output_file_base, country_code='EU'):
             country_code: 'EU', 'DE', 'MD', etc.
             size: pixel size (width=height for square)
         """
-        # Create rectangular flag area in top-left (3:2 ratio)
-        ax_flag = fig.add_axes([0.02, 0.90, 0.12, 0.08])  # [x, y, width, height] - 3:2 ratio
+        # Create rectangular flag area in top-left (3:2 ratio) - positioned higher
+        ax_flag = fig.add_axes([0.02, 0.93, 0.12, 0.08])  # [x, y, width, height] - moved up
         
         # Country-specific colors (or default blue)
         colors_map = {
@@ -1126,8 +1126,8 @@ def plot_analysis(stats_data, source_type, output_file_base, country_code='EU'):
         
         if os.path.exists(flag_path):
             try:
-                # Create axes for flag in top-left (3:2 ratio)
-                ax_flag = fig.add_axes([0.02, 0.90, 0.12, 0.08])
+                # Create axes for flag in top-left (3:2 ratio) - positioned higher
+                ax_flag = fig.add_axes([0.02, 0.93, 0.12, 0.08])
                 
                 # Load and display SVG
                 # Note: matplotlib can read SVG but rendering might vary
@@ -1210,18 +1210,26 @@ def plot_analysis(stats_data, source_type, output_file_base, country_code='EU'):
     # ========================================================================
     fig1, ax1 = plt.subplots(figsize=(12, 10))
     
+    # Adjust subplot position to move plot down (make room for flag/text at top)
+    plt.subplots_adjust(top=0.85, bottom=0.12, left=0.12, right=0.95)
+    
     # Add flag (top-left) - loads real SVG or uses placeholder
     load_flag(fig1, country_code)
     
-    # Add country name below flag (left-aligned, above plot area)
+    # Add country name below flag (left-aligned, closer spacing)
     country_display = COUNTRY_DISPLAY_NAMES.get(country_code, country_code)
-    fig1.text(0.02, 0.88, country_display,
+    fig1.text(0.02, 0.91, country_display,
              fontsize=20, fontweight='normal',
              ha='left', va='top',
              color='#333')
     
-    # Updated titles
-    fig1.suptitle('Electricity Generation', fontsize=30, fontweight='bold', x=0.5, y=0.98, ha="center")
+    # Updated titles - both use axes coordinates for proper centering
+    # Main title positioned above plot using axes coordinates
+    ax1.text(0.5, 1.12, 'Electricity Generation',
+             transform=ax1.transAxes,
+             fontsize=30, fontweight='bold',
+             ha='center', va='bottom')
+    
     ax1.set_title(f'{source_name} · Fraction of Total Generation', fontsize=24, fontweight='normal', pad=15)
     ax1.set_xlabel('Time of Day (Brussels)', fontsize=24, fontweight='bold', labelpad=25)
     ax1.set_ylabel('Electrical Power (%)', fontsize=24, fontweight='bold', labelpad=30)
@@ -1311,8 +1319,6 @@ def plot_analysis(stats_data, source_type, output_file_base, country_code='EU'):
               fontsize=12, color='#666',
               style='italic')
     
-    plt.tight_layout()
-    
     plt.savefig(output_file_percentage, dpi=150, bbox_inches='tight')
     print(f"  ✓ Saved percentage plot: {output_file_percentage}")
     plt.close()
@@ -1322,17 +1328,25 @@ def plot_analysis(stats_data, source_type, output_file_base, country_code='EU'):
     # ========================================================================
     fig2, ax2 = plt.subplots(figsize=(12, 10))
     
+    # Adjust subplot position to move plot down (make room for flag/text at top)
+    plt.subplots_adjust(top=0.85, bottom=0.12, left=0.12, right=0.95)
+    
     # Add flag (top-left) - loads real SVG or uses placeholder
     load_flag(fig2, country_code)
     
-    # Add country name below flag (left-aligned, above plot area)
-    fig2.text(0.02, 0.88, country_display,
+    # Add country name below flag (left-aligned, closer spacing)
+    fig2.text(0.02, 0.91, country_display,
              fontsize=20, fontweight='normal',
              ha='left', va='top',
              color='#333')
     
-    # Updated titles
-    fig2.suptitle('Electricity Generation', fontsize=30, fontweight='bold', x=0.5, y=0.98, ha="center")
+    # Updated titles - both use axes coordinates for proper centering
+    # Main title positioned above plot using axes coordinates
+    ax2.text(0.5, 1.12, 'Electricity Generation',
+             transform=ax2.transAxes,
+             fontsize=30, fontweight='bold',
+             ha='center', va='bottom')
+    
     ax2.set_title(f'{source_name} · Absolute Generation', fontsize=24, fontweight='normal', pad=15)
     ax2.set_xlabel('Time of Day (Brussels)', fontsize=24, fontweight='bold', labelpad=25)
     ax2.set_ylabel('Electrical Power (GW)', fontsize=24, fontweight='bold', labelpad=30)
@@ -1413,8 +1427,6 @@ def plot_analysis(stats_data, source_type, output_file_base, country_code='EU'):
               ha='right', va='bottom',
               fontsize=12, color='#666',
               style='italic')
-    
-    plt.tight_layout()
     
     plt.savefig(output_file_absolute, dpi=150, bbox_inches='tight')
     print(f"  ✓ Saved absolute plot: {output_file_absolute}")
