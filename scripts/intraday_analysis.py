@@ -1074,8 +1074,9 @@ def plot_analysis(stats_data, source_type, output_file_base, country_code='EU'):
             country_code: 'EU', 'DE', 'MD', etc.
             size: pixel size (width=height for square)
         """
-        # Create rectangular flag area in top-left (3:2 ratio) - smaller size
-        ax_flag = fig.add_axes([0.02, 0.92, 0.10, 0.067])  # Smaller: 0.10 width, 0.067 height (3:2 ratio)
+        # Create rectangular flag area - positioned for 14×14 canvas
+        # x=0.05, y=0.883, width=0.1, height=0.067 (3:2 ratio on square canvas)
+        ax_flag = fig.add_axes([0.05, 0.883, 0.1, 0.067])
         
         # Country-specific colors (or default blue)
         colors_map = {
@@ -1096,7 +1097,7 @@ def plot_analysis(stats_data, source_type, output_file_base, country_code='EU'):
         # Add country code in white
         ax_flag.text(0.5, 0.5, country_code, 
                     color='white', 
-                    fontsize=14,  # Slightly smaller font
+                    fontsize=14,
                     fontweight='bold',
                     ha='center', va='center')
         
@@ -1126,8 +1127,9 @@ def plot_analysis(stats_data, source_type, output_file_base, country_code='EU'):
         
         if os.path.exists(flag_path):
             try:
-                # Create axes for flag in top-left (3:2 ratio) - smaller size
-                ax_flag = fig.add_axes([0.02, 0.92, 0.10, 0.067])
+                # Create axes for flag - positioned for 14×14 canvas
+                # x=0.05, y=0.883, width=0.1, height=0.067 (3:2 ratio)
+                ax_flag = fig.add_axes([0.05, 0.883, 0.1, 0.067])
                 
                 # Load and display PNG
                 flag_img = mpimg.imread(flag_path)
@@ -1205,26 +1207,31 @@ def plot_analysis(stats_data, source_type, output_file_base, country_code='EU'):
     # ========================================================================
     # PLOT 1: PERCENTAGE
     # ========================================================================
-    fig1, ax1 = plt.subplots(figsize=(12, 8))  # Reduced height from 10 to 8 (20% less)
+    fig1, ax1 = plt.subplots(figsize=(14, 14))  # Changed to 14×14 square canvas
+    
+    # Set exact plot area positioning
+    plt.subplots_adjust(left=0.15, right=0.85, top=0.8, bottom=0.34)
     
     # Add flag (top-left) - loads real SVG or uses placeholder
     load_flag(fig1, country_code)
     
-    # Add country name below flag
+    # Add country name below flag (figure coordinates)
     country_display = COUNTRY_DISPLAY_NAMES.get(country_code, country_code)
-    fig1.text(0.02, 0.91, country_display,
+    fig1.text(0.05, 0.87, country_display,
              fontsize=18, fontweight='normal',
              ha='left', va='top',
              color='#333')
     
-    # Updated titles - both use axes coordinates for proper centering
-    # Main title positioned above plot using axes coordinates
-    ax1.text(0.5, 1.06, 'Electricity Generation',  # Lowered from 1.12 to 1.06
-             transform=ax1.transAxes,
+    # Titles in figure coordinates (not axes coordinates)
+    # Main title
+    fig1.text(0.5, 0.925, 'Electricity Generation',
              fontsize=30, fontweight='bold',
-             ha='center', va='bottom')
+             ha='center', va='top')
     
-    ax1.set_title(f'{source_name} · Fraction of Total Generation', fontsize=24, fontweight='normal', pad=15)
+    # Subtitle
+    fig1.text(0.5, 0.85, f'{source_name} · Fraction of Total Generation',
+             fontsize=24, fontweight='normal',
+             ha='center', va='top')
     ax1.set_xlabel('Time of Day (Brussels)', fontsize=24, fontweight='bold', labelpad=25)
     ax1.set_ylabel('Electrical Power (%)', fontsize=24, fontweight='bold', labelpad=30)
 
@@ -1294,22 +1301,23 @@ def plot_analysis(stats_data, source_type, output_file_base, country_code='EU'):
             ordered_labels.append(period_label)
     
     ax1.legend(ordered_handles, ordered_labels, 
-              loc='upper center', bbox_to_anchor=(0.45, -0.15),  # Raised from -0.25 to -0.15
+              loc='upper left', bbox_to_anchor=(0.05, 0.25),  # Figure coordinates
+              bbox_transform=fig1.transFigure,  # Use figure coordinate system
               ncol=3, fontsize=20, frameon=False)
     
     # Add watermark (bottom-left) and timestamp (bottom-right)
     from datetime import datetime
     timestamp = datetime.now().strftime('%Y-%m-%d %H:%M UTC')
     
-    # Watermark (left) - below legend
-    fig1.text(0.07, 0.01, "afratzl.github.io/eu-electricity",  # Lowered to 0.01 to be below legend
-              ha='left', va='bottom',
+    # Watermark (left) - aligned with plot left edge
+    fig1.text(0.15, 0.075, "afratzl.github.io/eu-electricity",
+              ha='left', va='top',
               fontsize=12, color='#666',
               style='italic')
     
-    # Timestamp (right) - below legend
-    fig1.text(0.93, 0.01, f"Generated: {timestamp}",  # Lowered to 0.01 to be below legend
-              ha='right', va='bottom',
+    # Timestamp (right) - aligned with plot right edge
+    fig1.text(0.85, 0.075, f"Generated: {timestamp}",
+              ha='right', va='top',
               fontsize=12, color='#666',
               style='italic')
     
@@ -1320,25 +1328,30 @@ def plot_analysis(stats_data, source_type, output_file_base, country_code='EU'):
     # ========================================================================
     # PLOT 2: ABSOLUTE
     # ========================================================================
-    fig2, ax2 = plt.subplots(figsize=(12, 8))  # Reduced height from 10 to 8 (20% less)
+    fig2, ax2 = plt.subplots(figsize=(14, 14))  # Changed to 14×14 square canvas
+    
+    # Set exact plot area positioning
+    plt.subplots_adjust(left=0.15, right=0.85, top=0.8, bottom=0.34)
     
     # Add flag (top-left) - loads real SVG or uses placeholder
     load_flag(fig2, country_code)
     
-    # Add country name below flag
-    fig2.text(0.02, 0.91, country_display,
+    # Add country name below flag (figure coordinates)
+    fig2.text(0.05, 0.87, country_display,
              fontsize=18, fontweight='normal',
              ha='left', va='top',
              color='#333')
     
-    # Updated titles - both use axes coordinates for proper centering
-    # Main title positioned above plot using axes coordinates
-    ax2.text(0.5, 1.06, 'Electricity Generation',  # Lowered from 1.12 to 1.06
-             transform=ax2.transAxes,
+    # Titles in figure coordinates (not axes coordinates)
+    # Main title
+    fig2.text(0.5, 0.925, 'Electricity Generation',
              fontsize=30, fontweight='bold',
-             ha='center', va='bottom')
+             ha='center', va='top')
     
-    ax2.set_title(f'{source_name} · Absolute Generation', fontsize=24, fontweight='normal', pad=15)
+    # Subtitle
+    fig2.text(0.5, 0.85, f'{source_name} · Absolute Generation',
+             fontsize=24, fontweight='normal',
+             ha='center', va='top')
     ax2.set_xlabel('Time of Day (Brussels)', fontsize=24, fontweight='bold', labelpad=25)
     ax2.set_ylabel('Electrical Power (GW)', fontsize=24, fontweight='bold', labelpad=30)
 
@@ -1403,19 +1416,20 @@ def plot_analysis(stats_data, source_type, output_file_base, country_code='EU'):
             ordered_labels2.append(period_label)
     
     ax2.legend(ordered_handles2, ordered_labels2,
-              loc='upper center', bbox_to_anchor=(0.45, -0.15),  # Raised from -0.25 to -0.15
+              loc='upper left', bbox_to_anchor=(0.05, 0.25),  # Figure coordinates
+              bbox_transform=fig2.transFigure,  # Use figure coordinate system
               ncol=3, fontsize=20, frameon=False)
     
     # Add watermark (bottom-left) and timestamp (bottom-right)
-    # Watermark (left) - below legend
-    fig2.text(0.07, 0.01, "afratzl.github.io/eu-electricity",  # Lowered to 0.01 to be below legend
-              ha='left', va='bottom',
+    # Watermark (left) - aligned with plot left edge
+    fig2.text(0.15, 0.075, "afratzl.github.io/eu-electricity",
+              ha='left', va='top',
               fontsize=12, color='#666',
               style='italic')
     
-    # Timestamp (right) - below legend
-    fig2.text(0.93, 0.01, f"Generated: {timestamp}",  # Lowered to 0.01 to be below legend
-              ha='right', va='bottom',
+    # Timestamp (right) - aligned with plot right edge
+    fig2.text(0.85, 0.075, f"Generated: {timestamp}",
+              ha='right', va='top',
               fontsize=12, color='#666',
               style='italic')
     
