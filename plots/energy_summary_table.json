@@ -1,12 +1,12 @@
 {
   "EU": {
-    "last_updated": "2025-12-26 10:01:59 UTC",
+    "last_updated": "2025-12-26 10:58:51 UTC",
     "sources": [
       {
         "source": "All Renewables",
         "category": "aggregate-renewable",
         "yesterday": {
-          "gwh": 3113.9,
+          "gwh": 3113.2,
           "twh": 3.11,
           "percentage": 44.62,
           "change_from_2015": "+53%",
@@ -42,9 +42,9 @@
         "source": "Wind",
         "category": "renewable",
         "yesterday": {
-          "gwh": 1697.0,
+          "gwh": 1697.6,
           "twh": 1.7,
-          "percentage": 24.32,
+          "percentage": 24.33,
           "change_from_2015": "+81%",
           "change_from_2024": "-20%",
           "change_from_2023": "-22%"
@@ -114,7 +114,7 @@
         "source": "Solar",
         "category": "renewable",
         "yesterday": {
-          "gwh": 289.1,
+          "gwh": 289.2,
           "twh": 0.29,
           "percentage": 4.14,
           "change_from_2015": "+214%",
@@ -150,10 +150,10 @@
         "source": "Biomass",
         "category": "renewable",
         "yesterday": {
-          "gwh": 221.9,
+          "gwh": 220.5,
           "twh": 0.22,
-          "percentage": 3.18,
-          "change_from_2015": "+7.8%",
+          "percentage": 3.16,
+          "change_from_2015": "+7.2%",
           "change_from_2024": "+1.3%",
           "change_from_2023": "+19%"
         },
@@ -222,7 +222,7 @@
         "source": "All Non-Renewables",
         "category": "aggregate-non-renewable",
         "yesterday": {
-          "gwh": 3877.7,
+          "gwh": 3877.5,
           "twh": 3.88,
           "percentage": 55.57,
           "change_from_2015": "-25%",
@@ -294,7 +294,7 @@
         "source": "Gas",
         "category": "non-renewable",
         "yesterday": {
-          "gwh": 1109.5,
+          "gwh": 1109.3,
           "twh": 1.11,
           "percentage": 15.9,
           "change_from_2015": "+23%",
@@ -437,7 +437,7 @@
     ]
   },
   "DE": {
-    "last_updated": "2025-12-26 10:02:00 UTC",
+    "last_updated": "2025-12-26 10:58:52 UTC",
     "sources": [
       {
         "source": "All Renewables",
