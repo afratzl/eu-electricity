@@ -1074,9 +1074,9 @@ def plot_analysis(stats_data, source_type, output_file_base, country_code='EU'):
             country_code: 'EU', 'DE', 'MD', etc.
             size: pixel size (width=height for square)
         """
-        # Create rectangular flag area - positioned for 14×14 canvas
-        # x=0.05, y=0.883, width=0.1, height=0.067 (3:2 ratio on square canvas)
-        ax_flag = fig.add_axes([0.05, 0.883, 0.1, 0.067])
+        # Create rectangular flag area - positioned for 12×8 canvas
+        # x=0.075, y=0.875, width=0.075, height=0.075
+        ax_flag = fig.add_axes([0.075, 0.875, 0.075, 0.075])
         
         # Country-specific colors (or default blue)
         colors_map = {
@@ -1127,9 +1127,9 @@ def plot_analysis(stats_data, source_type, output_file_base, country_code='EU'):
         
         if os.path.exists(flag_path):
             try:
-                # Create axes for flag - positioned for 14×14 canvas
-                # x=0.05, y=0.883, width=0.1, height=0.067 (3:2 ratio)
-                ax_flag = fig.add_axes([0.05, 0.883, 0.1, 0.067])
+                # Create axes for flag - positioned for 12×8 canvas
+                # x=0.075, y=0.875, width=0.075, height=0.075
+                ax_flag = fig.add_axes([0.075, 0.875, 0.075, 0.075])
                 
                 # Load and display PNG
                 flag_img = mpimg.imread(flag_path)
@@ -1207,29 +1207,29 @@ def plot_analysis(stats_data, source_type, output_file_base, country_code='EU'):
     # ========================================================================
     # PLOT 1: PERCENTAGE
     # ========================================================================
-    fig1, ax1 = plt.subplots(figsize=(14, 14))  # Changed to 14×14 square canvas
+    fig1, ax1 = plt.subplots(figsize=(12, 8))  # Canvas: 12 wide × 8 tall
     
     # Set exact plot area positioning
-    plt.subplots_adjust(left=0.15, right=0.85, top=0.8, bottom=0.34)
+    plt.subplots_adjust(left=0.25, right=0.85, top=0.85, bottom=0.25)
     
     # Add flag (top-left) - loads real SVG or uses placeholder
     load_flag(fig1, country_code)
     
     # Add country name below flag (figure coordinates)
     country_display = COUNTRY_DISPLAY_NAMES.get(country_code, country_code)
-    fig1.text(0.05, 0.87, country_display,
+    fig1.text(0.075, 0.865, country_display,
              fontsize=18, fontweight='normal',
              ha='left', va='top',
              color='#333')
     
     # Titles in figure coordinates (not axes coordinates)
     # Main title
-    fig1.text(0.5, 0.925, 'Electricity Generation',
+    fig1.text(0.5, 0.95, 'Electricity Generation',
              fontsize=30, fontweight='bold',
              ha='center', va='top')
     
     # Subtitle
-    fig1.text(0.5, 0.85, f'{source_name} · Fraction of Total Generation',
+    fig1.text(0.5, 0.875, f'{source_name} · Fraction of Total Generation',
              fontsize=24, fontweight='normal',
              ha='center', va='top')
     ax1.set_xlabel('Time of Day (Brussels)', fontsize=24, fontweight='bold', labelpad=25)
@@ -1301,7 +1301,7 @@ def plot_analysis(stats_data, source_type, output_file_base, country_code='EU'):
             ordered_labels.append(period_label)
     
     ax1.legend(ordered_handles, ordered_labels, 
-              loc='upper left', bbox_to_anchor=(0.05, 0.25),  # Figure coordinates
+              loc='upper left', bbox_to_anchor=(0.1, 0.15),  # Figure coordinates
               bbox_transform=fig1.transFigure,  # Use figure coordinate system
               ncol=3, fontsize=20, frameon=False)
     
@@ -1310,13 +1310,13 @@ def plot_analysis(stats_data, source_type, output_file_base, country_code='EU'):
     timestamp = datetime.now().strftime('%Y-%m-%d %H:%M UTC')
     
     # Watermark (left) - aligned with plot left edge
-    fig1.text(0.15, 0.075, "afratzl.github.io/eu-electricity",
+    fig1.text(0.25, 0.1, "afratzl.github.io/eu-electricity",
               ha='left', va='top',
               fontsize=12, color='#666',
               style='italic')
     
     # Timestamp (right) - aligned with plot right edge
-    fig1.text(0.85, 0.075, f"Generated: {timestamp}",
+    fig1.text(0.85, 0.1, f"Generated: {timestamp}",
               ha='right', va='top',
               fontsize=12, color='#666',
               style='italic')
@@ -1328,28 +1328,28 @@ def plot_analysis(stats_data, source_type, output_file_base, country_code='EU'):
     # ========================================================================
     # PLOT 2: ABSOLUTE
     # ========================================================================
-    fig2, ax2 = plt.subplots(figsize=(14, 14))  # Changed to 14×14 square canvas
+    fig2, ax2 = plt.subplots(figsize=(12, 8))  # Canvas: 12 wide × 8 tall
     
     # Set exact plot area positioning
-    plt.subplots_adjust(left=0.15, right=0.85, top=0.8, bottom=0.34)
+    plt.subplots_adjust(left=0.25, right=0.85, top=0.85, bottom=0.25)
     
     # Add flag (top-left) - loads real SVG or uses placeholder
     load_flag(fig2, country_code)
     
     # Add country name below flag (figure coordinates)
-    fig2.text(0.05, 0.87, country_display,
+    fig2.text(0.075, 0.865, country_display,
              fontsize=18, fontweight='normal',
              ha='left', va='top',
              color='#333')
     
     # Titles in figure coordinates (not axes coordinates)
     # Main title
-    fig2.text(0.5, 0.925, 'Electricity Generation',
+    fig2.text(0.5, 0.95, 'Electricity Generation',
              fontsize=30, fontweight='bold',
              ha='center', va='top')
     
     # Subtitle
-    fig2.text(0.5, 0.85, f'{source_name} · Absolute Generation',
+    fig2.text(0.5, 0.875, f'{source_name} · Absolute Generation',
              fontsize=24, fontweight='normal',
              ha='center', va='top')
     ax2.set_xlabel('Time of Day (Brussels)', fontsize=24, fontweight='bold', labelpad=25)
@@ -1416,19 +1416,19 @@ def plot_analysis(stats_data, source_type, output_file_base, country_code='EU'):
             ordered_labels2.append(period_label)
     
     ax2.legend(ordered_handles2, ordered_labels2,
-              loc='upper left', bbox_to_anchor=(0.05, 0.25),  # Figure coordinates
+              loc='upper left', bbox_to_anchor=(0.1, 0.15),  # Figure coordinates
               bbox_transform=fig2.transFigure,  # Use figure coordinate system
               ncol=3, fontsize=20, frameon=False)
     
     # Add watermark (bottom-left) and timestamp (bottom-right)
     # Watermark (left) - aligned with plot left edge
-    fig2.text(0.15, 0.075, "afratzl.github.io/eu-electricity",
+    fig2.text(0.25, 0.1, "afratzl.github.io/eu-electricity",
               ha='left', va='top',
               fontsize=12, color='#666',
               style='italic')
     
     # Timestamp (right) - aligned with plot right edge
-    fig2.text(0.85, 0.075, f"Generated: {timestamp}",
+    fig2.text(0.85, 0.1, f"Generated: {timestamp}",
               ha='right', va='top',
               fontsize=12, color='#666',
               style='italic')
@@ -1440,7 +1440,7 @@ def plot_analysis(stats_data, source_type, output_file_base, country_code='EU'):
     return output_file_percentage, output_file_absolute
 
 
-def generate_plot_for_source(source_type, corrected_data, output_file_base, fetch_time=None):
+def generate_plot_for_source(source_type, corrected_data, output_file_base, fetch_time=None, country_code='EU'):
     """
     Phase 3: Generate plot for a specific source from corrected data
     """
@@ -1459,7 +1459,7 @@ def generate_plot_for_source(source_type, corrected_data, output_file_base, fetc
     stats_data = calculate_daily_statistics(plot_data, fetch_time=fetch_time)
     
     # Create plots (returns percentage and absolute files)
-    percentage_file, absolute_file = plot_analysis(stats_data, source_type, output_file_base)
+    percentage_file, absolute_file = plot_analysis(stats_data, source_type, output_file_base, country_code=country_code)
     
     return percentage_file, absolute_file
 
@@ -2127,7 +2127,7 @@ def main():
                 print(f"PHASE 3: GENERATING {DISPLAY_NAMES[args.source].upper()} PLOTS")
                 print("=" * 80)
                 output_file_base = f'plots/{args.source.replace("-", "_")}_analysis.png'
-                percentage_file, absolute_file = generate_plot_for_source(args.source, corrected_data, output_file_base, fetch_time=fetch_time)
+                percentage_file, absolute_file = generate_plot_for_source(args.source, corrected_data, output_file_base, fetch_time=fetch_time, country_code=country_code)
                 
                 # Upload both to Google Drive (if plots were generated)
                 if percentage_file and absolute_file:
@@ -2153,7 +2153,7 @@ def main():
                 for i, source in enumerate(all_sources, 1):
                     print(f"\n[{i}/{len(all_sources)}] Processing {DISPLAY_NAMES[source]}...")
                     output_file_base = f'plots/{source.replace("-", "_")}_analysis.png'
-                    percentage_file, absolute_file = generate_plot_for_source(source, corrected_data, output_file_base, fetch_time=fetch_time)
+                    percentage_file, absolute_file = generate_plot_for_source(source, corrected_data, output_file_base, fetch_time=fetch_time, country_code=country_code)
                     
                     # Upload both to Google Drive (only if plots were generated)
                     if percentage_file and absolute_file:
