@@ -1075,8 +1075,8 @@ def plot_analysis(stats_data, source_type, output_file_base, country_code='EU'):
             size: pixel size (width=height for square)
         """
         # Create rectangular flag area - positioned for 12×12 canvas
-        # x=0.075, y=0.875, width=0.075, height=0.05
-        ax_flag = fig.add_axes([0.075, 0.875, 0.075, 0.05])
+        # x=0.075, y=0.858, width=0.1, height=0.067
+        ax_flag = fig.add_axes([0.075, 0.858, 0.1, 0.067])
         
         # Country-specific colors (or default blue)
         colors_map = {
@@ -1128,8 +1128,8 @@ def plot_analysis(stats_data, source_type, output_file_base, country_code='EU'):
         if os.path.exists(flag_path):
             try:
                 # Create axes for flag - positioned for 12×12 canvas
-                # x=0.075, y=0.875, width=0.075, height=0.05
-                ax_flag = fig.add_axes([0.075, 0.875, 0.075, 0.05])
+                # x=0.075, y=0.858, width=0.1, height=0.067
+                ax_flag = fig.add_axes([0.075, 0.858, 0.1, 0.067])
                 
                 # Load and display PNG
                 flag_img = mpimg.imread(flag_path)
@@ -1210,26 +1210,26 @@ def plot_analysis(stats_data, source_type, output_file_base, country_code='EU'):
     fig1, ax1 = plt.subplots(figsize=(12, 12))  # Canvas: 12 wide × 12 tall
     
     # Set exact plot area positioning
-    plt.subplots_adjust(left=0.15, right=0.85, top=0.82, bottom=0.35)
+    plt.subplots_adjust(left=0.2, right=0.85, top=0.78, bottom=0.35)
     
     # Add flag (top-left) - loads real SVG or uses placeholder
     load_flag(fig1, country_code)
     
     # Add country name below flag (figure coordinates)
     country_display = COUNTRY_DISPLAY_NAMES.get(country_code, country_code)
-    fig1.text(0.075, 0.865, country_display,
+    fig1.text(0.075, 0.85, country_display,
              fontsize=18, fontweight='normal',
              ha='left', va='top',
              color='#333')
     
     # Titles in figure coordinates (not axes coordinates)
     # Main title
-    fig1.text(0.5, 0.925, 'Electricity Generation',
+    fig1.text(0.525, 0.86, 'Electricity Generation',
              fontsize=30, fontweight='bold',
              ha='center', va='top')
     
     # Subtitle
-    fig1.text(0.5, 0.88, f'{source_name} · Fraction of Total Generation',
+    fig1.text(0.525, 0.81, f'{source_name} · Fraction of Total Generation',
              fontsize=24, fontweight='normal',
              ha='center', va='top')
     ax1.set_xlabel('Time of Day (Brussels)', fontsize=24, fontweight='bold')
@@ -1285,9 +1285,9 @@ def plot_analysis(stats_data, source_type, output_file_base, country_code='EU'):
     # Row 2: Yesterday, Yesterday (Projected), [empty]
     # Row 3: Today, Today (Projected), [empty]
     handles, labels_list = ax1.get_legend_handles_labels()
-    legend_order = ['week_ago', 'year_ago', 'two_years_ago',
-                    'yesterday', 'yesterday_projected',
-                    'today', 'today_projected']
+    legend_order = ['week_ago', 'today', 'today_projected',
+                    'year_ago', 'yesterday', 'yesterday_projected',
+                    'two_years_ago']
     
     # Create ordered handles/labels matching desired legend layout
     ordered_handles = []
@@ -1301,7 +1301,7 @@ def plot_analysis(stats_data, source_type, output_file_base, country_code='EU'):
             ordered_labels.append(period_label)
     
     ax1.legend(ordered_handles, ordered_labels, 
-              loc='upper left', bbox_to_anchor=(0.1, 0.3),  # Figure coordinates
+              loc='upper left', bbox_to_anchor=(0.15, 0.225),  # Figure coordinates
               bbox_transform=fig1.transFigure,  # Use figure coordinate system
               ncol=3, fontsize=18, frameon=False)
     
@@ -1310,13 +1310,13 @@ def plot_analysis(stats_data, source_type, output_file_base, country_code='EU'):
     timestamp = datetime.now().strftime('%Y-%m-%d %H:%M UTC')
     
     # Watermark (left) - aligned with plot left edge
-    fig1.text(0.25, 0.1, "afratzl.github.io/eu-electricity",
+    fig1.text(0.2, 0.125, "afratzl.github.io/eu-electricity",
               ha='left', va='top',
               fontsize=12, color='#666',
               style='italic')
     
     # Timestamp (right) - aligned with plot right edge
-    fig1.text(0.85, 0.1, f"Generated: {timestamp}",
+    fig1.text(0.85, 0.125, f"Generated: {timestamp}",
               ha='right', va='top',
               fontsize=12, color='#666',
               style='italic')
@@ -1331,25 +1331,25 @@ def plot_analysis(stats_data, source_type, output_file_base, country_code='EU'):
     fig2, ax2 = plt.subplots(figsize=(12, 12))  # Canvas: 12 wide × 12 tall
     
     # Set exact plot area positioning
-    plt.subplots_adjust(left=0.15, right=0.85, top=0.82, bottom=0.35)
+    plt.subplots_adjust(left=0.2, right=0.85, top=0.78, bottom=0.35)
     
     # Add flag (top-left) - loads real SVG or uses placeholder
     load_flag(fig2, country_code)
     
     # Add country name below flag (figure coordinates)
-    fig2.text(0.075, 0.865, country_display,
+    fig2.text(0.075, 0.85, country_display,
              fontsize=18, fontweight='normal',
              ha='left', va='top',
              color='#333')
     
     # Titles in figure coordinates (not axes coordinates)
     # Main title
-    fig2.text(0.5, 0.925, 'Electricity Generation',
+    fig2.text(0.525, 0.86, 'Electricity Generation',
              fontsize=30, fontweight='bold',
              ha='center', va='top')
     
     # Subtitle
-    fig2.text(0.5, 0.88, f'{source_name} · Absolute Generation',
+    fig2.text(0.525, 0.81, f'{source_name} · Absolute Generation',
              fontsize=24, fontweight='normal',
              ha='center', va='top')
     ax2.set_xlabel('Time of Day (Brussels)', fontsize=24, fontweight='bold')
@@ -1416,19 +1416,19 @@ def plot_analysis(stats_data, source_type, output_file_base, country_code='EU'):
             ordered_labels2.append(period_label)
     
     ax2.legend(ordered_handles2, ordered_labels2,
-              loc='upper left', bbox_to_anchor=(0.1, 0.3),  # Figure coordinates
+              loc='upper left', bbox_to_anchor=(0.15, 0.225),  # Figure coordinates
               bbox_transform=fig2.transFigure,  # Use figure coordinate system
               ncol=3, fontsize=18, frameon=False)
     
     # Add watermark (bottom-left) and timestamp (bottom-right)
     # Watermark (left) - aligned with plot left edge
-    fig2.text(0.25, 0.1, "afratzl.github.io/eu-electricity",
+    fig2.text(0.2, 0.125, "afratzl.github.io/eu-electricity",
               ha='left', va='top',
               fontsize=12, color='#666',
               style='italic')
     
     # Timestamp (right) - aligned with plot right edge
-    fig2.text(0.85, 0.1, f"Generated: {timestamp}",
+    fig2.text(0.85, 0.125, f"Generated: {timestamp}",
               ha='right', va='top',
               fontsize=12, color='#666',
               style='italic')
