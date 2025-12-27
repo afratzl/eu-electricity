@@ -1074,9 +1074,9 @@ def plot_analysis(stats_data, source_type, output_file_base, country_code='EU'):
             country_code: 'EU', 'DE', 'MD', etc.
             size: pixel size (width=height for square)
         """
-        # Create rectangular flag area - positioned for 12×8 canvas
-        # x=0.075, y=0.875, width=0.075, height=0.075
-        ax_flag = fig.add_axes([0.075, 0.875, 0.075, 0.075])
+        # Create rectangular flag area - positioned for 12×12 canvas
+        # x=0.075, y=0.875, width=0.075, height=0.05
+        ax_flag = fig.add_axes([0.075, 0.875, 0.075, 0.05])
         
         # Country-specific colors (or default blue)
         colors_map = {
@@ -1127,9 +1127,9 @@ def plot_analysis(stats_data, source_type, output_file_base, country_code='EU'):
         
         if os.path.exists(flag_path):
             try:
-                # Create axes for flag - positioned for 12×8 canvas
-                # x=0.075, y=0.875, width=0.075, height=0.075
-                ax_flag = fig.add_axes([0.075, 0.875, 0.075, 0.075])
+                # Create axes for flag - positioned for 12×12 canvas
+                # x=0.075, y=0.875, width=0.075, height=0.05
+                ax_flag = fig.add_axes([0.075, 0.875, 0.075, 0.05])
                 
                 # Load and display PNG
                 flag_img = mpimg.imread(flag_path)
@@ -1207,10 +1207,10 @@ def plot_analysis(stats_data, source_type, output_file_base, country_code='EU'):
     # ========================================================================
     # PLOT 1: PERCENTAGE
     # ========================================================================
-    fig1, ax1 = plt.subplots(figsize=(12, 8))  # Canvas: 12 wide × 8 tall
+    fig1, ax1 = plt.subplots(figsize=(12, 12))  # Canvas: 12 wide × 12 tall
     
     # Set exact plot area positioning
-    plt.subplots_adjust(left=0.25, right=0.85, top=0.85, bottom=0.25)
+    plt.subplots_adjust(left=0.15, right=0.85, top=0.82, bottom=0.35)
     
     # Add flag (top-left) - loads real SVG or uses placeholder
     load_flag(fig1, country_code)
@@ -1224,16 +1224,16 @@ def plot_analysis(stats_data, source_type, output_file_base, country_code='EU'):
     
     # Titles in figure coordinates (not axes coordinates)
     # Main title
-    fig1.text(0.5, 0.95, 'Electricity Generation',
+    fig1.text(0.5, 0.925, 'Electricity Generation',
              fontsize=30, fontweight='bold',
              ha='center', va='top')
     
     # Subtitle
-    fig1.text(0.5, 0.875, f'{source_name} · Fraction of Total Generation',
+    fig1.text(0.5, 0.88, f'{source_name} · Fraction of Total Generation',
              fontsize=24, fontweight='normal',
              ha='center', va='top')
-    ax1.set_xlabel('Time of Day (Brussels)', fontsize=24, fontweight='bold', labelpad=25)
-    ax1.set_ylabel('Electrical Power (%)', fontsize=24, fontweight='bold', labelpad=30)
+    ax1.set_xlabel('Time of Day (Brussels)', fontsize=24, fontweight='bold')
+    ax1.set_ylabel('Electrical Power (%)', fontsize=24, fontweight='bold')
 
     max_percentage = 0
 
@@ -1301,9 +1301,9 @@ def plot_analysis(stats_data, source_type, output_file_base, country_code='EU'):
             ordered_labels.append(period_label)
     
     ax1.legend(ordered_handles, ordered_labels, 
-              loc='upper left', bbox_to_anchor=(0.1, 0.15),  # Figure coordinates
+              loc='upper left', bbox_to_anchor=(0.1, 0.3),  # Figure coordinates
               bbox_transform=fig1.transFigure,  # Use figure coordinate system
-              ncol=3, fontsize=20, frameon=False)
+              ncol=3, fontsize=18, frameon=False)
     
     # Add watermark (bottom-left) and timestamp (bottom-right)
     from datetime import datetime
@@ -1328,10 +1328,10 @@ def plot_analysis(stats_data, source_type, output_file_base, country_code='EU'):
     # ========================================================================
     # PLOT 2: ABSOLUTE
     # ========================================================================
-    fig2, ax2 = plt.subplots(figsize=(12, 8))  # Canvas: 12 wide × 8 tall
+    fig2, ax2 = plt.subplots(figsize=(12, 12))  # Canvas: 12 wide × 12 tall
     
     # Set exact plot area positioning
-    plt.subplots_adjust(left=0.25, right=0.85, top=0.85, bottom=0.25)
+    plt.subplots_adjust(left=0.15, right=0.85, top=0.82, bottom=0.35)
     
     # Add flag (top-left) - loads real SVG or uses placeholder
     load_flag(fig2, country_code)
@@ -1344,16 +1344,16 @@ def plot_analysis(stats_data, source_type, output_file_base, country_code='EU'):
     
     # Titles in figure coordinates (not axes coordinates)
     # Main title
-    fig2.text(0.5, 0.95, 'Electricity Generation',
+    fig2.text(0.5, 0.925, 'Electricity Generation',
              fontsize=30, fontweight='bold',
              ha='center', va='top')
     
     # Subtitle
-    fig2.text(0.5, 0.875, f'{source_name} · Absolute Generation',
+    fig2.text(0.5, 0.88, f'{source_name} · Absolute Generation',
              fontsize=24, fontweight='normal',
              ha='center', va='top')
-    ax2.set_xlabel('Time of Day (Brussels)', fontsize=24, fontweight='bold', labelpad=25)
-    ax2.set_ylabel('Electrical Power (GW)', fontsize=24, fontweight='bold', labelpad=30)
+    ax2.set_xlabel('Time of Day (Brussels)', fontsize=24, fontweight='bold')
+    ax2.set_ylabel('Electrical Power (GW)', fontsize=24, fontweight='bold')
 
     max_energy = 0
 
@@ -1416,9 +1416,9 @@ def plot_analysis(stats_data, source_type, output_file_base, country_code='EU'):
             ordered_labels2.append(period_label)
     
     ax2.legend(ordered_handles2, ordered_labels2,
-              loc='upper left', bbox_to_anchor=(0.1, 0.15),  # Figure coordinates
+              loc='upper left', bbox_to_anchor=(0.1, 0.3),  # Figure coordinates
               bbox_transform=fig2.transFigure,  # Use figure coordinate system
-              ncol=3, fontsize=20, frameon=False)
+              ncol=3, fontsize=18, frameon=False)
     
     # Add watermark (bottom-left) and timestamp (bottom-right)
     # Watermark (left) - aligned with plot left edge
