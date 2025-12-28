@@ -1210,7 +1210,7 @@ def plot_analysis(stats_data, source_type, output_file_base, country_code='EU'):
     fig1, ax1 = plt.subplots(figsize=(12, 12))  # Canvas: 12 wide × 12 tall
     
     # Set exact plot area positioning
-    plt.subplots_adjust(left=0.2, right=0.85, top=0.78, bottom=0.35)
+    plt.subplots_adjust(left=0.2, right=0.85, top=0.82, bottom=0.35)
     
     # Add flag (top-left) - loads real SVG or uses placeholder
     load_flag(fig1, country_code)
@@ -1224,16 +1224,16 @@ def plot_analysis(stats_data, source_type, output_file_base, country_code='EU'):
     
     # Titles in figure coordinates (not axes coordinates)
     # Main title
-    fig1.text(0.525, 0.86, 'Electricity Generation',
+    fig1.text(0.525, 0.9, 'Electricity Generation',
              fontsize=30, fontweight='bold',
              ha='center', va='top')
     
     # Subtitle
-    fig1.text(0.525, 0.81, f'{source_name} · Fraction of Total Generation',
+    fig1.text(0.525, 0.85, f'{source_name} · Fraction of Total',
              fontsize=24, fontweight='normal',
              ha='center', va='top')
-    ax1.set_xlabel('Time of Day (Brussels)', fontsize=24, fontweight='bold')
-    ax1.set_ylabel('Electrical Power (%)', fontsize=24, fontweight='bold')
+    ax1.set_xlabel('Time of Day (Brussels)', fontsize=24, fontweight='bold', labelpad=5)
+    ax1.set_ylabel('Electrical Power (%)', fontsize=24, fontweight='bold', labelpad=5)
 
     max_percentage = 0
 
@@ -1285,9 +1285,9 @@ def plot_analysis(stats_data, source_type, output_file_base, country_code='EU'):
     # Row 2: Yesterday, Yesterday (Projected), [empty]
     # Row 3: Today, Today (Projected), [empty]
     handles, labels_list = ax1.get_legend_handles_labels()
-    legend_order = ['week_ago', 'today', 'today_projected',
-                    'year_ago', 'yesterday', 'yesterday_projected',
-                    'two_years_ago']
+    legend_order = ['week_ago', 'year_ago', 'two_years_ago',
+                    'today', 'yesterday',
+                    'today_projected', 'yesterday_projected']
     
     # Create ordered handles/labels matching desired legend layout
     ordered_handles = []
@@ -1301,7 +1301,7 @@ def plot_analysis(stats_data, source_type, output_file_base, country_code='EU'):
             ordered_labels.append(period_label)
     
     ax1.legend(ordered_handles, ordered_labels, 
-              loc='upper left', bbox_to_anchor=(0.15, 0.225),  # Figure coordinates
+              loc='upper left', bbox_to_anchor=(0.1, 0.275),  # Figure coordinates
               bbox_transform=fig1.transFigure,  # Use figure coordinate system
               ncol=3, fontsize=18, frameon=False)
     
@@ -1331,7 +1331,7 @@ def plot_analysis(stats_data, source_type, output_file_base, country_code='EU'):
     fig2, ax2 = plt.subplots(figsize=(12, 12))  # Canvas: 12 wide × 12 tall
     
     # Set exact plot area positioning
-    plt.subplots_adjust(left=0.2, right=0.85, top=0.78, bottom=0.35)
+    plt.subplots_adjust(left=0.2, right=0.85, top=0.82, bottom=0.35)
     
     # Add flag (top-left) - loads real SVG or uses placeholder
     load_flag(fig2, country_code)
@@ -1344,16 +1344,16 @@ def plot_analysis(stats_data, source_type, output_file_base, country_code='EU'):
     
     # Titles in figure coordinates (not axes coordinates)
     # Main title
-    fig2.text(0.525, 0.86, 'Electricity Generation',
+    fig2.text(0.525, 0.9, 'Electricity Generation',
              fontsize=30, fontweight='bold',
              ha='center', va='top')
     
     # Subtitle
-    fig2.text(0.525, 0.81, f'{source_name} · Absolute Generation',
+    fig2.text(0.525, 0.85, f'{source_name} · Absolute Values',
              fontsize=24, fontweight='normal',
              ha='center', va='top')
-    ax2.set_xlabel('Time of Day (Brussels)', fontsize=24, fontweight='bold')
-    ax2.set_ylabel('Electrical Power (GW)', fontsize=24, fontweight='bold')
+    ax2.set_xlabel('Time of Day (Brussels)', fontsize=24, fontweight='bold', labelpad=5)
+    ax2.set_ylabel('Electrical Power (GW)', fontsize=24, fontweight='bold', labelpad=5)
 
     max_energy = 0
 
@@ -1416,7 +1416,7 @@ def plot_analysis(stats_data, source_type, output_file_base, country_code='EU'):
             ordered_labels2.append(period_label)
     
     ax2.legend(ordered_handles2, ordered_labels2,
-              loc='upper left', bbox_to_anchor=(0.15, 0.225),  # Figure coordinates
+              loc='upper left', bbox_to_anchor=(0.1, 0.275),  # Figure coordinates
               bbox_transform=fig2.transFigure,  # Use figure coordinate system
               ncol=3, fontsize=18, frameon=False)
     
