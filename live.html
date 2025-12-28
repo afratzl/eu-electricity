@@ -111,7 +111,7 @@
                 <label>Display:</label>
                 <div class="toggle-group-compact">
                     <button id="toggle-percentage" class="toggle-btn-compact active" onclick="showPercentagePlot()">
-                        Percentage
+                        Relative
                     </button>
                     <button id="toggle-absolute" class="toggle-btn-compact" onclick="showAbsolutePlot()">
                         Absolute
@@ -405,7 +405,7 @@
             
             // Determine if percentage or absolute is showing
             const isAbsolute = document.getElementById('toggle-absolute').classList.contains('active');
-            const plotType = isAbsolute ? 'Absolute' : 'Percentage';
+            const plotType = isAbsolute ? 'Absolute' : 'Relative';
             const plotTypeFile = isAbsolute ? 'absolute' : 'percentage';
             
             // Get timestamp from last-update div (format: YYYY-MM-DD HH:MM:SS)
@@ -627,6 +627,9 @@
         .chart-container {
             margin-bottom: 8px;
             padding-bottom: 0;
+            background: #f7fafc;
+            padding: 20px;
+            border-radius: 8px;
         }
         
         .chart-img {
