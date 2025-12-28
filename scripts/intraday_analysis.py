@@ -1210,7 +1210,7 @@ def plot_analysis(stats_data, source_type, output_file_base, country_code='EU'):
     fig1, ax1 = plt.subplots(figsize=(12, 12))  # Canvas: 12 wide × 12 tall
     
     # Set exact plot area positioning
-    plt.subplots_adjust(left=0.2, right=0.85, top=0.82, bottom=0.35)
+    plt.subplots_adjust(left=0.2, right=0.9, top=0.82, bottom=0.35)
     
     # Add flag (top-left) - loads real SVG or uses placeholder
     load_flag(fig1, country_code)
@@ -1224,12 +1224,12 @@ def plot_analysis(stats_data, source_type, output_file_base, country_code='EU'):
     
     # Titles in figure coordinates (not axes coordinates)
     # Main title
-    fig1.text(0.525, 0.9, 'Electricity Generation',
+    fig1.text(0.55, 0.9, 'Electricity Generation',
              fontsize=30, fontweight='bold',
              ha='center', va='top')
     
     # Subtitle
-    fig1.text(0.525, 0.85, f'{source_name} · Fraction of Total',
+    fig1.text(0.55, 0.85, f'{source_name} · Fraction of Total',
              fontsize=24, fontweight='normal',
              ha='center', va='top')
     ax1.set_xlabel('Time of Day (Brussels)', fontsize=24, fontweight='bold', labelpad=5)
@@ -1316,7 +1316,7 @@ def plot_analysis(stats_data, source_type, output_file_base, country_code='EU'):
               style='italic')
     
     # Timestamp (right) - aligned with plot right edge
-    fig1.text(0.85, 0.125, f"Generated: {timestamp}",
+    fig1.text(0.9, 0.125, f"Generated: {timestamp}",
               ha='right', va='top',
               fontsize=12, color='#666',
               style='italic')
@@ -1331,7 +1331,7 @@ def plot_analysis(stats_data, source_type, output_file_base, country_code='EU'):
     fig2, ax2 = plt.subplots(figsize=(12, 12))  # Canvas: 12 wide × 12 tall
     
     # Set exact plot area positioning
-    plt.subplots_adjust(left=0.2, right=0.85, top=0.82, bottom=0.35)
+    plt.subplots_adjust(left=0.2, right=0.9, top=0.82, bottom=0.35)
     
     # Add flag (top-left) - loads real SVG or uses placeholder
     load_flag(fig2, country_code)
@@ -1344,12 +1344,12 @@ def plot_analysis(stats_data, source_type, output_file_base, country_code='EU'):
     
     # Titles in figure coordinates (not axes coordinates)
     # Main title
-    fig2.text(0.525, 0.9, 'Electricity Generation',
+    fig2.text(0.55, 0.9, 'Electricity Generation',
              fontsize=30, fontweight='bold',
              ha='center', va='top')
     
     # Subtitle
-    fig2.text(0.525, 0.85, f'{source_name} · Absolute Values',
+    fig2.text(0.55, 0.85, f'{source_name} · Absolute Values',
              fontsize=24, fontweight='normal',
              ha='center', va='top')
     ax2.set_xlabel('Time of Day (Brussels)', fontsize=24, fontweight='bold', labelpad=5)
@@ -1428,7 +1428,7 @@ def plot_analysis(stats_data, source_type, output_file_base, country_code='EU'):
               style='italic')
     
     # Timestamp (right) - aligned with plot right edge
-    fig2.text(0.85, 0.125, f"Generated: {timestamp}",
+    fig2.text(0.9, 0.125, f"Generated: {timestamp}",
               ha='right', va='top',
               fontsize=12, color='#666',
               style='italic')
