@@ -1,14 +1,14 @@
 {
   "EU": {
-    "last_updated": "2025-12-29 08:04:32 UTC",
+    "last_updated": "2025-12-29 09:11:30 UTC",
     "sources": [
       {
         "source": "All Renewables",
         "category": "aggregate-renewable",
         "yesterday": {
-          "gwh": 3040.1,
+          "gwh": 3040.0,
           "twh": 3.04,
-          "percentage": 43.0,
+          "percentage": 43.01,
           "change_from_2015": "+49%",
           "change_from_2024": "-13%",
           "change_from_2023": "-20%"
@@ -114,10 +114,10 @@
         "source": "Solar",
         "category": "renewable",
         "yesterday": {
-          "gwh": 353.0,
+          "gwh": 352.3,
           "twh": 0.35,
-          "percentage": 4.99,
-          "change_from_2015": "+283%",
+          "percentage": 4.98,
+          "change_from_2015": "+282%",
           "change_from_2024": "-13%",
           "change_from_2023": "+15%"
         },
@@ -222,7 +222,7 @@
         "source": "All Non-Renewables",
         "category": "aggregate-non-renewable",
         "yesterday": {
-          "gwh": 4042.8,
+          "gwh": 4042.0,
           "twh": 4.04,
           "percentage": 57.18,
           "change_from_2015": "-21%",
@@ -230,7 +230,7 @@
           "change_from_2023": "+0.4%"
         },
         "last_week": {
-          "gwh": 28796.5,
+          "gwh": 28796.6,
           "twh": 28.8,
           "percentage": 56.45,
           "change_from_2015": "-20%",
@@ -260,7 +260,7 @@
         "yesterday": {
           "gwh": 2081.4,
           "twh": 2.08,
-          "percentage": 29.44,
+          "percentage": 29.45,
           "change_from_2015": "-8.1%",
           "change_from_2024": "+4.1%",
           "change_from_2023": "+11%"
@@ -296,7 +296,7 @@
         "yesterday": {
           "gwh": 1208.5,
           "twh": 1.21,
-          "percentage": 17.09,
+          "percentage": 17.1,
           "change_from_2015": "+34%",
           "change_from_2024": "-4.3%",
           "change_from_2023": "+15%"
@@ -366,15 +366,15 @@
         "source": "Waste",
         "category": "non-renewable",
         "yesterday": {
-          "gwh": 175.7,
-          "twh": 0.18,
-          "percentage": 2.49,
+          "gwh": 175.0,
+          "twh": 0.17,
+          "percentage": 2.48,
           "change_from_2015": "-38%",
           "change_from_2024": "-33%",
           "change_from_2023": "-29%"
         },
         "last_week": {
-          "gwh": 1284.6,
+          "gwh": 1284.7,
           "twh": 1.28,
           "percentage": 2.52,
           "change_from_2015": "-35%",
@@ -437,7 +437,7 @@
     ]
   },
   "DE": {
-    "last_updated": "2025-12-29 08:04:33 UTC",
+    "last_updated": "2025-12-29 09:11:31 UTC",
     "sources": [
       {
         "source": "All Renewables",
