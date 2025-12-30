@@ -1075,8 +1075,8 @@ def plot_analysis(stats_data, source_type, output_file_base, country_code='EU'):
             size: pixel size (width=height for square)
         """
         # Create rectangular flag area - positioned for 12×12 canvas
-        # x=0.075, y=0.858, width=0.1, height=0.067
-        ax_flag = fig.add_axes([0.075, 0.858, 0.1, 0.067])
+        # x=0.075, y=0.875, width=0.075, height=0.05
+        ax_flag = fig.add_axes([0.075, 0.875, 0.075, 0.05])
         
         # Country-specific colors (or default blue)
         colors_map = {
@@ -1128,8 +1128,8 @@ def plot_analysis(stats_data, source_type, output_file_base, country_code='EU'):
         if os.path.exists(flag_path):
             try:
                 # Create axes for flag - positioned for 12×12 canvas
-                # x=0.075, y=0.858, width=0.1, height=0.067
-                ax_flag = fig.add_axes([0.075, 0.858, 0.1, 0.067])
+                # x=0.075, y=0.875, width=0.075, height=0.05
+                ax_flag = fig.add_axes([0.075, 0.875, 0.075, 0.05])
                 
                 # Load and display PNG
                 flag_img = mpimg.imread(flag_path)
@@ -1210,14 +1210,14 @@ def plot_analysis(stats_data, source_type, output_file_base, country_code='EU'):
     fig1, ax1 = plt.subplots(figsize=(12, 12))  # Canvas: 12 wide × 12 tall
     
     # Set exact plot area positioning
-    plt.subplots_adjust(left=0.2, right=0.9, top=0.82, bottom=0.35)
+    plt.subplots_adjust(left=0.2, right=0.9, top=0.80, bottom=0.35)
     
     # Add flag (top-left) - loads real SVG or uses placeholder
     load_flag(fig1, country_code)
     
     # Add country name below flag (figure coordinates)
     country_display = COUNTRY_DISPLAY_NAMES.get(country_code, country_code)
-    fig1.text(0.075, 0.85, country_display,
+    fig1.text(0.075, 0.868, country_display,
              fontsize=18, fontweight='normal',
              ha='left', va='top',
              color='#333')
@@ -1229,11 +1229,11 @@ def plot_analysis(stats_data, source_type, output_file_base, country_code='EU'):
              ha='center', va='top')
     
     # Subtitle
-    fig1.text(0.55, 0.85, f'{source_name} · Fraction of Total',
+    fig1.text(0.55, 0.84, f'{source_name} · Fraction of Total',
              fontsize=24, fontweight='normal',
              ha='center', va='top')
-    ax1.set_xlabel('Time of Day (Brussels)', fontsize=24, fontweight='bold', labelpad=5)
-    ax1.set_ylabel('Electrical Power (%)', fontsize=24, fontweight='bold', labelpad=5)
+    ax1.set_xlabel('Time of Day (Brussels)', fontsize=24, fontweight='bold', labelpad=8)
+    ax1.set_ylabel('Electrical Power (%)', fontsize=24, fontweight='bold', labelpad=8)
 
     max_percentage = 0
 
@@ -1301,7 +1301,7 @@ def plot_analysis(stats_data, source_type, output_file_base, country_code='EU'):
             ordered_labels.append(period_label)
     
     ax1.legend(ordered_handles, ordered_labels, 
-              loc='upper left', bbox_to_anchor=(0.1, 0.275),  # Figure coordinates
+              loc='upper left', bbox_to_anchor=(0.15, 0.24),  # Figure coordinates
               bbox_transform=fig1.transFigure,  # Use figure coordinate system
               ncol=3, fontsize=18, frameon=False)
     
@@ -1331,13 +1331,13 @@ def plot_analysis(stats_data, source_type, output_file_base, country_code='EU'):
     fig2, ax2 = plt.subplots(figsize=(12, 12))  # Canvas: 12 wide × 12 tall
     
     # Set exact plot area positioning
-    plt.subplots_adjust(left=0.2, right=0.9, top=0.82, bottom=0.35)
+    plt.subplots_adjust(left=0.2, right=0.9, top=0.80, bottom=0.35)
     
     # Add flag (top-left) - loads real SVG or uses placeholder
     load_flag(fig2, country_code)
     
     # Add country name below flag (figure coordinates)
-    fig2.text(0.075, 0.85, country_display,
+    fig2.text(0.075, 0.868, country_display,
              fontsize=18, fontweight='normal',
              ha='left', va='top',
              color='#333')
@@ -1349,11 +1349,11 @@ def plot_analysis(stats_data, source_type, output_file_base, country_code='EU'):
              ha='center', va='top')
     
     # Subtitle
-    fig2.text(0.55, 0.85, f'{source_name} · Absolute Values',
+    fig2.text(0.55, 0.84, f'{source_name} · Absolute Values',
              fontsize=24, fontweight='normal',
              ha='center', va='top')
-    ax2.set_xlabel('Time of Day (Brussels)', fontsize=24, fontweight='bold', labelpad=5)
-    ax2.set_ylabel('Electrical Power (GW)', fontsize=24, fontweight='bold', labelpad=5)
+    ax2.set_xlabel('Time of Day (Brussels)', fontsize=24, fontweight='bold', labelpad=8)
+    ax2.set_ylabel('Electrical Power (GW)', fontsize=24, fontweight='bold', labelpad=8)
 
     max_energy = 0
 
@@ -1402,6 +1402,81 @@ def plot_analysis(stats_data, source_type, output_file_base, country_code='EU'):
     
     ax2.grid(True, alpha=0.3, linewidth=1.5)
     
+    # ========================================================================
+    # AUTO UNIT CONVERSION: Check y-tick spacing and convert GW→MW→kW if needed
+    # ========================================================================
+    yticks = ax2.get_yticks()
+    if len(yticks) > 1:
+        tick_spacing = yticks[1] - yticks[0]
+        
+        # Determine appropriate unit
+        if tick_spacing < 0.00001:  # Less than 0.01 MW = 10 kW
+            unit_label = 'Electrical Power (kW)'
+            conversion_factor = 1000000  # GW to kW
+            unit_name = 'kW'
+        elif tick_spacing < 0.01:  # Less than 10 MW
+            unit_label = 'Electrical Power (MW)'
+            conversion_factor = 1000  # GW to MW
+            unit_name = 'MW'
+        else:
+            unit_label = None  # Keep GW
+            conversion_factor = 1
+            unit_name = 'GW'
+        
+        # If conversion needed, clear and replot
+        if unit_label is not None:
+            print(f"  → Converting to {unit_name} (tick spacing: {tick_spacing:.6f} GW)")
+            
+            # Clear the plot
+            ax2.clear()
+            
+            # Replot all data with converted units
+            max_energy_converted = 0
+            for period_name in plot_order:
+                if period_name not in stats_data:
+                    continue
+                    
+                data = stats_data[period_name]
+                if 'energy_mean' not in data or len(data['energy_mean']) == 0:
+                    continue
+            
+                color = colors.get(period_name, 'gray')
+                linestyle = linestyles.get(period_name, '-')
+                label = labels.get(period_name, period_name)
+            
+                x_values = np.arange(len(data['energy_mean']))
+                # Convert MW to target unit (kW or MW instead of GW)
+                y_values = data['energy_mean'].copy() / 1000 * conversion_factor
+                max_energy_converted = max(max_energy_converted, np.nanmax(y_values))
+            
+                if period_name in ['today', 'today_projected']:
+                    mask = ~np.isnan(y_values)
+                    if np.any(mask):
+                        x_values = x_values[mask]
+                        y_values = y_values[mask]
+                    else:
+                        continue
+            
+                ax2.plot(x_values, y_values, color=color, linestyle=linestyle, linewidth=6, label=label, marker='')
+            
+                if period_name in ['week_ago', 'year_ago', 'two_years_ago'] and 'energy_std' in data:
+                    # Convert std values to target unit
+                    std_values = data['energy_std'][:len(x_values)] / 1000 * conversion_factor
+                    upper_bound = y_values + std_values
+                    lower_bound = y_values - std_values
+                    max_energy_converted = max(max_energy_converted, np.nanmax(upper_bound))
+                    ax2.fill_between(x_values, lower_bound, upper_bound, color=color, alpha=0.2)
+            
+            # Reapply formatting
+            ax2.set_xlabel('Time of Day (Brussels)', fontsize=24, fontweight='bold', labelpad=8)
+            ax2.set_ylabel(unit_label, fontsize=24, fontweight='bold', labelpad=8)
+            ax2.tick_params(axis='both', labelsize=22, length=8, pad=8)
+            ax2.set_ylim(0, max_energy_converted * 1.20)
+            ax2.set_xlim(0, len(time_labels))
+            ax2.set_xticks(tick_positions)
+            ax2.set_xticklabels(tick_labels_axis)
+            ax2.grid(True, alpha=0.3, linewidth=1.5)
+    
     # Reorder legend to match percentage plot (3-2-2 layout)
     handles2, labels_list2 = ax2.get_legend_handles_labels()
     
@@ -1416,7 +1491,7 @@ def plot_analysis(stats_data, source_type, output_file_base, country_code='EU'):
             ordered_labels2.append(period_label)
     
     ax2.legend(ordered_handles2, ordered_labels2,
-              loc='upper left', bbox_to_anchor=(0.1, 0.275),  # Figure coordinates
+              loc='upper left', bbox_to_anchor=(0.15, 0.24),  # Figure coordinates
               bbox_transform=fig2.transFigure,  # Use figure coordinate system
               ncol=3, fontsize=18, frameon=False)
     
