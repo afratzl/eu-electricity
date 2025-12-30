@@ -1064,6 +1064,12 @@ def plot_analysis(stats_data, source_type, output_file_base, country_code='EU'):
         'CY': 'Cyprus'
     }
     
+    # Calculate dynamic years for legend labels
+    from datetime import datetime
+    current_year = datetime.now().year
+    previous_year = current_year - 1
+    two_years_ago = current_year - 2
+    
     def draw_flag_placeholder(fig, country_code, size=100):
         """
         Draw a placeholder for flag - colored rectangle with country code
@@ -1170,9 +1176,9 @@ def plot_analysis(stats_data, source_type, output_file_base, country_code='EU'):
     labels = {
         'today': 'Today',
         'yesterday': 'Yesterday',
-        'week_ago': 'Previous Week',
-        'year_ago': 'Last Year',
-        'two_years_ago': 'Two Years Ago',
+        'week_ago': 'Last Week',
+        'year_ago': f'Same Week {previous_year}',
+        'two_years_ago': f'Same Week {two_years_ago}',
         'today_projected': 'Today (Projected)',
         'yesterday_projected': 'Yesterday (Projected)'
     }
@@ -1217,7 +1223,7 @@ def plot_analysis(stats_data, source_type, output_file_base, country_code='EU'):
     
     # Add country name below flag (figure coordinates)
     country_display = COUNTRY_DISPLAY_NAMES.get(country_code, country_code)
-    fig1.text(0.075, 0.843, country_display,
+    fig1.text(0.1, 0.843, country_display,
              fontsize=18, fontweight='normal',
              ha='left', va='top',
              color='#333')
@@ -1229,7 +1235,7 @@ def plot_analysis(stats_data, source_type, output_file_base, country_code='EU'):
              ha='center', va='top')
     
     # Subtitle
-    fig1.text(0.55, 0.845, f'{source_name} · Fraction of Total',
+    fig1.text(0.55, 0.835, f'{source_name} · Fraction of Total',
              fontsize=24, fontweight='normal',
              ha='center', va='top')
     ax1.set_xlabel('Time of Day (Brussels)', fontsize=24, fontweight='bold', labelpad=8)
@@ -1301,7 +1307,7 @@ def plot_analysis(stats_data, source_type, output_file_base, country_code='EU'):
             ordered_labels.append(period_label)
     
     ax1.legend(ordered_handles, ordered_labels, 
-              loc='upper left', bbox_to_anchor=(0.16, 0.25),  # Figure coordinates
+              loc='upper left', bbox_to_anchor=(0.15, 0.255),  # Figure coordinates
               bbox_transform=fig1.transFigure,  # Use figure coordinate system
               ncol=3, fontsize=18, frameon=False)
     
@@ -1337,7 +1343,7 @@ def plot_analysis(stats_data, source_type, output_file_base, country_code='EU'):
     load_flag(fig2, country_code)
     
     # Add country name below flag (figure coordinates)
-    fig2.text(0.075, 0.843, country_display,
+    fig2.text(0.1, 0.843, country_display,
              fontsize=18, fontweight='normal',
              ha='left', va='top',
              color='#333')
@@ -1349,7 +1355,7 @@ def plot_analysis(stats_data, source_type, output_file_base, country_code='EU'):
              ha='center', va='top')
     
     # Subtitle
-    fig2.text(0.55, 0.845, f'{source_name} · Absolute Values',
+    fig2.text(0.55, 0.835, f'{source_name} · Absolute Values',
              fontsize=24, fontweight='normal',
              ha='center', va='top')
     ax2.set_xlabel('Time of Day (Brussels)', fontsize=24, fontweight='bold', labelpad=8)
@@ -1491,7 +1497,7 @@ def plot_analysis(stats_data, source_type, output_file_base, country_code='EU'):
             ordered_labels2.append(period_label)
     
     ax2.legend(ordered_handles2, ordered_labels2,
-              loc='upper left', bbox_to_anchor=(0.16, 0.25),  # Figure coordinates
+              loc='upper left', bbox_to_anchor=(0.15, 0.255),  # Figure coordinates
               bbox_transform=fig2.transFigure,  # Use figure coordinate system
               ncol=3, fontsize=18, frameon=False)
     
