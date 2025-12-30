@@ -514,7 +514,7 @@ def create_all_charts(all_data, country_code='EU'):
 
         plt.tight_layout()
 
-        percentage_filename = f'plots/eu_monthly_{source_name.lower().replace(" ", "_")}_percentage_10years.png'
+        percentage_filename = f'plots/{country_code.lower()}_monthly_{source_name.lower().replace(" ", "_")}_percentage_10years.png'
         plt.savefig(percentage_filename, dpi=150, bbox_inches='tight')
         print(f"  ✓ Saved: {percentage_filename}")
         
@@ -574,7 +574,7 @@ def create_all_charts(all_data, country_code='EU'):
 
         plt.tight_layout()
 
-        absolute_filename = f'plots/eu_monthly_{source_name.lower().replace(" ", "_")}_absolute_10years.png'
+        absolute_filename = f'plots/{country_code.lower()}_monthly_{source_name.lower().replace(" ", "_")}_absolute_10years.png'
         plt.savefig(absolute_filename, dpi=150, bbox_inches='tight')
         print(f"  ✓ Saved: {absolute_filename}")
         
@@ -690,67 +690,75 @@ def create_all_charts(all_data, country_code='EU'):
                     else:
                         monthly_means_pct[source_name].append(0)
 
-            fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(12, 20))
-            # Increase vertical spacing between subplots for better readability
-            fig.subplots_adjust(hspace=1.0)
+            # PLOT 1: PERCENTAGE
+            fig1, ax1 = plt.subplots(figsize=(12, 10))
 
             for source_name in available_sources:
                 color = ENTSOE_COLORS.get(source_name, 'black')
-
-                # ax1 = PERCENTAGE (top)
                 ax1.plot(months, monthly_means_pct[source_name], marker='o', color=color,
                          linewidth=6, markersize=13, label=source_name)
-                
-                # ax2 = ABSOLUTE (bottom)
-                values_twh = [val / 1000 for val in monthly_means_abs[source_name]]
-                ax2.plot(months, values_twh, marker='o', color=color,
-                         linewidth=6, markersize=13, label=source_name)
 
-            # Bold main title above top subplot
-            fig.text(0.5, 0.98, f'All Electricity Sources: {period["name"]}', 
-                    ha='center', fontsize=34, fontweight='bold')
-            
-            # Subtitle for top plot
-            ax1.set_title('Percentage of EU Production', fontsize=26, fontweight='normal', pad=60)
+            fig1.suptitle(f'All Electricity Sources: {period["name"]}', 
+                         fontsize=34, fontweight='bold')
+            ax1.set_title('Percentage of EU Production', fontsize=26, fontweight='normal')
             ax1.set_xlabel('Month', fontsize=28, fontweight='bold', labelpad=15)
             ax1.set_ylabel('Electricity production (%)', fontsize=28, fontweight='bold', labelpad=15)
             ax1.set_ylim(0, max_pct_all_periods)
             ax1.tick_params(axis='both', labelsize=22)
             ax1.grid(True, linestyle='--', alpha=0.7)
+            ax1.legend(loc='upper center', bbox_to_anchor=(0.5, -0.15), ncol=5,
+                       fontsize=20, frameon=False)
 
-            # Bold main title above bottom subplot  
-            fig.text(0.5, 0.44, f'All Electricity Sources: {period["name"]}', 
-                    ha='center', fontsize=34, fontweight='bold')
+            plt.tight_layout()
+
+            period_name_clean = period['name'].replace('-', '_')
+            percentage_filename = f'plots/{country_code.lower()}_monthly_energy_sources_mean_{period_name_clean}_percentage.png'
+            plt.savefig(percentage_filename, dpi=150, bbox_inches='tight')
+            print(f"  ✓ Saved: {percentage_filename}")
             
-            # Subtitle for bottom plot
-            ax2.set_title('Absolute Production', fontsize=26, fontweight='normal', pad=60)
+            if drive_service:
+                result = upload_plot_to_drive(drive_service, percentage_filename, plot_type='Monthly', country=country_code)
+                if result:
+                    plot_key = f'energy_sources_mean_{period_name_clean}'
+                    if plot_key not in plot_links['Monthly']:
+                        plot_links['Monthly'][plot_key] = {}
+                    plot_links['Monthly'][plot_key]['percentage'] = result
+            
+            plt.close()
+
+            # PLOT 2: ABSOLUTE
+            fig2, ax2 = plt.subplots(figsize=(12, 10))
+
+            for source_name in available_sources:
+                color = ENTSOE_COLORS.get(source_name, 'black')
+                values_twh = [val / 1000 for val in monthly_means_abs[source_name]]
+                ax2.plot(months, values_twh, marker='o', color=color,
+                         linewidth=6, markersize=13, label=source_name)
+
+            fig2.suptitle(f'All Electricity Sources: {period["name"]}', 
+                         fontsize=34, fontweight='bold')
+            ax2.set_title('Absolute Production', fontsize=26, fontweight='normal')
             ax2.set_xlabel('Month', fontsize=28, fontweight='bold', labelpad=15)
             ax2.set_ylabel('Electricity production (TWh)', fontsize=28, fontweight='bold', labelpad=15)
             ax2.set_ylim(0, max_abs_all_periods)
             ax2.tick_params(axis='both', labelsize=22)
             ax2.grid(True, linestyle='--', alpha=0.7)
-
-            # Double legend - one per subplot, positioned lower for more space
-            ax1.legend(loc='upper center', bbox_to_anchor=(0.5, -0.15), ncol=5,
-                       fontsize=20, frameon=False)
             ax2.legend(loc='upper center', bbox_to_anchor=(0.5, -0.15), ncol=5,
                        fontsize=20, frameon=False)
 
-            plt.tight_layout(rect=[0, 0.02, 1, 0.985])
+            plt.tight_layout()
 
-            period_name_clean = period['name'].replace('-', '_')
-            filename = f'plots/eu_monthly_energy_sources_mean_{period_name_clean}_combined.png'
-            plt.savefig(filename, dpi=150, bbox_inches='tight')
-            print(f"  Chart saved as: {filename}")
+            absolute_filename = f'plots/{country_code.lower()}_monthly_energy_sources_mean_{period_name_clean}_absolute.png'
+            plt.savefig(absolute_filename, dpi=150, bbox_inches='tight')
+            print(f"  ✓ Saved: {absolute_filename}")
             
-            # Upload to Drive (ADDED FROM AFTER)
             if drive_service:
-                result = upload_plot_to_drive(drive_service, filename, plot_type='Monthly', country=country_code)
+                result = upload_plot_to_drive(drive_service, absolute_filename, plot_type='Monthly', country=country_code)
                 if result:
                     plot_key = f'energy_sources_mean_{period_name_clean}'
                     if plot_key not in plot_links['Monthly']:
                         plot_links['Monthly'][plot_key] = {}
-                    plot_links['Monthly'][plot_key]['combined'] = result
+                    plot_links['Monthly'][plot_key]['absolute'] = result
             
             plt.close()
 
@@ -835,67 +843,75 @@ def create_all_charts(all_data, country_code='EU'):
                     else:
                         monthly_means_pct[category_name].append(0)
 
-            fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(12, 20))
-            # Increase vertical spacing between subplots for better readability
-            fig.subplots_adjust(hspace=1.0)
+            # PLOT 1: PERCENTAGE
+            fig1, ax1 = plt.subplots(figsize=(12, 10))
 
             for category_name in ['All Renewables', 'All Non-Renewables']:
                 color = ENTSOE_COLORS[category_name]
-
-                # ax1 = PERCENTAGE (top)
                 ax1.plot(month_names_abbr, monthly_means_pct[category_name], marker='o', color=color,
                          linewidth=6, markersize=13, label=category_name)
-                
-                # ax2 = ABSOLUTE (bottom)
-                values_twh = [val / 1000 for val in monthly_means_abs[category_name]]
-                ax2.plot(month_names_abbr, values_twh, marker='o', color=color,
-                         linewidth=6, markersize=13, label=category_name)
 
-            # Bold main title above top subplot
-            fig.text(0.5, 0.98, f'Renewables vs Non-Renewables: {period["name"]}', 
-                    ha='center', fontsize=34, fontweight='bold')
-            
-            # Subtitle for top plot
-            ax1.set_title('Percentage of EU Production', fontsize=26, fontweight='normal', pad=60)
+            fig1.suptitle(f'Renewables vs Non-Renewables: {period["name"]}', 
+                         fontsize=34, fontweight='bold')
+            ax1.set_title('Percentage of EU Production', fontsize=26, fontweight='normal')
             ax1.set_xlabel('Month', fontsize=28, fontweight='bold', labelpad=15)
             ax1.set_ylabel('Electricity production (%)', fontsize=28, fontweight='bold', labelpad=15)
             ax1.set_ylim(0, 100)
             ax1.tick_params(axis='both', labelsize=22)
             ax1.grid(True, linestyle='--', alpha=0.7)
+            ax1.legend(loc='upper center', bbox_to_anchor=(0.5, -0.15), ncol=2,
+                       fontsize=22, frameon=False)
 
-            # Bold main title above bottom subplot
-            fig.text(0.5, 0.44, f'Renewables vs Non-Renewables: {period["name"]}', 
-                    ha='center', fontsize=34, fontweight='bold')
+            plt.tight_layout()
+
+            period_name_clean = period['name'].replace('-', '_')
+            percentage_filename = f'plots/{country_code.lower()}_monthly_renewable_vs_nonrenewable_mean_{period_name_clean}_percentage.png'
+            plt.savefig(percentage_filename, dpi=150, bbox_inches='tight')
+            print(f"  ✓ Saved: {percentage_filename}")
             
-            # Subtitle for bottom plot
-            ax2.set_title('Absolute Production', fontsize=26, fontweight='normal', pad=60)
+            if drive_service:
+                result = upload_plot_to_drive(drive_service, percentage_filename, plot_type='Monthly', country=country_code)
+                if result:
+                    plot_key = f'renewable_vs_nonrenewable_mean_{period_name_clean}'
+                    if plot_key not in plot_links['Monthly']:
+                        plot_links['Monthly'][plot_key] = {}
+                    plot_links['Monthly'][plot_key]['percentage'] = result
+            
+            plt.close()
+
+            # PLOT 2: ABSOLUTE
+            fig2, ax2 = plt.subplots(figsize=(12, 10))
+
+            for category_name in ['All Renewables', 'All Non-Renewables']:
+                color = ENTSOE_COLORS[category_name]
+                values_twh = [val / 1000 for val in monthly_means_abs[category_name]]
+                ax2.plot(month_names_abbr, values_twh, marker='o', color=color,
+                         linewidth=6, markersize=13, label=category_name)
+
+            fig2.suptitle(f'Renewables vs Non-Renewables: {period["name"]}', 
+                         fontsize=34, fontweight='bold')
+            ax2.set_title('Absolute Production', fontsize=26, fontweight='normal')
             ax2.set_xlabel('Month', fontsize=28, fontweight='bold', labelpad=15)
             ax2.set_ylabel('Electricity production (TWh)', fontsize=28, fontweight='bold', labelpad=15)
             ax2.set_ylim(0, max_abs_renewable_periods)
             ax2.tick_params(axis='both', labelsize=22)
             ax2.grid(True, linestyle='--', alpha=0.7)
-
-            # Double legend - one per subplot, positioned lower for more space
-            ax1.legend(loc='upper center', bbox_to_anchor=(0.5, -0.15), ncol=2,
-                       fontsize=22, frameon=False)
             ax2.legend(loc='upper center', bbox_to_anchor=(0.5, -0.15), ncol=2,
                        fontsize=22, frameon=False)
 
-            plt.tight_layout(rect=[0, 0.02, 1, 0.985])
+            plt.tight_layout()
 
-            period_name_clean = period['name'].replace('-', '_')
-            filename = f'plots/eu_monthly_renewable_vs_nonrenewable_mean_{period_name_clean}_combined.png'
-            plt.savefig(filename, dpi=150, bbox_inches='tight')
-            print(f"  Chart saved as: {filename}")
+            absolute_filename = f'plots/{country_code.lower()}_monthly_renewable_vs_nonrenewable_mean_{period_name_clean}_absolute.png'
+            plt.savefig(absolute_filename, dpi=150, bbox_inches='tight')
+            print(f"  ✓ Saved: {absolute_filename}")
             
-            # Upload to Drive (ADDED FROM AFTER)
             if drive_service:
-                result = upload_plot_to_drive(drive_service, filename, plot_type='Monthly', country=country_code)
+                result = upload_plot_to_drive(drive_service, absolute_filename, plot_type='Monthly', country=country_code)
                 if result:
                     plot_key = f'renewable_vs_nonrenewable_mean_{period_name_clean}'
                     if plot_key not in plot_links['Monthly']:
                         plot_links['Monthly'][plot_key] = {}
-                    plot_links['Monthly'][plot_key]['combined'] = result
+                    plot_links['Monthly'][plot_key]['absolute'] = result
             
             plt.close()
 
@@ -958,21 +974,17 @@ def create_all_charts(all_data, country_code='EU'):
     if available_renewables and 'Total Generation' in annual_totals:
         print("\nCreating Annual Renewable Trends...")
 
-        fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(12, 20))
-        # Add more vertical spacing between subplots
-        fig.subplots_adjust(hspace=1.0)
+        # PLOT 1: PERCENTAGE
+        fig1, ax1 = plt.subplots(figsize=(12, 10))
 
         lines_plotted = 0
         for source_name in available_renewables:
             if source_name in annual_totals and len(annual_totals[source_name]) > 0:
-                years_list = sorted(annual_totals[source_name].keys())
-
                 color = ENTSOE_COLORS.get(source_name, 'black')
                 
-                # ax1 = PERCENTAGE (top)
                 source_years = set(annual_totals[source_name].keys())
                 total_years = set(annual_totals['Total Generation'].keys())
-                overlapping_years = source_years & total_years & set(years_list)
+                overlapping_years = source_years & total_years
 
                 if overlapping_years:
                     pct_years = sorted(overlapping_years)
@@ -988,58 +1000,73 @@ def create_all_charts(all_data, country_code='EU'):
 
                     ax1.plot(pct_years, percentages, marker='o', color=color,
                              linewidth=6, markersize=13, label=source_name)
-                
-                # ax2 = ABSOLUTE (bottom)
-                values_twh = [annual_totals[source_name][year] / 1000 for year in years_list]
-                ax2.plot(years_list, values_twh, marker='o', color=color,
-                         linewidth=6, markersize=13, label=source_name)
-
-                lines_plotted += 1
+                    lines_plotted += 1
 
         if lines_plotted > 0:
-            # Bold main title above top subplot
-            fig.text(0.5, 0.98, 'Annual Renewable Trends', 
-                    ha='center', fontsize=34, fontweight='bold')
-            
-            # Subtitle for top plot
-            ax1.set_title('Percentage of EU Production', fontsize=26, fontweight='normal', pad=60)
+            fig1.suptitle('Annual Renewable Trends', 
+                         fontsize=34, fontweight='bold')
+            ax1.set_title('Percentage of EU Production', fontsize=26, fontweight='normal')
             ax1.set_xlabel('Year', fontsize=28, fontweight='bold', labelpad=15)
             ax1.set_ylabel('Electricity production (%)', fontsize=28, fontweight='bold', labelpad=15)
             ax1.set_ylim(0, max_annual_pct)
             ax1.tick_params(axis='both', labelsize=22)
             ax1.grid(True, linestyle='--', alpha=0.7)
+            ax1.legend(loc='upper center', bbox_to_anchor=(0.5, -0.15), ncol=len(available_renewables),
+                       fontsize=20, frameon=False)
 
-            # Bold main title above bottom subplot
-            fig.text(0.5, 0.44, 'Annual Renewable Trends', 
-                    ha='center', fontsize=34, fontweight='bold')
+            plt.tight_layout()
+
+            percentage_filename = f'plots/{country_code.lower()}_annual_renewable_trends_percentage.png'
+            plt.savefig(percentage_filename, dpi=150, bbox_inches='tight')
+            print(f"  ✓ Saved: {percentage_filename}")
             
-            # Subtitle for bottom plot
-            ax2.set_title('Absolute Production', fontsize=26, fontweight='normal', pad=60)
+            if drive_service:
+                result = upload_plot_to_drive(drive_service, percentage_filename, plot_type='Trends', country=country_code)
+                if result:
+                    if 'renewable_trends' not in plot_links['Trends']:
+                        plot_links['Trends']['renewable_trends'] = {}
+                    plot_links['Trends']['renewable_trends']['percentage'] = result
+            
+            plt.close()
+
+        # PLOT 2: ABSOLUTE
+        fig2, ax2 = plt.subplots(figsize=(12, 10))
+
+        lines_plotted = 0
+        for source_name in available_renewables:
+            if source_name in annual_totals and len(annual_totals[source_name]) > 0:
+                years_list = sorted(annual_totals[source_name].keys())
+                color = ENTSOE_COLORS.get(source_name, 'black')
+                
+                values_twh = [annual_totals[source_name][year] / 1000 for year in years_list]
+                ax2.plot(years_list, values_twh, marker='o', color=color,
+                         linewidth=6, markersize=13, label=source_name)
+                lines_plotted += 1
+
+        if lines_plotted > 0:
+            fig2.suptitle('Annual Renewable Trends', 
+                         fontsize=34, fontweight='bold')
+            ax2.set_title('Absolute Production', fontsize=26, fontweight='normal')
             ax2.set_xlabel('Year', fontsize=28, fontweight='bold', labelpad=15)
             ax2.set_ylabel('Electricity production (TWh)', fontsize=28, fontweight='bold', labelpad=15)
             ax2.set_ylim(0, max_annual_twh)
             ax2.tick_params(axis='both', labelsize=22)
             ax2.grid(True, linestyle='--', alpha=0.7)
-
-            # Double legend - one per subplot, positioned lower for more space
-            ax1.legend(loc='upper center', bbox_to_anchor=(0.5, -0.15), ncol=len(available_renewables),
-                       fontsize=20, frameon=False)
             ax2.legend(loc='upper center', bbox_to_anchor=(0.5, -0.15), ncol=len(available_renewables),
                        fontsize=20, frameon=False)
 
-            plt.tight_layout(rect=[0, 0.02, 1, 0.985])
+            plt.tight_layout()
 
-            filename = 'plots/eu_annual_renewable_trends_combined.png'
-            plt.savefig(filename, dpi=150, bbox_inches='tight')
-            print(f"  Chart saved as: {filename}")
+            absolute_filename = f'plots/{country_code.lower()}_annual_renewable_trends_absolute.png'
+            plt.savefig(absolute_filename, dpi=150, bbox_inches='tight')
+            print(f"  ✓ Saved: {absolute_filename}")
             
-            # Upload to Drive (ADDED FROM AFTER)
             if drive_service:
-                result = upload_plot_to_drive(drive_service, filename, plot_type='Trends', country=country_code)
+                result = upload_plot_to_drive(drive_service, absolute_filename, plot_type='Trends', country=country_code)
                 if result:
                     if 'renewable_trends' not in plot_links['Trends']:
                         plot_links['Trends']['renewable_trends'] = {}
-                    plot_links['Trends']['renewable_trends']['combined'] = result
+                    plot_links['Trends']['renewable_trends']['absolute'] = result
             
             plt.close()
 
@@ -1047,21 +1074,17 @@ def create_all_charts(all_data, country_code='EU'):
     if available_non_renewables and 'Total Generation' in annual_totals:
         print("\nCreating Annual Non-Renewable Trends...")
 
-        fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(12, 20))
-        # Add more vertical spacing between subplots
-        fig.subplots_adjust(hspace=1.0)
+        # PLOT 1: PERCENTAGE
+        fig1, ax1 = plt.subplots(figsize=(12, 10))
 
         lines_plotted = 0
         for source_name in available_non_renewables:
             if source_name in annual_totals and len(annual_totals[source_name]) > 0:
-                years_list = sorted(annual_totals[source_name].keys())
-
                 color = ENTSOE_COLORS.get(source_name, 'black')
                 
-                # ax1 = PERCENTAGE (top)
                 source_years = set(annual_totals[source_name].keys())
                 total_years = set(annual_totals['Total Generation'].keys())
-                overlapping_years = source_years & total_years & set(years_list)
+                overlapping_years = source_years & total_years
 
                 if overlapping_years:
                     pct_years = sorted(overlapping_years)
@@ -1077,58 +1100,73 @@ def create_all_charts(all_data, country_code='EU'):
 
                     ax1.plot(pct_years, percentages, marker='o', color=color,
                              linewidth=6, markersize=13, label=source_name)
-                
-                # ax2 = ABSOLUTE (bottom)
-                values_twh = [annual_totals[source_name][year] / 1000 for year in years_list]
-                ax2.plot(years_list, values_twh, marker='o', color=color,
-                         linewidth=6, markersize=13, label=source_name)
-
-                lines_plotted += 1
+                    lines_plotted += 1
 
         if lines_plotted > 0:
-            # Bold main title above top subplot
-            fig.text(0.5, 0.98, 'Annual Non-Renewable Trends', 
-                    ha='center', fontsize=34, fontweight='bold')
-            
-            # Subtitle for top plot
-            ax1.set_title('Percentage of EU Production', fontsize=26, fontweight='normal', pad=60)
+            fig1.suptitle('Annual Non-Renewable Trends', 
+                         fontsize=34, fontweight='bold')
+            ax1.set_title('Percentage of EU Production', fontsize=26, fontweight='normal')
             ax1.set_xlabel('Year', fontsize=28, fontweight='bold', labelpad=15)
             ax1.set_ylabel('Electricity production (%)', fontsize=28, fontweight='bold', labelpad=15)
             ax1.set_ylim(0, max_annual_pct)
             ax1.tick_params(axis='both', labelsize=22)
             ax1.grid(True, linestyle='--', alpha=0.7)
+            ax1.legend(loc='upper center', bbox_to_anchor=(0.5, -0.15),
+                       ncol=len(available_non_renewables), fontsize=20, frameon=False)
 
-            # Bold main title above bottom subplot
-            fig.text(0.5, 0.44, 'Annual Non-Renewable Trends', 
-                    ha='center', fontsize=34, fontweight='bold')
+            plt.tight_layout()
+
+            percentage_filename = f'plots/{country_code.lower()}_annual_non_renewable_trends_percentage.png'
+            plt.savefig(percentage_filename, dpi=150, bbox_inches='tight')
+            print(f"  ✓ Saved: {percentage_filename}")
             
-            # Subtitle for bottom plot
-            ax2.set_title('Absolute Production', fontsize=26, fontweight='normal', pad=60)
+            if drive_service:
+                result = upload_plot_to_drive(drive_service, percentage_filename, plot_type='Trends', country=country_code)
+                if result:
+                    if 'non_renewable_trends' not in plot_links['Trends']:
+                        plot_links['Trends']['non_renewable_trends'] = {}
+                    plot_links['Trends']['non_renewable_trends']['percentage'] = result
+            
+            plt.close()
+
+        # PLOT 2: ABSOLUTE
+        fig2, ax2 = plt.subplots(figsize=(12, 10))
+
+        lines_plotted = 0
+        for source_name in available_non_renewables:
+            if source_name in annual_totals and len(annual_totals[source_name]) > 0:
+                years_list = sorted(annual_totals[source_name].keys())
+                color = ENTSOE_COLORS.get(source_name, 'black')
+                
+                values_twh = [annual_totals[source_name][year] / 1000 for year in years_list]
+                ax2.plot(years_list, values_twh, marker='o', color=color,
+                         linewidth=6, markersize=13, label=source_name)
+                lines_plotted += 1
+
+        if lines_plotted > 0:
+            fig2.suptitle('Annual Non-Renewable Trends', 
+                         fontsize=34, fontweight='bold')
+            ax2.set_title('Absolute Production', fontsize=26, fontweight='normal')
             ax2.set_xlabel('Year', fontsize=28, fontweight='bold', labelpad=15)
             ax2.set_ylabel('Electricity production (TWh)', fontsize=28, fontweight='bold', labelpad=15)
             ax2.set_ylim(0, max_annual_twh)
             ax2.tick_params(axis='both', labelsize=22)
             ax2.grid(True, linestyle='--', alpha=0.7)
-
-            # Double legend - one per subplot, positioned lower for more space
-            ax1.legend(loc='upper center', bbox_to_anchor=(0.5, -0.15),
-                       ncol=len(available_non_renewables), fontsize=20, frameon=False)
             ax2.legend(loc='upper center', bbox_to_anchor=(0.5, -0.15),
                        ncol=len(available_non_renewables), fontsize=20, frameon=False)
 
-            plt.tight_layout(rect=[0, 0.02, 1, 0.985])
+            plt.tight_layout()
 
-            filename = 'plots/eu_annual_non_renewable_trends_combined.png'
-            plt.savefig(filename, dpi=150, bbox_inches='tight')
-            print(f"  Chart saved as: {filename}")
+            absolute_filename = f'plots/{country_code.lower()}_annual_non_renewable_trends_absolute.png'
+            plt.savefig(absolute_filename, dpi=150, bbox_inches='tight')
+            print(f"  ✓ Saved: {absolute_filename}")
             
-            # Upload to Drive (ADDED FROM AFTER)
             if drive_service:
-                result = upload_plot_to_drive(drive_service, filename, plot_type='Trends', country=country_code)
+                result = upload_plot_to_drive(drive_service, absolute_filename, plot_type='Trends', country=country_code)
                 if result:
                     if 'non_renewable_trends' not in plot_links['Trends']:
                         plot_links['Trends']['non_renewable_trends'] = {}
-                    plot_links['Trends']['non_renewable_trends']['combined'] = result
+                    plot_links['Trends']['non_renewable_trends']['absolute'] = result
             
             plt.close()
 
@@ -1136,21 +1174,17 @@ def create_all_charts(all_data, country_code='EU'):
     if available_totals and 'Total Generation' in annual_totals:
         print("\nCreating Annual Renewables vs Non-Renewables...")
 
-        fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(12, 20))
-        # Add more vertical spacing between subplots
-        fig.subplots_adjust(hspace=1.0)
+        # PLOT 1: PERCENTAGE
+        fig1, ax1 = plt.subplots(figsize=(12, 10))
 
         lines_plotted = 0
         for source_name in available_totals:
             if source_name in annual_totals and len(annual_totals[source_name]) > 0:
-                years_list = sorted(annual_totals[source_name].keys())
-
                 color = ENTSOE_COLORS[source_name]
                 
-                # ax1 = PERCENTAGE (top)
                 source_years = set(annual_totals[source_name].keys())
                 total_years = set(annual_totals['Total Generation'].keys())
-                overlapping_years = source_years & total_years & set(years_list)
+                overlapping_years = source_years & total_years
 
                 if overlapping_years:
                     pct_years = sorted(overlapping_years)
@@ -1166,58 +1200,73 @@ def create_all_charts(all_data, country_code='EU'):
 
                     ax1.plot(pct_years, percentages, marker='o', color=color,
                              linewidth=6, markersize=13, label=source_name)
-                
-                # ax2 = ABSOLUTE (bottom)
-                values_twh = [annual_totals[source_name][year] / 1000 for year in years_list]
-                ax2.plot(years_list, values_twh, marker='o', color=color,
-                         linewidth=6, markersize=13, label=source_name)
-
-                lines_plotted += 1
+                    lines_plotted += 1
 
         if lines_plotted > 0:
-            # Bold main title above top subplot
-            fig.text(0.5, 0.98, 'Renewables vs Non-Renewables', 
-                    ha='center', fontsize=34, fontweight='bold')
-            
-            # Subtitle for top plot
-            ax1.set_title('Percentage of EU Production', fontsize=26, fontweight='normal', pad=60)
+            fig1.suptitle('Renewables vs Non-Renewables', 
+                         fontsize=34, fontweight='bold')
+            ax1.set_title('Percentage of EU Production', fontsize=26, fontweight='normal')
             ax1.set_xlabel('Year', fontsize=28, fontweight='bold', labelpad=15)
             ax1.set_ylabel('Electricity production (%)', fontsize=28, fontweight='bold', labelpad=15)
             ax1.set_ylim(0, 100)
             ax1.tick_params(axis='both', labelsize=22)
             ax1.grid(True, linestyle='--', alpha=0.7)
+            ax1.legend(loc='upper center', bbox_to_anchor=(0.5, -0.15), ncol=2,
+                       fontsize=22, frameon=False)
 
-            # Bold main title above bottom subplot
-            fig.text(0.5, 0.44, 'Renewables vs Non-Renewables', 
-                    ha='center', fontsize=34, fontweight='bold')
+            plt.tight_layout()
+
+            percentage_filename = f'plots/{country_code.lower()}_annual_renewable_vs_non_renewable_percentage.png'
+            plt.savefig(percentage_filename, dpi=150, bbox_inches='tight')
+            print(f"  ✓ Saved: {percentage_filename}")
             
-            # Subtitle for bottom plot
-            ax2.set_title('Absolute Production', fontsize=26, fontweight='normal', pad=60)
+            if drive_service:
+                result = upload_plot_to_drive(drive_service, percentage_filename, plot_type='Trends', country=country_code)
+                if result:
+                    if 'renewable_vs_non_renewable' not in plot_links['Trends']:
+                        plot_links['Trends']['renewable_vs_non_renewable'] = {}
+                    plot_links['Trends']['renewable_vs_non_renewable']['percentage'] = result
+            
+            plt.close()
+
+        # PLOT 2: ABSOLUTE
+        fig2, ax2 = plt.subplots(figsize=(12, 10))
+
+        lines_plotted = 0
+        for source_name in available_totals:
+            if source_name in annual_totals and len(annual_totals[source_name]) > 0:
+                years_list = sorted(annual_totals[source_name].keys())
+                color = ENTSOE_COLORS[source_name]
+                
+                values_twh = [annual_totals[source_name][year] / 1000 for year in years_list]
+                ax2.plot(years_list, values_twh, marker='o', color=color,
+                         linewidth=6, markersize=13, label=source_name)
+                lines_plotted += 1
+
+        if lines_plotted > 0:
+            fig2.suptitle('Renewables vs Non-Renewables', 
+                         fontsize=34, fontweight='bold')
+            ax2.set_title('Absolute Production', fontsize=26, fontweight='normal')
             ax2.set_xlabel('Year', fontsize=28, fontweight='bold', labelpad=15)
             ax2.set_ylabel('Electricity production (TWh)', fontsize=28, fontweight='bold', labelpad=15)
             ax2.set_ylim(bottom=0)
             ax2.tick_params(axis='both', labelsize=22)
             ax2.grid(True, linestyle='--', alpha=0.7)
-
-            # Double legend - one per subplot, positioned lower for more space
-            ax1.legend(loc='upper center', bbox_to_anchor=(0.5, -0.15), ncol=2,
-                       fontsize=22, frameon=False)
             ax2.legend(loc='upper center', bbox_to_anchor=(0.5, -0.15), ncol=2,
                        fontsize=22, frameon=False)
 
-            plt.tight_layout(rect=[0, 0.02, 1, 0.985])
+            plt.tight_layout()
 
-            filename = 'plots/eu_annual_renewable_vs_non_renewable_combined.png'
-            plt.savefig(filename, dpi=150, bbox_inches='tight')
-            print(f"  Chart saved as: {filename}")
+            absolute_filename = f'plots/{country_code.lower()}_annual_renewable_vs_non_renewable_absolute.png'
+            plt.savefig(absolute_filename, dpi=150, bbox_inches='tight')
+            print(f"  ✓ Saved: {absolute_filename}")
             
-            # Upload to Drive (ADDED FROM AFTER)
             if drive_service:
-                result = upload_plot_to_drive(drive_service, filename, plot_type='Trends', country=country_code)
+                result = upload_plot_to_drive(drive_service, absolute_filename, plot_type='Trends', country=country_code)
                 if result:
                     if 'renewable_vs_non_renewable' not in plot_links['Trends']:
                         plot_links['Trends']['renewable_vs_non_renewable'] = {}
-                    plot_links['Trends']['renewable_vs_non_renewable']['combined'] = result
+                    plot_links['Trends']['renewable_vs_non_renewable']['absolute'] = result
             
             plt.close()
 
@@ -1234,14 +1283,12 @@ def create_all_charts(all_data, country_code='EU'):
         all_sources_for_yoy = available_renewables + available_non_renewables
         totals_for_yoy = ['All Renewables', 'All Non-Renewables']
 
-        fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(12, 20))
-        # Add more vertical spacing between subplots
-        fig.subplots_adjust(hspace=1.0)
+        # PLOT 1: ALL ELECTRICITY SOURCES
+        fig1, ax1 = plt.subplots(figsize=(12, 10))
 
         all_yoy_values = []
-
-        # Top plot: All individual sources
         lines_plotted = 0
+        
         for source_name in all_sources_for_yoy:
             if source_name in annual_totals and baseline_year in annual_totals[source_name]:
                 baseline_value = annual_totals[source_name][baseline_year]
@@ -1265,7 +1312,50 @@ def create_all_charts(all_data, country_code='EU'):
                                  linewidth=6, markersize=13, label=source_name)
                         lines_plotted += 1
 
-        # Bottom plot: Just totals
+        if lines_plotted > 0:
+            if all_yoy_values:
+                y_min = min(all_yoy_values)
+                y_max = max(all_yoy_values)
+                y_margin = (y_max - y_min) * 0.1
+                y_min_limit = y_min - y_margin
+                y_max_limit = y_max + y_margin
+            else:
+                y_min_limit = -50
+                y_max_limit = 100
+
+            fig1.suptitle('Year-over-Year Change vs 2015', 
+                         fontsize=34, fontweight='bold')
+            ax1.set_title('All Electricity Sources', fontsize=26, fontweight='normal')
+            ax1.set_xlabel('Year', fontsize=28, fontweight='bold', labelpad=15)
+            ax1.set_ylabel('% Change from 2015', fontsize=28, fontweight='bold', labelpad=15)
+            ax1.set_ylim(y_min_limit, y_max_limit)
+            ax1.axhline(y=0, color='black', linestyle='--', linewidth=1, alpha=0.5)
+            ax1.tick_params(axis='both', labelsize=22)
+            ax1.grid(True, linestyle='--', alpha=0.7)
+            ax1.legend(loc='upper center', bbox_to_anchor=(0.5, -0.15), ncol=5,
+                       fontsize=18, frameon=False)
+
+            plt.tight_layout()
+
+            percentage_filename = f'plots/{country_code.lower()}_annual_yoy_change_vs_2015_percentage.png'
+            plt.savefig(percentage_filename, dpi=150, bbox_inches='tight')
+            print(f"  ✓ Saved: {percentage_filename}")
+            
+            if drive_service:
+                result = upload_plot_to_drive(drive_service, percentage_filename, plot_type='Trends', country=country_code)
+                if result:
+                    if 'yoy_change_vs_2015' not in plot_links['Trends']:
+                        plot_links['Trends']['yoy_change_vs_2015'] = {}
+                    plot_links['Trends']['yoy_change_vs_2015']['percentage'] = result
+            
+            plt.close()
+
+        # PLOT 2: RENEWABLES VS NON-RENEWABLES
+        fig2, ax2 = plt.subplots(figsize=(12, 10))
+
+        all_yoy_values2 = []
+        lines_plotted2 = 0
+        
         for category_name in totals_for_yoy:
             if category_name in annual_totals and baseline_year in annual_totals[category_name]:
                 baseline_value = annual_totals[category_name][baseline_year]
@@ -1279,7 +1369,7 @@ def create_all_charts(all_data, country_code='EU'):
                             current_value = annual_totals[category_name][year]
                             pct_change = ((current_value - baseline_value) / baseline_value) * 100
                             yoy_changes.append(pct_change)
-                            all_yoy_values.append(pct_change)
+                            all_yoy_values2.append(pct_change)
 
                     years_to_plot = [year for year in years_list if year >= baseline_year]
 
@@ -1287,11 +1377,12 @@ def create_all_charts(all_data, country_code='EU'):
                         color = ENTSOE_COLORS[category_name]
                         ax2.plot(years_to_plot, yoy_changes, marker='o', color=color,
                                  linewidth=6, markersize=13, label=category_name)
+                        lines_plotted2 += 1
 
-        if lines_plotted > 0:
-            if all_yoy_values:
-                y_min = min(all_yoy_values)
-                y_max = max(all_yoy_values)
+        if lines_plotted2 > 0:
+            if all_yoy_values2:
+                y_min = min(all_yoy_values2)
+                y_max = max(all_yoy_values2)
                 y_margin = (y_max - y_min) * 0.1
                 y_min_limit = y_min - y_margin
                 y_max_limit = y_max + y_margin
@@ -1299,51 +1390,30 @@ def create_all_charts(all_data, country_code='EU'):
                 y_min_limit = -50
                 y_max_limit = 100
 
-            # Bold main title above top subplot
-            fig.text(0.5, 0.98, 'Year-over-Year Change vs 2015', 
-                    ha='center', fontsize=34, fontweight='bold')
-            
-            # Subtitle for top plot
-            ax1.set_title('All Electricity Sources', fontsize=26, fontweight='normal', pad=60)
-            ax1.set_xlabel('Year', fontsize=28, fontweight='bold', labelpad=15)
-            ax1.set_ylabel('% Change from 2015', fontsize=28, fontweight='bold', labelpad=15)
-            ax1.set_ylim(y_min_limit, y_max_limit)
-            ax1.axhline(y=0, color='black', linestyle='--', linewidth=1, alpha=0.5)
-            ax1.tick_params(axis='both', labelsize=22)
-            ax1.grid(True, linestyle='--', alpha=0.7)
-
-            # Bold main title above bottom subplot
-            fig.text(0.5, 0.44, 'Year-over-Year Change vs 2015', 
-                    ha='center', fontsize=34, fontweight='bold')
-            
-            # Subtitle for bottom plot
-            ax2.set_title('Renewables vs Non-Renewables', fontsize=26, fontweight='normal', pad=60)
+            fig2.suptitle('Year-over-Year Change vs 2015', 
+                         fontsize=34, fontweight='bold')
+            ax2.set_title('Renewables vs Non-Renewables', fontsize=26, fontweight='normal')
             ax2.set_xlabel('Year', fontsize=28, fontweight='bold', labelpad=15)
             ax2.set_ylabel('% Change from 2015', fontsize=28, fontweight='bold', labelpad=15)
             ax2.set_ylim(y_min_limit, y_max_limit)
             ax2.axhline(y=0, color='black', linestyle='--', linewidth=1, alpha=0.5)
             ax2.tick_params(axis='both', labelsize=22)
             ax2.grid(True, linestyle='--', alpha=0.7)
-
-            # Double legend - one per subplot, positioned lower for more space
-            ax1.legend(loc='upper center', bbox_to_anchor=(0.5, -0.15), ncol=5,
-                       fontsize=18, frameon=False)
             ax2.legend(loc='upper center', bbox_to_anchor=(0.5, -0.15), ncol=2,
                        fontsize=22, frameon=False)
 
-            plt.tight_layout(rect=[0, 0.02, 1, 0.985])
+            plt.tight_layout()
 
-            filename = 'plots/eu_annual_yoy_change_vs_2015.png'
-            plt.savefig(filename, dpi=150, bbox_inches='tight')
-            print(f"  Chart saved as: {filename}")
+            absolute_filename = f'plots/{country_code.lower()}_annual_yoy_change_vs_2015_absolute.png'
+            plt.savefig(absolute_filename, dpi=150, bbox_inches='tight')
+            print(f"  ✓ Saved: {absolute_filename}")
             
-            # Upload to Drive (ADDED FROM AFTER)
             if drive_service:
-                result = upload_plot_to_drive(drive_service, filename, plot_type='Trends', country=country_code)
+                result = upload_plot_to_drive(drive_service, absolute_filename, plot_type='Trends', country=country_code)
                 if result:
                     if 'yoy_change_vs_2015' not in plot_links['Trends']:
                         plot_links['Trends']['yoy_change_vs_2015'] = {}
-                    plot_links['Trends']['yoy_change_vs_2015']['combined'] = result
+                    plot_links['Trends']['yoy_change_vs_2015']['absolute'] = result
             
             plt.close()
 
