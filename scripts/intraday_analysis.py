@@ -1075,8 +1075,8 @@ def plot_analysis(stats_data, source_type, output_file_base, country_code='EU'):
             size: pixel size (width=height for square)
         """
         # Create rectangular flag area - positioned for 12×12 canvas
-        # x=0.075, y=0.875, width=0.075, height=0.05
-        ax_flag = fig.add_axes([0.075, 0.875, 0.075, 0.05])
+        # x=0.1, y=0.85, width=0.075, height=0.05
+        ax_flag = fig.add_axes([0.1, 0.85, 0.075, 0.05])
         
         # Country-specific colors (or default blue)
         colors_map = {
@@ -1128,8 +1128,8 @@ def plot_analysis(stats_data, source_type, output_file_base, country_code='EU'):
         if os.path.exists(flag_path):
             try:
                 # Create axes for flag - positioned for 12×12 canvas
-                # x=0.075, y=0.875, width=0.075, height=0.05
-                ax_flag = fig.add_axes([0.075, 0.875, 0.075, 0.05])
+                # x=0.1, y=0.85, width=0.075, height=0.05
+                ax_flag = fig.add_axes([0.1, 0.85, 0.075, 0.05])
                 
                 # Load and display PNG
                 flag_img = mpimg.imread(flag_path)
@@ -1217,19 +1217,19 @@ def plot_analysis(stats_data, source_type, output_file_base, country_code='EU'):
     
     # Add country name below flag (figure coordinates)
     country_display = COUNTRY_DISPLAY_NAMES.get(country_code, country_code)
-    fig1.text(0.075, 0.868, country_display,
+    fig1.text(0.075, 0.843, country_display,
              fontsize=18, fontweight='normal',
              ha='left', va='top',
              color='#333')
     
     # Titles in figure coordinates (not axes coordinates)
     # Main title
-    fig1.text(0.55, 0.9, 'Electricity Generation',
+    fig1.text(0.55, 0.89, 'Electricity Generation',
              fontsize=30, fontweight='bold',
              ha='center', va='top')
     
     # Subtitle
-    fig1.text(0.55, 0.84, f'{source_name} · Fraction of Total',
+    fig1.text(0.55, 0.845, f'{source_name} · Fraction of Total',
              fontsize=24, fontweight='normal',
              ha='center', va='top')
     ax1.set_xlabel('Time of Day (Brussels)', fontsize=24, fontweight='bold', labelpad=8)
@@ -1301,7 +1301,7 @@ def plot_analysis(stats_data, source_type, output_file_base, country_code='EU'):
             ordered_labels.append(period_label)
     
     ax1.legend(ordered_handles, ordered_labels, 
-              loc='upper left', bbox_to_anchor=(0.15, 0.24),  # Figure coordinates
+              loc='upper left', bbox_to_anchor=(0.16, 0.25),  # Figure coordinates
               bbox_transform=fig1.transFigure,  # Use figure coordinate system
               ncol=3, fontsize=18, frameon=False)
     
@@ -1337,19 +1337,19 @@ def plot_analysis(stats_data, source_type, output_file_base, country_code='EU'):
     load_flag(fig2, country_code)
     
     # Add country name below flag (figure coordinates)
-    fig2.text(0.075, 0.868, country_display,
+    fig2.text(0.075, 0.843, country_display,
              fontsize=18, fontweight='normal',
              ha='left', va='top',
              color='#333')
     
     # Titles in figure coordinates (not axes coordinates)
     # Main title
-    fig2.text(0.55, 0.9, 'Electricity Generation',
+    fig2.text(0.55, 0.89, 'Electricity Generation',
              fontsize=30, fontweight='bold',
              ha='center', va='top')
     
     # Subtitle
-    fig2.text(0.55, 0.84, f'{source_name} · Absolute Values',
+    fig2.text(0.55, 0.845, f'{source_name} · Absolute Values',
              fontsize=24, fontweight='normal',
              ha='center', va='top')
     ax2.set_xlabel('Time of Day (Brussels)', fontsize=24, fontweight='bold', labelpad=8)
@@ -1491,7 +1491,7 @@ def plot_analysis(stats_data, source_type, output_file_base, country_code='EU'):
             ordered_labels2.append(period_label)
     
     ax2.legend(ordered_handles2, ordered_labels2,
-              loc='upper left', bbox_to_anchor=(0.15, 0.24),  # Figure coordinates
+              loc='upper left', bbox_to_anchor=(0.16, 0.25),  # Figure coordinates
               bbox_transform=fig2.transFigure,  # Use figure coordinate system
               ncol=3, fontsize=18, frameon=False)
     
