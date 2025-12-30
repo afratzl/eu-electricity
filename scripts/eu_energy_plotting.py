@@ -970,15 +970,16 @@ def create_all_charts(all_data, country_code='EU'):
     max_annual_twh *= 1.1
     max_annual_pct *= 1.1
 
-    # Chart: Renewable Trends
-    if available_renewables and 'Total Generation' in annual_totals:
-        print("\nCreating Annual Renewable Trends...")
+    # Chart: Annual Trends - ALL Sources
+    all_sources_for_annual = available_renewables + available_non_renewables
+    if all_sources_for_annual and 'Total Generation' in annual_totals:
+        print("\nCreating Annual Trends - All Sources...")
 
         # PLOT 1: PERCENTAGE
         fig1, ax1 = plt.subplots(figsize=(12, 10))
 
         lines_plotted = 0
-        for source_name in available_renewables:
+        for source_name in all_sources_for_annual:
             if source_name in annual_totals and len(annual_totals[source_name]) > 0:
                 color = ENTSOE_COLORS.get(source_name, 'black')
                 
@@ -1003,7 +1004,7 @@ def create_all_charts(all_data, country_code='EU'):
                     lines_plotted += 1
 
         if lines_plotted > 0:
-            fig1.suptitle('Annual Renewable Trends', 
+            fig1.suptitle('Annual Trends - All Sources', 
                          fontsize=34, fontweight='bold')
             ax1.set_title('Percentage of EU Production', fontsize=26, fontweight='normal')
             ax1.set_xlabel('Year', fontsize=28, fontweight='bold', labelpad=15)
@@ -1011,21 +1012,21 @@ def create_all_charts(all_data, country_code='EU'):
             ax1.set_ylim(0, max_annual_pct)
             ax1.tick_params(axis='both', labelsize=22)
             ax1.grid(True, linestyle='--', alpha=0.7)
-            ax1.legend(loc='upper center', bbox_to_anchor=(0.5, -0.15), ncol=len(available_renewables),
-                       fontsize=20, frameon=False)
+            ax1.legend(loc='upper center', bbox_to_anchor=(0.5, -0.15), ncol=5,
+                       fontsize=18, frameon=False)
 
             plt.tight_layout()
 
-            percentage_filename = f'plots/{country_code.lower()}_annual_renewable_trends_percentage.png'
+            percentage_filename = f'plots/{country_code.lower()}_annual_all_sources_percentage.png'
             plt.savefig(percentage_filename, dpi=150, bbox_inches='tight')
             print(f"  ✓ Saved: {percentage_filename}")
             
             if drive_service:
                 result = upload_plot_to_drive(drive_service, percentage_filename, plot_type='Trends', country=country_code)
                 if result:
-                    if 'renewable_trends' not in plot_links['Trends']:
-                        plot_links['Trends']['renewable_trends'] = {}
-                    plot_links['Trends']['renewable_trends']['percentage'] = result
+                    if 'all_sources_trends' not in plot_links['Trends']:
+                        plot_links['Trends']['all_sources_trends'] = {}
+                    plot_links['Trends']['all_sources_trends']['percentage'] = result
             
             plt.close()
 
@@ -1033,7 +1034,7 @@ def create_all_charts(all_data, country_code='EU'):
         fig2, ax2 = plt.subplots(figsize=(12, 10))
 
         lines_plotted = 0
-        for source_name in available_renewables:
+        for source_name in all_sources_for_annual:
             if source_name in annual_totals and len(annual_totals[source_name]) > 0:
                 years_list = sorted(annual_totals[source_name].keys())
                 color = ENTSOE_COLORS.get(source_name, 'black')
@@ -1044,7 +1045,7 @@ def create_all_charts(all_data, country_code='EU'):
                 lines_plotted += 1
 
         if lines_plotted > 0:
-            fig2.suptitle('Annual Renewable Trends', 
+            fig2.suptitle('Annual Trends - All Sources', 
                          fontsize=34, fontweight='bold')
             ax2.set_title('Absolute Production', fontsize=26, fontweight='normal')
             ax2.set_xlabel('Year', fontsize=28, fontweight='bold', labelpad=15)
@@ -1052,121 +1053,21 @@ def create_all_charts(all_data, country_code='EU'):
             ax2.set_ylim(0, max_annual_twh)
             ax2.tick_params(axis='both', labelsize=22)
             ax2.grid(True, linestyle='--', alpha=0.7)
-            ax2.legend(loc='upper center', bbox_to_anchor=(0.5, -0.15), ncol=len(available_renewables),
-                       fontsize=20, frameon=False)
+            ax2.legend(loc='upper center', bbox_to_anchor=(0.5, -0.15), ncol=5,
+                       fontsize=18, frameon=False)
 
             plt.tight_layout()
 
-            absolute_filename = f'plots/{country_code.lower()}_annual_renewable_trends_absolute.png'
+            absolute_filename = f'plots/{country_code.lower()}_annual_all_sources_absolute.png'
             plt.savefig(absolute_filename, dpi=150, bbox_inches='tight')
             print(f"  ✓ Saved: {absolute_filename}")
             
             if drive_service:
                 result = upload_plot_to_drive(drive_service, absolute_filename, plot_type='Trends', country=country_code)
                 if result:
-                    if 'renewable_trends' not in plot_links['Trends']:
-                        plot_links['Trends']['renewable_trends'] = {}
-                    plot_links['Trends']['renewable_trends']['absolute'] = result
-            
-            plt.close()
-
-    # Chart: Non-Renewable Trends
-    if available_non_renewables and 'Total Generation' in annual_totals:
-        print("\nCreating Annual Non-Renewable Trends...")
-
-        # PLOT 1: PERCENTAGE
-        fig1, ax1 = plt.subplots(figsize=(12, 10))
-
-        lines_plotted = 0
-        for source_name in available_non_renewables:
-            if source_name in annual_totals and len(annual_totals[source_name]) > 0:
-                color = ENTSOE_COLORS.get(source_name, 'black')
-                
-                source_years = set(annual_totals[source_name].keys())
-                total_years = set(annual_totals['Total Generation'].keys())
-                overlapping_years = source_years & total_years
-
-                if overlapping_years:
-                    pct_years = sorted(overlapping_years)
-                    percentages = []
-                    for year in pct_years:
-                        source_value = annual_totals[source_name][year]
-                        total_value = annual_totals['Total Generation'][year]
-                        if total_value > 0:
-                            percentage = (source_value / total_value) * 100
-                            percentages.append(percentage)
-                        else:
-                            percentages.append(0)
-
-                    ax1.plot(pct_years, percentages, marker='o', color=color,
-                             linewidth=6, markersize=13, label=source_name)
-                    lines_plotted += 1
-
-        if lines_plotted > 0:
-            fig1.suptitle('Annual Non-Renewable Trends', 
-                         fontsize=34, fontweight='bold')
-            ax1.set_title('Percentage of EU Production', fontsize=26, fontweight='normal')
-            ax1.set_xlabel('Year', fontsize=28, fontweight='bold', labelpad=15)
-            ax1.set_ylabel('Electricity production (%)', fontsize=28, fontweight='bold', labelpad=15)
-            ax1.set_ylim(0, max_annual_pct)
-            ax1.tick_params(axis='both', labelsize=22)
-            ax1.grid(True, linestyle='--', alpha=0.7)
-            ax1.legend(loc='upper center', bbox_to_anchor=(0.5, -0.15),
-                       ncol=len(available_non_renewables), fontsize=20, frameon=False)
-
-            plt.tight_layout()
-
-            percentage_filename = f'plots/{country_code.lower()}_annual_non_renewable_trends_percentage.png'
-            plt.savefig(percentage_filename, dpi=150, bbox_inches='tight')
-            print(f"  ✓ Saved: {percentage_filename}")
-            
-            if drive_service:
-                result = upload_plot_to_drive(drive_service, percentage_filename, plot_type='Trends', country=country_code)
-                if result:
-                    if 'non_renewable_trends' not in plot_links['Trends']:
-                        plot_links['Trends']['non_renewable_trends'] = {}
-                    plot_links['Trends']['non_renewable_trends']['percentage'] = result
-            
-            plt.close()
-
-        # PLOT 2: ABSOLUTE
-        fig2, ax2 = plt.subplots(figsize=(12, 10))
-
-        lines_plotted = 0
-        for source_name in available_non_renewables:
-            if source_name in annual_totals and len(annual_totals[source_name]) > 0:
-                years_list = sorted(annual_totals[source_name].keys())
-                color = ENTSOE_COLORS.get(source_name, 'black')
-                
-                values_twh = [annual_totals[source_name][year] / 1000 for year in years_list]
-                ax2.plot(years_list, values_twh, marker='o', color=color,
-                         linewidth=6, markersize=13, label=source_name)
-                lines_plotted += 1
-
-        if lines_plotted > 0:
-            fig2.suptitle('Annual Non-Renewable Trends', 
-                         fontsize=34, fontweight='bold')
-            ax2.set_title('Absolute Production', fontsize=26, fontweight='normal')
-            ax2.set_xlabel('Year', fontsize=28, fontweight='bold', labelpad=15)
-            ax2.set_ylabel('Electricity production (TWh)', fontsize=28, fontweight='bold', labelpad=15)
-            ax2.set_ylim(0, max_annual_twh)
-            ax2.tick_params(axis='both', labelsize=22)
-            ax2.grid(True, linestyle='--', alpha=0.7)
-            ax2.legend(loc='upper center', bbox_to_anchor=(0.5, -0.15),
-                       ncol=len(available_non_renewables), fontsize=20, frameon=False)
-
-            plt.tight_layout()
-
-            absolute_filename = f'plots/{country_code.lower()}_annual_non_renewable_trends_absolute.png'
-            plt.savefig(absolute_filename, dpi=150, bbox_inches='tight')
-            print(f"  ✓ Saved: {absolute_filename}")
-            
-            if drive_service:
-                result = upload_plot_to_drive(drive_service, absolute_filename, plot_type='Trends', country=country_code)
-                if result:
-                    if 'non_renewable_trends' not in plot_links['Trends']:
-                        plot_links['Trends']['non_renewable_trends'] = {}
-                    plot_links['Trends']['non_renewable_trends']['absolute'] = result
+                    if 'all_sources_trends' not in plot_links['Trends']:
+                        plot_links['Trends']['all_sources_trends'] = {}
+                    plot_links['Trends']['all_sources_trends']['absolute'] = result
             
             plt.close()
 
@@ -1276,17 +1177,19 @@ def create_all_charts(all_data, country_code='EU'):
     print("=" * 60)
 
     if annual_totals:
-        print("\nCreating YoY change vs 2015 baseline chart...")
-
         baseline_year = 2015
-
         all_sources_for_yoy = available_renewables + available_non_renewables
         totals_for_yoy = ['All Renewables', 'All Non-Renewables']
 
-        # PLOT 1: ALL ELECTRICITY SOURCES
+        # ====================================================================
+        # Chart 1: YoY Change - ALL SOURCES
+        # ====================================================================
+        print("\nCreating YoY Change - All Sources...")
+
+        # PLOT 1: PERCENTAGE CHANGE
         fig1, ax1 = plt.subplots(figsize=(12, 10))
 
-        all_yoy_values = []
+        all_yoy_pct_values = []
         lines_plotted = 0
         
         for source_name in all_sources_for_yoy:
@@ -1295,27 +1198,27 @@ def create_all_charts(all_data, country_code='EU'):
 
                 if baseline_value > 0:
                     years_list = sorted(annual_totals[source_name].keys())
-
-                    yoy_changes = []
+                    yoy_pct_changes = []
+                    
                     for year in years_list:
                         if year >= baseline_year:
                             current_value = annual_totals[source_name][year]
                             pct_change = ((current_value - baseline_value) / baseline_value) * 100
-                            yoy_changes.append(pct_change)
-                            all_yoy_values.append(pct_change)
+                            yoy_pct_changes.append(pct_change)
+                            all_yoy_pct_values.append(pct_change)
 
                     years_to_plot = [year for year in years_list if year >= baseline_year]
 
                     if len(years_to_plot) > 0:
                         color = ENTSOE_COLORS.get(source_name, 'black')
-                        ax1.plot(years_to_plot, yoy_changes, marker='o', color=color,
+                        ax1.plot(years_to_plot, yoy_pct_changes, marker='o', color=color,
                                  linewidth=6, markersize=13, label=source_name)
                         lines_plotted += 1
 
         if lines_plotted > 0:
-            if all_yoy_values:
-                y_min = min(all_yoy_values)
-                y_max = max(all_yoy_values)
+            if all_yoy_pct_values:
+                y_min = min(all_yoy_pct_values)
+                y_max = max(all_yoy_pct_values)
                 y_margin = (y_max - y_min) * 0.1
                 y_min_limit = y_min - y_margin
                 y_max_limit = y_max + y_margin
@@ -1323,9 +1226,9 @@ def create_all_charts(all_data, country_code='EU'):
                 y_min_limit = -50
                 y_max_limit = 100
 
-            fig1.suptitle('Year-over-Year Change vs 2015', 
+            fig1.suptitle('YoY Change vs 2015 - All Sources', 
                          fontsize=34, fontweight='bold')
-            ax1.set_title('All Electricity Sources', fontsize=26, fontweight='normal')
+            ax1.set_title('Percentage Change', fontsize=26, fontweight='normal')
             ax1.set_xlabel('Year', fontsize=28, fontweight='bold', labelpad=15)
             ax1.set_ylabel('% Change from 2015', fontsize=28, fontweight='bold', labelpad=15)
             ax1.set_ylim(y_min_limit, y_max_limit)
@@ -1337,24 +1240,96 @@ def create_all_charts(all_data, country_code='EU'):
 
             plt.tight_layout()
 
-            percentage_filename = f'plots/{country_code.lower()}_annual_yoy_change_vs_2015_percentage.png'
+            percentage_filename = f'plots/{country_code.lower()}_annual_yoy_all_sources_vs_2015_percentage.png'
             plt.savefig(percentage_filename, dpi=150, bbox_inches='tight')
             print(f"  ✓ Saved: {percentage_filename}")
             
             if drive_service:
                 result = upload_plot_to_drive(drive_service, percentage_filename, plot_type='Trends', country=country_code)
                 if result:
-                    if 'yoy_change_vs_2015' not in plot_links['Trends']:
-                        plot_links['Trends']['yoy_change_vs_2015'] = {}
-                    plot_links['Trends']['yoy_change_vs_2015']['percentage'] = result
+                    if 'yoy_change_vs_2015_all_sources' not in plot_links['Trends']:
+                        plot_links['Trends']['yoy_change_vs_2015_all_sources'] = {}
+                    plot_links['Trends']['yoy_change_vs_2015_all_sources']['percentage'] = result
             
             plt.close()
 
-        # PLOT 2: RENEWABLES VS NON-RENEWABLES
+        # PLOT 2: ABSOLUTE CHANGE (TWh)
         fig2, ax2 = plt.subplots(figsize=(12, 10))
 
-        all_yoy_values2 = []
-        lines_plotted2 = 0
+        all_yoy_abs_values = []
+        lines_plotted = 0
+        
+        for source_name in all_sources_for_yoy:
+            if source_name in annual_totals and baseline_year in annual_totals[source_name]:
+                baseline_value = annual_totals[source_name][baseline_year]
+
+                if baseline_value > 0:
+                    years_list = sorted(annual_totals[source_name].keys())
+                    yoy_abs_changes = []
+                    
+                    for year in years_list:
+                        if year >= baseline_year:
+                            current_value = annual_totals[source_name][year]
+                            abs_change = (current_value - baseline_value) / 1000  # Convert to TWh
+                            yoy_abs_changes.append(abs_change)
+                            all_yoy_abs_values.append(abs_change)
+
+                    years_to_plot = [year for year in years_list if year >= baseline_year]
+
+                    if len(years_to_plot) > 0:
+                        color = ENTSOE_COLORS.get(source_name, 'black')
+                        ax2.plot(years_to_plot, yoy_abs_changes, marker='o', color=color,
+                                 linewidth=6, markersize=13, label=source_name)
+                        lines_plotted += 1
+
+        if lines_plotted > 0:
+            if all_yoy_abs_values:
+                y_min = min(all_yoy_abs_values)
+                y_max = max(all_yoy_abs_values)
+                y_margin = max(abs(y_max - y_min) * 0.1, 10)  # At least 10 TWh margin
+                y_min_limit = y_min - y_margin
+                y_max_limit = y_max + y_margin
+            else:
+                y_min_limit = -50
+                y_max_limit = 100
+
+            fig2.suptitle('YoY Change vs 2015 - All Sources', 
+                         fontsize=34, fontweight='bold')
+            ax2.set_title('Absolute Change', fontsize=26, fontweight='normal')
+            ax2.set_xlabel('Year', fontsize=28, fontweight='bold', labelpad=15)
+            ax2.set_ylabel('Change from 2015 (TWh)', fontsize=28, fontweight='bold', labelpad=15)
+            ax2.set_ylim(y_min_limit, y_max_limit)
+            ax2.axhline(y=0, color='black', linestyle='--', linewidth=1, alpha=0.5)
+            ax2.tick_params(axis='both', labelsize=22)
+            ax2.grid(True, linestyle='--', alpha=0.7)
+            ax2.legend(loc='upper center', bbox_to_anchor=(0.5, -0.15), ncol=5,
+                       fontsize=18, frameon=False)
+
+            plt.tight_layout()
+
+            absolute_filename = f'plots/{country_code.lower()}_annual_yoy_all_sources_vs_2015_absolute.png'
+            plt.savefig(absolute_filename, dpi=150, bbox_inches='tight')
+            print(f"  ✓ Saved: {absolute_filename}")
+            
+            if drive_service:
+                result = upload_plot_to_drive(drive_service, absolute_filename, plot_type='Trends', country=country_code)
+                if result:
+                    if 'yoy_change_vs_2015_all_sources' not in plot_links['Trends']:
+                        plot_links['Trends']['yoy_change_vs_2015_all_sources'] = {}
+                    plot_links['Trends']['yoy_change_vs_2015_all_sources']['absolute'] = result
+            
+            plt.close()
+
+        # ====================================================================
+        # Chart 2: YoY Change - AGGREGATES ONLY
+        # ====================================================================
+        print("\nCreating YoY Change - Aggregates...")
+
+        # PLOT 1: PERCENTAGE CHANGE
+        fig3, ax3 = plt.subplots(figsize=(12, 10))
+
+        all_yoy_agg_pct_values = []
+        lines_plotted = 0
         
         for category_name in totals_for_yoy:
             if category_name in annual_totals and baseline_year in annual_totals[category_name]:
@@ -1362,27 +1337,27 @@ def create_all_charts(all_data, country_code='EU'):
 
                 if baseline_value > 0:
                     years_list = sorted(annual_totals[category_name].keys())
-
-                    yoy_changes = []
+                    yoy_pct_changes = []
+                    
                     for year in years_list:
                         if year >= baseline_year:
                             current_value = annual_totals[category_name][year]
                             pct_change = ((current_value - baseline_value) / baseline_value) * 100
-                            yoy_changes.append(pct_change)
-                            all_yoy_values2.append(pct_change)
+                            yoy_pct_changes.append(pct_change)
+                            all_yoy_agg_pct_values.append(pct_change)
 
                     years_to_plot = [year for year in years_list if year >= baseline_year]
 
                     if len(years_to_plot) > 0:
                         color = ENTSOE_COLORS[category_name]
-                        ax2.plot(years_to_plot, yoy_changes, marker='o', color=color,
+                        ax3.plot(years_to_plot, yoy_pct_changes, marker='o', color=color,
                                  linewidth=6, markersize=13, label=category_name)
-                        lines_plotted2 += 1
+                        lines_plotted += 1
 
-        if lines_plotted2 > 0:
-            if all_yoy_values2:
-                y_min = min(all_yoy_values2)
-                y_max = max(all_yoy_values2)
+        if lines_plotted > 0:
+            if all_yoy_agg_pct_values:
+                y_min = min(all_yoy_agg_pct_values)
+                y_max = max(all_yoy_agg_pct_values)
                 y_margin = (y_max - y_min) * 0.1
                 y_min_limit = y_min - y_margin
                 y_max_limit = y_max + y_margin
@@ -1390,30 +1365,97 @@ def create_all_charts(all_data, country_code='EU'):
                 y_min_limit = -50
                 y_max_limit = 100
 
-            fig2.suptitle('Year-over-Year Change vs 2015', 
+            fig3.suptitle('YoY Change vs 2015 - Aggregates', 
                          fontsize=34, fontweight='bold')
-            ax2.set_title('Renewables vs Non-Renewables', fontsize=26, fontweight='normal')
-            ax2.set_xlabel('Year', fontsize=28, fontweight='bold', labelpad=15)
-            ax2.set_ylabel('% Change from 2015', fontsize=28, fontweight='bold', labelpad=15)
-            ax2.set_ylim(y_min_limit, y_max_limit)
-            ax2.axhline(y=0, color='black', linestyle='--', linewidth=1, alpha=0.5)
-            ax2.tick_params(axis='both', labelsize=22)
-            ax2.grid(True, linestyle='--', alpha=0.7)
-            ax2.legend(loc='upper center', bbox_to_anchor=(0.5, -0.15), ncol=2,
+            ax3.set_title('Percentage Change', fontsize=26, fontweight='normal')
+            ax3.set_xlabel('Year', fontsize=28, fontweight='bold', labelpad=15)
+            ax3.set_ylabel('% Change from 2015', fontsize=28, fontweight='bold', labelpad=15)
+            ax3.set_ylim(y_min_limit, y_max_limit)
+            ax3.axhline(y=0, color='black', linestyle='--', linewidth=1, alpha=0.5)
+            ax3.tick_params(axis='both', labelsize=22)
+            ax3.grid(True, linestyle='--', alpha=0.7)
+            ax3.legend(loc='upper center', bbox_to_anchor=(0.5, -0.15), ncol=2,
                        fontsize=22, frameon=False)
 
             plt.tight_layout()
 
-            absolute_filename = f'plots/{country_code.lower()}_annual_yoy_change_vs_2015_absolute.png'
+            percentage_filename = f'plots/{country_code.lower()}_annual_yoy_aggregates_vs_2015_percentage.png'
+            plt.savefig(percentage_filename, dpi=150, bbox_inches='tight')
+            print(f"  ✓ Saved: {percentage_filename}")
+            
+            if drive_service:
+                result = upload_plot_to_drive(drive_service, percentage_filename, plot_type='Trends', country=country_code)
+                if result:
+                    if 'yoy_change_vs_2015_aggregates' not in plot_links['Trends']:
+                        plot_links['Trends']['yoy_change_vs_2015_aggregates'] = {}
+                    plot_links['Trends']['yoy_change_vs_2015_aggregates']['percentage'] = result
+            
+            plt.close()
+
+        # PLOT 2: ABSOLUTE CHANGE (TWh)
+        fig4, ax4 = plt.subplots(figsize=(12, 10))
+
+        all_yoy_agg_abs_values = []
+        lines_plotted = 0
+        
+        for category_name in totals_for_yoy:
+            if category_name in annual_totals and baseline_year in annual_totals[category_name]:
+                baseline_value = annual_totals[category_name][baseline_year]
+
+                if baseline_value > 0:
+                    years_list = sorted(annual_totals[category_name].keys())
+                    yoy_abs_changes = []
+                    
+                    for year in years_list:
+                        if year >= baseline_year:
+                            current_value = annual_totals[category_name][year]
+                            abs_change = (current_value - baseline_value) / 1000  # Convert to TWh
+                            yoy_abs_changes.append(abs_change)
+                            all_yoy_agg_abs_values.append(abs_change)
+
+                    years_to_plot = [year for year in years_list if year >= baseline_year]
+
+                    if len(years_to_plot) > 0:
+                        color = ENTSOE_COLORS[category_name]
+                        ax4.plot(years_to_plot, yoy_abs_changes, marker='o', color=color,
+                                 linewidth=6, markersize=13, label=category_name)
+                        lines_plotted += 1
+
+        if lines_plotted > 0:
+            if all_yoy_agg_abs_values:
+                y_min = min(all_yoy_agg_abs_values)
+                y_max = max(all_yoy_agg_abs_values)
+                y_margin = max(abs(y_max - y_min) * 0.1, 50)  # At least 50 TWh margin for aggregates
+                y_min_limit = y_min - y_margin
+                y_max_limit = y_max + y_margin
+            else:
+                y_min_limit = -200
+                y_max_limit = 400
+
+            fig4.suptitle('YoY Change vs 2015 - Aggregates', 
+                         fontsize=34, fontweight='bold')
+            ax4.set_title('Absolute Change', fontsize=26, fontweight='normal')
+            ax4.set_xlabel('Year', fontsize=28, fontweight='bold', labelpad=15)
+            ax4.set_ylabel('Change from 2015 (TWh)', fontsize=28, fontweight='bold', labelpad=15)
+            ax4.set_ylim(y_min_limit, y_max_limit)
+            ax4.axhline(y=0, color='black', linestyle='--', linewidth=1, alpha=0.5)
+            ax4.tick_params(axis='both', labelsize=22)
+            ax4.grid(True, linestyle='--', alpha=0.7)
+            ax4.legend(loc='upper center', bbox_to_anchor=(0.5, -0.15), ncol=2,
+                       fontsize=22, frameon=False)
+
+            plt.tight_layout()
+
+            absolute_filename = f'plots/{country_code.lower()}_annual_yoy_aggregates_vs_2015_absolute.png'
             plt.savefig(absolute_filename, dpi=150, bbox_inches='tight')
             print(f"  ✓ Saved: {absolute_filename}")
             
             if drive_service:
                 result = upload_plot_to_drive(drive_service, absolute_filename, plot_type='Trends', country=country_code)
                 if result:
-                    if 'yoy_change_vs_2015' not in plot_links['Trends']:
-                        plot_links['Trends']['yoy_change_vs_2015'] = {}
-                    plot_links['Trends']['yoy_change_vs_2015']['absolute'] = result
+                    if 'yoy_change_vs_2015_aggregates' not in plot_links['Trends']:
+                        plot_links['Trends']['yoy_change_vs_2015_aggregates'] = {}
+                    plot_links['Trends']['yoy_change_vs_2015_aggregates']['absolute'] = result
             
             plt.close()
 
