@@ -11,10 +11,10 @@ import gspread
 from google.oauth2.service_account import Credentials
 from datetime import datetime
 
-# Config file with spreadsheet names per country
-SPREADSHEET_CONFIG_FILE = 'spreadsheet_config.json'
+# Use drive_links.json as single source of truth for spreadsheet IDs
+DRIVE_LINKS_FILE = 'plots/drive_links.json'
 
-# Fallback: hardcoded spreadsheet names (will be overridden by config if it exists)
+# Fallback: hardcoded spreadsheet names (only if drive_links.json missing)
 DEFAULT_SPREADSHEET_NAMES = {
     'EU': 'EU Electricity Production Data',
     'DE': 'DE Electricity Production Data'
@@ -22,20 +22,34 @@ DEFAULT_SPREADSHEET_NAMES = {
 
 def load_spreadsheet_config():
     """
-    Load spreadsheet configuration from JSON file.
-    Expected format: {"EU": "spreadsheet_name_or_url", "DE": "spreadsheet_name_or_url"}
+    Load spreadsheet IDs from drive_links.json (single source of truth)
+    Falls back to default names if file doesn't exist
     """
-    if os.path.exists(SPREADSHEET_CONFIG_FILE):
+    # Try to load from drive_links.json first
+    if os.path.exists(DRIVE_LINKS_FILE):
         try:
-            with open(SPREADSHEET_CONFIG_FILE, 'r') as f:
-                config = json.load(f)
-                print(f"✓ Loaded spreadsheet config from {SPREADSHEET_CONFIG_FILE}")
-                return config
+            with open(DRIVE_LINKS_FILE, 'r') as f:
+                drive_links = json.load(f)
+            
+            # Extract spreadsheet IDs for each country
+            spreadsheet_config = {}
+            for country_code, country_data in drive_links.items():
+                if 'data_sheet_id' in country_data:
+                    # Use the sheet ID directly (more reliable than name)
+                    spreadsheet_config[country_code] = country_data['data_sheet_id']
+            
+            if spreadsheet_config:
+                print(f"✓ Loaded {len(spreadsheet_config)} spreadsheet IDs from {DRIVE_LINKS_FILE}")
+                for country, sheet_id in spreadsheet_config.items():
+                    print(f"  {country}: {sheet_id[:20]}...")
+                return spreadsheet_config
+            else:
+                print(f"⚠ No data_sheet_id found in {DRIVE_LINKS_FILE}, using defaults")
         except Exception as e:
-            print(f"⚠ Error loading {SPREADSHEET_CONFIG_FILE}: {e}")
+            print(f"⚠ Error loading {DRIVE_LINKS_FILE}: {e}")
             print(f"  Using default spreadsheet names")
     else:
-        print(f"⚠ {SPREADSHEET_CONFIG_FILE} not found, using default spreadsheet names")
+        print(f"⚠ {DRIVE_LINKS_FILE} not found, using default spreadsheet names")
     
     return DEFAULT_SPREADSHEET_NAMES
 
@@ -70,18 +84,24 @@ def generate_summary_json():
         final_json = {}
         
         # Process each country
-        for country_code, spreadsheet_name in spreadsheet_config.items():
+        for country_code, spreadsheet_identifier in spreadsheet_config.items():
             print(f"\n{'=' * 60}")
             print(f"PROCESSING: {country_code}")
             print(f"{'=' * 60}")
             
             # Open the country-specific spreadsheet
             try:
-                spreadsheet = gc.open(spreadsheet_name)
+                # Try to open by ID first (if it looks like an ID - IDs are long alphanumeric strings)
+                if len(spreadsheet_identifier) > 30:
+                    spreadsheet = gc.open_by_key(spreadsheet_identifier)
+                else:
+                    # Fall back to opening by name
+                    spreadsheet = gc.open(spreadsheet_identifier)
+                
                 print(f"✓ Opened spreadsheet: {spreadsheet.title}")
                 print(f"  URL: {spreadsheet.url}")
             except Exception as e:
-                print(f"✗ Failed to open spreadsheet '{spreadsheet_name}': {e}")
+                print(f"✗ Failed to open spreadsheet '{spreadsheet_identifier[:30]}...': {e}")
                 final_json[country_code] = {
                     "last_updated": "Data not available",
                     "sources": []
@@ -94,7 +114,7 @@ def generate_summary_json():
                 worksheet = spreadsheet.worksheet(worksheet_name)
                 print(f"✓ Found '{worksheet_name}' worksheet")
             except gspread.WorksheetNotFound:
-                print(f"✗ '{worksheet_name}' worksheet not found in {spreadsheet_name}!")
+                print(f"✗ '{worksheet_name}' worksheet not found in {spreadsheet.title}!")
                 final_json[country_code] = {
                     "last_updated": "Data not available",
                     "sources": []
