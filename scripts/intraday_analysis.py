@@ -1216,7 +1216,7 @@ def plot_analysis(stats_data, source_type, output_file_base, country_code='EU'):
     fig1, ax1 = plt.subplots(figsize=(12, 12))  # Canvas: 12 wide × 12 tall
     
     # Set exact plot area positioning
-    plt.subplots_adjust(left=0.2, right=0.9, top=0.80, bottom=0.35)
+    plt.subplots_adjust(left=0.22, right=0.9, top=0.80, bottom=0.35)
     
     # Add flag (top-left) - loads real SVG or uses placeholder
     load_flag(fig1, country_code)
@@ -1307,7 +1307,7 @@ def plot_analysis(stats_data, source_type, output_file_base, country_code='EU'):
             ordered_labels.append(period_label)
     
     ax1.legend(ordered_handles, ordered_labels, 
-              loc='upper left', bbox_to_anchor=(0.15, 0.255),  # Figure coordinates
+              loc='upper left', bbox_to_anchor=(0.14, 0.255),  # Figure coordinates
               bbox_transform=fig1.transFigure,  # Use figure coordinate system
               ncol=3, fontsize=18, frameon=False)
     
@@ -1337,7 +1337,7 @@ def plot_analysis(stats_data, source_type, output_file_base, country_code='EU'):
     fig2, ax2 = plt.subplots(figsize=(12, 12))  # Canvas: 12 wide × 12 tall
     
     # Set exact plot area positioning
-    plt.subplots_adjust(left=0.2, right=0.9, top=0.80, bottom=0.35)
+    plt.subplots_adjust(left=0.22, right=0.9, top=0.80, bottom=0.35)
     
     # Add flag (top-left) - loads real SVG or uses placeholder
     load_flag(fig2, country_code)
@@ -1497,7 +1497,7 @@ def plot_analysis(stats_data, source_type, output_file_base, country_code='EU'):
             ordered_labels2.append(period_label)
     
     ax2.legend(ordered_handles2, ordered_labels2,
-              loc='upper left', bbox_to_anchor=(0.15, 0.255),  # Figure coordinates
+              loc='upper left', bbox_to_anchor=(0.14, 0.255),  # Figure coordinates
               bbox_transform=fig2.transFigure,  # Use figure coordinate system
               ncol=3, fontsize=18, frameon=False)
     
