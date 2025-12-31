@@ -589,8 +589,8 @@ def create_all_charts(all_data, country_code='EU'):
         ax1.set_xlabel('Month', fontsize=24, fontweight='bold', labelpad=8)
         ax1.set_ylabel('Electricity Generation (%)', fontsize=24, fontweight='bold', labelpad=8)
         
-        # NO RESTRICTION - let it scale to data
-        ax1.set_ylim(0, max_pct_value * 1.1 if max_pct_value > 0 else 10)
+        # Set y-axis with 20% margin
+        ax1.set_ylim(0, max_pct_value * 1.2 if max_pct_value > 0 else 10)
             
         ax1.tick_params(axis='both', labelsize=22, length=8, pad=8)
         ax1.grid(True, linestyle='--', alpha=0.7)
@@ -649,8 +649,8 @@ def create_all_charts(all_data, country_code='EU'):
         ax2.set_xlabel('Month', fontsize=24, fontweight='bold', labelpad=8)
         ax2.set_ylabel('Electricity Generation (TWh)', fontsize=24, fontweight='bold', labelpad=8)
         
-        # NO RESTRICTION - let it scale to data
-        ax2.set_ylim(0, max_abs_value * 1.1 if max_abs_value > 0 else 10)
+        # Set y-axis with 20% margin
+        ax2.set_ylim(0, max_abs_value * 1.2 if max_abs_value > 0 else 10)
             
         ax2.tick_params(axis='both', labelsize=22, length=8, pad=8)
         ax2.grid(True, linestyle='--', alpha=0.7)
@@ -719,8 +719,8 @@ def create_all_charts(all_data, country_code='EU'):
                                 percentage = (source_val / total_val) * 100
                                 max_pct_all_periods = max(max_pct_all_periods, percentage)
 
-        max_abs_all_periods *= 1.1
-        max_pct_all_periods *= 1.1
+        max_abs_all_periods *= 1.2
+        max_pct_all_periods *= 1.2
 
         for period in periods:
             print(f"\nCreating Monthly Mean chart for {period['name']}...")
@@ -799,16 +799,16 @@ def create_all_charts(all_data, country_code='EU'):
             empty = Rectangle((0,0), 0, 0, fill=False, edgecolor='none', visible=False)
             handles, labels = ax1.get_legend_handles_labels()
             reordered_handles = [
-                handles[0], handles[1], handles[2],
-                handles[3], handles[4], empty,
-                handles[5], handles[6], handles[7],
-                handles[8], handles[9], empty,
+                handles[1], handles[2], handles[0],
+                handles[9], handles[8], empty,
+                handles[7], handles[3], handles[4],
+                handles[6], handles[5], empty,
             ]
             reordered_labels = [
-                labels[0], labels[1], labels[2],
-                labels[3], labels[4], '',
-                labels[5], labels[6], labels[7],
-                labels[8], labels[9], '',
+                labels[1], labels[2], labels[0],
+                labels[9], labels[8], '',
+                labels[7], labels[3], labels[4],
+                labels[6], labels[5], '',
             ]
             
             ax1.legend(reordered_handles, reordered_labels, loc='upper left', bbox_to_anchor=(0.14, 0.255),
@@ -855,16 +855,16 @@ def create_all_charts(all_data, country_code='EU'):
             empty = Rectangle((0,0), 0, 0, fill=False, edgecolor='none', visible=False)
             handles, labels = ax2.get_legend_handles_labels()
             reordered_handles = [
-                handles[0], handles[1], handles[2],
-                handles[3], handles[4], empty,
-                handles[5], handles[6], handles[7],
-                handles[8], handles[9], empty,
+                handles[1], handles[2], handles[0],
+                handles[9], handles[8], empty,
+                handles[7], handles[3], handles[4],
+                handles[6], handles[5], empty,
             ]
             reordered_labels = [
-                labels[0], labels[1], labels[2],
-                labels[3], labels[4], '',
-                labels[5], labels[6], labels[7],
-                labels[8], labels[9], '',
+                labels[1], labels[2], labels[0],
+                labels[9], labels[8], '',
+                labels[7], labels[3], labels[4],
+                labels[6], labels[5], '',
             ]
             
             ax2.legend(reordered_handles, reordered_labels, loc='upper left', bbox_to_anchor=(0.14, 0.255),
@@ -911,7 +911,7 @@ def create_all_charts(all_data, country_code='EU'):
                             category_val = category_monthly.get(month, 0)
                             max_abs_renewable_periods = max(max_abs_renewable_periods, category_val / 1000)
 
-        max_abs_renewable_periods *= 1.1
+        max_abs_renewable_periods *= 1.2
 
         for period in periods:
             print(f"\nCreating Renewable vs Non-Renewable chart for {period['name']}...")
@@ -1092,8 +1092,8 @@ def create_all_charts(all_data, country_code='EU'):
                     percentage = (source_value / total_value) * 100
                     max_annual_pct = max(max_annual_pct, percentage)
 
-    max_annual_twh *= 1.1
-    max_annual_pct *= 1.1
+    max_annual_twh *= 1.2
+    max_annual_pct *= 1.2
 
     # Chart: Annual Trends - ALL Sources
     all_sources_for_annual = available_renewables + available_non_renewables
@@ -1145,16 +1145,16 @@ def create_all_charts(all_data, country_code='EU'):
             empty = Rectangle((0,0), 0, 0, fill=False, edgecolor='none', visible=False)
             handles, labels = ax1.get_legend_handles_labels()
             reordered_handles = [
-                handles[0], handles[1], handles[2],
-                handles[3], handles[4], empty,
-                handles[5], handles[6], handles[7],
-                handles[8], handles[9], empty,
+                handles[1], handles[2], handles[0],
+                handles[9], handles[8], empty,
+                handles[7], handles[3], handles[4],
+                handles[6], handles[5], empty,
             ]
             reordered_labels = [
-                labels[0], labels[1], labels[2],
-                labels[3], labels[4], '',
-                labels[5], labels[6], labels[7],
-                labels[8], labels[9], '',
+                labels[1], labels[2], labels[0],
+                labels[9], labels[8], '',
+                labels[7], labels[3], labels[4],
+                labels[6], labels[5], '',
             ]
             
             ax1.legend(reordered_handles, reordered_labels, loc='upper left', bbox_to_anchor=(0.14, 0.255),
@@ -1205,16 +1205,16 @@ def create_all_charts(all_data, country_code='EU'):
             empty = Rectangle((0,0), 0, 0, fill=False, edgecolor='none', visible=False)
             handles, labels = ax2.get_legend_handles_labels()
             reordered_handles = [
-                handles[0], handles[1], handles[2],
-                handles[3], handles[4], empty,
-                handles[5], handles[6], handles[7],
-                handles[8], handles[9], empty,
+                handles[1], handles[2], handles[0],
+                handles[9], handles[8], empty,
+                handles[7], handles[3], handles[4],
+                handles[6], handles[5], empty,
             ]
             reordered_labels = [
-                labels[0], labels[1], labels[2],
-                labels[3], labels[4], '',
-                labels[5], labels[6], labels[7],
-                labels[8], labels[9], '',
+                labels[1], labels[2], labels[0],
+                labels[9], labels[8], '',
+                labels[7], labels[3], labels[4],
+                labels[6], labels[5], '',
             ]
             
             ax2.legend(reordered_handles, reordered_labels, loc='upper left', bbox_to_anchor=(0.14, 0.255),
@@ -1299,12 +1299,14 @@ def create_all_charts(all_data, country_code='EU'):
         plt.subplots_adjust(left=0.22, right=0.9, top=0.80, bottom=0.35)
 
         lines_plotted = 0
+        max_renewable_abs = 0
         for source_name in available_totals:
             if source_name in annual_totals and len(annual_totals[source_name]) > 0:
                 years_list = sorted(annual_totals[source_name].keys())
                 color = ENTSOE_COLORS[source_name]
                 
                 values_twh = [annual_totals[source_name][year] / 1000 for year in years_list]
+                max_renewable_abs = max(max_renewable_abs, max(values_twh) if values_twh else 0)
                 ax2.plot(years_list, values_twh, marker='o', color=color,
                          linewidth=6, markersize=13, label=source_name)
                 lines_plotted += 1
@@ -1316,7 +1318,7 @@ def create_all_charts(all_data, country_code='EU'):
             
             ax2.set_xlabel('Year', fontsize=24, fontweight='bold', labelpad=8)
             ax2.set_ylabel('Electricity Generation (TWh)', fontsize=24, fontweight='bold', labelpad=8)
-            ax2.set_ylim(bottom=0)
+            ax2.set_ylim(0, max_renewable_abs * 1.2 if max_renewable_abs > 0 else 10)
             ax2.tick_params(axis='both', labelsize=22, length=8, pad=8)
             ax2.grid(True, linestyle='--', alpha=0.7)
             ax2.legend(loc='upper left', bbox_to_anchor=(0.14, 0.255),
@@ -1385,9 +1387,9 @@ def create_all_charts(all_data, country_code='EU'):
             if all_yoy_pct_values:
                 y_min = min(all_yoy_pct_values)
                 y_max = max(all_yoy_pct_values)
-                y_margin = (y_max - y_min) * 0.1
-                y_min_limit = y_min - y_margin
-                y_max_limit = y_max + y_margin
+                # 20% margin: if min is negative, make it 20% more negative; if positive, use 0
+                y_min_limit = y_min * 1.2 if y_min < 0 else 0
+                y_max_limit = y_max * 1.2
             else:
                 y_min_limit = -50
                 y_max_limit = 100
@@ -1408,16 +1410,16 @@ def create_all_charts(all_data, country_code='EU'):
             empty = Rectangle((0,0), 0, 0, fill=False, edgecolor='none', visible=False)
             handles, labels = ax1.get_legend_handles_labels()
             reordered_handles = [
-                handles[0], handles[1], handles[2],
-                handles[3], handles[4], empty,
-                handles[5], handles[6], handles[7],
-                handles[8], handles[9], empty,
+                handles[1], handles[2], handles[0],
+                handles[9], handles[8], empty,
+                handles[7], handles[3], handles[4],
+                handles[6], handles[5], empty,
             ]
             reordered_labels = [
-                labels[0], labels[1], labels[2],
-                labels[3], labels[4], '',
-                labels[5], labels[6], labels[7],
-                labels[8], labels[9], '',
+                labels[1], labels[2], labels[0],
+                labels[9], labels[8], '',
+                labels[7], labels[3], labels[4],
+                labels[6], labels[5], '',
             ]
             
             ax1.legend(reordered_handles, reordered_labels, loc='upper left', bbox_to_anchor=(0.14, 0.255),
@@ -1471,9 +1473,9 @@ def create_all_charts(all_data, country_code='EU'):
             if all_yoy_abs_values:
                 y_min = min(all_yoy_abs_values)
                 y_max = max(all_yoy_abs_values)
-                y_margin = max(abs(y_max - y_min) * 0.1, 10)  # At least 10 TWh margin
-                y_min_limit = y_min - y_margin
-                y_max_limit = y_max + y_margin
+                # 20% margin: if min is negative, make it 20% more negative; if positive, use 0
+                y_min_limit = y_min * 1.2 if y_min < 0 else 0
+                y_max_limit = y_max * 1.2
             else:
                 y_min_limit = -50
                 y_max_limit = 100
@@ -1494,16 +1496,16 @@ def create_all_charts(all_data, country_code='EU'):
             empty = Rectangle((0,0), 0, 0, fill=False, edgecolor='none', visible=False)
             handles, labels = ax2.get_legend_handles_labels()
             reordered_handles = [
-                handles[0], handles[1], handles[2],
-                handles[3], handles[4], empty,
-                handles[5], handles[6], handles[7],
-                handles[8], handles[9], empty,
+                handles[1], handles[2], handles[0],
+                handles[9], handles[8], empty,
+                handles[7], handles[3], handles[4],
+                handles[6], handles[5], empty,
             ]
             reordered_labels = [
-                labels[0], labels[1], labels[2],
-                labels[3], labels[4], '',
-                labels[5], labels[6], labels[7],
-                labels[8], labels[9], '',
+                labels[1], labels[2], labels[0],
+                labels[9], labels[8], '',
+                labels[7], labels[3], labels[4],
+                labels[6], labels[5], '',
             ]
             
             ax2.legend(reordered_handles, reordered_labels, loc='upper left', bbox_to_anchor=(0.14, 0.255),
@@ -1562,9 +1564,9 @@ def create_all_charts(all_data, country_code='EU'):
             if all_yoy_agg_pct_values:
                 y_min = min(all_yoy_agg_pct_values)
                 y_max = max(all_yoy_agg_pct_values)
-                y_margin = (y_max - y_min) * 0.1
-                y_min_limit = y_min - y_margin
-                y_max_limit = y_max + y_margin
+                # 20% margin: if min is negative, make it 20% more negative; if positive, use 0
+                y_min_limit = y_min * 1.2 if y_min < 0 else 0
+                y_max_limit = y_max * 1.2
             else:
                 y_min_limit = -50
                 y_max_limit = 100
@@ -1630,9 +1632,9 @@ def create_all_charts(all_data, country_code='EU'):
             if all_yoy_agg_abs_values:
                 y_min = min(all_yoy_agg_abs_values)
                 y_max = max(all_yoy_agg_abs_values)
-                y_margin = max(abs(y_max - y_min) * 0.1, 50)  # At least 50 TWh margin for aggregates
-                y_min_limit = y_min - y_margin
-                y_max_limit = y_max + y_margin
+                # 20% margin: if min is negative, make it 20% more negative; if positive, use 0
+                y_min_limit = y_min * 1.2 if y_min < 0 else 0
+                y_max_limit = y_max * 1.2
             else:
                 y_min_limit = -200
                 y_max_limit = 400
