@@ -584,10 +584,10 @@ def create_all_charts(all_data, country_code='EU'):
                         linewidth=6, markersize=13, label=str(year))
 
         # Add flag, country name, titles, watermark, timestamp
-        add_flag_and_labels(fig1, country_code, source_name, 'Percentage of Total Production')
+        add_flag_and_labels(fig1, country_code, 'Electricity Generation', f'{source_name} · Fraction of Total')
         
         ax1.set_xlabel('Month', fontsize=24, fontweight='bold', labelpad=8)
-        ax1.set_ylabel('Electricity production (%)', fontsize=24, fontweight='bold', labelpad=8)
+        ax1.set_ylabel('Electricity Generation (%)', fontsize=24, fontweight='bold', labelpad=8)
         
         # NO RESTRICTION - let it scale to data
         ax1.set_ylim(0, max_pct_value * 1.1 if max_pct_value > 0 else 10)
@@ -597,10 +597,10 @@ def create_all_charts(all_data, country_code='EU'):
 
         ax1.legend(loc='upper left', bbox_to_anchor=(0.14, 0.255), 
                    bbox_transform=fig1.transFigure,
-                   ncol=3, fontsize=18, frameon=False)
+                   ncol=5, fontsize=18, frameon=False)
 
         percentage_filename = f'plots/{country_code.lower()}_monthly_{source_name.lower().replace(" ", "_")}_percentage_10years.png'
-        plt.savefig(percentage_filename, dpi=150, bbox_inches=None)
+        plt.savefig(percentage_filename, dpi=150, bbox_inches='tight')
         print(f"  ✓ Saved: {percentage_filename}")
         
         # Upload to Drive (ADDED FROM AFTER)
@@ -644,10 +644,10 @@ def create_all_charts(all_data, country_code='EU'):
                     linewidth=6, markersize=13, label=str(year))
 
         # Add flag, country name, titles, watermark, timestamp
-        add_flag_and_labels(fig2, country_code, source_name, 'Absolute Production')
+        add_flag_and_labels(fig2, country_code, 'Electricity Generation', f'{source_name} · Absolute Values')
         
         ax2.set_xlabel('Month', fontsize=24, fontweight='bold', labelpad=8)
-        ax2.set_ylabel('Electricity production (TWh)', fontsize=24, fontweight='bold', labelpad=8)
+        ax2.set_ylabel('Electricity Generation (TWh)', fontsize=24, fontweight='bold', labelpad=8)
         
         # NO RESTRICTION - let it scale to data
         ax2.set_ylim(0, max_abs_value * 1.1 if max_abs_value > 0 else 10)
@@ -657,10 +657,10 @@ def create_all_charts(all_data, country_code='EU'):
 
         ax2.legend(loc='upper left', bbox_to_anchor=(0.14, 0.255),
                    bbox_transform=fig2.transFigure,
-                   ncol=3, fontsize=18, frameon=False)
+                   ncol=5, fontsize=18, frameon=False)
 
         absolute_filename = f'plots/{country_code.lower()}_monthly_{source_name.lower().replace(" ", "_")}_absolute_10years.png'
-        plt.savefig(absolute_filename, dpi=150, bbox_inches=None)
+        plt.savefig(absolute_filename, dpi=150, bbox_inches='tight')
         print(f"  ✓ Saved: {absolute_filename}")
         
         # Upload to Drive (ADDED FROM AFTER)
@@ -785,21 +785,21 @@ def create_all_charts(all_data, country_code='EU'):
                          linewidth=6, markersize=13, label=source_name)
 
             add_flag_and_labels(fig1, country_code, 
-                              f'All Electricity Sources: {period["name"]}',
-                              'Percentage of Total Production')
+                              'Electricity Generation',
+                              f'{period["name"]} Average · Fraction of Total')
             
             ax1.set_xlabel('Month', fontsize=24, fontweight='bold', labelpad=8)
-            ax1.set_ylabel('Electricity production (%)', fontsize=24, fontweight='bold', labelpad=8)
+            ax1.set_ylabel('Electricity Generation (%)', fontsize=24, fontweight='bold', labelpad=8)
             ax1.set_ylim(0, max_pct_all_periods)
             ax1.tick_params(axis='both', labelsize=22, length=8, pad=8)
             ax1.grid(True, linestyle='--', alpha=0.7)
             ax1.legend(loc='upper left', bbox_to_anchor=(0.14, 0.255),
-                       bbox_transform=fig1.transFigure, ncol=3,
+                       bbox_transform=fig1.transFigure, ncol=5,
                        fontsize=18, frameon=False)
 
             period_name_clean = period['name'].replace('-', '_')
             percentage_filename = f'plots/{country_code.lower()}_monthly_energy_sources_mean_{period_name_clean}_percentage.png'
-            plt.savefig(percentage_filename, dpi=150, bbox_inches=None)
+            plt.savefig(percentage_filename, dpi=150, bbox_inches='tight')
             print(f"  ✓ Saved: {percentage_filename}")
             
             if drive_service:
@@ -823,20 +823,20 @@ def create_all_charts(all_data, country_code='EU'):
                          linewidth=6, markersize=13, label=source_name)
 
             add_flag_and_labels(fig2, country_code,
-                              f'All Electricity Sources: {period["name"]}',
-                              'Absolute Production')
+                              'Electricity Generation',
+                              f'{period["name"]} Average · Absolute Values')
             
             ax2.set_xlabel('Month', fontsize=24, fontweight='bold', labelpad=8)
-            ax2.set_ylabel('Electricity production (TWh)', fontsize=24, fontweight='bold', labelpad=8)
+            ax2.set_ylabel('Electricity Generation (TWh)', fontsize=24, fontweight='bold', labelpad=8)
             ax2.set_ylim(0, max_abs_all_periods)
             ax2.tick_params(axis='both', labelsize=22, length=8, pad=8)
             ax2.grid(True, linestyle='--', alpha=0.7)
             ax2.legend(loc='upper left', bbox_to_anchor=(0.14, 0.255),
-                       bbox_transform=fig2.transFigure, ncol=3,
+                       bbox_transform=fig2.transFigure, ncol=5,
                        fontsize=18, frameon=False)
 
             absolute_filename = f'plots/{country_code.lower()}_monthly_energy_sources_mean_{period_name_clean}_absolute.png'
-            plt.savefig(absolute_filename, dpi=150, bbox_inches=None)
+            plt.savefig(absolute_filename, dpi=150, bbox_inches='tight')
             print(f"  ✓ Saved: {absolute_filename}")
             
             if drive_service:
@@ -940,21 +940,21 @@ def create_all_charts(all_data, country_code='EU'):
                          linewidth=6, markersize=13, label=category_name)
 
             add_flag_and_labels(fig1, country_code,
-                              f'Renewables vs Non-Renewables: {period["name"]}',
-                              'Percentage of Total Production')
+                              'Electricity Generation',
+                              f'{period["name"]} Average · Fraction of Total')
             
             ax1.set_xlabel('Month', fontsize=24, fontweight='bold', labelpad=8)
-            ax1.set_ylabel('Electricity production (%)', fontsize=24, fontweight='bold', labelpad=8)
+            ax1.set_ylabel('Electricity Generation (%)', fontsize=24, fontweight='bold', labelpad=8)
             ax1.set_ylim(0, 100)
             ax1.tick_params(axis='both', labelsize=22, length=8, pad=8)
             ax1.grid(True, linestyle='--', alpha=0.7)
             ax1.legend(loc='upper left', bbox_to_anchor=(0.14, 0.255),
-                       bbox_transform=fig1.transFigure, ncol=3,
+                       bbox_transform=fig1.transFigure, ncol=2,
                        fontsize=18, frameon=False)
 
             period_name_clean = period['name'].replace('-', '_')
             percentage_filename = f'plots/{country_code.lower()}_monthly_renewable_vs_nonrenewable_mean_{period_name_clean}_percentage.png'
-            plt.savefig(percentage_filename, dpi=150, bbox_inches=None)
+            plt.savefig(percentage_filename, dpi=150, bbox_inches='tight')
             print(f"  ✓ Saved: {percentage_filename}")
             
             if drive_service:
@@ -978,20 +978,20 @@ def create_all_charts(all_data, country_code='EU'):
                          linewidth=6, markersize=13, label=category_name)
 
             add_flag_and_labels(fig2, country_code,
-                              f'Renewables vs Non-Renewables: {period["name"]}',
-                              'Absolute Production')
+                              'Electricity Generation',
+                              f'{period["name"]} Average · Absolute Values')
             
             ax2.set_xlabel('Month', fontsize=24, fontweight='bold', labelpad=8)
-            ax2.set_ylabel('Electricity production (TWh)', fontsize=24, fontweight='bold', labelpad=8)
+            ax2.set_ylabel('Electricity Generation (TWh)', fontsize=24, fontweight='bold', labelpad=8)
             ax2.set_ylim(0, max_abs_renewable_periods)
             ax2.tick_params(axis='both', labelsize=22, length=8, pad=8)
             ax2.grid(True, linestyle='--', alpha=0.7)
             ax2.legend(loc='upper left', bbox_to_anchor=(0.14, 0.255),
-                       bbox_transform=fig2.transFigure, ncol=3,
+                       bbox_transform=fig2.transFigure, ncol=2,
                        fontsize=18, frameon=False)
 
             absolute_filename = f'plots/{country_code.lower()}_monthly_renewable_vs_nonrenewable_mean_{period_name_clean}_absolute.png'
-            plt.savefig(absolute_filename, dpi=150, bbox_inches=None)
+            plt.savefig(absolute_filename, dpi=150, bbox_inches='tight')
             print(f"  ✓ Saved: {absolute_filename}")
             
             if drive_service:
@@ -1095,20 +1095,20 @@ def create_all_charts(all_data, country_code='EU'):
 
         if lines_plotted > 0:
             add_flag_and_labels(fig1, country_code,
-                              'Annual Trends - All Sources',
-                              'Percentage of Total Production')
+                              'Electricity Generation',
+                              'Fraction of Total')
             
             ax1.set_xlabel('Year', fontsize=24, fontweight='bold', labelpad=8)
-            ax1.set_ylabel('Electricity production (%)', fontsize=24, fontweight='bold', labelpad=8)
+            ax1.set_ylabel('Electricity Generation (%)', fontsize=24, fontweight='bold', labelpad=8)
             ax1.set_ylim(0, max_annual_pct)
             ax1.tick_params(axis='both', labelsize=22, length=8, pad=8)
             ax1.grid(True, linestyle='--', alpha=0.7)
             ax1.legend(loc='upper left', bbox_to_anchor=(0.14, 0.255),
-                       bbox_transform=fig1.transFigure, ncol=3,
+                       bbox_transform=fig1.transFigure, ncol=5,
                        fontsize=18, frameon=False)
 
             percentage_filename = f'plots/{country_code.lower()}_annual_all_sources_percentage.png'
-            plt.savefig(percentage_filename, dpi=150, bbox_inches=None)
+            plt.savefig(percentage_filename, dpi=150, bbox_inches='tight')
             print(f"  ✓ Saved: {percentage_filename}")
             
             if drive_service:
@@ -1137,20 +1137,20 @@ def create_all_charts(all_data, country_code='EU'):
 
         if lines_plotted > 0:
             add_flag_and_labels(fig2, country_code,
-                              'Annual Trends - All Sources',
-                              'Absolute Production')
+                              'Electricity Generation',
+                              'Absolute Values')
             
             ax2.set_xlabel('Year', fontsize=24, fontweight='bold', labelpad=8)
-            ax2.set_ylabel('Electricity production (TWh)', fontsize=24, fontweight='bold', labelpad=8)
+            ax2.set_ylabel('Electricity Generation (TWh)', fontsize=24, fontweight='bold', labelpad=8)
             ax2.set_ylim(0, max_annual_twh)
             ax2.tick_params(axis='both', labelsize=22, length=8, pad=8)
             ax2.grid(True, linestyle='--', alpha=0.7)
             ax2.legend(loc='upper left', bbox_to_anchor=(0.14, 0.255),
-                       bbox_transform=fig2.transFigure, ncol=3,
+                       bbox_transform=fig2.transFigure, ncol=5,
                        fontsize=18, frameon=False)
 
             absolute_filename = f'plots/{country_code.lower()}_annual_all_sources_absolute.png'
-            plt.savefig(absolute_filename, dpi=150, bbox_inches=None)
+            plt.savefig(absolute_filename, dpi=150, bbox_inches='tight')
             print(f"  ✓ Saved: {absolute_filename}")
             
             if drive_service:
@@ -1197,20 +1197,20 @@ def create_all_charts(all_data, country_code='EU'):
 
         if lines_plotted > 0:
             add_flag_and_labels(fig1, country_code,
-                              'Renewables vs Non-Renewables',
-                              'Percentage of Total Production')
+                              'Electricity Generation',
+                              'Fraction of Total')
             
             ax1.set_xlabel('Year', fontsize=24, fontweight='bold', labelpad=8)
-            ax1.set_ylabel('Electricity production (%)', fontsize=24, fontweight='bold', labelpad=8)
+            ax1.set_ylabel('Electricity Generation (%)', fontsize=24, fontweight='bold', labelpad=8)
             ax1.set_ylim(0, 100)
             ax1.tick_params(axis='both', labelsize=22, length=8, pad=8)
             ax1.grid(True, linestyle='--', alpha=0.7)
             ax1.legend(loc='upper left', bbox_to_anchor=(0.14, 0.255),
-                       bbox_transform=fig1.transFigure, ncol=3,
+                       bbox_transform=fig1.transFigure, ncol=2,
                        fontsize=18, frameon=False)
 
             percentage_filename = f'plots/{country_code.lower()}_annual_renewable_vs_non_renewable_percentage.png'
-            plt.savefig(percentage_filename, dpi=150, bbox_inches=None)
+            plt.savefig(percentage_filename, dpi=150, bbox_inches='tight')
             print(f"  ✓ Saved: {percentage_filename}")
             
             if drive_service:
@@ -1239,20 +1239,20 @@ def create_all_charts(all_data, country_code='EU'):
 
         if lines_plotted > 0:
             add_flag_and_labels(fig2, country_code,
-                              'Renewables vs Non-Renewables',
-                              'Absolute Production')
+                              'Electricity Generation',
+                              'Absolute Values')
             
             ax2.set_xlabel('Year', fontsize=24, fontweight='bold', labelpad=8)
-            ax2.set_ylabel('Electricity production (TWh)', fontsize=24, fontweight='bold', labelpad=8)
+            ax2.set_ylabel('Electricity Generation (TWh)', fontsize=24, fontweight='bold', labelpad=8)
             ax2.set_ylim(bottom=0)
             ax2.tick_params(axis='both', labelsize=22, length=8, pad=8)
             ax2.grid(True, linestyle='--', alpha=0.7)
             ax2.legend(loc='upper left', bbox_to_anchor=(0.14, 0.255),
-                       bbox_transform=fig2.transFigure, ncol=3,
+                       bbox_transform=fig2.transFigure, ncol=2,
                        fontsize=18, frameon=False)
 
             absolute_filename = f'plots/{country_code.lower()}_annual_renewable_vs_non_renewable_absolute.png'
-            plt.savefig(absolute_filename, dpi=150, bbox_inches=None)
+            plt.savefig(absolute_filename, dpi=150, bbox_inches='tight')
             print(f"  ✓ Saved: {absolute_filename}")
             
             if drive_service:
@@ -1321,21 +1321,21 @@ def create_all_charts(all_data, country_code='EU'):
                 y_max_limit = 100
 
             add_flag_and_labels(fig1, country_code,
-                              'YoY Change vs 2015 - All Sources',
-                              'Percentage Change from 2015 Baseline')
+                              'Electricity Generation',
+                              'Change from 2015 · Relative')
             
             ax1.set_xlabel('Year', fontsize=24, fontweight='bold', labelpad=8)
-            ax1.set_ylabel('% Change from 2015', fontsize=24, fontweight='bold', labelpad=8)
+            ax1.set_ylabel('Change from 2015 (%)', fontsize=24, fontweight='bold', labelpad=8)
             ax1.set_ylim(y_min_limit, y_max_limit)
             ax1.axhline(y=0, color='black', linestyle='--', linewidth=1, alpha=0.5)
             ax1.tick_params(axis='both', labelsize=22, length=8, pad=8)
             ax1.grid(True, linestyle='--', alpha=0.7)
             ax1.legend(loc='upper left', bbox_to_anchor=(0.14, 0.255),
-                       bbox_transform=fig1.transFigure, ncol=3,
+                       bbox_transform=fig1.transFigure, ncol=5,
                        fontsize=18, frameon=False)
 
             percentage_filename = f'plots/{country_code.lower()}_annual_yoy_all_sources_vs_2015_percentage.png'
-            plt.savefig(percentage_filename, dpi=150, bbox_inches=None)
+            plt.savefig(percentage_filename, dpi=150, bbox_inches='tight')
             print(f"  ✓ Saved: {percentage_filename}")
             
             if drive_service:
@@ -1389,8 +1389,8 @@ def create_all_charts(all_data, country_code='EU'):
                 y_max_limit = 100
 
             add_flag_and_labels(fig2, country_code,
-                              'YoY Change vs 2015 - All Sources',
-                              'Absolute Change from 2015 Baseline')
+                              'Electricity Generation',
+                              'Change from 2015 · Absolute')
             
             ax2.set_xlabel('Year', fontsize=24, fontweight='bold', labelpad=8)
             ax2.set_ylabel('Change from 2015 (TWh)', fontsize=24, fontweight='bold', labelpad=8)
@@ -1399,11 +1399,11 @@ def create_all_charts(all_data, country_code='EU'):
             ax2.tick_params(axis='both', labelsize=22, length=8, pad=8)
             ax2.grid(True, linestyle='--', alpha=0.7)
             ax2.legend(loc='upper left', bbox_to_anchor=(0.14, 0.255),
-                       bbox_transform=fig2.transFigure, ncol=3,
+                       bbox_transform=fig2.transFigure, ncol=5,
                        fontsize=18, frameon=False)
 
             absolute_filename = f'plots/{country_code.lower()}_annual_yoy_all_sources_vs_2015_absolute.png'
-            plt.savefig(absolute_filename, dpi=150, bbox_inches=None)
+            plt.savefig(absolute_filename, dpi=150, bbox_inches='tight')
             print(f"  ✓ Saved: {absolute_filename}")
             
             if drive_service:
@@ -1462,21 +1462,21 @@ def create_all_charts(all_data, country_code='EU'):
                 y_max_limit = 100
 
             add_flag_and_labels(fig3, country_code,
-                              'YoY Change vs 2015 - Aggregates',
-                              'Percentage Change from 2015 Baseline')
+                              'Electricity Generation',
+                              'Change from 2015 · Relative')
             
             ax3.set_xlabel('Year', fontsize=24, fontweight='bold', labelpad=8)
-            ax3.set_ylabel('% Change from 2015', fontsize=24, fontweight='bold', labelpad=8)
+            ax3.set_ylabel('Change from 2015 (%)', fontsize=24, fontweight='bold', labelpad=8)
             ax3.set_ylim(y_min_limit, y_max_limit)
             ax3.axhline(y=0, color='black', linestyle='--', linewidth=1, alpha=0.5)
             ax3.tick_params(axis='both', labelsize=22, length=8, pad=8)
             ax3.grid(True, linestyle='--', alpha=0.7)
             ax3.legend(loc='upper left', bbox_to_anchor=(0.14, 0.255),
-                       bbox_transform=fig3.transFigure, ncol=3,
+                       bbox_transform=fig3.transFigure, ncol=2,
                        fontsize=18, frameon=False)
 
             percentage_filename = f'plots/{country_code.lower()}_annual_yoy_aggregates_vs_2015_percentage.png'
-            plt.savefig(percentage_filename, dpi=150, bbox_inches=None)
+            plt.savefig(percentage_filename, dpi=150, bbox_inches='tight')
             print(f"  ✓ Saved: {percentage_filename}")
             
             if drive_service:
@@ -1530,8 +1530,8 @@ def create_all_charts(all_data, country_code='EU'):
                 y_max_limit = 400
 
             add_flag_and_labels(fig4, country_code,
-                              'YoY Change vs 2015 - Aggregates',
-                              'Absolute Change from 2015 Baseline')
+                              'Electricity Generation',
+                              'Change from 2015 · Absolute')
             
             ax4.set_xlabel('Year', fontsize=24, fontweight='bold', labelpad=8)
             ax4.set_ylabel('Change from 2015 (TWh)', fontsize=24, fontweight='bold', labelpad=8)
@@ -1540,11 +1540,11 @@ def create_all_charts(all_data, country_code='EU'):
             ax4.tick_params(axis='both', labelsize=22, length=8, pad=8)
             ax4.grid(True, linestyle='--', alpha=0.7)
             ax4.legend(loc='upper left', bbox_to_anchor=(0.14, 0.255),
-                       bbox_transform=fig4.transFigure, ncol=3,
+                       bbox_transform=fig4.transFigure, ncol=2,
                        fontsize=18, frameon=False)
 
             absolute_filename = f'plots/{country_code.lower()}_annual_yoy_aggregates_vs_2015_absolute.png'
-            plt.savefig(absolute_filename, dpi=150, bbox_inches=None)
+            plt.savefig(absolute_filename, dpi=150, bbox_inches='tight')
             print(f"  ✓ Saved: {absolute_filename}")
             
             if drive_service:
