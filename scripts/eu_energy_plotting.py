@@ -2,6 +2,7 @@ import gspread
 from google.oauth2.service_account import Credentials
 import pandas as pd
 import matplotlib.pyplot as plt
+import matplotlib.image as mpimg
 import numpy as np
 import calendar
 from datetime import datetime
@@ -39,6 +40,42 @@ ENTSOE_COLORS = {
     # Totals
     'All Renewables': '#00CED1',  # Dark Turquoise
     'All Non-Renewables': '#000000'  # Black
+}
+
+# Country display names
+COUNTRY_DISPLAY_NAMES = {
+    'EU': 'European Union',
+    'DE': 'Germany',
+    'FR': 'France',
+    'ES': 'Spain',
+    'IT': 'Italy',
+    'PL': 'Poland',
+    'NL': 'Netherlands',
+    'BE': 'Belgium',
+    'SE': 'Sweden',
+    'AT': 'Austria',
+    'CZ': 'Czechia',
+    'RO': 'Romania',
+    'PT': 'Portugal',
+    'GR': 'Greece',
+    'DK': 'Denmark',
+    'FI': 'Finland',
+    'SK': 'Slovakia',
+    'IE': 'Ireland',
+    'HR': 'Croatia',
+    'BG': 'Bulgaria',
+    'LT': 'Lithuania',
+    'SI': 'Slovenia',
+    'HU': 'Hungary',
+    'LV': 'Latvia',
+    'EE': 'Estonia',
+    'LU': 'Luxembourg',
+    'CY': 'Cyprus',
+    'MT': 'Malta',
+    'GB': 'United Kingdom',
+    'NO': 'Norway',
+    'CH': 'Switzerland',
+    'MD': 'Moldova'
 }
 
 
@@ -367,6 +404,64 @@ def load_data_from_google_sheets(country_code='EU'):
         return None
 
 
+def add_flag_and_labels(fig, country_code, main_title, subtitle):
+    """
+    Add flag, country name, titles, watermark, and timestamp to a figure.
+    Matches intraday plot styling.
+    """
+    # Add flag
+    flag_path = f'flags/{country_code}.svg'
+    if not os.path.exists(flag_path):
+        flag_path = f'flags/{country_code}.png'
+    
+    if os.path.exists(flag_path):
+        try:
+            ax_flag = fig.add_axes([0.1, 0.85, 0.075, 0.05])
+            if flag_path.endswith('.svg'):
+                # For SVG, convert to PNG first (matplotlib doesn't natively support SVG)
+                import cairosvg
+                from io import BytesIO
+                png_data = BytesIO()
+                cairosvg.svg2png(url=flag_path, write_to=png_data)
+                png_data.seek(0)
+                flag_img = mpimg.imread(png_data, format='png')
+            else:
+                flag_img = mpimg.imread(flag_path)
+            
+            ax_flag.imshow(flag_img, aspect='auto')
+            ax_flag.axis('off')
+        except Exception as e:
+            print(f"  ⚠ Could not load flag: {e}")
+    
+    # Add country name
+    country_display = COUNTRY_DISPLAY_NAMES.get(country_code, country_code)
+    fig.text(0.1, 0.843, country_display,
+             fontsize=18, fontweight='normal',
+             ha='left', va='top',
+             color='#333')
+    
+    # Add main title
+    fig.text(0.55, 0.89, main_title,
+             fontsize=30, fontweight='bold',
+             ha='center', va='top')
+    
+    # Add subtitle
+    fig.text(0.55, 0.835, subtitle,
+             fontsize=24, fontweight='normal',
+             ha='center', va='top')
+    
+    # Add watermark and timestamp
+    timestamp = datetime.now().strftime('%Y-%m-%d %H:%M UTC')
+    fig.text(0.2, 0.125, "afratzl.github.io/eu-electricity",
+              ha='left', va='top',
+              fontsize=12, color='#666',
+              style='italic')
+    fig.text(0.9, 0.125, f"Generated: {timestamp}",
+              ha='right', va='top',
+              fontsize=12, color='#666',
+              style='italic')
+
+
 def create_all_charts(all_data, country_code='EU'):
     """
     Create all charts from the loaded data - MOBILE OPTIMIZED
@@ -460,7 +555,8 @@ def create_all_charts(all_data, country_code='EU'):
         total_data = all_data['Total Generation']['year_data']
 
         # PLOT 1: Percentage
-        fig1, ax1 = plt.subplots(figsize=(12, 10))
+        fig1, ax1 = plt.subplots(figsize=(12, 12))
+        plt.subplots_adjust(left=0.22, right=0.9, top=0.80, bottom=0.35)
 
         max_pct_value = 0
         
@@ -497,20 +593,21 @@ def create_all_charts(all_data, country_code='EU'):
                 ax1.plot(months, percentages, marker='o', color=color, 
                         linewidth=6, markersize=13, label=str(year))
 
-        # Title with bold source name ONLY (no confusing subtitle)
-        fig1.suptitle(source_name, fontsize=34, fontweight='bold', x=0.5, y=0.98, ha="center")
-        ax1.set_title('Percentage of EU Production', fontsize=26, fontweight='normal', pad=15)
-        ax1.set_xlabel('Month', fontsize=28, fontweight='bold', labelpad=15)
-        ax1.set_ylabel('Electricity production (%)', fontsize=28, fontweight='bold', labelpad=15)
+        # Add flag, country name, titles, watermark, timestamp
+        add_flag_and_labels(fig1, country_code, source_name, 'Percentage of Total Production')
+        
+        ax1.set_xlabel('Month', fontsize=24, fontweight='bold', labelpad=8)
+        ax1.set_ylabel('Electricity production (%)', fontsize=24, fontweight='bold', labelpad=8)
         
         # NO RESTRICTION - let it scale to data
         ax1.set_ylim(0, max_pct_value * 1.1 if max_pct_value > 0 else 10)
             
-        ax1.tick_params(axis='both', labelsize=22)
-        ax1.grid(True, alpha=0.3, linewidth=1.5)
+        ax1.tick_params(axis='both', labelsize=22, length=8, pad=8)
+        ax1.grid(True, linestyle='--', alpha=0.7)
 
-        ax1.legend(loc='upper center', bbox_to_anchor=(0.5, -0.15), 
-                  ncol=5, fontsize=20, frameon=False)
+        ax1.legend(loc='upper left', bbox_to_anchor=(0.14, 0.255), 
+                   bbox_transform=fig1.transFigure,
+                   ncol=3, fontsize=18, frameon=False)
 
         plt.tight_layout()
 
@@ -530,7 +627,8 @@ def create_all_charts(all_data, country_code='EU'):
         plt.close()
 
         # PLOT 2: Absolute
-        fig2, ax2 = plt.subplots(figsize=(12, 10))
+        fig2, ax2 = plt.subplots(figsize=(12, 12))
+        plt.subplots_adjust(left=0.22, right=0.9, top=0.80, bottom=0.35)
 
         max_abs_value = 0
         
@@ -557,20 +655,21 @@ def create_all_charts(all_data, country_code='EU'):
             ax2.plot(months, values_twh, marker='o', color=color,
                     linewidth=6, markersize=13, label=str(year))
 
-        # Title with bold source name ONLY (no confusing subtitle)
-        fig2.suptitle(source_name, fontsize=34, fontweight='bold', x=0.5, y=0.98, ha="center")
-        ax2.set_title('Absolute Production', fontsize=26, fontweight='normal', pad=15)
-        ax2.set_xlabel('Month', fontsize=28, fontweight='bold', labelpad=15)
-        ax2.set_ylabel('Electricity production (TWh)', fontsize=28, fontweight='bold', labelpad=15)
+        # Add flag, country name, titles, watermark, timestamp
+        add_flag_and_labels(fig2, country_code, source_name, 'Absolute Production')
+        
+        ax2.set_xlabel('Month', fontsize=24, fontweight='bold', labelpad=8)
+        ax2.set_ylabel('Electricity production (TWh)', fontsize=24, fontweight='bold', labelpad=8)
         
         # NO RESTRICTION - let it scale to data
         ax2.set_ylim(0, max_abs_value * 1.1 if max_abs_value > 0 else 10)
             
-        ax2.tick_params(axis='both', labelsize=22)
-        ax2.grid(True, alpha=0.3, linewidth=1.5)
+        ax2.tick_params(axis='both', labelsize=22, length=8, pad=8)
+        ax2.grid(True, linestyle='--', alpha=0.7)
 
-        ax2.legend(loc='upper center', bbox_to_anchor=(0.5, -0.15),
-                  ncol=5, fontsize=20, frameon=False)
+        ax2.legend(loc='upper left', bbox_to_anchor=(0.14, 0.255),
+                   bbox_transform=fig2.transFigure,
+                   ncol=3, fontsize=18, frameon=False)
 
         plt.tight_layout()
 
@@ -691,23 +790,26 @@ def create_all_charts(all_data, country_code='EU'):
                         monthly_means_pct[source_name].append(0)
 
             # PLOT 1: PERCENTAGE
-            fig1, ax1 = plt.subplots(figsize=(12, 10))
+            fig1, ax1 = plt.subplots(figsize=(12, 12))
+            plt.subplots_adjust(left=0.22, right=0.9, top=0.80, bottom=0.35)
 
             for source_name in available_sources:
                 color = ENTSOE_COLORS.get(source_name, 'black')
                 ax1.plot(months, monthly_means_pct[source_name], marker='o', color=color,
                          linewidth=6, markersize=13, label=source_name)
 
-            fig1.suptitle(f'All Electricity Sources: {period["name"]}', 
-                         fontsize=34, fontweight='bold')
-            ax1.set_title('Percentage of EU Production', fontsize=26, fontweight='normal')
-            ax1.set_xlabel('Month', fontsize=28, fontweight='bold', labelpad=15)
-            ax1.set_ylabel('Electricity production (%)', fontsize=28, fontweight='bold', labelpad=15)
+            add_flag_and_labels(fig1, country_code, 
+                              f'All Electricity Sources: {period["name"]}',
+                              'Percentage of Total Production')
+            
+            ax1.set_xlabel('Month', fontsize=24, fontweight='bold', labelpad=8)
+            ax1.set_ylabel('Electricity production (%)', fontsize=24, fontweight='bold', labelpad=8)
             ax1.set_ylim(0, max_pct_all_periods)
-            ax1.tick_params(axis='both', labelsize=22)
+            ax1.tick_params(axis='both', labelsize=22, length=8, pad=8)
             ax1.grid(True, linestyle='--', alpha=0.7)
-            ax1.legend(loc='upper center', bbox_to_anchor=(0.5, -0.15), ncol=5,
-                       fontsize=20, frameon=False)
+            ax1.legend(loc='upper left', bbox_to_anchor=(0.14, 0.255),
+                       bbox_transform=fig1.transFigure, ncol=3,
+                       fontsize=18, frameon=False)
 
             plt.tight_layout()
 
@@ -727,7 +829,8 @@ def create_all_charts(all_data, country_code='EU'):
             plt.close()
 
             # PLOT 2: ABSOLUTE
-            fig2, ax2 = plt.subplots(figsize=(12, 10))
+            fig2, ax2 = plt.subplots(figsize=(12, 12))
+            plt.subplots_adjust(left=0.22, right=0.9, top=0.80, bottom=0.35)
 
             for source_name in available_sources:
                 color = ENTSOE_COLORS.get(source_name, 'black')
@@ -735,16 +838,18 @@ def create_all_charts(all_data, country_code='EU'):
                 ax2.plot(months, values_twh, marker='o', color=color,
                          linewidth=6, markersize=13, label=source_name)
 
-            fig2.suptitle(f'All Electricity Sources: {period["name"]}', 
-                         fontsize=34, fontweight='bold')
-            ax2.set_title('Absolute Production', fontsize=26, fontweight='normal')
-            ax2.set_xlabel('Month', fontsize=28, fontweight='bold', labelpad=15)
-            ax2.set_ylabel('Electricity production (TWh)', fontsize=28, fontweight='bold', labelpad=15)
+            add_flag_and_labels(fig2, country_code,
+                              f'All Electricity Sources: {period["name"]}',
+                              'Absolute Production')
+            
+            ax2.set_xlabel('Month', fontsize=24, fontweight='bold', labelpad=8)
+            ax2.set_ylabel('Electricity production (TWh)', fontsize=24, fontweight='bold', labelpad=8)
             ax2.set_ylim(0, max_abs_all_periods)
-            ax2.tick_params(axis='both', labelsize=22)
+            ax2.tick_params(axis='both', labelsize=22, length=8, pad=8)
             ax2.grid(True, linestyle='--', alpha=0.7)
-            ax2.legend(loc='upper center', bbox_to_anchor=(0.5, -0.15), ncol=5,
-                       fontsize=20, frameon=False)
+            ax2.legend(loc='upper left', bbox_to_anchor=(0.14, 0.255),
+                       bbox_transform=fig2.transFigure, ncol=3,
+                       fontsize=18, frameon=False)
 
             plt.tight_layout()
 
@@ -844,23 +949,26 @@ def create_all_charts(all_data, country_code='EU'):
                         monthly_means_pct[category_name].append(0)
 
             # PLOT 1: PERCENTAGE
-            fig1, ax1 = plt.subplots(figsize=(12, 10))
+            fig1, ax1 = plt.subplots(figsize=(12, 12))
+            plt.subplots_adjust(left=0.22, right=0.9, top=0.80, bottom=0.35)
 
             for category_name in ['All Renewables', 'All Non-Renewables']:
                 color = ENTSOE_COLORS[category_name]
                 ax1.plot(month_names_abbr, monthly_means_pct[category_name], marker='o', color=color,
                          linewidth=6, markersize=13, label=category_name)
 
-            fig1.suptitle(f'Renewables vs Non-Renewables: {period["name"]}', 
-                         fontsize=34, fontweight='bold')
-            ax1.set_title('Percentage of EU Production', fontsize=26, fontweight='normal')
-            ax1.set_xlabel('Month', fontsize=28, fontweight='bold', labelpad=15)
-            ax1.set_ylabel('Electricity production (%)', fontsize=28, fontweight='bold', labelpad=15)
+            add_flag_and_labels(fig1, country_code,
+                              f'Renewables vs Non-Renewables: {period["name"]}',
+                              'Percentage of Total Production')
+            
+            ax1.set_xlabel('Month', fontsize=24, fontweight='bold', labelpad=8)
+            ax1.set_ylabel('Electricity production (%)', fontsize=24, fontweight='bold', labelpad=8)
             ax1.set_ylim(0, 100)
-            ax1.tick_params(axis='both', labelsize=22)
+            ax1.tick_params(axis='both', labelsize=22, length=8, pad=8)
             ax1.grid(True, linestyle='--', alpha=0.7)
-            ax1.legend(loc='upper center', bbox_to_anchor=(0.5, -0.15), ncol=2,
-                       fontsize=22, frameon=False)
+            ax1.legend(loc='upper left', bbox_to_anchor=(0.14, 0.255),
+                       bbox_transform=fig1.transFigure, ncol=3,
+                       fontsize=18, frameon=False)
 
             plt.tight_layout()
 
@@ -880,7 +988,8 @@ def create_all_charts(all_data, country_code='EU'):
             plt.close()
 
             # PLOT 2: ABSOLUTE
-            fig2, ax2 = plt.subplots(figsize=(12, 10))
+            fig2, ax2 = plt.subplots(figsize=(12, 12))
+            plt.subplots_adjust(left=0.22, right=0.9, top=0.80, bottom=0.35)
 
             for category_name in ['All Renewables', 'All Non-Renewables']:
                 color = ENTSOE_COLORS[category_name]
@@ -888,16 +997,18 @@ def create_all_charts(all_data, country_code='EU'):
                 ax2.plot(month_names_abbr, values_twh, marker='o', color=color,
                          linewidth=6, markersize=13, label=category_name)
 
-            fig2.suptitle(f'Renewables vs Non-Renewables: {period["name"]}', 
-                         fontsize=34, fontweight='bold')
-            ax2.set_title('Absolute Production', fontsize=26, fontweight='normal')
-            ax2.set_xlabel('Month', fontsize=28, fontweight='bold', labelpad=15)
-            ax2.set_ylabel('Electricity production (TWh)', fontsize=28, fontweight='bold', labelpad=15)
+            add_flag_and_labels(fig2, country_code,
+                              f'Renewables vs Non-Renewables: {period["name"]}',
+                              'Absolute Production')
+            
+            ax2.set_xlabel('Month', fontsize=24, fontweight='bold', labelpad=8)
+            ax2.set_ylabel('Electricity production (TWh)', fontsize=24, fontweight='bold', labelpad=8)
             ax2.set_ylim(0, max_abs_renewable_periods)
-            ax2.tick_params(axis='both', labelsize=22)
+            ax2.tick_params(axis='both', labelsize=22, length=8, pad=8)
             ax2.grid(True, linestyle='--', alpha=0.7)
-            ax2.legend(loc='upper center', bbox_to_anchor=(0.5, -0.15), ncol=2,
-                       fontsize=22, frameon=False)
+            ax2.legend(loc='upper left', bbox_to_anchor=(0.14, 0.255),
+                       bbox_transform=fig2.transFigure, ncol=3,
+                       fontsize=18, frameon=False)
 
             plt.tight_layout()
 
@@ -976,7 +1087,8 @@ def create_all_charts(all_data, country_code='EU'):
         print("\nCreating Annual Trends - All Sources...")
 
         # PLOT 1: PERCENTAGE
-        fig1, ax1 = plt.subplots(figsize=(12, 10))
+        fig1, ax1 = plt.subplots(figsize=(12, 12))
+        plt.subplots_adjust(left=0.22, right=0.9, top=0.80, bottom=0.35)
 
         lines_plotted = 0
         for source_name in all_sources_for_annual:
@@ -1004,15 +1116,17 @@ def create_all_charts(all_data, country_code='EU'):
                     lines_plotted += 1
 
         if lines_plotted > 0:
-            fig1.suptitle('Annual Trends - All Sources', 
-                         fontsize=34, fontweight='bold')
-            ax1.set_title('Percentage of EU Production', fontsize=26, fontweight='normal')
-            ax1.set_xlabel('Year', fontsize=28, fontweight='bold', labelpad=15)
-            ax1.set_ylabel('Electricity production (%)', fontsize=28, fontweight='bold', labelpad=15)
+            add_flag_and_labels(fig1, country_code,
+                              'Annual Trends - All Sources',
+                              'Percentage of Total Production')
+            
+            ax1.set_xlabel('Year', fontsize=24, fontweight='bold', labelpad=8)
+            ax1.set_ylabel('Electricity production (%)', fontsize=24, fontweight='bold', labelpad=8)
             ax1.set_ylim(0, max_annual_pct)
-            ax1.tick_params(axis='both', labelsize=22)
+            ax1.tick_params(axis='both', labelsize=22, length=8, pad=8)
             ax1.grid(True, linestyle='--', alpha=0.7)
-            ax1.legend(loc='upper center', bbox_to_anchor=(0.5, -0.15), ncol=5,
+            ax1.legend(loc='upper left', bbox_to_anchor=(0.14, 0.255),
+                       bbox_transform=fig1.transFigure, ncol=3,
                        fontsize=18, frameon=False)
 
             plt.tight_layout()
@@ -1031,7 +1145,8 @@ def create_all_charts(all_data, country_code='EU'):
             plt.close()
 
         # PLOT 2: ABSOLUTE
-        fig2, ax2 = plt.subplots(figsize=(12, 10))
+        fig2, ax2 = plt.subplots(figsize=(12, 12))
+        plt.subplots_adjust(left=0.22, right=0.9, top=0.80, bottom=0.35)
 
         lines_plotted = 0
         for source_name in all_sources_for_annual:
@@ -1045,15 +1160,17 @@ def create_all_charts(all_data, country_code='EU'):
                 lines_plotted += 1
 
         if lines_plotted > 0:
-            fig2.suptitle('Annual Trends - All Sources', 
-                         fontsize=34, fontweight='bold')
-            ax2.set_title('Absolute Production', fontsize=26, fontweight='normal')
-            ax2.set_xlabel('Year', fontsize=28, fontweight='bold', labelpad=15)
-            ax2.set_ylabel('Electricity production (TWh)', fontsize=28, fontweight='bold', labelpad=15)
+            add_flag_and_labels(fig2, country_code,
+                              'Annual Trends - All Sources',
+                              'Absolute Production')
+            
+            ax2.set_xlabel('Year', fontsize=24, fontweight='bold', labelpad=8)
+            ax2.set_ylabel('Electricity production (TWh)', fontsize=24, fontweight='bold', labelpad=8)
             ax2.set_ylim(0, max_annual_twh)
-            ax2.tick_params(axis='both', labelsize=22)
+            ax2.tick_params(axis='both', labelsize=22, length=8, pad=8)
             ax2.grid(True, linestyle='--', alpha=0.7)
-            ax2.legend(loc='upper center', bbox_to_anchor=(0.5, -0.15), ncol=5,
+            ax2.legend(loc='upper left', bbox_to_anchor=(0.14, 0.255),
+                       bbox_transform=fig2.transFigure, ncol=3,
                        fontsize=18, frameon=False)
 
             plt.tight_layout()
@@ -1076,7 +1193,8 @@ def create_all_charts(all_data, country_code='EU'):
         print("\nCreating Annual Renewables vs Non-Renewables...")
 
         # PLOT 1: PERCENTAGE
-        fig1, ax1 = plt.subplots(figsize=(12, 10))
+        fig1, ax1 = plt.subplots(figsize=(12, 12))
+        plt.subplots_adjust(left=0.22, right=0.9, top=0.80, bottom=0.35)
 
         lines_plotted = 0
         for source_name in available_totals:
@@ -1104,16 +1222,18 @@ def create_all_charts(all_data, country_code='EU'):
                     lines_plotted += 1
 
         if lines_plotted > 0:
-            fig1.suptitle('Renewables vs Non-Renewables', 
-                         fontsize=34, fontweight='bold')
-            ax1.set_title('Percentage of EU Production', fontsize=26, fontweight='normal')
-            ax1.set_xlabel('Year', fontsize=28, fontweight='bold', labelpad=15)
-            ax1.set_ylabel('Electricity production (%)', fontsize=28, fontweight='bold', labelpad=15)
+            add_flag_and_labels(fig1, country_code,
+                              'Renewables vs Non-Renewables',
+                              'Percentage of Total Production')
+            
+            ax1.set_xlabel('Year', fontsize=24, fontweight='bold', labelpad=8)
+            ax1.set_ylabel('Electricity production (%)', fontsize=24, fontweight='bold', labelpad=8)
             ax1.set_ylim(0, 100)
-            ax1.tick_params(axis='both', labelsize=22)
+            ax1.tick_params(axis='both', labelsize=22, length=8, pad=8)
             ax1.grid(True, linestyle='--', alpha=0.7)
-            ax1.legend(loc='upper center', bbox_to_anchor=(0.5, -0.15), ncol=2,
-                       fontsize=22, frameon=False)
+            ax1.legend(loc='upper left', bbox_to_anchor=(0.14, 0.255),
+                       bbox_transform=fig1.transFigure, ncol=3,
+                       fontsize=18, frameon=False)
 
             plt.tight_layout()
 
@@ -1131,7 +1251,8 @@ def create_all_charts(all_data, country_code='EU'):
             plt.close()
 
         # PLOT 2: ABSOLUTE
-        fig2, ax2 = plt.subplots(figsize=(12, 10))
+        fig2, ax2 = plt.subplots(figsize=(12, 12))
+        plt.subplots_adjust(left=0.22, right=0.9, top=0.80, bottom=0.35)
 
         lines_plotted = 0
         for source_name in available_totals:
@@ -1145,16 +1266,18 @@ def create_all_charts(all_data, country_code='EU'):
                 lines_plotted += 1
 
         if lines_plotted > 0:
-            fig2.suptitle('Renewables vs Non-Renewables', 
-                         fontsize=34, fontweight='bold')
-            ax2.set_title('Absolute Production', fontsize=26, fontweight='normal')
-            ax2.set_xlabel('Year', fontsize=28, fontweight='bold', labelpad=15)
-            ax2.set_ylabel('Electricity production (TWh)', fontsize=28, fontweight='bold', labelpad=15)
+            add_flag_and_labels(fig2, country_code,
+                              'Renewables vs Non-Renewables',
+                              'Absolute Production')
+            
+            ax2.set_xlabel('Year', fontsize=24, fontweight='bold', labelpad=8)
+            ax2.set_ylabel('Electricity production (TWh)', fontsize=24, fontweight='bold', labelpad=8)
             ax2.set_ylim(bottom=0)
-            ax2.tick_params(axis='both', labelsize=22)
+            ax2.tick_params(axis='both', labelsize=22, length=8, pad=8)
             ax2.grid(True, linestyle='--', alpha=0.7)
-            ax2.legend(loc='upper center', bbox_to_anchor=(0.5, -0.15), ncol=2,
-                       fontsize=22, frameon=False)
+            ax2.legend(loc='upper left', bbox_to_anchor=(0.14, 0.255),
+                       bbox_transform=fig2.transFigure, ncol=3,
+                       fontsize=18, frameon=False)
 
             plt.tight_layout()
 
@@ -1187,7 +1310,8 @@ def create_all_charts(all_data, country_code='EU'):
         print("\nCreating YoY Change - All Sources...")
 
         # PLOT 1: PERCENTAGE CHANGE
-        fig1, ax1 = plt.subplots(figsize=(12, 10))
+        fig1, ax1 = plt.subplots(figsize=(12, 12))
+        plt.subplots_adjust(left=0.22, right=0.9, top=0.80, bottom=0.35)
 
         all_yoy_pct_values = []
         lines_plotted = 0
@@ -1226,16 +1350,18 @@ def create_all_charts(all_data, country_code='EU'):
                 y_min_limit = -50
                 y_max_limit = 100
 
-            fig1.suptitle('YoY Change vs 2015 - All Sources', 
-                         fontsize=34, fontweight='bold')
-            ax1.set_title('Percentage Change', fontsize=26, fontweight='normal')
-            ax1.set_xlabel('Year', fontsize=28, fontweight='bold', labelpad=15)
-            ax1.set_ylabel('% Change from 2015', fontsize=28, fontweight='bold', labelpad=15)
+            add_flag_and_labels(fig1, country_code,
+                              'YoY Change vs 2015 - All Sources',
+                              'Percentage Change from 2015 Baseline')
+            
+            ax1.set_xlabel('Year', fontsize=24, fontweight='bold', labelpad=8)
+            ax1.set_ylabel('% Change from 2015', fontsize=24, fontweight='bold', labelpad=8)
             ax1.set_ylim(y_min_limit, y_max_limit)
             ax1.axhline(y=0, color='black', linestyle='--', linewidth=1, alpha=0.5)
-            ax1.tick_params(axis='both', labelsize=22)
+            ax1.tick_params(axis='both', labelsize=22, length=8, pad=8)
             ax1.grid(True, linestyle='--', alpha=0.7)
-            ax1.legend(loc='upper center', bbox_to_anchor=(0.5, -0.15), ncol=5,
+            ax1.legend(loc='upper left', bbox_to_anchor=(0.14, 0.255),
+                       bbox_transform=fig1.transFigure, ncol=3,
                        fontsize=18, frameon=False)
 
             plt.tight_layout()
@@ -1254,7 +1380,8 @@ def create_all_charts(all_data, country_code='EU'):
             plt.close()
 
         # PLOT 2: ABSOLUTE CHANGE (TWh)
-        fig2, ax2 = plt.subplots(figsize=(12, 10))
+        fig2, ax2 = plt.subplots(figsize=(12, 12))
+        plt.subplots_adjust(left=0.22, right=0.9, top=0.80, bottom=0.35)
 
         all_yoy_abs_values = []
         lines_plotted = 0
@@ -1293,16 +1420,18 @@ def create_all_charts(all_data, country_code='EU'):
                 y_min_limit = -50
                 y_max_limit = 100
 
-            fig2.suptitle('YoY Change vs 2015 - All Sources', 
-                         fontsize=34, fontweight='bold')
-            ax2.set_title('Absolute Change', fontsize=26, fontweight='normal')
-            ax2.set_xlabel('Year', fontsize=28, fontweight='bold', labelpad=15)
-            ax2.set_ylabel('Change from 2015 (TWh)', fontsize=28, fontweight='bold', labelpad=15)
+            add_flag_and_labels(fig2, country_code,
+                              'YoY Change vs 2015 - All Sources',
+                              'Absolute Change from 2015 Baseline')
+            
+            ax2.set_xlabel('Year', fontsize=24, fontweight='bold', labelpad=8)
+            ax2.set_ylabel('Change from 2015 (TWh)', fontsize=24, fontweight='bold', labelpad=8)
             ax2.set_ylim(y_min_limit, y_max_limit)
             ax2.axhline(y=0, color='black', linestyle='--', linewidth=1, alpha=0.5)
-            ax2.tick_params(axis='both', labelsize=22)
+            ax2.tick_params(axis='both', labelsize=22, length=8, pad=8)
             ax2.grid(True, linestyle='--', alpha=0.7)
-            ax2.legend(loc='upper center', bbox_to_anchor=(0.5, -0.15), ncol=5,
+            ax2.legend(loc='upper left', bbox_to_anchor=(0.14, 0.255),
+                       bbox_transform=fig2.transFigure, ncol=3,
                        fontsize=18, frameon=False)
 
             plt.tight_layout()
@@ -1326,7 +1455,8 @@ def create_all_charts(all_data, country_code='EU'):
         print("\nCreating YoY Change - Aggregates...")
 
         # PLOT 1: PERCENTAGE CHANGE
-        fig3, ax3 = plt.subplots(figsize=(12, 10))
+        fig3, ax3 = plt.subplots(figsize=(12, 12))
+        plt.subplots_adjust(left=0.22, right=0.9, top=0.80, bottom=0.35)
 
         all_yoy_agg_pct_values = []
         lines_plotted = 0
@@ -1365,17 +1495,19 @@ def create_all_charts(all_data, country_code='EU'):
                 y_min_limit = -50
                 y_max_limit = 100
 
-            fig3.suptitle('YoY Change vs 2015 - Aggregates', 
-                         fontsize=34, fontweight='bold')
-            ax3.set_title('Percentage Change', fontsize=26, fontweight='normal')
-            ax3.set_xlabel('Year', fontsize=28, fontweight='bold', labelpad=15)
-            ax3.set_ylabel('% Change from 2015', fontsize=28, fontweight='bold', labelpad=15)
+            add_flag_and_labels(fig3, country_code,
+                              'YoY Change vs 2015 - Aggregates',
+                              'Percentage Change from 2015 Baseline')
+            
+            ax3.set_xlabel('Year', fontsize=24, fontweight='bold', labelpad=8)
+            ax3.set_ylabel('% Change from 2015', fontsize=24, fontweight='bold', labelpad=8)
             ax3.set_ylim(y_min_limit, y_max_limit)
             ax3.axhline(y=0, color='black', linestyle='--', linewidth=1, alpha=0.5)
-            ax3.tick_params(axis='both', labelsize=22)
+            ax3.tick_params(axis='both', labelsize=22, length=8, pad=8)
             ax3.grid(True, linestyle='--', alpha=0.7)
-            ax3.legend(loc='upper center', bbox_to_anchor=(0.5, -0.15), ncol=2,
-                       fontsize=22, frameon=False)
+            ax3.legend(loc='upper left', bbox_to_anchor=(0.14, 0.255),
+                       bbox_transform=fig3.transFigure, ncol=3,
+                       fontsize=18, frameon=False)
 
             plt.tight_layout()
 
@@ -1393,7 +1525,8 @@ def create_all_charts(all_data, country_code='EU'):
             plt.close()
 
         # PLOT 2: ABSOLUTE CHANGE (TWh)
-        fig4, ax4 = plt.subplots(figsize=(12, 10))
+        fig4, ax4 = plt.subplots(figsize=(12, 12))
+        plt.subplots_adjust(left=0.22, right=0.9, top=0.80, bottom=0.35)
 
         all_yoy_agg_abs_values = []
         lines_plotted = 0
@@ -1432,17 +1565,19 @@ def create_all_charts(all_data, country_code='EU'):
                 y_min_limit = -200
                 y_max_limit = 400
 
-            fig4.suptitle('YoY Change vs 2015 - Aggregates', 
-                         fontsize=34, fontweight='bold')
-            ax4.set_title('Absolute Change', fontsize=26, fontweight='normal')
-            ax4.set_xlabel('Year', fontsize=28, fontweight='bold', labelpad=15)
-            ax4.set_ylabel('Change from 2015 (TWh)', fontsize=28, fontweight='bold', labelpad=15)
+            add_flag_and_labels(fig4, country_code,
+                              'YoY Change vs 2015 - Aggregates',
+                              'Absolute Change from 2015 Baseline')
+            
+            ax4.set_xlabel('Year', fontsize=24, fontweight='bold', labelpad=8)
+            ax4.set_ylabel('Change from 2015 (TWh)', fontsize=24, fontweight='bold', labelpad=8)
             ax4.set_ylim(y_min_limit, y_max_limit)
             ax4.axhline(y=0, color='black', linestyle='--', linewidth=1, alpha=0.5)
-            ax4.tick_params(axis='both', labelsize=22)
+            ax4.tick_params(axis='both', labelsize=22, length=8, pad=8)
             ax4.grid(True, linestyle='--', alpha=0.7)
-            ax4.legend(loc='upper center', bbox_to_anchor=(0.5, -0.15), ncol=2,
-                       fontsize=22, frameon=False)
+            ax4.legend(loc='upper left', bbox_to_anchor=(0.14, 0.255),
+                       bbox_transform=fig4.transFigure, ncol=3,
+                       fontsize=18, frameon=False)
 
             plt.tight_layout()
 
