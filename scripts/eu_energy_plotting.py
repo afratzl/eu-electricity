@@ -408,26 +408,16 @@ def add_flag_and_labels(fig, country_code, main_title, subtitle):
     """
     Add flag, country name, titles, watermark, and timestamp to a figure.
     Matches intraday plot styling.
+    Uses PNG flags only (like intraday script).
     """
-    # Add flag
-    flag_path = f'flags/{country_code}.svg'
-    if not os.path.exists(flag_path):
-        flag_path = f'flags/{country_code}.png'
+    # Add flag - PNG only
+    flag_path = f'flags/{country_code}.png'
     
     if os.path.exists(flag_path):
         try:
+            # Create axes for flag - positioned for 12×12 canvas
             ax_flag = fig.add_axes([0.1, 0.85, 0.075, 0.05])
-            if flag_path.endswith('.svg'):
-                # For SVG, convert to PNG first (matplotlib doesn't natively support SVG)
-                import cairosvg
-                from io import BytesIO
-                png_data = BytesIO()
-                cairosvg.svg2png(url=flag_path, write_to=png_data)
-                png_data.seek(0)
-                flag_img = mpimg.imread(png_data, format='png')
-            else:
-                flag_img = mpimg.imread(flag_path)
-            
+            flag_img = mpimg.imread(flag_path)
             ax_flag.imshow(flag_img, aspect='auto')
             ax_flag.axis('off')
         except Exception as e:
@@ -609,8 +599,6 @@ def create_all_charts(all_data, country_code='EU'):
                    bbox_transform=fig1.transFigure,
                    ncol=3, fontsize=18, frameon=False)
 
-        plt.tight_layout()
-
         percentage_filename = f'plots/{country_code.lower()}_monthly_{source_name.lower().replace(" ", "_")}_percentage_10years.png'
         plt.savefig(percentage_filename, dpi=150, bbox_inches='tight')
         print(f"  ✓ Saved: {percentage_filename}")
@@ -670,8 +658,6 @@ def create_all_charts(all_data, country_code='EU'):
         ax2.legend(loc='upper left', bbox_to_anchor=(0.14, 0.255),
                    bbox_transform=fig2.transFigure,
                    ncol=3, fontsize=18, frameon=False)
-
-        plt.tight_layout()
 
         absolute_filename = f'plots/{country_code.lower()}_monthly_{source_name.lower().replace(" ", "_")}_absolute_10years.png'
         plt.savefig(absolute_filename, dpi=150, bbox_inches='tight')
@@ -811,8 +797,6 @@ def create_all_charts(all_data, country_code='EU'):
                        bbox_transform=fig1.transFigure, ncol=3,
                        fontsize=18, frameon=False)
 
-            plt.tight_layout()
-
             period_name_clean = period['name'].replace('-', '_')
             percentage_filename = f'plots/{country_code.lower()}_monthly_energy_sources_mean_{period_name_clean}_percentage.png'
             plt.savefig(percentage_filename, dpi=150, bbox_inches='tight')
@@ -850,8 +834,6 @@ def create_all_charts(all_data, country_code='EU'):
             ax2.legend(loc='upper left', bbox_to_anchor=(0.14, 0.255),
                        bbox_transform=fig2.transFigure, ncol=3,
                        fontsize=18, frameon=False)
-
-            plt.tight_layout()
 
             absolute_filename = f'plots/{country_code.lower()}_monthly_energy_sources_mean_{period_name_clean}_absolute.png'
             plt.savefig(absolute_filename, dpi=150, bbox_inches='tight')
@@ -970,8 +952,6 @@ def create_all_charts(all_data, country_code='EU'):
                        bbox_transform=fig1.transFigure, ncol=3,
                        fontsize=18, frameon=False)
 
-            plt.tight_layout()
-
             period_name_clean = period['name'].replace('-', '_')
             percentage_filename = f'plots/{country_code.lower()}_monthly_renewable_vs_nonrenewable_mean_{period_name_clean}_percentage.png'
             plt.savefig(percentage_filename, dpi=150, bbox_inches='tight')
@@ -1009,8 +989,6 @@ def create_all_charts(all_data, country_code='EU'):
             ax2.legend(loc='upper left', bbox_to_anchor=(0.14, 0.255),
                        bbox_transform=fig2.transFigure, ncol=3,
                        fontsize=18, frameon=False)
-
-            plt.tight_layout()
 
             absolute_filename = f'plots/{country_code.lower()}_monthly_renewable_vs_nonrenewable_mean_{period_name_clean}_absolute.png'
             plt.savefig(absolute_filename, dpi=150, bbox_inches='tight')
@@ -1129,8 +1107,6 @@ def create_all_charts(all_data, country_code='EU'):
                        bbox_transform=fig1.transFigure, ncol=3,
                        fontsize=18, frameon=False)
 
-            plt.tight_layout()
-
             percentage_filename = f'plots/{country_code.lower()}_annual_all_sources_percentage.png'
             plt.savefig(percentage_filename, dpi=150, bbox_inches='tight')
             print(f"  ✓ Saved: {percentage_filename}")
@@ -1172,8 +1148,6 @@ def create_all_charts(all_data, country_code='EU'):
             ax2.legend(loc='upper left', bbox_to_anchor=(0.14, 0.255),
                        bbox_transform=fig2.transFigure, ncol=3,
                        fontsize=18, frameon=False)
-
-            plt.tight_layout()
 
             absolute_filename = f'plots/{country_code.lower()}_annual_all_sources_absolute.png'
             plt.savefig(absolute_filename, dpi=150, bbox_inches='tight')
@@ -1235,8 +1209,6 @@ def create_all_charts(all_data, country_code='EU'):
                        bbox_transform=fig1.transFigure, ncol=3,
                        fontsize=18, frameon=False)
 
-            plt.tight_layout()
-
             percentage_filename = f'plots/{country_code.lower()}_annual_renewable_vs_non_renewable_percentage.png'
             plt.savefig(percentage_filename, dpi=150, bbox_inches='tight')
             print(f"  ✓ Saved: {percentage_filename}")
@@ -1278,8 +1250,6 @@ def create_all_charts(all_data, country_code='EU'):
             ax2.legend(loc='upper left', bbox_to_anchor=(0.14, 0.255),
                        bbox_transform=fig2.transFigure, ncol=3,
                        fontsize=18, frameon=False)
-
-            plt.tight_layout()
 
             absolute_filename = f'plots/{country_code.lower()}_annual_renewable_vs_non_renewable_absolute.png'
             plt.savefig(absolute_filename, dpi=150, bbox_inches='tight')
@@ -1364,8 +1334,6 @@ def create_all_charts(all_data, country_code='EU'):
                        bbox_transform=fig1.transFigure, ncol=3,
                        fontsize=18, frameon=False)
 
-            plt.tight_layout()
-
             percentage_filename = f'plots/{country_code.lower()}_annual_yoy_all_sources_vs_2015_percentage.png'
             plt.savefig(percentage_filename, dpi=150, bbox_inches='tight')
             print(f"  ✓ Saved: {percentage_filename}")
@@ -1433,8 +1401,6 @@ def create_all_charts(all_data, country_code='EU'):
             ax2.legend(loc='upper left', bbox_to_anchor=(0.14, 0.255),
                        bbox_transform=fig2.transFigure, ncol=3,
                        fontsize=18, frameon=False)
-
-            plt.tight_layout()
 
             absolute_filename = f'plots/{country_code.lower()}_annual_yoy_all_sources_vs_2015_absolute.png'
             plt.savefig(absolute_filename, dpi=150, bbox_inches='tight')
@@ -1509,8 +1475,6 @@ def create_all_charts(all_data, country_code='EU'):
                        bbox_transform=fig3.transFigure, ncol=3,
                        fontsize=18, frameon=False)
 
-            plt.tight_layout()
-
             percentage_filename = f'plots/{country_code.lower()}_annual_yoy_aggregates_vs_2015_percentage.png'
             plt.savefig(percentage_filename, dpi=150, bbox_inches='tight')
             print(f"  ✓ Saved: {percentage_filename}")
@@ -1578,8 +1542,6 @@ def create_all_charts(all_data, country_code='EU'):
             ax4.legend(loc='upper left', bbox_to_anchor=(0.14, 0.255),
                        bbox_transform=fig4.transFigure, ncol=3,
                        fontsize=18, frameon=False)
-
-            plt.tight_layout()
 
             absolute_filename = f'plots/{country_code.lower()}_annual_yoy_aggregates_vs_2015_absolute.png'
             plt.savefig(absolute_filename, dpi=150, bbox_inches='tight')
