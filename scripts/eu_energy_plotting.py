@@ -600,7 +600,7 @@ def create_all_charts(all_data, country_code='EU'):
                    ncol=3, fontsize=18, frameon=False)
 
         percentage_filename = f'plots/{country_code.lower()}_monthly_{source_name.lower().replace(" ", "_")}_percentage_10years.png'
-        plt.savefig(percentage_filename, dpi=150, bbox_inches='tight')
+        plt.savefig(percentage_filename, dpi=150, bbox_inches=None)
         print(f"  ✓ Saved: {percentage_filename}")
         
         # Upload to Drive (ADDED FROM AFTER)
@@ -660,7 +660,7 @@ def create_all_charts(all_data, country_code='EU'):
                    ncol=3, fontsize=18, frameon=False)
 
         absolute_filename = f'plots/{country_code.lower()}_monthly_{source_name.lower().replace(" ", "_")}_absolute_10years.png'
-        plt.savefig(absolute_filename, dpi=150, bbox_inches='tight')
+        plt.savefig(absolute_filename, dpi=150, bbox_inches=None)
         print(f"  ✓ Saved: {absolute_filename}")
         
         # Upload to Drive (ADDED FROM AFTER)
@@ -799,7 +799,7 @@ def create_all_charts(all_data, country_code='EU'):
 
             period_name_clean = period['name'].replace('-', '_')
             percentage_filename = f'plots/{country_code.lower()}_monthly_energy_sources_mean_{period_name_clean}_percentage.png'
-            plt.savefig(percentage_filename, dpi=150, bbox_inches='tight')
+            plt.savefig(percentage_filename, dpi=150, bbox_inches=None)
             print(f"  ✓ Saved: {percentage_filename}")
             
             if drive_service:
@@ -836,7 +836,7 @@ def create_all_charts(all_data, country_code='EU'):
                        fontsize=18, frameon=False)
 
             absolute_filename = f'plots/{country_code.lower()}_monthly_energy_sources_mean_{period_name_clean}_absolute.png'
-            plt.savefig(absolute_filename, dpi=150, bbox_inches='tight')
+            plt.savefig(absolute_filename, dpi=150, bbox_inches=None)
             print(f"  ✓ Saved: {absolute_filename}")
             
             if drive_service:
@@ -954,7 +954,7 @@ def create_all_charts(all_data, country_code='EU'):
 
             period_name_clean = period['name'].replace('-', '_')
             percentage_filename = f'plots/{country_code.lower()}_monthly_renewable_vs_nonrenewable_mean_{period_name_clean}_percentage.png'
-            plt.savefig(percentage_filename, dpi=150, bbox_inches='tight')
+            plt.savefig(percentage_filename, dpi=150, bbox_inches=None)
             print(f"  ✓ Saved: {percentage_filename}")
             
             if drive_service:
@@ -991,7 +991,7 @@ def create_all_charts(all_data, country_code='EU'):
                        fontsize=18, frameon=False)
 
             absolute_filename = f'plots/{country_code.lower()}_monthly_renewable_vs_nonrenewable_mean_{period_name_clean}_absolute.png'
-            plt.savefig(absolute_filename, dpi=150, bbox_inches='tight')
+            plt.savefig(absolute_filename, dpi=150, bbox_inches=None)
             print(f"  ✓ Saved: {absolute_filename}")
             
             if drive_service:
@@ -1108,7 +1108,7 @@ def create_all_charts(all_data, country_code='EU'):
                        fontsize=18, frameon=False)
 
             percentage_filename = f'plots/{country_code.lower()}_annual_all_sources_percentage.png'
-            plt.savefig(percentage_filename, dpi=150, bbox_inches='tight')
+            plt.savefig(percentage_filename, dpi=150, bbox_inches=None)
             print(f"  ✓ Saved: {percentage_filename}")
             
             if drive_service:
@@ -1150,7 +1150,7 @@ def create_all_charts(all_data, country_code='EU'):
                        fontsize=18, frameon=False)
 
             absolute_filename = f'plots/{country_code.lower()}_annual_all_sources_absolute.png'
-            plt.savefig(absolute_filename, dpi=150, bbox_inches='tight')
+            plt.savefig(absolute_filename, dpi=150, bbox_inches=None)
             print(f"  ✓ Saved: {absolute_filename}")
             
             if drive_service:
@@ -1210,7 +1210,7 @@ def create_all_charts(all_data, country_code='EU'):
                        fontsize=18, frameon=False)
 
             percentage_filename = f'plots/{country_code.lower()}_annual_renewable_vs_non_renewable_percentage.png'
-            plt.savefig(percentage_filename, dpi=150, bbox_inches='tight')
+            plt.savefig(percentage_filename, dpi=150, bbox_inches=None)
             print(f"  ✓ Saved: {percentage_filename}")
             
             if drive_service:
@@ -1252,7 +1252,7 @@ def create_all_charts(all_data, country_code='EU'):
                        fontsize=18, frameon=False)
 
             absolute_filename = f'plots/{country_code.lower()}_annual_renewable_vs_non_renewable_absolute.png'
-            plt.savefig(absolute_filename, dpi=150, bbox_inches='tight')
+            plt.savefig(absolute_filename, dpi=150, bbox_inches=None)
             print(f"  ✓ Saved: {absolute_filename}")
             
             if drive_service:
@@ -1335,7 +1335,7 @@ def create_all_charts(all_data, country_code='EU'):
                        fontsize=18, frameon=False)
 
             percentage_filename = f'plots/{country_code.lower()}_annual_yoy_all_sources_vs_2015_percentage.png'
-            plt.savefig(percentage_filename, dpi=150, bbox_inches='tight')
+            plt.savefig(percentage_filename, dpi=150, bbox_inches=None)
             print(f"  ✓ Saved: {percentage_filename}")
             
             if drive_service:
@@ -1403,7 +1403,7 @@ def create_all_charts(all_data, country_code='EU'):
                        fontsize=18, frameon=False)
 
             absolute_filename = f'plots/{country_code.lower()}_annual_yoy_all_sources_vs_2015_absolute.png'
-            plt.savefig(absolute_filename, dpi=150, bbox_inches='tight')
+            plt.savefig(absolute_filename, dpi=150, bbox_inches=None)
             print(f"  ✓ Saved: {absolute_filename}")
             
             if drive_service:
@@ -1476,7 +1476,7 @@ def create_all_charts(all_data, country_code='EU'):
                        fontsize=18, frameon=False)
 
             percentage_filename = f'plots/{country_code.lower()}_annual_yoy_aggregates_vs_2015_percentage.png'
-            plt.savefig(percentage_filename, dpi=150, bbox_inches='tight')
+            plt.savefig(percentage_filename, dpi=150, bbox_inches=None)
             print(f"  ✓ Saved: {percentage_filename}")
             
             if drive_service:
@@ -1544,7 +1544,7 @@ def create_all_charts(all_data, country_code='EU'):
                        fontsize=18, frameon=False)
 
             absolute_filename = f'plots/{country_code.lower()}_annual_yoy_aggregates_vs_2015_absolute.png'
-            plt.savefig(absolute_filename, dpi=150, bbox_inches='tight')
+            plt.savefig(absolute_filename, dpi=150, bbox_inches=None)
             print(f"  ✓ Saved: {absolute_filename}")
             
             if drive_service:
