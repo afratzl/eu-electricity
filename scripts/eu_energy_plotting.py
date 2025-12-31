@@ -793,8 +793,26 @@ def create_all_charts(all_data, country_code='EU'):
             ax1.set_ylim(0, max_pct_all_periods)
             ax1.tick_params(axis='both', labelsize=22, length=8, pad=8)
             ax1.grid(True, linestyle='--', alpha=0.7)
-            ax1.legend(loc='upper left', bbox_to_anchor=(0.14, 0.255),
-                       bbox_transform=fig1.transFigure, ncol=5,
+            
+            # Reorder legend for 4-column layout: 3, 2+empty, 3, 2+empty
+            from matplotlib.patches import Rectangle
+            empty = Rectangle((0,0), 0, 0, fill=False, edgecolor='none', visible=False)
+            handles, labels = ax1.get_legend_handles_labels()
+            reordered_handles = [
+                handles[0], handles[1], handles[2],
+                handles[3], handles[4], empty,
+                handles[5], handles[6], handles[7],
+                handles[8], handles[9], empty,
+            ]
+            reordered_labels = [
+                labels[0], labels[1], labels[2],
+                labels[3], labels[4], '',
+                labels[5], labels[6], labels[7],
+                labels[8], labels[9], '',
+            ]
+            
+            ax1.legend(reordered_handles, reordered_labels, loc='upper left', bbox_to_anchor=(0.14, 0.255),
+                       bbox_transform=fig1.transFigure, ncol=4,
                        fontsize=18, frameon=False)
 
             period_name_clean = period['name'].replace('-', '_')
@@ -831,8 +849,26 @@ def create_all_charts(all_data, country_code='EU'):
             ax2.set_ylim(0, max_abs_all_periods)
             ax2.tick_params(axis='both', labelsize=22, length=8, pad=8)
             ax2.grid(True, linestyle='--', alpha=0.7)
-            ax2.legend(loc='upper left', bbox_to_anchor=(0.14, 0.255),
-                       bbox_transform=fig2.transFigure, ncol=5,
+            
+            # Reorder legend for 4-column layout: 3, 2+empty, 3, 2+empty
+            from matplotlib.patches import Rectangle
+            empty = Rectangle((0,0), 0, 0, fill=False, edgecolor='none', visible=False)
+            handles, labels = ax2.get_legend_handles_labels()
+            reordered_handles = [
+                handles[0], handles[1], handles[2],
+                handles[3], handles[4], empty,
+                handles[5], handles[6], handles[7],
+                handles[8], handles[9], empty,
+            ]
+            reordered_labels = [
+                labels[0], labels[1], labels[2],
+                labels[3], labels[4], '',
+                labels[5], labels[6], labels[7],
+                labels[8], labels[9], '',
+            ]
+            
+            ax2.legend(reordered_handles, reordered_labels, loc='upper left', bbox_to_anchor=(0.14, 0.255),
+                       bbox_transform=fig2.transFigure, ncol=4,
                        fontsize=18, frameon=False)
 
             absolute_filename = f'plots/{country_code.lower()}_monthly_energy_sources_mean_{period_name_clean}_absolute.png'
@@ -1103,8 +1139,26 @@ def create_all_charts(all_data, country_code='EU'):
             ax1.set_ylim(0, max_annual_pct)
             ax1.tick_params(axis='both', labelsize=22, length=8, pad=8)
             ax1.grid(True, linestyle='--', alpha=0.7)
-            ax1.legend(loc='upper left', bbox_to_anchor=(0.14, 0.255),
-                       bbox_transform=fig1.transFigure, ncol=5,
+            
+            # Reorder legend for 4-column layout: 3, 2+empty, 3, 2+empty
+            from matplotlib.patches import Rectangle
+            empty = Rectangle((0,0), 0, 0, fill=False, edgecolor='none', visible=False)
+            handles, labels = ax1.get_legend_handles_labels()
+            reordered_handles = [
+                handles[0], handles[1], handles[2],
+                handles[3], handles[4], empty,
+                handles[5], handles[6], handles[7],
+                handles[8], handles[9], empty,
+            ]
+            reordered_labels = [
+                labels[0], labels[1], labels[2],
+                labels[3], labels[4], '',
+                labels[5], labels[6], labels[7],
+                labels[8], labels[9], '',
+            ]
+            
+            ax1.legend(reordered_handles, reordered_labels, loc='upper left', bbox_to_anchor=(0.14, 0.255),
+                       bbox_transform=fig1.transFigure, ncol=4,
                        fontsize=18, frameon=False)
 
             percentage_filename = f'plots/{country_code.lower()}_annual_all_sources_percentage.png'
@@ -1145,8 +1199,26 @@ def create_all_charts(all_data, country_code='EU'):
             ax2.set_ylim(0, max_annual_twh)
             ax2.tick_params(axis='both', labelsize=22, length=8, pad=8)
             ax2.grid(True, linestyle='--', alpha=0.7)
-            ax2.legend(loc='upper left', bbox_to_anchor=(0.14, 0.255),
-                       bbox_transform=fig2.transFigure, ncol=5,
+            
+            # Reorder legend for 4-column layout: 3, 2+empty, 3, 2+empty
+            from matplotlib.patches import Rectangle
+            empty = Rectangle((0,0), 0, 0, fill=False, edgecolor='none', visible=False)
+            handles, labels = ax2.get_legend_handles_labels()
+            reordered_handles = [
+                handles[0], handles[1], handles[2],
+                handles[3], handles[4], empty,
+                handles[5], handles[6], handles[7],
+                handles[8], handles[9], empty,
+            ]
+            reordered_labels = [
+                labels[0], labels[1], labels[2],
+                labels[3], labels[4], '',
+                labels[5], labels[6], labels[7],
+                labels[8], labels[9], '',
+            ]
+            
+            ax2.legend(reordered_handles, reordered_labels, loc='upper left', bbox_to_anchor=(0.14, 0.255),
+                       bbox_transform=fig2.transFigure, ncol=4,
                        fontsize=18, frameon=False)
 
             absolute_filename = f'plots/{country_code.lower()}_annual_all_sources_absolute.png'
@@ -1330,8 +1402,26 @@ def create_all_charts(all_data, country_code='EU'):
             ax1.axhline(y=0, color='black', linestyle='--', linewidth=1, alpha=0.5)
             ax1.tick_params(axis='both', labelsize=22, length=8, pad=8)
             ax1.grid(True, linestyle='--', alpha=0.7)
-            ax1.legend(loc='upper left', bbox_to_anchor=(0.14, 0.255),
-                       bbox_transform=fig1.transFigure, ncol=5,
+            
+            # Reorder legend for 4-column layout: 3, 2+empty, 3, 2+empty
+            from matplotlib.patches import Rectangle
+            empty = Rectangle((0,0), 0, 0, fill=False, edgecolor='none', visible=False)
+            handles, labels = ax1.get_legend_handles_labels()
+            reordered_handles = [
+                handles[0], handles[1], handles[2],
+                handles[3], handles[4], empty,
+                handles[5], handles[6], handles[7],
+                handles[8], handles[9], empty,
+            ]
+            reordered_labels = [
+                labels[0], labels[1], labels[2],
+                labels[3], labels[4], '',
+                labels[5], labels[6], labels[7],
+                labels[8], labels[9], '',
+            ]
+            
+            ax1.legend(reordered_handles, reordered_labels, loc='upper left', bbox_to_anchor=(0.14, 0.255),
+                       bbox_transform=fig1.transFigure, ncol=4,
                        fontsize=18, frameon=False)
 
             percentage_filename = f'plots/{country_code.lower()}_annual_yoy_all_sources_vs_2015_percentage.png'
@@ -1398,8 +1488,26 @@ def create_all_charts(all_data, country_code='EU'):
             ax2.axhline(y=0, color='black', linestyle='--', linewidth=1, alpha=0.5)
             ax2.tick_params(axis='both', labelsize=22, length=8, pad=8)
             ax2.grid(True, linestyle='--', alpha=0.7)
-            ax2.legend(loc='upper left', bbox_to_anchor=(0.14, 0.255),
-                       bbox_transform=fig2.transFigure, ncol=5,
+            
+            # Reorder legend for 4-column layout: 3, 2+empty, 3, 2+empty
+            from matplotlib.patches import Rectangle
+            empty = Rectangle((0,0), 0, 0, fill=False, edgecolor='none', visible=False)
+            handles, labels = ax2.get_legend_handles_labels()
+            reordered_handles = [
+                handles[0], handles[1], handles[2],
+                handles[3], handles[4], empty,
+                handles[5], handles[6], handles[7],
+                handles[8], handles[9], empty,
+            ]
+            reordered_labels = [
+                labels[0], labels[1], labels[2],
+                labels[3], labels[4], '',
+                labels[5], labels[6], labels[7],
+                labels[8], labels[9], '',
+            ]
+            
+            ax2.legend(reordered_handles, reordered_labels, loc='upper left', bbox_to_anchor=(0.14, 0.255),
+                       bbox_transform=fig2.transFigure, ncol=4,
                        fontsize=18, frameon=False)
 
             absolute_filename = f'plots/{country_code.lower()}_annual_yoy_all_sources_vs_2015_absolute.png'
