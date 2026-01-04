@@ -1775,14 +1775,8 @@ def update_summary_table_historical_data(all_data, country_code='EU'):
             if current_year in year_data:
                 for month in range(1, current_month + 1):
                     month_value = year_data[current_year].get(month, 0)
-                    if month < current_month:
-                        # Full month - sheet already has monthly total
-                        ytd_current_gwh += month_value
-                    else:
-                        # Partial month - current month
-                        current_day = current_date.day
-                        days_in_month = calendar.monthrange(current_year, month)[1]
-                        ytd_current_gwh += month_value * (current_day / days_in_month)
+                    # Current year: sheet contains only actual data so far, use as-is
+                    ytd_current_gwh += month_value
             
             # Calculate previous year full year
             year_previous_gwh = 0
