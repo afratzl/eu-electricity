@@ -729,6 +729,12 @@ def create_all_charts(all_data, country_code='EU'):
             if not period_years:
                 continue
 
+            # Get current date info for weighted averaging
+            current_date = datetime.now()
+            current_year = current_date.year
+            current_month = current_date.month
+            current_day = current_date.day
+
             monthly_absolute = {}
             monthly_percentages = {}
 
@@ -757,22 +763,52 @@ def create_all_charts(all_data, country_code='EU'):
                                 percentage = (source_val / total_val) * 100
                                 monthly_percentages[source_name][month].append(percentage)
 
+            # Calculate weighted means
             monthly_means_abs = {}
             monthly_means_pct = {}
             for source_name in available_sources:
                 monthly_means_abs[source_name] = []
                 monthly_means_pct[source_name] = []
+                source_data = all_data[source_name]['year_data']
+                total_data = all_data['Total Generation']['year_data']
+                
                 for month in range(1, 13):
-                    absolute_vals = monthly_absolute[source_name][month]
-                    if absolute_vals:
-                        monthly_means_abs[source_name].append(np.mean(absolute_vals))
+                    # Calculate weighted average based on data availability
+                    weighted_sum_abs = 0
+                    weighted_sum_pct = 0
+                    total_weight = 0
+                    
+                    for year in period_years:
+                        if year in source_data and year in total_data:
+                            source_val = source_data[year].get(month, 0)
+                            total_val = total_data[year].get(month, 0)
+                            
+                            # Determine weight for this year-month
+                            if year == current_year and month == current_month:
+                                # Current month of current year: partial data
+                                days_in_month = calendar.monthrange(year, month)[1]
+                                weight = current_day / days_in_month
+                            elif year == current_year and month > current_month:
+                                # Future months of current year: no data
+                                weight = 0
+                            else:
+                                # Past years or past months: full data
+                                weight = 1
+                            
+                            if weight > 0:
+                                weighted_sum_abs += source_val * weight
+                                total_weight += weight
+                                
+                                if total_val > 0:
+                                    percentage = (source_val / total_val) * 100
+                                    weighted_sum_pct += percentage * weight
+                    
+                    # Calculate final weighted average
+                    if total_weight > 0:
+                        monthly_means_abs[source_name].append(weighted_sum_abs / total_weight)
+                        monthly_means_pct[source_name].append(weighted_sum_pct / total_weight)
                     else:
                         monthly_means_abs[source_name].append(0)
-
-                    percentages = monthly_percentages[source_name][month]
-                    if percentages:
-                        monthly_means_pct[source_name].append(np.mean(percentages))
-                    else:
                         monthly_means_pct[source_name].append(0)
 
             # PLOT 1: PERCENTAGE
@@ -948,22 +984,59 @@ def create_all_charts(all_data, country_code='EU'):
                                 percentage = (category_val / total_val) * 100
                                 monthly_percentages[category_name][month].append(percentage)
 
+            # Calculate weighted means
             monthly_means_abs = {}
             monthly_means_pct = {}
+            
+            # Get current date info for weighted averaging
+            current_date = datetime.now()
+            current_year = current_date.year
+            current_month = current_date.month
+            current_day = current_date.day
+            
             for category_name in ['All Renewables', 'All Non-Renewables']:
                 monthly_means_abs[category_name] = []
                 monthly_means_pct[category_name] = []
+                category_data = all_data[category_name]['year_data']
+                total_data = all_data['Total Generation']['year_data']
+                
                 for month in range(1, 13):
-                    absolute_vals = monthly_absolute[category_name][month]
-                    if absolute_vals:
-                        monthly_means_abs[category_name].append(np.mean(absolute_vals))
+                    # Calculate weighted average based on data availability
+                    weighted_sum_abs = 0
+                    weighted_sum_pct = 0
+                    total_weight = 0
+                    
+                    for year in period_years:
+                        if year in category_data and year in total_data:
+                            category_val = category_data[year].get(month, 0)
+                            total_val = total_data[year].get(month, 0)
+                            
+                            # Determine weight for this year-month
+                            if year == current_year and month == current_month:
+                                # Current month of current year: partial data
+                                days_in_month = calendar.monthrange(year, month)[1]
+                                weight = current_day / days_in_month
+                            elif year == current_year and month > current_month:
+                                # Future months of current year: no data
+                                weight = 0
+                            else:
+                                # Past years or past months: full data
+                                weight = 1
+                            
+                            if weight > 0:
+                                weighted_sum_abs += category_val * weight
+                                total_weight += weight
+                                
+                                if total_val > 0:
+                                    percentage = (category_val / total_val) * 100
+                                    weighted_sum_pct += percentage * weight
+                    
+                    # Calculate final weighted average
+                    if total_weight > 0:
+                        monthly_means_abs[category_name].append(weighted_sum_abs / total_weight)
+                        monthly_means_pct[category_name].append(weighted_sum_pct / total_weight)
                     else:
                         monthly_means_abs[category_name].append(0)
-
-                    percentages = monthly_percentages[category_name][month]
-                    if percentages:
-                        monthly_means_pct[category_name].append(np.mean(percentages))
-                    else:
                         monthly_means_pct[category_name].append(0)
 
             # PLOT 1: PERCENTAGE
