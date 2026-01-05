@@ -1420,6 +1420,54 @@ def create_all_charts(all_data, country_code='EU'):
         baseline_year = 2015
         all_sources_for_yoy = available_renewables + available_non_renewables
         totals_for_yoy = ['All Renewables', 'All Non-Renewables']
+        
+        # Calculate YTD for current year and prorated baseline for fair comparison
+        current_date = datetime.now()
+        current_year = current_date.year
+        current_month = current_date.month
+        current_day = current_date.day
+        
+        # Build YTD-adjusted annual totals for YoY comparison
+        annual_totals_ytd_adjusted = {}
+        
+        for source_name in all_sources:
+            if source_name not in all_data:
+                continue
+            
+            annual_totals_ytd_adjusted[source_name] = {}
+            year_data = all_data[source_name]['year_data']
+            
+            for year in years_available:
+                if year == current_year:
+                    # Current year: Use actual YTD (no proration)
+                    ytd_total = 0
+                    if year in year_data:
+                        for month in range(1, current_month + 1):
+                            month_value = year_data[year].get(month, 0)
+                            ytd_total += month_value
+                    annual_totals_ytd_adjusted[source_name][year] = ytd_total
+                    
+                elif year == baseline_year:
+                    # Baseline year: Prorate to match current year's period
+                    ytd_baseline = 0
+                    if year in year_data:
+                        for month in range(1, current_month + 1):
+                            month_value = year_data[year].get(month, 0)
+                            if month < current_month:
+                                # Full month
+                                ytd_baseline += month_value
+                            else:
+                                # Partial month (current month)
+                                days_in_month = calendar.monthrange(year, month)[1]
+                                ytd_baseline += month_value * (current_day / days_in_month)
+                    annual_totals_ytd_adjusted[source_name][year] = ytd_baseline
+                    
+                else:
+                    # Other years: Use full year data (unchanged)
+                    if year in annual_totals.get(source_name, {}):
+                        annual_totals_ytd_adjusted[source_name][year] = annual_totals[source_name][year]
+        
+        print(f"  ✓ Calculated YTD-adjusted values for {current_year} (YTD) and {baseline_year} (prorated to match)")
 
         # ====================================================================
         # Chart 1: YoY Change - ALL SOURCES
@@ -1434,16 +1482,16 @@ def create_all_charts(all_data, country_code='EU'):
         lines_plotted = 0
         
         for source_name in all_sources_for_yoy:
-            if source_name in annual_totals and baseline_year in annual_totals[source_name]:
-                baseline_value = annual_totals[source_name][baseline_year]
+            if source_name in annual_totals_ytd_adjusted and baseline_year in annual_totals_ytd_adjusted[source_name]:
+                baseline_value = annual_totals_ytd_adjusted[source_name][baseline_year]
 
                 if baseline_value > 0:
-                    years_list = sorted(annual_totals[source_name].keys())
+                    years_list = sorted(annual_totals_ytd_adjusted[source_name].keys())
                     yoy_pct_changes = []
                     
                     for year in years_list:
                         if year >= baseline_year:
-                            current_value = annual_totals[source_name][year]
+                            current_value = annual_totals_ytd_adjusted[source_name][year]
                             pct_change = ((current_value - baseline_value) / baseline_value) * 100
                             yoy_pct_changes.append(pct_change)
                             all_yoy_pct_values.append(pct_change)
@@ -1520,16 +1568,16 @@ def create_all_charts(all_data, country_code='EU'):
         lines_plotted = 0
         
         for source_name in all_sources_for_yoy:
-            if source_name in annual_totals and baseline_year in annual_totals[source_name]:
-                baseline_value = annual_totals[source_name][baseline_year]
+            if source_name in annual_totals_ytd_adjusted and baseline_year in annual_totals_ytd_adjusted[source_name]:
+                baseline_value = annual_totals_ytd_adjusted[source_name][baseline_year]
 
                 if baseline_value > 0:
-                    years_list = sorted(annual_totals[source_name].keys())
+                    years_list = sorted(annual_totals_ytd_adjusted[source_name].keys())
                     yoy_abs_changes = []
                     
                     for year in years_list:
                         if year >= baseline_year:
-                            current_value = annual_totals[source_name][year]
+                            current_value = annual_totals_ytd_adjusted[source_name][year]
                             abs_change = (current_value - baseline_value) / 1000  # Convert to TWh
                             yoy_abs_changes.append(abs_change)
                             all_yoy_abs_values.append(abs_change)
@@ -1611,16 +1659,16 @@ def create_all_charts(all_data, country_code='EU'):
         lines_plotted = 0
         
         for category_name in totals_for_yoy:
-            if category_name in annual_totals and baseline_year in annual_totals[category_name]:
-                baseline_value = annual_totals[category_name][baseline_year]
+            if category_name in annual_totals_ytd_adjusted and baseline_year in annual_totals_ytd_adjusted[category_name]:
+                baseline_value = annual_totals_ytd_adjusted[category_name][baseline_year]
 
                 if baseline_value > 0:
-                    years_list = sorted(annual_totals[category_name].keys())
+                    years_list = sorted(annual_totals_ytd_adjusted[category_name].keys())
                     yoy_pct_changes = []
                     
                     for year in years_list:
                         if year >= baseline_year:
-                            current_value = annual_totals[category_name][year]
+                            current_value = annual_totals_ytd_adjusted[category_name][year]
                             pct_change = ((current_value - baseline_value) / baseline_value) * 100
                             yoy_pct_changes.append(pct_change)
                             all_yoy_agg_pct_values.append(pct_change)
@@ -1679,16 +1727,16 @@ def create_all_charts(all_data, country_code='EU'):
         lines_plotted = 0
         
         for category_name in totals_for_yoy:
-            if category_name in annual_totals and baseline_year in annual_totals[category_name]:
-                baseline_value = annual_totals[category_name][baseline_year]
+            if category_name in annual_totals_ytd_adjusted and baseline_year in annual_totals_ytd_adjusted[category_name]:
+                baseline_value = annual_totals_ytd_adjusted[category_name][baseline_year]
 
                 if baseline_value > 0:
-                    years_list = sorted(annual_totals[category_name].keys())
+                    years_list = sorted(annual_totals_ytd_adjusted[category_name].keys())
                     yoy_abs_changes = []
                     
                     for year in years_list:
                         if year >= baseline_year:
-                            current_value = annual_totals[category_name][year]
+                            current_value = annual_totals_ytd_adjusted[category_name][year]
                             abs_change = (current_value - baseline_value) / 1000  # Convert to TWh
                             yoy_abs_changes.append(abs_change)
                             all_yoy_agg_abs_values.append(abs_change)
