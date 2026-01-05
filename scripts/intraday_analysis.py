@@ -1699,6 +1699,8 @@ def update_summary_table_worksheet(corrected_data, country_code='EU'):
     """
     Update Google Sheets "Summary Table Data" worksheet with yesterday/last week data
     Uses PROJECTED (corrected) data for accuracy
+    
+    FIXED: Now uses 22 columns (A-V) matching monthly/trends script
     """
     if not GSPREAD_AVAILABLE:
         print("\n⚠ Skipping Google Sheets update - gspread not available")
@@ -1734,48 +1736,62 @@ def update_summary_table_worksheet(corrected_data, country_code='EU'):
         spreadsheet = get_or_create_country_sheet(gc, drive_service, country_code=country_code)
         print(f"✓ Connected to Google Sheets ({country_code}): {spreadsheet.url}")
         
+        # Get current date info for dynamic headers
+        current_date = datetime.now()
+        current_year = current_date.year      # 2026
+        previous_year = current_year - 1      # 2025
+        two_years_ago = current_year - 2      # 2024
+        
         # Get or create worksheet
         try:
             worksheet = spreadsheet.worksheet('Summary Table Data')
             print("✓ Found existing 'Summary Table Data' worksheet")
             
-            # Check if worksheet has enough columns (need 14: A-N)
-            if worksheet.col_count < 14:
-                print(f"  Expanding worksheet from {worksheet.col_count} to 14 columns...")
-                worksheet.resize(rows=worksheet.row_count, cols=14)
+            # Check if worksheet has enough columns (need 22: A-V)
+            if worksheet.col_count < 22:
+                print(f"  Expanding worksheet from {worksheet.col_count} to 22 columns...")
+                worksheet.resize(rows=worksheet.row_count, cols=22)
                 
                 # Update header row with new columns
                 headers = [
                     'Source', 
                     'Yesterday_GWh', 'Yesterday_%', 
                     'LastWeek_GWh', 'LastWeek_%',
-                    'YTD2025_GWh', 'YTD2025_%',
-                    'Avg2020_2024_GWh', 'Avg2020_2024_%',
+                    f'YTD{current_year}_GWh', f'YTD{current_year}_%',
+                    f'{previous_year}_GWh', f'{previous_year}_%',
                     'Last_Updated',
                     'Yesterday_Change_2015_%', 'LastWeek_Change_2015_%',
-                    'YTD2025_Change_2015_%', 'Avg2020_2024_Change_2015_%'
+                    f'YTD{current_year}_Change_2015_%', f'{previous_year}_Change_2015_%',
+                    f'Yesterday_Change_{previous_year}_%', f'LastWeek_Change_{previous_year}_%',
+                    f'YTD{current_year}_Change_{previous_year}_%', f'{previous_year}_Change_{previous_year}_%',
+                    f'Yesterday_Change_{two_years_ago}_%', f'LastWeek_Change_{two_years_ago}_%',
+                    f'YTD{current_year}_Change_{two_years_ago}_%', f'{previous_year}_Change_{two_years_ago}_%'
                 ]
-                worksheet.update('A1:N1', [headers])
-                worksheet.format('A1:N1', {'textFormat': {'bold': True}})
+                worksheet.update('A1:V1', [headers])
+                worksheet.format('A1:V1', {'textFormat': {'bold': True}})
                 print("  ✓ Worksheet expanded and header updated")
                 
         except gspread.WorksheetNotFound:
-            worksheet = spreadsheet.add_worksheet(title='Summary Table Data', rows=20, cols=15)
+            worksheet = spreadsheet.add_worksheet(title='Summary Table Data', rows=20, cols=25)
             print("✓ Created new 'Summary Table Data' worksheet")
             
-            # Add headers (now includes K-N for change from 2015)
+            # Add headers (22 columns A-V)
             headers = [
                 'Source', 
                 'Yesterday_GWh', 'Yesterday_%', 
                 'LastWeek_GWh', 'LastWeek_%',
-                'YTD2025_GWh', 'YTD2025_%',
-                'Avg2020_2024_GWh', 'Avg2020_2024_%',
+                f'YTD{current_year}_GWh', f'YTD{current_year}_%',
+                f'{previous_year}_GWh', f'{previous_year}_%',
                 'Last_Updated',
                 'Yesterday_Change_2015_%', 'LastWeek_Change_2015_%',
-                'YTD2025_Change_2015_%', 'Avg2020_2024_Change_2015_%'
+                f'YTD{current_year}_Change_2015_%', f'{previous_year}_Change_2015_%',
+                f'Yesterday_Change_{previous_year}_%', f'LastWeek_Change_{previous_year}_%',
+                f'YTD{current_year}_Change_{previous_year}_%', f'{previous_year}_Change_{previous_year}_%',
+                f'Yesterday_Change_{two_years_ago}_%', f'LastWeek_Change_{two_years_ago}_%',
+                f'YTD{current_year}_Change_{two_years_ago}_%', f'{previous_year}_Change_{two_years_ago}_%'
             ]
-            worksheet.update('A1:N1', [headers])
-            worksheet.format('A1:N1', {'textFormat': {'bold': True}})
+            worksheet.update('A1:V1', [headers])
+            worksheet.format('A1:V1', {'textFormat': {'bold': True}})
         
         # Calculate yesterday totals (using PROJECTED data)
         yesterday_totals = calculate_period_totals(
@@ -1859,7 +1875,7 @@ def update_summary_table_worksheet(corrected_data, country_code='EU'):
                         # Monthly sheets store MONTHLY TOTALS, so store as-is
                         # We'll convert to daily when comparing
                         data_2015[source] = monthly_total_2015
-                        print(f"  {source}: Nov 2015 = {monthly_total_2015:.1f} GWh (monthly total)")
+                        print(f"  {source}: {calendar.month_name[baseline_month]} 2015 = {monthly_total_2015:.1f} GWh (monthly total)")
                     
             except Exception as e:
                 print(f"  ⚠ Could not load 2015 data for {source}: {e}")
@@ -1887,7 +1903,7 @@ def update_summary_table_worksheet(corrected_data, country_code='EU'):
         
         print(f"  ✓ Loaded 2015 baseline for {len(data_2015)} sources")
         
-        # Prepare data rows - ONLY columns that intraday owns
+        # Prepare data rows - ONLY columns that intraday owns (B-E, K-L)
         timestamp = datetime.now().strftime('%Y-%m-%d %H:%M UTC')
         
         # First, update column A (Source names) if needed
@@ -1931,10 +1947,6 @@ def update_summary_table_worksheet(corrected_data, country_code='EU'):
                 change_y = (yesterday_gwh - baseline_yesterday) / baseline_yesterday * 100
                 yesterday_change = format_change_percentage(change_y)
                 
-                # Debug: print first source
-                if source == source_order[0]:
-                    print(f"  DEBUG {source}: yesterday={yesterday_gwh:.1f} GWh, baseline={baseline_yesterday:.1f} GWh (={monthly_total_2015:.1f}/{days_in_baseline_month}), change={change_y:.1f}%")
-                
                 # Last week change: monthly_total / days_in_month * 7 days
                 baseline_week = (monthly_total_2015 / days_in_baseline_month) * 7
                 lastweek_gwh = week_totals[source]['gwh']
@@ -1944,7 +1956,7 @@ def update_summary_table_worksheet(corrected_data, country_code='EU'):
             row_kl = [yesterday_change, lastweek_change]
             data_updates_kl.append(row_kl)
         
-        # Update columns B-E (preserves F-I historical data!)
+        # Update columns B-E (preserves F-I, M-N, O-V historical data!)
         if data_updates_be:
             worksheet.update('B2:E13', data_updates_be)
         
@@ -1957,11 +1969,11 @@ def update_summary_table_worksheet(corrected_data, country_code='EU'):
             worksheet.update('J2:J13', timestamp_updates)
             
             # Format aggregate rows (bold)
-            worksheet.format('A2:N2', {'textFormat': {'bold': True}})  # All Renewables
-            worksheet.format('A8:N8', {'textFormat': {'bold': True}})  # All Non-Renewables
+            worksheet.format('A2:V2', {'textFormat': {'bold': True}})  # All Renewables
+            worksheet.format('A8:V8', {'textFormat': {'bold': True}})  # All Non-Renewables
             
             print(f"✓ Updated {len(source_order)} sources with yesterday/last week data (columns B-E, K-L)")
-            print(f"   Historical data (columns F-I, M-N) preserved!")
+            print(f"   Historical data (columns F-I, M-N, O-V) preserved for monthly script!")
             print(f"   Worksheet: {spreadsheet.url}")
         else:
             print("⚠ No data to update")
