@@ -1427,47 +1427,40 @@ def create_all_charts(all_data, country_code='EU'):
         current_month = current_date.month
         current_day = current_date.day
         
-        # Build YTD-adjusted annual totals for YoY comparison
-        annual_totals_ytd_adjusted = {}
+        # Build YTD-adjusted values for current year only
+        # Historical years will use full year 2015 baseline
+        current_year_ytd = {}
+        baseline_year_prorated = {}
         
         for source_name in all_sources:
             if source_name not in all_data:
                 continue
             
-            annual_totals_ytd_adjusted[source_name] = {}
             year_data = all_data[source_name]['year_data']
             
-            for year in years_available:
-                if year == current_year:
-                    # Current year: Use actual YTD (no proration)
-                    ytd_total = 0
-                    if year in year_data:
-                        for month in range(1, current_month + 1):
-                            month_value = year_data[year].get(month, 0)
-                            ytd_total += month_value
-                    annual_totals_ytd_adjusted[source_name][year] = ytd_total
-                    
-                elif year == baseline_year:
-                    # Baseline year: Prorate to match current year's period
-                    ytd_baseline = 0
-                    if year in year_data:
-                        for month in range(1, current_month + 1):
-                            month_value = year_data[year].get(month, 0)
-                            if month < current_month:
-                                # Full month
-                                ytd_baseline += month_value
-                            else:
-                                # Partial month (current month)
-                                days_in_month = calendar.monthrange(year, month)[1]
-                                ytd_baseline += month_value * (current_day / days_in_month)
-                    annual_totals_ytd_adjusted[source_name][year] = ytd_baseline
-                    
-                else:
-                    # Other years: Use full year data (unchanged)
-                    if year in annual_totals.get(source_name, {}):
-                        annual_totals_ytd_adjusted[source_name][year] = annual_totals[source_name][year]
+            # Calculate current year YTD
+            if current_year in year_data:
+                ytd_total = 0
+                for month in range(1, current_month + 1):
+                    month_value = year_data[current_year].get(month, 0)
+                    ytd_total += month_value
+                current_year_ytd[source_name] = ytd_total
+            
+            # Calculate prorated baseline (2015) to match current year's period
+            if baseline_year in year_data:
+                ytd_baseline = 0
+                for month in range(1, current_month + 1):
+                    month_value = year_data[baseline_year].get(month, 0)
+                    if month < current_month:
+                        # Full month
+                        ytd_baseline += month_value
+                    else:
+                        # Partial month (current month)
+                        days_in_month = calendar.monthrange(baseline_year, month)[1]
+                        ytd_baseline += month_value * (current_day / days_in_month)
+                baseline_year_prorated[source_name] = ytd_baseline
         
-        print(f"  ✓ Calculated YTD-adjusted values for {current_year} (YTD) and {baseline_year} (prorated to match)")
+        print(f"  ✓ Calculated YTD for {current_year} and prorated baseline for comparison")
 
         # ====================================================================
         # Chart 1: YoY Change - ALL SOURCES
@@ -1482,27 +1475,46 @@ def create_all_charts(all_data, country_code='EU'):
         lines_plotted = 0
         
         for source_name in all_sources_for_yoy:
-            if source_name in annual_totals_ytd_adjusted and baseline_year in annual_totals_ytd_adjusted[source_name]:
-                baseline_value = annual_totals_ytd_adjusted[source_name][baseline_year]
+            if source_name not in annual_totals:
+                continue
+            
+            # Check if we have baseline data (full year 2015)
+            if baseline_year not in annual_totals[source_name]:
+                continue
+            
+            baseline_full_year = annual_totals[source_name][baseline_year]
+            if baseline_full_year <= 0:
+                continue
+            
+            years_list = sorted(annual_totals[source_name].keys())
+            yoy_pct_changes = []
+            
+            for year in years_list:
+                if year >= baseline_year:
+                    if year == current_year:
+                        # Current year: Compare YTD to prorated baseline
+                        if source_name in current_year_ytd and source_name in baseline_year_prorated:
+                            current_value = current_year_ytd[source_name]
+                            baseline_value = baseline_year_prorated[source_name]
+                            if baseline_value > 0:
+                                pct_change = ((current_value - baseline_value) / baseline_value) * 100
+                                yoy_pct_changes.append(pct_change)
+                                all_yoy_pct_values.append(pct_change)
+                    else:
+                        # Historical years: Compare full year to full year baseline
+                        current_value = annual_totals[source_name][year]
+                        pct_change = ((current_value - baseline_full_year) / baseline_full_year) * 100
+                        yoy_pct_changes.append(pct_change)
+                        all_yoy_pct_values.append(pct_change)
 
-                if baseline_value > 0:
-                    years_list = sorted(annual_totals_ytd_adjusted[source_name].keys())
-                    yoy_pct_changes = []
-                    
-                    for year in years_list:
-                        if year >= baseline_year:
-                            current_value = annual_totals_ytd_adjusted[source_name][year]
-                            pct_change = ((current_value - baseline_value) / baseline_value) * 100
-                            yoy_pct_changes.append(pct_change)
-                            all_yoy_pct_values.append(pct_change)
-
-                    years_to_plot = [year for year in years_list if year >= baseline_year]
-
-                    if len(years_to_plot) > 0:
-                        color = ENTSOE_COLORS.get(source_name, 'black')
-                        ax1.plot(years_to_plot, yoy_pct_changes, marker='o', color=color,
-                                 linewidth=6, markersize=13, label=source_name)
-                        lines_plotted += 1
+            years_to_plot = [year for year in years_list if year >= baseline_year]
+            
+            # Only plot if we have matching data points
+            if len(years_to_plot) > 0 and len(yoy_pct_changes) == len(years_to_plot):
+                color = ENTSOE_COLORS.get(source_name, 'black')
+                ax1.plot(years_to_plot, yoy_pct_changes, marker='o', color=color,
+                         linewidth=6, markersize=13, label=source_name)
+                lines_plotted += 1
 
         if lines_plotted > 0:
             if all_yoy_pct_values:
@@ -1568,27 +1580,45 @@ def create_all_charts(all_data, country_code='EU'):
         lines_plotted = 0
         
         for source_name in all_sources_for_yoy:
-            if source_name in annual_totals_ytd_adjusted and baseline_year in annual_totals_ytd_adjusted[source_name]:
-                baseline_value = annual_totals_ytd_adjusted[source_name][baseline_year]
-
-                if baseline_value > 0:
-                    years_list = sorted(annual_totals_ytd_adjusted[source_name].keys())
-                    yoy_abs_changes = []
-                    
-                    for year in years_list:
-                        if year >= baseline_year:
-                            current_value = annual_totals_ytd_adjusted[source_name][year]
+            if source_name not in annual_totals:
+                continue
+            
+            # Check if we have baseline data (full year 2015)
+            if baseline_year not in annual_totals[source_name]:
+                continue
+            
+            baseline_full_year = annual_totals[source_name][baseline_year]
+            if baseline_full_year <= 0:
+                continue
+            
+            years_list = sorted(annual_totals[source_name].keys())
+            yoy_abs_changes = []
+            
+            for year in years_list:
+                if year >= baseline_year:
+                    if year == current_year:
+                        # Current year: Compare YTD to prorated baseline
+                        if source_name in current_year_ytd and source_name in baseline_year_prorated:
+                            current_value = current_year_ytd[source_name]
+                            baseline_value = baseline_year_prorated[source_name]
                             abs_change = (current_value - baseline_value) / 1000  # Convert to TWh
                             yoy_abs_changes.append(abs_change)
                             all_yoy_abs_values.append(abs_change)
+                    else:
+                        # Historical years: Compare full year to full year baseline
+                        current_value = annual_totals[source_name][year]
+                        abs_change = (current_value - baseline_full_year) / 1000  # Convert to TWh
+                        yoy_abs_changes.append(abs_change)
+                        all_yoy_abs_values.append(abs_change)
 
-                    years_to_plot = [year for year in years_list if year >= baseline_year]
-
-                    if len(years_to_plot) > 0:
-                        color = ENTSOE_COLORS.get(source_name, 'black')
-                        ax2.plot(years_to_plot, yoy_abs_changes, marker='o', color=color,
-                                 linewidth=6, markersize=13, label=source_name)
-                        lines_plotted += 1
+            years_to_plot = [year for year in years_list if year >= baseline_year]
+            
+            # Only plot if we have matching data points
+            if len(years_to_plot) > 0 and len(yoy_abs_changes) == len(years_to_plot):
+                color = ENTSOE_COLORS.get(source_name, 'black')
+                ax2.plot(years_to_plot, yoy_abs_changes, marker='o', color=color,
+                         linewidth=6, markersize=13, label=source_name)
+                lines_plotted += 1
 
         if lines_plotted > 0:
             if all_yoy_abs_values:
@@ -1659,27 +1689,46 @@ def create_all_charts(all_data, country_code='EU'):
         lines_plotted = 0
         
         for category_name in totals_for_yoy:
-            if category_name in annual_totals_ytd_adjusted and baseline_year in annual_totals_ytd_adjusted[category_name]:
-                baseline_value = annual_totals_ytd_adjusted[category_name][baseline_year]
+            if category_name not in annual_totals:
+                continue
+            
+            # Check if we have baseline data (full year 2015)
+            if baseline_year not in annual_totals[category_name]:
+                continue
+            
+            baseline_full_year = annual_totals[category_name][baseline_year]
+            if baseline_full_year <= 0:
+                continue
+            
+            years_list = sorted(annual_totals[category_name].keys())
+            yoy_pct_changes = []
+            
+            for year in years_list:
+                if year >= baseline_year:
+                    if year == current_year:
+                        # Current year: Compare YTD to prorated baseline
+                        if category_name in current_year_ytd and category_name in baseline_year_prorated:
+                            current_value = current_year_ytd[category_name]
+                            baseline_value = baseline_year_prorated[category_name]
+                            if baseline_value > 0:
+                                pct_change = ((current_value - baseline_value) / baseline_value) * 100
+                                yoy_pct_changes.append(pct_change)
+                                all_yoy_agg_pct_values.append(pct_change)
+                    else:
+                        # Historical years: Compare full year to full year baseline
+                        current_value = annual_totals[category_name][year]
+                        pct_change = ((current_value - baseline_full_year) / baseline_full_year) * 100
+                        yoy_pct_changes.append(pct_change)
+                        all_yoy_agg_pct_values.append(pct_change)
 
-                if baseline_value > 0:
-                    years_list = sorted(annual_totals_ytd_adjusted[category_name].keys())
-                    yoy_pct_changes = []
-                    
-                    for year in years_list:
-                        if year >= baseline_year:
-                            current_value = annual_totals_ytd_adjusted[category_name][year]
-                            pct_change = ((current_value - baseline_value) / baseline_value) * 100
-                            yoy_pct_changes.append(pct_change)
-                            all_yoy_agg_pct_values.append(pct_change)
-
-                    years_to_plot = [year for year in years_list if year >= baseline_year]
-
-                    if len(years_to_plot) > 0:
-                        color = ENTSOE_COLORS[category_name]
-                        ax3.plot(years_to_plot, yoy_pct_changes, marker='o', color=color,
-                                 linewidth=6, markersize=13, label=category_name)
-                        lines_plotted += 1
+            years_to_plot = [year for year in years_list if year >= baseline_year]
+            
+            # Only plot if we have matching data points
+            if len(years_to_plot) > 0 and len(yoy_pct_changes) == len(years_to_plot):
+                color = ENTSOE_COLORS[category_name]
+                ax3.plot(years_to_plot, yoy_pct_changes, marker='o', color=color,
+                         linewidth=6, markersize=13, label=category_name)
+                lines_plotted += 1
 
         if lines_plotted > 0:
             if all_yoy_agg_pct_values:
@@ -1727,27 +1776,45 @@ def create_all_charts(all_data, country_code='EU'):
         lines_plotted = 0
         
         for category_name in totals_for_yoy:
-            if category_name in annual_totals_ytd_adjusted and baseline_year in annual_totals_ytd_adjusted[category_name]:
-                baseline_value = annual_totals_ytd_adjusted[category_name][baseline_year]
-
-                if baseline_value > 0:
-                    years_list = sorted(annual_totals_ytd_adjusted[category_name].keys())
-                    yoy_abs_changes = []
-                    
-                    for year in years_list:
-                        if year >= baseline_year:
-                            current_value = annual_totals_ytd_adjusted[category_name][year]
+            if category_name not in annual_totals:
+                continue
+            
+            # Check if we have baseline data (full year 2015)
+            if baseline_year not in annual_totals[category_name]:
+                continue
+            
+            baseline_full_year = annual_totals[category_name][baseline_year]
+            if baseline_full_year <= 0:
+                continue
+            
+            years_list = sorted(annual_totals[category_name].keys())
+            yoy_abs_changes = []
+            
+            for year in years_list:
+                if year >= baseline_year:
+                    if year == current_year:
+                        # Current year: Compare YTD to prorated baseline
+                        if category_name in current_year_ytd and category_name in baseline_year_prorated:
+                            current_value = current_year_ytd[category_name]
+                            baseline_value = baseline_year_prorated[category_name]
                             abs_change = (current_value - baseline_value) / 1000  # Convert to TWh
                             yoy_abs_changes.append(abs_change)
                             all_yoy_agg_abs_values.append(abs_change)
+                    else:
+                        # Historical years: Compare full year to full year baseline
+                        current_value = annual_totals[category_name][year]
+                        abs_change = (current_value - baseline_full_year) / 1000  # Convert to TWh
+                        yoy_abs_changes.append(abs_change)
+                        all_yoy_agg_abs_values.append(abs_change)
 
-                    years_to_plot = [year for year in years_list if year >= baseline_year]
-
-                    if len(years_to_plot) > 0:
-                        color = ENTSOE_COLORS[category_name]
-                        ax4.plot(years_to_plot, yoy_abs_changes, marker='o', color=color,
-                                 linewidth=6, markersize=13, label=category_name)
-                        lines_plotted += 1
+            years_to_plot = [year for year in years_list if year >= baseline_year]
+            
+            # Only plot if we have matching data points
+            if len(years_to_plot) > 0 and len(yoy_abs_changes) == len(years_to_plot):
+                color = ENTSOE_COLORS[category_name]
+                ax4.plot(years_to_plot, yoy_abs_changes, marker='o', color=color,
+                         linewidth=6, markersize=13, label=category_name)
+                lines_plotted += 1
 
         if lines_plotted > 0:
             if all_yoy_agg_abs_values:
