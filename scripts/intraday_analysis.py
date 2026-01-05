@@ -1817,13 +1817,15 @@ def update_summary_table_worksheet(corrected_data, country_code='EU'):
             'gas', 'coal', 'nuclear', 'oil', 'waste'
         ]
         
-        # Load 2015 data for change calculation
-        print("  Loading 2015 baseline data...")
+        # Load 2015, 2025, and 2024 data for change calculation
+        print("  Loading baseline data (2015, 2025, 2024)...")
         data_2015 = {}
+        data_2025 = {}
+        data_2024 = {}
         
-        # Get yesterday's month for baseline (e.g., if yesterday was Nov 30, use November 2015)
+        # Get yesterday's month for baseline (e.g., if yesterday was Jan 5, use January)
         yesterday_date = datetime.now() - timedelta(days=1)
-        baseline_month = yesterday_date.month  # e.g., 11 for November
+        baseline_month = yesterday_date.month  # e.g., 1 for January
         
         # Map source names to worksheet names
         source_to_worksheet = {
@@ -1850,58 +1852,78 @@ def update_summary_table_worksheet(corrected_data, country_code='EU'):
                 continue
             
             try:
-                ws_2015 = spreadsheet.worksheet(worksheet_name)
-                values = ws_2015.get_all_values()
+                ws_baseline = spreadsheet.worksheet(worksheet_name)
+                values = ws_baseline.get_all_values()
                 
                 if len(values) < 2:
                     continue
                 
-                # Parse to find 2015 data
+                # Parse to find baseline data
                 df = pd.DataFrame(values[1:], columns=values[0])
                 df = df[df['Month'] != 'Total']
-                
-                # Check if 2015 column exists
-                if '2015' not in df.columns:
-                    print(f"  ⚠ No 2015 data for {source}")
-                    continue
                 
                 # Get the monthly TOTAL for the baseline month
                 month_abbr = calendar.month_abbr[baseline_month]
                 month_row = df[df['Month'] == month_abbr]
                 
-                if not month_row.empty:
+                if month_row.empty:
+                    continue
+                
+                # Load 2015 data
+                if '2015' in df.columns:
                     monthly_total_2015 = pd.to_numeric(month_row['2015'].iloc[0], errors='coerce')
                     if not pd.isna(monthly_total_2015):
-                        # Monthly sheets store MONTHLY TOTALS, so store as-is
-                        # We'll convert to daily when comparing
                         data_2015[source] = monthly_total_2015
-                        print(f"  {source}: {calendar.month_name[baseline_month]} 2015 = {monthly_total_2015:.1f} GWh (monthly total)")
+                
+                # Load 2025 data (previous_year)
+                if '2025' in df.columns:
+                    monthly_total_2025 = pd.to_numeric(month_row['2025'].iloc[0], errors='coerce')
+                    if not pd.isna(monthly_total_2025):
+                        data_2025[source] = monthly_total_2025
+                
+                # Load 2024 data (two_years_ago)
+                if '2024' in df.columns:
+                    monthly_total_2024 = pd.to_numeric(month_row['2024'].iloc[0], errors='coerce')
+                    if not pd.isna(monthly_total_2024):
+                        data_2024[source] = monthly_total_2024
                     
             except Exception as e:
-                print(f"  ⚠ Could not load 2015 data for {source}: {e}")
+                print(f"  ⚠ Could not load baseline data for {source}: {e}")
                 continue
         
-        # Calculate all-non-renewables from Total - Renewables
-        if 'all-renewables' in data_2015:
+        # Calculate all-non-renewables from Total - Renewables for all 3 years
+        if 'all-renewables' in data_2015 or 'all-renewables' in data_2025 or 'all-renewables' in data_2024:
             try:
                 ws_total = spreadsheet.worksheet('Total Generation Monthly Production')
                 values = ws_total.get_all_values()
                 df = pd.DataFrame(values[1:], columns=values[0])
                 df = df[df['Month'] != 'Total']
                 
-                if '2015' in df.columns:
-                    month_abbr = calendar.month_abbr[baseline_month]
-                    month_row = df[df['Month'] == month_abbr]
-                    
-                    if not month_row.empty:
+                month_abbr = calendar.month_abbr[baseline_month]
+                month_row = df[df['Month'] == month_abbr]
+                
+                if not month_row.empty:
+                    # 2015
+                    if '2015' in df.columns and 'all-renewables' in data_2015:
                         total_2015_monthly = pd.to_numeric(month_row['2015'].iloc[0], errors='coerce')
                         if not pd.isna(total_2015_monthly):
-                            # Store monthly totals
                             data_2015['all-non-renewables'] = total_2015_monthly - data_2015['all-renewables']
+                    
+                    # 2025
+                    if '2025' in df.columns and 'all-renewables' in data_2025:
+                        total_2025_monthly = pd.to_numeric(month_row['2025'].iloc[0], errors='coerce')
+                        if not pd.isna(total_2025_monthly):
+                            data_2025['all-non-renewables'] = total_2025_monthly - data_2025['all-renewables']
+                    
+                    # 2024
+                    if '2024' in df.columns and 'all-renewables' in data_2024:
+                        total_2024_monthly = pd.to_numeric(month_row['2024'].iloc[0], errors='coerce')
+                        if not pd.isna(total_2024_monthly):
+                            data_2024['all-non-renewables'] = total_2024_monthly - data_2024['all-renewables']
             except:
                 pass
         
-        print(f"  ✓ Loaded 2015 baseline for {len(data_2015)} sources")
+        print(f"  ✓ Loaded baselines: 2015={len(data_2015)}, 2025={len(data_2025)}, 2024={len(data_2024)} sources")
         
         # Prepare data rows - ONLY columns that intraday owns (B-E, K-L)
         timestamp = datetime.now().strftime('%Y-%m-%d %H:%M UTC')
@@ -1914,17 +1936,17 @@ def update_summary_table_worksheet(corrected_data, country_code='EU'):
         
         worksheet.update('A2:A13', source_names)
         
-        # Now update columns B-E (Yesterday, Last Week) and K-L (Change from 2015)
-        data_updates_be = []  # Columns B-E
-        data_updates_kl = []  # Columns K-L
+        # Now update columns B-E (Yesterday, Last Week) and K-L, O-P, S-T (all change columns)
+        data_updates_be = []    # Columns B-E
+        data_updates_klops = [] # Columns K-L, O-P, S-T (6 columns)
         
         for source in source_order:
             if source not in yesterday_totals or source not in week_totals:
                 data_updates_be.append(['', '', '', ''])
-                data_updates_kl.append(['', ''])
+                data_updates_klops.append(['', '', '', '', '', ''])
                 continue
             
-            # Columns B-E (existing)
+            # Columns B-E (Yesterday & Last Week)
             row_be = [
                 f"{yesterday_totals[source]['gwh']:.1f}",      # B: Yesterday_GWh
                 f"{yesterday_totals[source]['percentage']:.2f}",  # C: Yesterday_%
@@ -1933,47 +1955,104 @@ def update_summary_table_worksheet(corrected_data, country_code='EU'):
             ]
             data_updates_be.append(row_be)
             
-            # Columns K-L (change from 2015)
-            yesterday_change = ''
-            lastweek_change = ''
+            # Initialize all change values
+            yesterday_change_2015 = ''
+            lastweek_change_2015 = ''
+            yesterday_change_2025 = ''
+            lastweek_change_2025 = ''
+            yesterday_change_2024 = ''
+            lastweek_change_2024 = ''
             
+            yesterday_gwh = yesterday_totals[source]['gwh']
+            lastweek_gwh = week_totals[source]['gwh']
+            
+            # Calculate change from 2015 (columns K-L)
             if source in data_2015 and data_2015[source] > 0:
-                monthly_total_2015 = data_2015[source]  # Monthly total in GWh
-                days_in_baseline_month = calendar.monthrange(2015, baseline_month)[1]
+                monthly_total_2015 = data_2015[source]
+                days_in_month = calendar.monthrange(2015, baseline_month)[1]
                 
-                # Yesterday change: monthly_total / days_in_month * 1 day
-                baseline_yesterday = (monthly_total_2015 / days_in_baseline_month) * 1
-                yesterday_gwh = yesterday_totals[source]['gwh']
+                # Yesterday change
+                baseline_yesterday = (monthly_total_2015 / days_in_month) * 1
                 change_y = (yesterday_gwh - baseline_yesterday) / baseline_yesterday * 100
-                yesterday_change = format_change_percentage(change_y)
+                yesterday_change_2015 = format_change_percentage(change_y)
                 
-                # Last week change: monthly_total / days_in_month * 7 days
-                baseline_week = (monthly_total_2015 / days_in_baseline_month) * 7
-                lastweek_gwh = week_totals[source]['gwh']
+                # Last week change
+                baseline_week = (monthly_total_2015 / days_in_month) * 7
                 change_w = (lastweek_gwh - baseline_week) / baseline_week * 100
-                lastweek_change = format_change_percentage(change_w)
+                lastweek_change_2015 = format_change_percentage(change_w)
             
-            row_kl = [yesterday_change, lastweek_change]
-            data_updates_kl.append(row_kl)
+            # Calculate change from 2025 (columns O-P)
+            if source in data_2025 and data_2025[source] > 0:
+                monthly_total_2025 = data_2025[source]
+                days_in_month = calendar.monthrange(2025, baseline_month)[1]
+                
+                # Yesterday change
+                baseline_yesterday = (monthly_total_2025 / days_in_month) * 1
+                change_y = (yesterday_gwh - baseline_yesterday) / baseline_yesterday * 100
+                yesterday_change_2025 = format_change_percentage(change_y)
+                
+                # Last week change
+                baseline_week = (monthly_total_2025 / days_in_month) * 7
+                change_w = (lastweek_gwh - baseline_week) / baseline_week * 100
+                lastweek_change_2025 = format_change_percentage(change_w)
+            
+            # Calculate change from 2024 (columns S-T)
+            if source in data_2024 and data_2024[source] > 0:
+                monthly_total_2024 = data_2024[source]
+                days_in_month = calendar.monthrange(2024, baseline_month)[1]
+                
+                # Yesterday change
+                baseline_yesterday = (monthly_total_2024 / days_in_month) * 1
+                change_y = (yesterday_gwh - baseline_yesterday) / baseline_yesterday * 100
+                yesterday_change_2024 = format_change_percentage(change_y)
+                
+                # Last week change
+                baseline_week = (monthly_total_2024 / days_in_month) * 7
+                change_w = (lastweek_gwh - baseline_week) / baseline_week * 100
+                lastweek_change_2024 = format_change_percentage(change_w)
+            
+            # Build row with all 6 change columns: K, L, O, P, S, T
+            row_klops = [
+                yesterday_change_2015, lastweek_change_2015,  # K, L
+                yesterday_change_2025, lastweek_change_2025,  # O, P
+                yesterday_change_2024, lastweek_change_2024   # S, T
+            ]
+            data_updates_klops.append(row_klops)
         
-        # Update columns B-E (preserves F-I, M-N, O-V historical data!)
+        # Update columns B-E (preserves F-I for monthly script)
         if data_updates_be:
             worksheet.update('B2:E13', data_updates_be)
         
-        # Update columns K-L (change from 2015)
-        if data_updates_kl:
-            worksheet.update('K2:L13', data_updates_kl)
+        # Update columns K-L, O-P, S-T (all intraday change columns)
+        if data_updates_klops:
+            # Need to update non-contiguous ranges: K-L, then O-P, then S-T
+            # Split the 6-column data into 3 separate 2-column updates
+            data_kl = [[row[0], row[1]] for row in data_updates_klops]  # K, L
+            data_op = [[row[2], row[3]] for row in data_updates_klops]  # O, P
+            data_st = [[row[4], row[5]] for row in data_updates_klops]  # S, T
+            
+            worksheet.update('K2:L13', data_kl)
+            worksheet.update('O2:P13', data_op)
+            worksheet.update('S2:T13', data_st)
             
             # Update timestamp in column J
             timestamp_updates = [[timestamp]] * len(source_order)
             worksheet.update('J2:J13', timestamp_updates)
             
-            # Format aggregate rows (bold)
-            worksheet.format('A2:V2', {'textFormat': {'bold': True}})  # All Renewables
-            worksheet.format('A8:V8', {'textFormat': {'bold': True}})  # All Non-Renewables
+            # Format aggregate rows (bold) - ONLY columns that intraday owns
+            worksheet.format('A2:E2', {'textFormat': {'bold': True}})  # All Renewables
+            worksheet.format('J2:L2', {'textFormat': {'bold': True}})
+            worksheet.format('O2:P2', {'textFormat': {'bold': True}})
+            worksheet.format('S2:T2', {'textFormat': {'bold': True}})
             
-            print(f"✓ Updated {len(source_order)} sources with yesterday/last week data (columns B-E, K-L)")
-            print(f"   Historical data (columns F-I, M-N, O-V) preserved for monthly script!")
+            worksheet.format('A8:E8', {'textFormat': {'bold': True}})  # All Non-Renewables
+            worksheet.format('J8:L8', {'textFormat': {'bold': True}})
+            worksheet.format('O8:P8', {'textFormat': {'bold': True}})
+            worksheet.format('S8:T8', {'textFormat': {'bold': True}})
+            
+            print(f"✓ Updated {len(source_order)} sources with yesterday/last week data")
+            print(f"   Columns updated: B-E (values), K-L (vs 2015), O-P (vs 2025), S-T (vs 2024)")
+            print(f"   Historical data (columns F-I, M-N, Q-R, U-V) preserved for monthly script!")
             print(f"   Worksheet: {spreadsheet.url}")
         else:
             print("⚠ No data to update")
@@ -1982,7 +2061,6 @@ def update_summary_table_worksheet(corrected_data, country_code='EU'):
         print(f"✗ Error updating Google Sheets: {e}")
         import traceback
         traceback.print_exc()
-
 
 def get_or_create_drive_folder(service, folder_name, parent_id=None, share_with_email=None):
     """
