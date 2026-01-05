@@ -1002,13 +1002,13 @@ def calculate_daily_statistics(data_dict, fetch_time=None):
                 energy_array = np.array(daily_energy_data)
                 percentage_array = np.array(daily_percentage_data)
 
-                    stats[period_name] = {
-                        'time_bins': standard_times,
-                        'energy_mean': np.nanmean(energy_array, axis=0),      # ← Changed: Skip NaN
-                        'energy_std': np.nanstd(energy_array, axis=0),        # ← Changed: Skip NaN in std too
-                        'percentage_mean': np.nanmean(percentage_array, axis=0),  # ← Changed: Skip NaN
-                        'percentage_std': np.nanstd(percentage_array, axis=0),    # ← Changed: Skip NaN in std too
-                    }
+                stats[period_name] = {
+                    'time_bins': standard_times,
+                    'energy_mean': np.nanmean(energy_array, axis=0),
+                    'energy_std': np.nanstd(energy_array, axis=0),
+                    'percentage_mean': np.nanmean(percentage_array, axis=0),
+                    'percentage_std': np.nanstd(percentage_array, axis=0),
+                }
 
     return stats
 
