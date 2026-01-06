@@ -1614,71 +1614,100 @@ def get_or_create_country_sheet(gc, drive_service, country_code='EU'):
     """
     Get or create a country-specific Google Sheet and move to correct Drive folder
     Sets permissions: Anyone with link can view
+    SAVES sheet ID to drive_links.json for sharing with other scripts
     
     Args:
         gc: gspread client
         drive_service: Google Drive API service
-        country_code: 'EU', 'DE', etc.
+        country_code: 'EU', 'DE', 'ES', etc.
     
     Returns:
         spreadsheet: gspread Spreadsheet object
     """
+    import json
+    import os
+    
     sheet_name = f"{country_code} Electricity Production Data"
+    spreadsheet = None
+    is_new_sheet = False
     
-    try:
-        # Try to open existing sheet
-        spreadsheet = gc.open(sheet_name)
-        print(f"✓ Opened existing sheet: {sheet_name}")
-    except gspread.SpreadsheetNotFound:
-        # Create new sheet
-        spreadsheet = gc.create(sheet_name)
-        print(f"✓ Created new sheet: {sheet_name}")
-        
-        # Set permissions: Anyone with link can view
-        permission = {'type': 'anyone', 'role': 'reader'}
-        drive_service.permissions().create(
-            fileId=spreadsheet.id,
-            body=permission,
-            fields='id'
-        ).execute()
-        print(f"  ✓ Set permissions: Anyone with link can view")
+    # Try to get from JSON first
+    drive_links_file = 'plots/drive_links.json'
+    if os.path.exists(drive_links_file):
+        try:
+            with open(drive_links_file, 'r') as f:
+                links = json.load(f)
+                
+            # Check if we have this country's sheet ID
+            if country_code in links and 'data_sheet_id' in links[country_code]:
+                sheet_id = links[country_code]['data_sheet_id']
+                try:
+                    spreadsheet = gc.open_by_key(sheet_id)
+                    print(f"✓ Opened existing sheet from JSON: {sheet_name}")
+                except:
+                    print(f"  ⚠ Sheet ID in JSON is invalid, will search by name")
+        except:
+            pass
     
-    # Move to correct Drive folder structure (runs every time)
-    # Get or create folder: EU-Electricity-Plots/[Country]/
-    try:
-        # Find root folder
-        query = "name='EU-Electricity-Plots' and mimeType='application/vnd.google-apps.folder' and trashed=false"
-        results = drive_service.files().list(q=query, spaces='drive', fields='files(id)').execute()
-        folders = results.get('files', [])
-        
-        if folders:
-            root_folder_id = folders[0]['id']
+    # If not found in JSON, try to open by name
+    if spreadsheet is None:
+        try:
+            spreadsheet = gc.open(sheet_name)
+            print(f"✓ Opened existing sheet by name: {sheet_name}")
+        except gspread.SpreadsheetNotFound:
+            # Create new sheet
+            spreadsheet = gc.create(sheet_name)
+            print(f"✓ Created new sheet: {sheet_name}")
+            is_new_sheet = True
             
-            # Find or create country folder
-            query = f"name='{country_code}' and '{root_folder_id}' in parents and mimeType='application/vnd.google-apps.folder' and trashed=false"
+            # Set permissions: Anyone with link can view
+            try:
+                permission = {'type': 'anyone', 'role': 'reader'}
+                drive_service.permissions().create(
+                    fileId=spreadsheet.id,
+                    body=permission,
+                    fields='id'
+                ).execute()
+                print(f"  ✓ Set permissions: Anyone with link can view")
+            except Exception as e:
+                # Permission might already exist
+                if 'already exists' not in str(e).lower():
+                    print(f"  ⚠ Could not set permissions: {e}")
+    
+    # Move to correct Drive folder structure (runs every time for new sheets)
+    if is_new_sheet:
+        try:
+            # Find root folder
+            query = "name='EU-Electricity-Plots' and mimeType='application/vnd.google-apps.folder' and trashed=false"
             results = drive_service.files().list(q=query, spaces='drive', fields='files(id)').execute()
-            country_folders = results.get('files', [])
+            folders = results.get('files', [])
             
-            if country_folders:
-                country_folder_id = country_folders[0]['id']
-            else:
-                # Create country folder
-                file_metadata = {
-                    'name': country_code,
-                    'mimeType': 'application/vnd.google-apps.folder',
-                    'parents': [root_folder_id]
-                }
-                folder = drive_service.files().create(body=file_metadata, fields='id').execute()
-                country_folder_id = folder.get('id')
-                print(f"  ✓ Created folder: EU-Electricity-Plots/{country_code}/")
-            
-            # Check if sheet is already in correct folder
-            file = drive_service.files().get(fileId=spreadsheet.id, fields='parents').execute()
-            current_parents = file.get('parents', [])
-            
-            if country_folder_id not in current_parents:
+            if folders:
+                root_folder_id = folders[0]['id']
+                
+                # Find or create country folder
+                query = f"name='{country_code}' and '{root_folder_id}' in parents and mimeType='application/vnd.google-apps.folder' and trashed=false"
+                results = drive_service.files().list(q=query, spaces='drive', fields='files(id)').execute()
+                country_folders = results.get('files', [])
+                
+                if country_folders:
+                    country_folder_id = country_folders[0]['id']
+                else:
+                    # Create country folder
+                    file_metadata = {
+                        'name': country_code,
+                        'mimeType': 'application/vnd.google-apps.folder',
+                        'parents': [root_folder_id]
+                    }
+                    folder = drive_service.files().create(body=file_metadata, fields='id').execute()
+                    country_folder_id = folder.get('id')
+                    print(f"  ✓ Created folder: EU-Electricity-Plots/{country_code}/")
+                
                 # Move sheet to country folder
+                file = drive_service.files().get(fileId=spreadsheet.id, fields='parents').execute()
+                current_parents = file.get('parents', [])
                 previous_parents = ",".join(current_parents)
+                
                 drive_service.files().update(
                     fileId=spreadsheet.id,
                     addParents=country_folder_id,
@@ -1686,11 +1715,31 @@ def get_or_create_country_sheet(gc, drive_service, country_code='EU'):
                     fields='id, parents'
                 ).execute()
                 print(f"  ✓ Moved to: EU-Electricity-Plots/{country_code}/")
-            else:
-                print(f"  ✓ Already in: EU-Electricity-Plots/{country_code}/")
-            
+                
+        except Exception as e:
+            print(f"  ⚠ Could not move to Drive folder: {e}")
+    
+    # Save sheet ID to JSON (CRITICAL - this is what was missing!)
+    try:
+        # Load existing links
+        links = {}
+        if os.path.exists(drive_links_file):
+            with open(drive_links_file, 'r') as f:
+                links = json.load(f)
+        
+        # Update with sheet ID
+        if country_code not in links:
+            links[country_code] = {}
+        links[country_code]['data_sheet_id'] = spreadsheet.id
+        
+        # Save back
+        os.makedirs('plots', exist_ok=True)
+        with open(drive_links_file, 'w') as f:
+            json.dump(links, f, indent=2)
+        
+        print(f"  ✓ Saved sheet ID to drive_links.json")
     except Exception as e:
-        print(f"  ⚠ Could not move to Drive folder: {e}")
+        print(f"  ⚠ Could not save to JSON: {e}")
     
     return spreadsheet
 
