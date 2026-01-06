@@ -842,9 +842,9 @@ def create_all_charts(all_data, country_code='EU'):
             ]
             reordered_labels = [
                 labels[1], labels[2], labels[0],
+                labels[3], labels[4], '',
+                labels[7], labels[5], labels[6],
                 labels[9], labels[8], '',
-                labels[7], labels[3], labels[4],
-                labels[6], labels[5], '',
             ]
             
             ax1.legend(reordered_handles, reordered_labels, loc='upper left', bbox_to_anchor=(0.14, 0.255),
@@ -898,9 +898,9 @@ def create_all_charts(all_data, country_code='EU'):
             ]
             reordered_labels = [
                 labels[1], labels[2], labels[0],
+                labels[3], labels[4], '',
+                labels[7], labels[5], labels[6],
                 labels[9], labels[8], '',
-                labels[7], labels[3], labels[4],
-                labels[6], labels[5], '',
             ]
             
             ax2.legend(reordered_handles, reordered_labels, loc='upper left', bbox_to_anchor=(0.14, 0.255),
@@ -1225,9 +1225,9 @@ def create_all_charts(all_data, country_code='EU'):
             ]
             reordered_labels = [
                 labels[1], labels[2], labels[0],
+                labels[3], labels[4], '',
+                labels[7], labels[5], labels[6],
                 labels[9], labels[8], '',
-                labels[7], labels[3], labels[4],
-                labels[6], labels[5], '',
             ]
             
             ax1.legend(reordered_handles, reordered_labels, loc='upper left', bbox_to_anchor=(0.14, 0.255),
@@ -1285,9 +1285,9 @@ def create_all_charts(all_data, country_code='EU'):
             ]
             reordered_labels = [
                 labels[1], labels[2], labels[0],
+                labels[3], labels[4], '',
+                labels[7], labels[5], labels[6],
                 labels[9], labels[8], '',
-                labels[7], labels[3], labels[4],
-                labels[6], labels[5], '',
             ]
             
             ax2.legend(reordered_handles, reordered_labels, loc='upper left', bbox_to_anchor=(0.14, 0.255),
@@ -1550,9 +1550,9 @@ def create_all_charts(all_data, country_code='EU'):
             ]
             reordered_labels = [
                 labels[1], labels[2], labels[0],
+                labels[3], labels[4], '',
+                labels[7], labels[5], labels[6],
                 labels[9], labels[8], '',
-                labels[7], labels[3], labels[4],
-                labels[6], labels[5], '',
             ]
             
             ax1.legend(reordered_handles, reordered_labels, loc='upper left', bbox_to_anchor=(0.14, 0.255),
@@ -1654,9 +1654,9 @@ def create_all_charts(all_data, country_code='EU'):
             ]
             reordered_labels = [
                 labels[1], labels[2], labels[0],
+                labels[3], labels[4], '',
+                labels[7], labels[5], labels[6],
                 labels[9], labels[8], '',
-                labels[7], labels[3], labels[4],
-                labels[6], labels[5], '',
             ]
             
             ax2.legend(reordered_handles, reordered_labels, loc='upper left', bbox_to_anchor=(0.14, 0.255),
