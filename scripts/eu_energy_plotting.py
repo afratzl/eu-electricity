@@ -836,9 +836,9 @@ def create_all_charts(all_data, country_code='EU'):
             handles, labels = ax1.get_legend_handles_labels()
             reordered_handles = [
                 handles[1], handles[2], handles[0],
+                handles[3], handles[4], empty,
+                handles[7], handles[5], handles[6],
                 handles[9], handles[8], empty,
-                handles[7], handles[3], handles[4],
-                handles[6], handles[5], empty,
             ]
             reordered_labels = [
                 labels[1], labels[2], labels[0],
@@ -892,9 +892,9 @@ def create_all_charts(all_data, country_code='EU'):
             handles, labels = ax2.get_legend_handles_labels()
             reordered_handles = [
                 handles[1], handles[2], handles[0],
+                handles[3], handles[4], empty,
+                handles[7], handles[5], handles[6],
                 handles[9], handles[8], empty,
-                handles[7], handles[3], handles[4],
-                handles[6], handles[5], empty,
             ]
             reordered_labels = [
                 labels[1], labels[2], labels[0],
@@ -1219,9 +1219,9 @@ def create_all_charts(all_data, country_code='EU'):
             handles, labels = ax1.get_legend_handles_labels()
             reordered_handles = [
                 handles[1], handles[2], handles[0],
+                handles[3], handles[4], empty,
+                handles[7], handles[5], handles[6],
                 handles[9], handles[8], empty,
-                handles[7], handles[3], handles[4],
-                handles[6], handles[5], empty,
             ]
             reordered_labels = [
                 labels[1], labels[2], labels[0],
@@ -1279,9 +1279,9 @@ def create_all_charts(all_data, country_code='EU'):
             handles, labels = ax2.get_legend_handles_labels()
             reordered_handles = [
                 handles[1], handles[2], handles[0],
+                handles[3], handles[4], empty,
+                handles[7], handles[5], handles[6],
                 handles[9], handles[8], empty,
-                handles[7], handles[3], handles[4],
-                handles[6], handles[5], empty,
             ]
             reordered_labels = [
                 labels[1], labels[2], labels[0],
@@ -1544,9 +1544,9 @@ def create_all_charts(all_data, country_code='EU'):
             handles, labels = ax1.get_legend_handles_labels()
             reordered_handles = [
                 handles[1], handles[2], handles[0],
+                handles[3], handles[4], empty,
+                handles[7], handles[5], handles[6],
                 handles[9], handles[8], empty,
-                handles[7], handles[3], handles[4],
-                handles[6], handles[5], empty,
             ]
             reordered_labels = [
                 labels[1], labels[2], labels[0],
@@ -1648,9 +1648,9 @@ def create_all_charts(all_data, country_code='EU'):
             handles, labels = ax2.get_legend_handles_labels()
             reordered_handles = [
                 handles[1], handles[2], handles[0],
+                handles[3], handles[4], empty,
+                handles[7], handles[5], handles[6],
                 handles[9], handles[8], empty,
-                handles[7], handles[3], handles[4],
-                handles[6], handles[5], empty,
             ]
             reordered_labels = [
                 labels[1], labels[2], labels[0],
@@ -2587,7 +2587,7 @@ def main():
     args = parser.parse_args()
     
     # Define countries to process (should match data collection script)
-    countries_to_process = ['EU', 'DE', 'ES']
+    countries_to_process = ['EU', 'DE']
     
     # If specific country requested, only process that one
     if args.country:
