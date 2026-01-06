@@ -2640,36 +2640,11 @@ def main():
 
         print(f"\n✓ {country_code} complete!")
 
-    # Save combined drive links JSON - MERGE with existing intraday data
-    drive_links_file = 'plots/drive_links.json'
-    
-    # Load existing data (from intraday script)
-    existing_links = {}
-    if os.path.exists(drive_links_file):
-        try:
-            with open(drive_links_file, 'r') as f:
-                existing_links = json.load(f)
-            print(f"  Loaded existing drive_links.json")
-        except:
-            print(f"  Could not load existing drive_links.json, starting fresh")
-    
-    # Merge: Keep existing data (Intraday, data_sheet_id), add/update Monthly & Trends
-    for country_code, plot_links in all_plot_links.items():
-        if country_code not in existing_links:
-            existing_links[country_code] = {}
-        
-        # Add/update Monthly and Trends sections
-        if 'Monthly' in plot_links:
-            existing_links[country_code]['Monthly'] = plot_links['Monthly']
-        if 'Trends' in plot_links:
-            existing_links[country_code]['Trends'] = plot_links['Trends']
-        
-        # Keep existing Intraday and data_sheet_id (don't overwrite)
-    
-    # Write merged data
+    # Save combined drive links JSON (ADDED FROM AFTER)
+    drive_links_file = 'plots/drive_links_monthly_trends.json'
     with open(drive_links_file, 'w') as f:
-        json.dump(existing_links, f, indent=2)
-    print(f"\n✓ Drive links merged and saved to: {drive_links_file}")
+        json.dump(all_plot_links, f, indent=2)
+    print(f"\n✓ Drive links saved to: {drive_links_file}")
     
     # Write timestamp file for HTML to read (ADDED FROM AFTER)
     timestamp_file = 'plots/last_update_monthly_trends.html'
