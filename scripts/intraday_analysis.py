@@ -1674,40 +1674,41 @@ def get_or_create_country_sheet(gc, drive_service, country_code='EU'):
                 if 'already exists' not in str(e).lower():
                     print(f"  ⚠ Could not set permissions: {e}")
     
-    # Move to correct Drive folder structure (runs every time for new sheets)
-    if is_new_sheet:
-        try:
-            # Find root folder
-            query = "name='EU-Electricity-Plots' and mimeType='application/vnd.google-apps.folder' and trashed=false"
-            results = drive_service.files().list(q=query, spaces='drive', fields='files(id)').execute()
-            folders = results.get('files', [])
+    # Move to correct Drive folder structure (ALWAYS check, not just for new sheets)
+    try:
+        # Find root folder
+        query = "name='EU-Electricity-Plots' and mimeType='application/vnd.google-apps.folder' and trashed=false"
+        results = drive_service.files().list(q=query, spaces='drive', fields='files(id)').execute()
+        folders = results.get('files', [])
+        
+        if folders:
+            root_folder_id = folders[0]['id']
             
-            if folders:
-                root_folder_id = folders[0]['id']
-                
-                # Find or create country folder
-                query = f"name='{country_code}' and '{root_folder_id}' in parents and mimeType='application/vnd.google-apps.folder' and trashed=false"
-                results = drive_service.files().list(q=query, spaces='drive', fields='files(id)').execute()
-                country_folders = results.get('files', [])
-                
-                if country_folders:
-                    country_folder_id = country_folders[0]['id']
-                else:
-                    # Create country folder
-                    file_metadata = {
-                        'name': country_code,
-                        'mimeType': 'application/vnd.google-apps.folder',
-                        'parents': [root_folder_id]
-                    }
-                    folder = drive_service.files().create(body=file_metadata, fields='id').execute()
-                    country_folder_id = folder.get('id')
-                    print(f"  ✓ Created folder: EU-Electricity-Plots/{country_code}/")
-                
+            # Find or create country folder
+            query = f"name='{country_code}' and '{root_folder_id}' in parents and mimeType='application/vnd.google-apps.folder' and trashed=false"
+            results = drive_service.files().list(q=query, spaces='drive', fields='files(id)').execute()
+            country_folders = results.get('files', [])
+            
+            if country_folders:
+                country_folder_id = country_folders[0]['id']
+            else:
+                # Create country folder
+                file_metadata = {
+                    'name': country_code,
+                    'mimeType': 'application/vnd.google-apps.folder',
+                    'parents': [root_folder_id]
+                }
+                folder = drive_service.files().create(body=file_metadata, fields='id').execute()
+                country_folder_id = folder.get('id')
+                print(f"  ✓ Created folder: EU-Electricity-Plots/{country_code}/")
+            
+            # Check if sheet is already in correct folder
+            file = drive_service.files().get(fileId=spreadsheet.id, fields='parents').execute()
+            current_parents = file.get('parents', [])
+            
+            if country_folder_id not in current_parents:
                 # Move sheet to country folder
-                file = drive_service.files().get(fileId=spreadsheet.id, fields='parents').execute()
-                current_parents = file.get('parents', [])
                 previous_parents = ",".join(current_parents)
-                
                 drive_service.files().update(
                     fileId=spreadsheet.id,
                     addParents=country_folder_id,
@@ -1715,9 +1716,11 @@ def get_or_create_country_sheet(gc, drive_service, country_code='EU'):
                     fields='id, parents'
                 ).execute()
                 print(f"  ✓ Moved to: EU-Electricity-Plots/{country_code}/")
-                
-        except Exception as e:
-            print(f"  ⚠ Could not move to Drive folder: {e}")
+            else:
+                print(f"  ✓ Already in: EU-Electricity-Plots/{country_code}/")
+            
+    except Exception as e:
+        print(f"  ⚠ Could not move to Drive folder: {e}")
     
     # Save sheet ID to JSON (CRITICAL - this is what was missing!)
     try:
