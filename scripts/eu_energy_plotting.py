@@ -849,13 +849,13 @@ def create_all_charts(all_data, country_code='EU'):
             reordered_handles = [
                 handles[1], handles[2], handles[0],
                 handles[3], handles[4], empty,
-                handles[7], handles[5], handles[6],
+                handles[5], handles[6], handles[7],
                 handles[9], handles[8], empty,
             ]
             reordered_labels = [
                 labels[1], labels[2], labels[0],
                 labels[3], labels[4], '',
-                labels[7], labels[5], labels[6],
+                labels[5], labels[6], labels[7],
                 labels[9], labels[8], '',
             ]
             
@@ -913,13 +913,13 @@ def create_all_charts(all_data, country_code='EU'):
             reordered_handles = [
                 handles[1], handles[2], handles[0],
                 handles[3], handles[4], empty,
-                handles[7], handles[5], handles[6],
+                handles[5], handles[6], handles[7],
                 handles[9], handles[8], empty,
             ]
             reordered_labels = [
                 labels[1], labels[2], labels[0],
                 labels[3], labels[4], '',
-                labels[7], labels[5], labels[6],
+                labels[5], labels[6], labels[7],
                 labels[9], labels[8], '',
             ]
             
@@ -1247,13 +1247,13 @@ def create_all_charts(all_data, country_code='EU'):
             reordered_handles = [
                 handles[1], handles[2], handles[0],
                 handles[3], handles[4], empty,
-                handles[7], handles[5], handles[6],
+                handles[5], handles[6], handles[7],
                 handles[9], handles[8], empty,
             ]
             reordered_labels = [
                 labels[1], labels[2], labels[0],
                 labels[3], labels[4], '',
-                labels[7], labels[5], labels[6],
+                labels[5], labels[6], labels[7],
                 labels[9], labels[8], '',
             ]
             
@@ -1314,13 +1314,13 @@ def create_all_charts(all_data, country_code='EU'):
             reordered_handles = [
                 handles[1], handles[2], handles[0],
                 handles[3], handles[4], empty,
-                handles[7], handles[5], handles[6],
+                handles[5], handles[6], handles[7],
                 handles[9], handles[8], empty,
             ]
             reordered_labels = [
                 labels[1], labels[2], labels[0],
                 labels[3], labels[4], '',
-                labels[7], labels[5], labels[6],
+                labels[5], labels[6], labels[7],
                 labels[9], labels[8], '',
             ]
             
@@ -1596,13 +1596,13 @@ def create_all_charts(all_data, country_code='EU'):
             reordered_handles = [
                 handles[1], handles[2], handles[0],
                 handles[3], handles[4], empty,
-                handles[7], handles[5], handles[6],
+                handles[5], handles[6], handles[7],
                 handles[9], handles[8], empty,
             ]
             reordered_labels = [
                 labels[1], labels[2], labels[0],
                 labels[3], labels[4], '',
-                labels[7], labels[5], labels[6],
+                labels[5], labels[6], labels[7],
                 labels[9], labels[8], '',
             ]
             
@@ -1717,13 +1717,13 @@ def create_all_charts(all_data, country_code='EU'):
             reordered_handles = [
                 handles[1], handles[2], handles[0],
                 handles[3], handles[4], empty,
-                handles[7], handles[5], handles[6],
+                handles[5], handles[6], handles[7],
                 handles[9], handles[8], empty,
             ]
             reordered_labels = [
                 labels[1], labels[2], labels[0],
                 labels[3], labels[4], '',
-                labels[7], labels[5], labels[6],
+                labels[5], labels[6], labels[7],
                 labels[9], labels[8], '',
             ]
             
