@@ -1681,6 +1681,14 @@ def create_all_charts(all_data, country_code='EU'):
             if len(years_to_plot) > 0 and len(yoy_abs_changes) == len(years_to_plot):
                 ax2.plot(years_to_plot, yoy_abs_changes, marker='o', color=color,
                          linewidth=6, markersize=13, label=source_name)
+
+        if True:  # Always true since we force all sources
+            if all_yoy_abs_values:
+                y_min = min(all_yoy_abs_values)
+                y_max = max(all_yoy_abs_values)
+                # 20% margin: if min is negative, make it 20% more negative; if positive, use 0
+                y_min_limit = y_min * 1.2 if y_min < 0 else 0
+                y_max_limit = y_max * 1.2
             else:
                 y_min_limit = -50
                 y_max_limit = 100
