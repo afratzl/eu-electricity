@@ -204,7 +204,7 @@
             try {
                 // Add cache-buster to force reload of JSON
                 const cacheBuster = Date.now();
-                const response = await fetch(`plots/drive_links_monthly_trends.json?t=${cacheBuster}`);
+                const response = await fetch(`plots/drive_links.json?t=${cacheBuster}`);
                 driveLinks = await response.json();
                 return driveLinks;
             } catch (error) {
