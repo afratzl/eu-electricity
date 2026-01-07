@@ -478,6 +478,10 @@ def create_all_charts(all_data, country_code='EU'):
     print(f"Years available: {years_available}")
 
     month_names = [calendar.month_abbr[i] for i in range(1, 13)]
+    
+    # Define standard 10 energy sources for consistent plotting
+    all_sources = ['Solar', 'Wind', 'Hydro', 'Biomass', 'Geothermal', 
+                   'Nuclear', 'Gas', 'Coal', 'Oil', 'Waste']
 
     # Color gradient for years
     import matplotlib.cm as cm
