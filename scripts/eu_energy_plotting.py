@@ -858,10 +858,6 @@ def create_all_charts(all_data, country_code='EU'):
             ax1.legend(reordered_handles, reordered_labels, loc='upper left', bbox_to_anchor=(0.14, 0.255),
                        bbox_transform=fig1.transFigure, ncol=4,
                        fontsize=18, frameon=False)
-            else:
-                ax1.legend(loc='upper left', bbox_to_anchor=(0.14, 0.255),
-                           bbox_transform=fig1.transFigure, ncol=4,
-                           fontsize=18, frameon=False)
 
             period_name_clean = period['name'].replace('-', '_')
             percentage_filename = f'plots/{country_code.lower()}_monthly_energy_sources_mean_{period_name_clean}_percentage.png'
@@ -926,10 +922,6 @@ def create_all_charts(all_data, country_code='EU'):
             ax1.legend(reordered_handles, reordered_labels, loc='upper left', bbox_to_anchor=(0.14, 0.255),
                        bbox_transform=fig1.transFigure, ncol=4,
                        fontsize=18, frameon=False)
-            else:
-                ax2.legend(loc='upper left', bbox_to_anchor=(0.14, 0.255),
-                           bbox_transform=fig2.transFigure, ncol=4,
-                           fontsize=18, frameon=False)
 
             absolute_filename = f'plots/{country_code.lower()}_monthly_energy_sources_mean_{period_name_clean}_absolute.png'
             plt.savefig(absolute_filename, dpi=150, bbox_inches='tight')
@@ -1220,10 +1212,6 @@ def create_all_charts(all_data, country_code='EU'):
                             percentage = (source_value / total_value) * 100
                             percentages.append(percentage)
                         else:
-                            percentages.append(0)
-
-                    ax1.plot(pct_years, percentages, marker='o', color=color,
-                             linewidth=6, markersize=13, label=source_name)
             else:
                 # Plot zero line for missing sources
                 if 'Total Generation' in annual_totals:
@@ -1260,10 +1248,6 @@ def create_all_charts(all_data, country_code='EU'):
                 labels[7], labels[5], labels[6],
                 labels[9], labels[8], '',
             ]
-            
-            ax1.legend(reordered_handles, reordered_labels, loc='upper left', bbox_to_anchor=(0.14, 0.255),
-                       bbox_transform=fig1.transFigure, ncol=4,
-                       fontsize=18, frameon=False)
             else:
                 ax1.legend(loc='upper left', bbox_to_anchor=(0.14, 0.255),
                            bbox_transform=fig1.transFigure, ncol=4,
@@ -1291,10 +1275,6 @@ def create_all_charts(all_data, country_code='EU'):
             color = ENTSOE_COLORS.get(source_name, 'black')
             
             if source_name in annual_totals and len(annual_totals[source_name]) > 0:
-                years_list = sorted(annual_totals[source_name].keys())
-                values_twh = [annual_totals[source_name][year] / 1000 for year in years_list]
-                ax2.plot(years_list, values_twh, marker='o', color=color,
-                         linewidth=6, markersize=13, label=source_name)
             else:
                 # Plot zero line for missing sources
                 if 'Total Generation' in annual_totals:
@@ -1331,10 +1311,6 @@ def create_all_charts(all_data, country_code='EU'):
                 labels[7], labels[5], labels[6],
                 labels[9], labels[8], '',
             ]
-            
-            ax1.legend(reordered_handles, reordered_labels, loc='upper left', bbox_to_anchor=(0.14, 0.255),
-                       bbox_transform=fig1.transFigure, ncol=4,
-                       fontsize=18, frameon=False)
             else:
                 ax2.legend(loc='upper left', bbox_to_anchor=(0.14, 0.255),
                            bbox_transform=fig2.transFigure, ncol=4,
@@ -1617,10 +1593,6 @@ def create_all_charts(all_data, country_code='EU'):
                 labels[7], labels[5], labels[6],
                 labels[9], labels[8], '',
             ]
-            
-            ax1.legend(reordered_handles, reordered_labels, loc='upper left', bbox_to_anchor=(0.14, 0.255),
-                       bbox_transform=fig1.transFigure, ncol=4,
-                       fontsize=18, frameon=False)
             else:
                 # Some sources missing - use default matplotlib order
                 ax1.legend(loc='upper left', bbox_to_anchor=(0.14, 0.255),
@@ -1706,10 +1678,6 @@ def create_all_charts(all_data, country_code='EU'):
         if True:  # Always true since we force all sources
             if all_yoy_abs_values:
                 y_min = min(all_yoy_abs_values)
-                y_max = max(all_yoy_abs_values)
-                # 20% margin: if min is negative, make it 20% more negative; if positive, use 0
-                y_min_limit = y_min * 1.2 if y_min < 0 else 0
-                y_max_limit = y_max * 1.2
             else:
                 y_min_limit = -50
                 y_max_limit = 100
@@ -1743,10 +1711,6 @@ def create_all_charts(all_data, country_code='EU'):
                 labels[7], labels[5], labels[6],
                 labels[9], labels[8], '',
             ]
-            
-            ax1.legend(reordered_handles, reordered_labels, loc='upper left', bbox_to_anchor=(0.14, 0.255),
-                       bbox_transform=fig1.transFigure, ncol=4,
-                       fontsize=18, frameon=False)
             else:
                 # Some sources missing - use default matplotlib order
                 ax2.legend(loc='upper left', bbox_to_anchor=(0.14, 0.255),
