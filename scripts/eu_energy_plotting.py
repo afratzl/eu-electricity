@@ -1148,9 +1148,9 @@ def create_all_charts(all_data, country_code='EU'):
     available_non_renewables = [s for s in non_renewable_sources if s in all_data]
     available_totals = [s for s in total_sources if s in all_data]
 
-    all_sources = available_renewables + available_non_renewables + available_totals
+    all_sources_and_totals = available_renewables + available_non_renewables + available_totals
 
-    for source_name in all_sources:
+    for source_name in all_sources_and_totals:
         annual_totals[source_name] = {}
         year_data = all_data[source_name]['year_data']
 
