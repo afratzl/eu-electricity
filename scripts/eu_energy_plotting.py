@@ -815,10 +815,16 @@ def create_all_charts(all_data, country_code='EU'):
             fig1, ax1 = plt.subplots(figsize=(12, 12))
             plt.subplots_adjust(left=0.22, right=0.9, top=0.80, bottom=0.35)
 
-            for source_name in available_sources:
+            # Force plot all 10 sources, use zeros for missing ones
+            for source_name in all_sources:
                 color = ENTSOE_COLORS.get(source_name, 'black')
-                ax1.plot(months, monthly_means_pct[source_name], marker='o', color=color,
-                         linewidth=6, markersize=13, label=source_name)
+                if source_name in available_sources:
+                    ax1.plot(months, monthly_means_pct[source_name], marker='o', color=color,
+                             linewidth=6, markersize=13, label=source_name)
+                else:
+                    # Plot zero line for missing sources
+                    ax1.plot(months, [0]*12, marker='o', color=color,
+                             linewidth=6, markersize=13, label=source_name, alpha=0.3)
 
             add_flag_and_labels(fig1, country_code, 
                               'Electricity Generation',
@@ -831,9 +837,11 @@ def create_all_charts(all_data, country_code='EU'):
             ax1.grid(True, linestyle='--', alpha=0.7)
             
             # Reorder legend for 4-column layout: 3, 2+empty, 3, 2+empty
+            
             from matplotlib.patches import Rectangle
             empty = Rectangle((0,0), 0, 0, fill=False, edgecolor='none', visible=False)
             handles, labels = ax1.get_legend_handles_labels()
+            
             reordered_handles = [
                 handles[1], handles[2], handles[0],
                 handles[3], handles[4], empty,
@@ -850,6 +858,10 @@ def create_all_charts(all_data, country_code='EU'):
             ax1.legend(reordered_handles, reordered_labels, loc='upper left', bbox_to_anchor=(0.14, 0.255),
                        bbox_transform=fig1.transFigure, ncol=4,
                        fontsize=18, frameon=False)
+            else:
+                ax1.legend(loc='upper left', bbox_to_anchor=(0.14, 0.255),
+                           bbox_transform=fig1.transFigure, ncol=4,
+                           fontsize=18, frameon=False)
 
             period_name_clean = period['name'].replace('-', '_')
             percentage_filename = f'plots/{country_code.lower()}_monthly_energy_sources_mean_{period_name_clean}_percentage.png'
@@ -870,11 +882,17 @@ def create_all_charts(all_data, country_code='EU'):
             fig2, ax2 = plt.subplots(figsize=(12, 12))
             plt.subplots_adjust(left=0.22, right=0.9, top=0.80, bottom=0.35)
 
-            for source_name in available_sources:
+            # Force plot all 10 sources, use zeros for missing ones
+            for source_name in all_sources:
                 color = ENTSOE_COLORS.get(source_name, 'black')
-                values_twh = [val / 1000 for val in monthly_means_abs[source_name]]
-                ax2.plot(months, values_twh, marker='o', color=color,
-                         linewidth=6, markersize=13, label=source_name)
+                if source_name in available_sources:
+                    values_twh = [val / 1000 for val in monthly_means_abs[source_name]]
+                    ax2.plot(months, values_twh, marker='o', color=color,
+                             linewidth=6, markersize=13, label=source_name)
+                else:
+                    # Plot zero line for missing sources
+                    ax2.plot(months, [0]*12, marker='o', color=color,
+                             linewidth=6, markersize=13, label=source_name, alpha=0.3)
 
             add_flag_and_labels(fig2, country_code,
                               'Electricity Generation',
@@ -887,9 +905,11 @@ def create_all_charts(all_data, country_code='EU'):
             ax2.grid(True, linestyle='--', alpha=0.7)
             
             # Reorder legend for 4-column layout: 3, 2+empty, 3, 2+empty
+            
             from matplotlib.patches import Rectangle
             empty = Rectangle((0,0), 0, 0, fill=False, edgecolor='none', visible=False)
             handles, labels = ax2.get_legend_handles_labels()
+            
             reordered_handles = [
                 handles[1], handles[2], handles[0],
                 handles[3], handles[4], empty,
@@ -903,9 +923,13 @@ def create_all_charts(all_data, country_code='EU'):
                 labels[9], labels[8], '',
             ]
             
-            ax2.legend(reordered_handles, reordered_labels, loc='upper left', bbox_to_anchor=(0.14, 0.255),
-                       bbox_transform=fig2.transFigure, ncol=4,
+            ax1.legend(reordered_handles, reordered_labels, loc='upper left', bbox_to_anchor=(0.14, 0.255),
+                       bbox_transform=fig1.transFigure, ncol=4,
                        fontsize=18, frameon=False)
+            else:
+                ax2.legend(loc='upper left', bbox_to_anchor=(0.14, 0.255),
+                           bbox_transform=fig2.transFigure, ncol=4,
+                           fontsize=18, frameon=False)
 
             absolute_filename = f'plots/{country_code.lower()}_monthly_energy_sources_mean_{period_name_clean}_absolute.png'
             plt.savefig(absolute_filename, dpi=150, bbox_inches='tight')
@@ -1177,11 +1201,11 @@ def create_all_charts(all_data, country_code='EU'):
         fig1, ax1 = plt.subplots(figsize=(12, 12))
         plt.subplots_adjust(left=0.22, right=0.9, top=0.80, bottom=0.35)
 
-        lines_plotted = 0
-        for source_name in all_sources_for_annual:
+        # Force plot all 10 sources
+        for source_name in all_sources:
+            color = ENTSOE_COLORS.get(source_name, 'black')
+            
             if source_name in annual_totals and len(annual_totals[source_name]) > 0:
-                color = ENTSOE_COLORS.get(source_name, 'black')
-                
                 source_years = set(annual_totals[source_name].keys())
                 total_years = set(annual_totals['Total Generation'].keys())
                 overlapping_years = source_years & total_years
@@ -1200,9 +1224,14 @@ def create_all_charts(all_data, country_code='EU'):
 
                     ax1.plot(pct_years, percentages, marker='o', color=color,
                              linewidth=6, markersize=13, label=source_name)
-                    lines_plotted += 1
+            else:
+                # Plot zero line for missing sources
+                if 'Total Generation' in annual_totals:
+                    pct_years = sorted(annual_totals['Total Generation'].keys())
+                    ax1.plot(pct_years, [0]*len(pct_years), marker='o', color=color,
+                             linewidth=6, markersize=13, label=source_name, alpha=0.3)
 
-        if lines_plotted > 0:
+        if True:  # Always true since we force all sources
             add_flag_and_labels(fig1, country_code,
                               'Electricity Generation',
                               'Fraction of Total')
@@ -1214,9 +1243,11 @@ def create_all_charts(all_data, country_code='EU'):
             ax1.grid(True, linestyle='--', alpha=0.7)
             
             # Reorder legend for 4-column layout: 3, 2+empty, 3, 2+empty
+            
             from matplotlib.patches import Rectangle
             empty = Rectangle((0,0), 0, 0, fill=False, edgecolor='none', visible=False)
             handles, labels = ax1.get_legend_handles_labels()
+            
             reordered_handles = [
                 handles[1], handles[2], handles[0],
                 handles[3], handles[4], empty,
@@ -1233,6 +1264,10 @@ def create_all_charts(all_data, country_code='EU'):
             ax1.legend(reordered_handles, reordered_labels, loc='upper left', bbox_to_anchor=(0.14, 0.255),
                        bbox_transform=fig1.transFigure, ncol=4,
                        fontsize=18, frameon=False)
+            else:
+                ax1.legend(loc='upper left', bbox_to_anchor=(0.14, 0.255),
+                           bbox_transform=fig1.transFigure, ncol=4,
+                           fontsize=18, frameon=False)
 
             percentage_filename = f'plots/{country_code.lower()}_annual_all_sources_percentage.png'
             plt.savefig(percentage_filename, dpi=150, bbox_inches='tight')
@@ -1251,18 +1286,23 @@ def create_all_charts(all_data, country_code='EU'):
         fig2, ax2 = plt.subplots(figsize=(12, 12))
         plt.subplots_adjust(left=0.22, right=0.9, top=0.80, bottom=0.35)
 
-        lines_plotted = 0
-        for source_name in all_sources_for_annual:
+        # Force plot all 10 sources
+        for source_name in all_sources:
+            color = ENTSOE_COLORS.get(source_name, 'black')
+            
             if source_name in annual_totals and len(annual_totals[source_name]) > 0:
                 years_list = sorted(annual_totals[source_name].keys())
-                color = ENTSOE_COLORS.get(source_name, 'black')
-                
                 values_twh = [annual_totals[source_name][year] / 1000 for year in years_list]
                 ax2.plot(years_list, values_twh, marker='o', color=color,
                          linewidth=6, markersize=13, label=source_name)
-                lines_plotted += 1
+            else:
+                # Plot zero line for missing sources
+                if 'Total Generation' in annual_totals:
+                    years_list = sorted(annual_totals['Total Generation'].keys())
+                    ax2.plot(years_list, [0]*len(years_list), marker='o', color=color,
+                             linewidth=6, markersize=13, label=source_name, alpha=0.3)
 
-        if lines_plotted > 0:
+        if True:  # Always true since we force all sources
             add_flag_and_labels(fig2, country_code,
                               'Electricity Generation',
                               'Absolute Values')
@@ -1274,9 +1314,11 @@ def create_all_charts(all_data, country_code='EU'):
             ax2.grid(True, linestyle='--', alpha=0.7)
             
             # Reorder legend for 4-column layout: 3, 2+empty, 3, 2+empty
+            
             from matplotlib.patches import Rectangle
             empty = Rectangle((0,0), 0, 0, fill=False, edgecolor='none', visible=False)
             handles, labels = ax2.get_legend_handles_labels()
+            
             reordered_handles = [
                 handles[1], handles[2], handles[0],
                 handles[3], handles[4], empty,
@@ -1290,9 +1332,13 @@ def create_all_charts(all_data, country_code='EU'):
                 labels[9], labels[8], '',
             ]
             
-            ax2.legend(reordered_handles, reordered_labels, loc='upper left', bbox_to_anchor=(0.14, 0.255),
-                       bbox_transform=fig2.transFigure, ncol=4,
+            ax1.legend(reordered_handles, reordered_labels, loc='upper left', bbox_to_anchor=(0.14, 0.255),
+                       bbox_transform=fig1.transFigure, ncol=4,
                        fontsize=18, frameon=False)
+            else:
+                ax2.legend(loc='upper left', bbox_to_anchor=(0.14, 0.255),
+                           bbox_transform=fig2.transFigure, ncol=4,
+                           fontsize=18, frameon=False)
 
             absolute_filename = f'plots/{country_code.lower()}_annual_all_sources_absolute.png'
             plt.savefig(absolute_filename, dpi=150, bbox_inches='tight')
@@ -1472,18 +1518,35 @@ def create_all_charts(all_data, country_code='EU'):
         plt.subplots_adjust(left=0.22, right=0.9, top=0.80, bottom=0.35)
 
         all_yoy_pct_values = []
-        lines_plotted = 0
         
-        for source_name in all_sources_for_yoy:
+        # Force plot all 10 sources
+        for source_name in all_sources:
+            color = ENTSOE_COLORS.get(source_name, 'black')
+            
             if source_name not in annual_totals:
+                # Missing source - plot zero line
+                if 'Total Generation' in annual_totals:
+                    years_list = [year for year in sorted(annual_totals['Total Generation'].keys()) if year >= baseline_year]
+                    ax1.plot(years_list, [0]*len(years_list), marker='o', color=color,
+                             linewidth=6, markersize=13, label=source_name, alpha=0.3)
                 continue
             
             # Check if we have baseline data (full year 2015)
             if baseline_year not in annual_totals[source_name]:
+                # No baseline - plot zero line
+                years_list = [year for year in sorted(annual_totals[source_name].keys()) if year >= baseline_year]
+                if years_list:
+                    ax1.plot(years_list, [0]*len(years_list), marker='o', color=color,
+                             linewidth=6, markersize=13, label=source_name, alpha=0.3)
                 continue
             
             baseline_full_year = annual_totals[source_name][baseline_year]
             if baseline_full_year <= 0:
+                # Zero baseline - plot zero line
+                years_list = [year for year in sorted(annual_totals[source_name].keys()) if year >= baseline_year]
+                if years_list:
+                    ax1.plot(years_list, [0]*len(years_list), marker='o', color=color,
+                             linewidth=6, markersize=13, label=source_name, alpha=0.3)
                 continue
             
             years_list = sorted(annual_totals[source_name].keys())
@@ -1511,12 +1574,10 @@ def create_all_charts(all_data, country_code='EU'):
             
             # Only plot if we have matching data points
             if len(years_to_plot) > 0 and len(yoy_pct_changes) == len(years_to_plot):
-                color = ENTSOE_COLORS.get(source_name, 'black')
                 ax1.plot(years_to_plot, yoy_pct_changes, marker='o', color=color,
                          linewidth=6, markersize=13, label=source_name)
-                lines_plotted += 1
 
-        if lines_plotted > 0:
+        if True:  # Always true since we force all sources
             if all_yoy_pct_values:
                 y_min = min(all_yoy_pct_values)
                 y_max = max(all_yoy_pct_values)
@@ -1539,9 +1600,11 @@ def create_all_charts(all_data, country_code='EU'):
             ax1.grid(True, linestyle='--', alpha=0.7)
             
             # Reorder legend for 4-column layout: 3, 2+empty, 3, 2+empty
+            
             from matplotlib.patches import Rectangle
             empty = Rectangle((0,0), 0, 0, fill=False, edgecolor='none', visible=False)
             handles, labels = ax1.get_legend_handles_labels()
+            
             reordered_handles = [
                 handles[1], handles[2], handles[0],
                 handles[3], handles[4], empty,
@@ -1558,6 +1621,11 @@ def create_all_charts(all_data, country_code='EU'):
             ax1.legend(reordered_handles, reordered_labels, loc='upper left', bbox_to_anchor=(0.14, 0.255),
                        bbox_transform=fig1.transFigure, ncol=4,
                        fontsize=18, frameon=False)
+            else:
+                # Some sources missing - use default matplotlib order
+                ax1.legend(loc='upper left', bbox_to_anchor=(0.14, 0.255),
+                           bbox_transform=fig1.transFigure, ncol=4,
+                           fontsize=18, frameon=False)
 
             percentage_filename = f'plots/{country_code.lower()}_annual_yoy_all_sources_vs_2015_percentage.png'
             plt.savefig(percentage_filename, dpi=150, bbox_inches='tight')
@@ -1577,18 +1645,35 @@ def create_all_charts(all_data, country_code='EU'):
         plt.subplots_adjust(left=0.22, right=0.9, top=0.80, bottom=0.35)
 
         all_yoy_abs_values = []
-        lines_plotted = 0
         
-        for source_name in all_sources_for_yoy:
+        # Force plot all 10 sources
+        for source_name in all_sources:
+            color = ENTSOE_COLORS.get(source_name, 'black')
+            
             if source_name not in annual_totals:
+                # Missing source - plot zero line
+                if 'Total Generation' in annual_totals:
+                    years_list = [year for year in sorted(annual_totals['Total Generation'].keys()) if year >= baseline_year]
+                    ax2.plot(years_list, [0]*len(years_list), marker='o', color=color,
+                             linewidth=6, markersize=13, label=source_name, alpha=0.3)
                 continue
             
             # Check if we have baseline data (full year 2015)
             if baseline_year not in annual_totals[source_name]:
+                # No baseline - plot zero line
+                years_list = [year for year in sorted(annual_totals[source_name].keys()) if year >= baseline_year]
+                if years_list:
+                    ax2.plot(years_list, [0]*len(years_list), marker='o', color=color,
+                             linewidth=6, markersize=13, label=source_name, alpha=0.3)
                 continue
             
             baseline_full_year = annual_totals[source_name][baseline_year]
             if baseline_full_year <= 0:
+                # Zero baseline - plot zero line
+                years_list = [year for year in sorted(annual_totals[source_name].keys()) if year >= baseline_year]
+                if years_list:
+                    ax2.plot(years_list, [0]*len(years_list), marker='o', color=color,
+                             linewidth=6, markersize=13, label=source_name, alpha=0.3)
                 continue
             
             years_list = sorted(annual_totals[source_name].keys())
@@ -1615,12 +1700,10 @@ def create_all_charts(all_data, country_code='EU'):
             
             # Only plot if we have matching data points
             if len(years_to_plot) > 0 and len(yoy_abs_changes) == len(years_to_plot):
-                color = ENTSOE_COLORS.get(source_name, 'black')
                 ax2.plot(years_to_plot, yoy_abs_changes, marker='o', color=color,
                          linewidth=6, markersize=13, label=source_name)
-                lines_plotted += 1
 
-        if lines_plotted > 0:
+        if True:  # Always true since we force all sources
             if all_yoy_abs_values:
                 y_min = min(all_yoy_abs_values)
                 y_max = max(all_yoy_abs_values)
@@ -1643,9 +1726,11 @@ def create_all_charts(all_data, country_code='EU'):
             ax2.grid(True, linestyle='--', alpha=0.7)
             
             # Reorder legend for 4-column layout: 3, 2+empty, 3, 2+empty
+            
             from matplotlib.patches import Rectangle
             empty = Rectangle((0,0), 0, 0, fill=False, edgecolor='none', visible=False)
             handles, labels = ax2.get_legend_handles_labels()
+            
             reordered_handles = [
                 handles[1], handles[2], handles[0],
                 handles[3], handles[4], empty,
@@ -1659,9 +1744,14 @@ def create_all_charts(all_data, country_code='EU'):
                 labels[9], labels[8], '',
             ]
             
-            ax2.legend(reordered_handles, reordered_labels, loc='upper left', bbox_to_anchor=(0.14, 0.255),
-                       bbox_transform=fig2.transFigure, ncol=4,
+            ax1.legend(reordered_handles, reordered_labels, loc='upper left', bbox_to_anchor=(0.14, 0.255),
+                       bbox_transform=fig1.transFigure, ncol=4,
                        fontsize=18, frameon=False)
+            else:
+                # Some sources missing - use default matplotlib order
+                ax2.legend(loc='upper left', bbox_to_anchor=(0.14, 0.255),
+                           bbox_transform=fig2.transFigure, ncol=4,
+                           fontsize=18, frameon=False)
 
             absolute_filename = f'plots/{country_code.lower()}_annual_yoy_all_sources_vs_2015_absolute.png'
             plt.savefig(absolute_filename, dpi=150, bbox_inches='tight')
@@ -2640,11 +2730,36 @@ def main():
 
         print(f"\n✓ {country_code} complete!")
 
-    # Save combined drive links JSON (ADDED FROM AFTER)
-    drive_links_file = 'plots/drive_links_monthly_trends.json'
+    # Save combined drive links JSON - MERGE with existing intraday data
+    drive_links_file = 'plots/drive_links.json'
+    
+    # Load existing data (from intraday script)
+    existing_links = {}
+    if os.path.exists(drive_links_file):
+        try:
+            with open(drive_links_file, 'r') as f:
+                existing_links = json.load(f)
+            print(f"  Loaded existing drive_links.json")
+        except:
+            print(f"  Could not load existing drive_links.json, starting fresh")
+    
+    # Merge: Keep existing data (Intraday, data_sheet_id), add/update Monthly & Trends
+    for country_code, plot_links in all_plot_links.items():
+        if country_code not in existing_links:
+            existing_links[country_code] = {}
+        
+        # Add/update Monthly and Trends sections
+        if 'Monthly' in plot_links:
+            existing_links[country_code]['Monthly'] = plot_links['Monthly']
+        if 'Trends' in plot_links:
+            existing_links[country_code]['Trends'] = plot_links['Trends']
+        
+        # Keep existing Intraday and data_sheet_id (don't overwrite)
+    
+    # Write merged data
     with open(drive_links_file, 'w') as f:
-        json.dump(all_plot_links, f, indent=2)
-    print(f"\n✓ Drive links saved to: {drive_links_file}")
+        json.dump(existing_links, f, indent=2)
+    print(f"\n✓ Drive links merged and saved to: {drive_links_file}")
     
     # Write timestamp file for HTML to read (ADDED FROM AFTER)
     timestamp_file = 'plots/last_update_monthly_trends.html'
