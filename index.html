@@ -16,7 +16,6 @@
             <div class="nav-links">
                 <a href="index.html" class="active">Home</a>
                 <a href="live.html">Intraday</a>
-                <a href="yesterday.html">Yesterday</a>
                 <a href="monthly.html">Monthly</a>
                 <a href="trends.html">Trends</a>
             </div>
@@ -28,7 +27,7 @@
             <h1>EU Electricity Generation</h1>
         </header>
 
-        <!-- Three main navigation cards -->
+        <!-- Four main navigation cards -->
         <div class="cards-grid-pro">
             <div class="feature-card-pro">
                 <div class="card-header">
@@ -37,6 +36,15 @@
                 </div>
                 <p class="card-description">Live electricity generation</p>
                 <a href="live.html" class="card-button-pro">View Intraday Data →</a>
+            </div>
+
+            <div class="feature-card-pro">
+                <div class="card-header">
+                    <h2>Yesterday</h2>
+                    <span class="update-badge">Updates daily</span>
+                </div>
+                <p class="card-description">Complete breakdown by source</p>
+                <a href="yesterday.html" class="card-button-pro">View Yesterday's Data →</a>
             </div>
 
             <div class="feature-card-pro">
@@ -75,9 +83,7 @@
                             <option value="EU" selected>European Union</option>
                         </optgroup>
                         <optgroup label="EU Member States">
-                            <option value="FR">France</option>
                             <option value="DE">Germany</option>
-                            <option value="ES">Spain</option>
                         </optgroup>
                     </select>
                 </div>
@@ -375,7 +381,7 @@
         /* Cards Grid - Professional */
         .cards-grid-pro {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
             gap: var(--spacing-md);
             margin-top: 0;
             margin-bottom: var(--spacing-xl);
