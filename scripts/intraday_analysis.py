@@ -19,6 +19,29 @@ from entsoe import EntsoePandasClient
 import entsoe.entsoe
 import entsoe.parsers
 
+# Source colors (consistent with monthly/trends plots)
+ENTSOE_COLORS = {
+    # Renewables
+    'Solar': '#FFD700',  # Gold
+    'Wind': '#228B22',  # Forest Green
+    'Wind Onshore': '#2E8B57',  # Sea Green
+    'Wind Offshore': '#008B8B',  # Dark Cyan
+    'Hydro': '#1E90FF',  # Dodger Blue
+    'Biomass': '#9ACD32',  # Yellow Green
+    'Geothermal': '#708090',  # Slate Gray
+
+    # Non-renewables
+    'Gas': '#FF1493',  # Deep Pink
+    'Coal': '#8B008B',  # Dark Magenta
+    'Nuclear': '#8B4513',  # Saddle Brown
+    'Oil': '#191970',  # Midnight Blue
+    'Waste': '#808000',  # Olive
+
+    # Totals
+    'All Renewables': '#32CD32',  # Lime Green
+    'Total Generation': '#000000',  # Black
+}
+
 # CRITICAL: Set new API endpoint (ENTSO-E migration November 2024)
 # See: https://github.com/EnergieID/entsoe-py/issues/154
 entsoe.entsoe.URL = 'https://external-api.tp.entsoe.eu/api'
@@ -2288,6 +2311,439 @@ def upload_plot_to_drive(file_path, country='EU'):
         print(f"  ⚠ Drive upload failed for {os.path.basename(file_path)}: {e}")
         return None
 
+def generate_yesterday_plots(corrected_data, country_code='EU'):
+    """
+    Generate two yesterday plots (absolute and percentage) showing all 10 sources
+    
+    Args:
+        corrected_data: Dictionary containing yesterday_projected data for all sources
+        country_code: Country code (EU, DE, ES, etc.)
+    
+    Returns:
+        tuple: (percentage_file, absolute_file) paths or (None, None) if failed
+    """
+    import os
+    from datetime import datetime, timedelta
+    
+    # Check if we have yesterday_projected data
+    if 'yesterday_projected' not in corrected_data:
+        print("  ⚠ No yesterday_projected data available")
+        return None, None
+    
+    yesterday_data = corrected_data['yesterday_projected']
+    
+    # Get yesterday's date for title
+    yesterday_date = (datetime.now() - timedelta(days=1)).strftime('%Y-%m-%d')
+    
+    # Define the 10 sources in the order we want to plot them
+    source_list = [
+        'Solar', 'Wind', 'Hydro', 'Biomass', 'Geothermal',
+        'Gas', 'Coal', 'Nuclear', 'Oil', 'Waste'
+    ]
+    
+    # Country display names
+    COUNTRY_DISPLAY_NAMES = {
+        'EU': 'European Union',
+        'DE': 'Germany',
+        'ES': 'Spain',
+        'FR': 'France',
+        'IT': 'Italy',
+        'MD': 'Moldova',
+        'PL': 'Poland',
+        'NL': 'Netherlands',
+        'BE': 'Belgium',
+        'AT': 'Austria',
+        'SE': 'Sweden',
+        'DK': 'Denmark',
+        'FI': 'Finland',
+        'NO': 'Norway',
+        'CH': 'Switzerland',
+        'GB': 'United Kingdom',
+        'PT': 'Portugal',
+        'GR': 'Greece',
+        'CZ': 'Czechia',
+        'RO': 'Romania',
+        'HU': 'Hungary',
+        'BG': 'Bulgaria',
+        'SK': 'Slovakia',
+        'SI': 'Slovenia',
+        'HR': 'Croatia',
+        'LT': 'Lithuania',
+        'LV': 'Latvia',
+        'EE': 'Estonia',
+        'IE': 'Ireland',
+        'LU': 'Luxembourg',
+        'MT': 'Malta',
+        'CY': 'Cyprus'
+    }
+    
+    country_name = COUNTRY_DISPLAY_NAMES.get(country_code, country_code)
+    
+    def load_flag(fig, country_code):
+        """Load real flag PNG or fall back to placeholder"""
+        import os
+        from matplotlib import image as mpimg
+        
+        flag_path = f'flags/{country_code}.png'
+        
+        if os.path.exists(flag_path):
+            try:
+                ax_flag = fig.add_axes([0.1, 0.85, 0.075, 0.05])
+                flag_img = mpimg.imread(flag_path)
+                ax_flag.imshow(flag_img, aspect='auto')
+                ax_flag.axis('off')
+                return ax_flag
+            except:
+                pass
+        
+        # Fallback: colored rectangle with country code
+        ax_flag = fig.add_axes([0.1, 0.85, 0.075, 0.05])
+        colors_map = {
+            'EU': '#003399', 'DE': '#000000', 'ES': '#AA151B',
+            'FR': '#0055A4', 'MD': '#0046AE',
+        }
+        bg_color = colors_map.get(country_code, '#4A90E2')
+        ax_flag.add_patch(plt.Rectangle((0, 0), 1, 1, facecolor=bg_color, 
+                                        edgecolor='#CCCCCC', linewidth=2))
+        ax_flag.text(0.5, 0.5, country_code, color='white', 
+                    fontsize=14, fontweight='bold', ha='center', va='center')
+        ax_flag.set_xlim(0, 1)
+        ax_flag.set_ylim(0, 1)
+        ax_flag.axis('off')
+        return ax_flag
+    
+    # Create output directory
+    os.makedirs('plots', exist_ok=True)
+    
+    # Extract data for each source
+    source_data = {}
+    hours = None
+    
+    for source_name in source_list:
+        if source_name in yesterday_data:
+            data = yesterday_data[source_name]
+            if data is not None and len(data) > 0:
+                source_data[source_name] = data
+                if hours is None:
+                    hours = np.arange(len(data))
+    
+    if not source_data or hours is None:
+        print("  ⚠ No valid source data for yesterday")
+        return None, None
+    
+    # Calculate total generation for percentage calculation
+    total_gen = np.zeros(len(hours))
+    for source_name, data in source_data.items():
+        if len(data) == len(hours):
+            total_gen += data
+    
+    # Prevent division by zero
+    total_gen = np.where(total_gen == 0, 1, total_gen)
+    
+    print(f"\n📊 Generating yesterday plots for {country_code}...")
+    
+    # ========== PLOT 1: PERCENTAGE ==========
+    fig1 = plt.figure(figsize=(12, 12))
+    ax1 = fig1.add_axes([0.1, 0.15, 0.85, 0.68])
+    
+    # Plot each source
+    lines_pct = []
+    labels_pct = []
+    for source_name in source_list:
+        if source_name in source_data:
+            data = source_data[source_name]
+            if len(data) == len(hours):
+                pct_data = (data / total_gen) * 100
+                color = ENTSOE_COLORS.get(source_name, 'black')
+                line, = ax1.plot(hours, pct_data, color=color, linewidth=2, label=source_name)
+                lines_pct.append(line)
+                labels_pct.append(source_name)
+    
+    # Formatting
+    ax1.set_xlabel('Hour of Day', fontsize=14, fontweight='bold')
+    ax1.set_ylabel('Generation (%)', fontsize=14, fontweight='bold')
+    ax1.grid(True, alpha=0.3)
+    ax1.set_xlim(0, 23)
+    ax1.set_ylim(0, max(100, ax1.get_ylim()[1] * 1.2))  # 20% margin
+    
+    # X-axis: 0, 6, 12, 18, 23
+    ax1.set_xticks([0, 6, 12, 18, 23])
+    ax1.set_xticklabels(['00:00', '06:00', '12:00', '18:00', '23:00'])
+    
+    # Title
+    fig1.text(0.525, 0.92, 'Electricity Generation', 
+              fontsize=18, fontweight='bold', ha='center')
+    fig1.text(0.525, 0.89, f'{country_name} · Yesterday ({yesterday_date}) · All Sources', 
+              fontsize=14, ha='center', color='#333')
+    
+    # Flag
+    load_flag(fig1, country_code)
+    
+    # Legend: 4-column layout with custom reordering
+    # Desired order:
+    # Wind      | Hydro     | Solar      |
+    # Biomass   | Geotherm  | [empty]    |
+    # Nuclear   | Gas       | Coal       |
+    # Waste     | Oil       | [empty]    |
+    
+    # Map source names to indices in lines_pct/labels_pct
+    source_to_idx = {labels_pct[i]: i for i in range(len(labels_pct))}
+    
+    # Create reordered handles and labels
+    empty = Rectangle((0, 0), 0, 0, fill=False, edgecolor='none', visible=False)
+    
+    reordered_handles = []
+    reordered_labels = []
+    
+    # Row 1: Wind, Hydro, Solar
+    for name in ['Wind', 'Hydro', 'Solar']:
+        if name in source_to_idx:
+            idx = source_to_idx[name]
+            reordered_handles.append(lines_pct[idx])
+            reordered_labels.append(name)
+        else:
+            reordered_handles.append(empty)
+            reordered_labels.append('')
+    
+    # Row 2: Biomass, Geothermal, [empty]
+    for name in ['Biomass', 'Geothermal']:
+        if name in source_to_idx:
+            idx = source_to_idx[name]
+            reordered_handles.append(lines_pct[idx])
+            reordered_labels.append(name)
+        else:
+            reordered_handles.append(empty)
+            reordered_labels.append('')
+    reordered_handles.append(empty)
+    reordered_labels.append('')
+    
+    # Row 3: Nuclear, Gas, Coal
+    for name in ['Nuclear', 'Gas', 'Coal']:
+        if name in source_to_idx:
+            idx = source_to_idx[name]
+            reordered_handles.append(lines_pct[idx])
+            reordered_labels.append(name)
+        else:
+            reordered_handles.append(empty)
+            reordered_labels.append('')
+    
+    # Row 4: Waste, Oil, [empty]
+    for name in ['Waste', 'Oil']:
+        if name in source_to_idx:
+            idx = source_to_idx[name]
+            reordered_handles.append(lines_pct[idx])
+            reordered_labels.append(name)
+        else:
+            reordered_handles.append(empty)
+            reordered_labels.append('')
+    reordered_handles.append(empty)
+    reordered_labels.append('')
+    
+    # Add legend
+    ax1.legend(reordered_handles, reordered_labels,
+              loc='upper center', bbox_to_anchor=(0.5, -0.08),
+              ncol=3, frameon=True, fontsize=11)
+    
+    # Save percentage plot
+    percentage_file = f'plots/{country_code}_yesterday_all_sources_percentage.png'
+    fig1.savefig(percentage_file, dpi=150, bbox_inches='tight', facecolor='white')
+    plt.close(fig1)
+    print(f"  ✓ Saved: {percentage_file}")
+    
+    # ========== PLOT 2: ABSOLUTE (GW) ==========
+    fig2 = plt.figure(figsize=(12, 12))
+    ax2 = fig2.add_axes([0.1, 0.15, 0.85, 0.68])
+    
+    # Plot each source
+    lines_abs = []
+    labels_abs = []
+    for source_name in source_list:
+        if source_name in source_data:
+            data = source_data[source_name]
+            if len(data) == len(hours):
+                gw_data = data / 1000  # Convert MW to GW
+                color = ENTSOE_COLORS.get(source_name, 'black')
+                line, = ax2.plot(hours, gw_data, color=color, linewidth=2, label=source_name)
+                lines_abs.append(line)
+                labels_abs.append(source_name)
+    
+    # Formatting
+    ax2.set_xlabel('Hour of Day', fontsize=14, fontweight='bold')
+    ax2.set_ylabel('Generation (GW)', fontsize=14, fontweight='bold')
+    ax2.grid(True, alpha=0.3)
+    ax2.set_xlim(0, 23)
+    
+    # Y-axis with 20% margin
+    current_max = ax2.get_ylim()[1]
+    ax2.set_ylim(0, current_max * 1.2)
+    
+    # X-axis: 0, 6, 12, 18, 23
+    ax2.set_xticks([0, 6, 12, 18, 23])
+    ax2.set_xticklabels(['00:00', '06:00', '12:00', '18:00', '23:00'])
+    
+    # Title
+    fig2.text(0.525, 0.92, 'Electricity Generation', 
+              fontsize=18, fontweight='bold', ha='center')
+    fig2.text(0.525, 0.89, f'{country_name} · Yesterday ({yesterday_date}) · All Sources', 
+              fontsize=14, ha='center', color='#333')
+    
+    # Flag
+    load_flag(fig2, country_code)
+    
+    # Legend: same reordering as percentage plot
+    source_to_idx_abs = {labels_abs[i]: i for i in range(len(labels_abs))}
+    
+    reordered_handles_abs = []
+    reordered_labels_abs = []
+    
+    # Row 1: Wind, Hydro, Solar
+    for name in ['Wind', 'Hydro', 'Solar']:
+        if name in source_to_idx_abs:
+            idx = source_to_idx_abs[name]
+            reordered_handles_abs.append(lines_abs[idx])
+            reordered_labels_abs.append(name)
+        else:
+            reordered_handles_abs.append(empty)
+            reordered_labels_abs.append('')
+    
+    # Row 2: Biomass, Geothermal, [empty]
+    for name in ['Biomass', 'Geothermal']:
+        if name in source_to_idx_abs:
+            idx = source_to_idx_abs[name]
+            reordered_handles_abs.append(lines_abs[idx])
+            reordered_labels_abs.append(name)
+        else:
+            reordered_handles_abs.append(empty)
+            reordered_labels_abs.append('')
+    reordered_handles_abs.append(empty)
+    reordered_labels_abs.append('')
+    
+    # Row 3: Nuclear, Gas, Coal
+    for name in ['Nuclear', 'Gas', 'Coal']:
+        if name in source_to_idx_abs:
+            idx = source_to_idx_abs[name]
+            reordered_handles_abs.append(lines_abs[idx])
+            reordered_labels_abs.append(name)
+        else:
+            reordered_handles_abs.append(empty)
+            reordered_labels_abs.append('')
+    
+    # Row 4: Waste, Oil, [empty]
+    for name in ['Waste', 'Oil']:
+        if name in source_to_idx_abs:
+            idx = source_to_idx_abs[name]
+            reordered_handles_abs.append(lines_abs[idx])
+            reordered_labels_abs.append(name)
+        else:
+            reordered_handles_abs.append(empty)
+            reordered_labels_abs.append('')
+    reordered_handles_abs.append(empty)
+    reordered_labels_abs.append('')
+    
+    # Add legend
+    ax2.legend(reordered_handles_abs, reordered_labels_abs,
+              loc='upper center', bbox_to_anchor=(0.5, -0.08),
+              ncol=3, frameon=True, fontsize=11)
+    
+    # Save absolute plot
+    absolute_file = f'plots/{country_code}_yesterday_all_sources_absolute.png'
+    fig2.savefig(absolute_file, dpi=150, bbox_inches='tight', facecolor='white')
+    plt.close(fig2)
+    print(f"  ✓ Saved: {absolute_file}")
+    
+    return percentage_file, absolute_file
+
+
+def upload_yesterday_plot_to_drive(file_path, country='EU'):
+    """
+    Upload yesterday plot to Google Drive
+    Structure: EU-Electricity-Plots/[Country]/Yesterday/[plot].png
+    
+    Returns: Drive file ID or None if failed
+    """
+    import os
+    import json
+    from google.oauth2.service_account import Credentials as ServiceAccountCredentials
+    from googleapiclient.discovery import build
+    from googleapiclient.http import MediaFileUpload
+    
+    try:
+        # Get credentials from environment
+        google_creds_json = os.getenv('GOOGLE_CREDENTIALS_JSON')
+        if not google_creds_json:
+            print("  ⚠ GOOGLE_CREDENTIALS_JSON not set")
+            return None
+        
+        creds_dict = json.loads(google_creds_json)
+        credentials = ServiceAccountCredentials.from_service_account_info(
+            creds_dict,
+            scopes=['https://www.googleapis.com/auth/drive.file']
+        )
+        
+        service = build('drive', 'v3', credentials=credentials)
+        
+        # Helper function to get or create folder
+        def get_or_create_folder(folder_name, parent_id=None):
+            query = f"name='{folder_name}' and mimeType='application/vnd.google-apps.folder' and trashed=false"
+            if parent_id:
+                query += f" and '{parent_id}' in parents"
+            
+            results = service.files().list(q=query, spaces='drive', fields='files(id)').execute()
+            folders = results.get('files', [])
+            
+            if folders:
+                return folders[0]['id']
+            else:
+                file_metadata = {
+                    'name': folder_name,
+                    'mimeType': 'application/vnd.google-apps.folder'
+                }
+                if parent_id:
+                    file_metadata['parents'] = [parent_id]
+                folder = service.files().create(body=file_metadata, fields='id').execute()
+                return folder.get('id')
+        
+        # Create folder structure: EU-Electricity-Plots/[Country]/Yesterday/
+        root_folder_id = get_or_create_folder('EU-Electricity-Plots')
+        country_folder_id = get_or_create_folder(country, root_folder_id)
+        yesterday_folder_id = get_or_create_folder('Yesterday', country_folder_id)
+        
+        # Get filename
+        filename = os.path.basename(file_path)
+        
+        # Check if file already exists
+        query = f"name='{filename}' and '{yesterday_folder_id}' in parents and trashed=false"
+        results = service.files().list(q=query, spaces='drive', fields='files(id)').execute()
+        existing_files = results.get('files', [])
+        
+        if existing_files:
+            # Update existing file
+            file_id = existing_files[0]['id']
+            media = MediaFileUpload(file_path, mimetype='image/png')
+            service.files().update(fileId=file_id, media_body=media).execute()
+        else:
+            # Create new file
+            file_metadata = {
+                'name': filename,
+                'parents': [yesterday_folder_id]
+            }
+            media = MediaFileUpload(file_path, mimetype='image/png')
+            file = service.files().create(body=file_metadata, media_body=media, fields='id').execute()
+            file_id = file.get('id')
+        
+        # Set permissions: Anyone with link can view
+        try:
+            permission = {'type': 'anyone', 'role': 'reader'}
+            service.permissions().create(fileId=file_id, body=permission).execute()
+        except:
+            pass
+        
+        return file_id
+        
+    except Exception as e:
+        print(f"  ⚠ Drive upload failed for {os.path.basename(file_path)}: {e}")
+        return None
+
 
 def main():
     """
@@ -2373,6 +2829,7 @@ def main():
                 drive_file_ids = {}
                 plots_generated = 0  # Track successful plots
                 
+                # Generate individual source plots
                 for i, source in enumerate(all_sources, 1):
                     print(f"\n[{i}/{len(all_sources)}] Processing {DISPLAY_NAMES[source]}...")
                     output_file_base = f'plots/{source.replace("-", "_")}_analysis.png'
@@ -2394,10 +2851,41 @@ def main():
                 
                 total_plots_generated[country_code] = plots_generated
                 
+                # === GENERATE YESTERDAY ALL-SOURCES PLOTS ===
+                print(f"\n" + "=" * 80)
+                print(f"GENERATING YESTERDAY ALL-SOURCES PLOTS FOR {country_code}")
+                print("=" * 80)
+                yesterday_perc, yesterday_abs = generate_yesterday_plots(corrected_data, country_code=country_code)
+                
+                if yesterday_perc and yesterday_abs:
+                    if GDRIVE_AVAILABLE:
+                        print(f"  📤 Uploading yesterday plots to Drive...")
+                        yesterday_perc_id = upload_yesterday_plot_to_drive(yesterday_perc, country=country_code)
+                        yesterday_abs_id = upload_yesterday_plot_to_drive(yesterday_abs, country=country_code)
+                        
+                        if yesterday_perc_id and yesterday_abs_id:
+                            # Store separately (not in drive_file_ids with individual sources)
+                            drive_file_ids['__yesterday__'] = {
+                                'percentage': yesterday_perc_id,
+                                'absolute': yesterday_abs_id
+                            }
+                            print(f"  ✓ Uploaded yesterday plots to Drive: {country_code}/Yesterday/")
+                        else:
+                            print(f"  ⚠ Failed to upload yesterday plots to Drive")
+                    else:
+                        print(f"  ⚠ Drive upload not available")
+                else:
+                    print(f"  ⚠ Failed to generate yesterday plots")
+                # === END YESTERDAY PLOTS ===
+                
                 # Save Drive file IDs to JSON
                 if drive_file_ids:
-                    print(f"\n📤 Saving Drive links for {len(drive_file_ids)} sources...")
-                    print(f"   Sources: {', '.join(drive_file_ids.keys())}")
+                    print(f"\n📤 Saving Drive links for {len(drive_file_ids)} items...")
+                    individual_sources = [k for k in drive_file_ids.keys() if k != '__yesterday__']
+                    print(f"   Individual sources: {', '.join(individual_sources)}")
+                    if '__yesterday__' in drive_file_ids:
+                        print(f"   Yesterday: all_sources")
+                    
                     drive_links_file = 'plots/drive_links.json'
                     drive_links = {}
                     
@@ -2409,18 +2897,21 @@ def main():
                         except:
                             pass
                     
-                    # Update with new file IDs
+                    # Initialize country structure
                     if country_code not in drive_links:
                         drive_links[country_code] = {}
                     if 'Intraday' not in drive_links[country_code]:
                         drive_links[country_code]['Intraday'] = {}
                     
                     # Random thumbnail size to bypass mobile browser cache
-                    # Rotates between 5 sizes: each new URL forces browser to fetch fresh image
                     thumbnail_size = random.choice([1998, 1999, 2000, 2001, 2002])
                     print(f"  📐 Using thumbnail size: w{thumbnail_size} (cache-busting)")
                     
+                    # Save individual source plots
                     for source, file_ids in drive_file_ids.items():
+                        if source == '__yesterday__':
+                            continue  # Handle separately below
+                        
                         drive_links[country_code]['Intraday'][source] = {
                             'percentage': {
                                 'file_id': file_ids['percentage'],
@@ -2433,6 +2924,29 @@ def main():
                                 'direct_url': f'https://drive.google.com/thumbnail?id={file_ids["absolute"]}&sz=w{thumbnail_size}'
                             },
                             'updated': datetime.now().isoformat()
+                        }
+                    
+                    # Save yesterday plots (separate section)
+                    if '__yesterday__' in drive_file_ids:
+                        if 'Yesterday' not in drive_links[country_code]:
+                            drive_links[country_code]['Yesterday'] = {}
+                        
+                        yesterday_ids = drive_file_ids['__yesterday__']
+                        drive_links[country_code]['Yesterday'] = {
+                            'all_sources': {
+                                'percentage': {
+                                    'file_id': yesterday_ids['percentage'],
+                                    'view_url': f'https://drive.google.com/file/d/{yesterday_ids["percentage"]}/view',
+                                    'direct_url': f'https://drive.google.com/thumbnail?id={yesterday_ids["percentage"]}&sz=w{thumbnail_size}',
+                                    'updated': datetime.now().isoformat()
+                                },
+                                'absolute': {
+                                    'file_id': yesterday_ids['absolute'],
+                                    'view_url': f'https://drive.google.com/file/d/{yesterday_ids["absolute"]}/view',
+                                    'direct_url': f'https://drive.google.com/thumbnail?id={yesterday_ids["absolute"]}&sz=w{thumbnail_size}',
+                                    'updated': datetime.now().isoformat()
+                                }
+                            }
                         }
                     
                     # Save back to file (atomic write with validation)
@@ -2464,7 +2978,9 @@ def main():
                         os.replace(temp_file, drive_links_file)
                         
                         # Verify structure
-                        sample_source = list(drive_file_ids.keys())[0] if drive_file_ids else None
+                        individual_sources = [k for k in drive_file_ids.keys() if k != '__yesterday__']
+                        sample_source = individual_sources[0] if individual_sources else None
+                        
                         if sample_source:
                             if country_code in saved_data and 'Intraday' in saved_data[country_code]:
                                 if sample_source in saved_data[country_code]['Intraday']:
@@ -2474,11 +2990,19 @@ def main():
                                         print(f"  ✓ Drive links saved to {drive_links_file}")
                                         print(f"     Full path: {drive_links_file_path}")
                                         print(f"     File size: {file_size} bytes")
-                                        print(f"     ✓ Verified NEW structure (percentage/absolute)")
+                                        print(f"     ✓ Verified structure (Intraday + Yesterday)")
                                     else:
                                         print(f"  ⚠ WARNING: OLD structure detected! Missing percentage/absolute")
                                 else:
                                     print(f"  ⚠ WARNING: Source {sample_source} not in saved JSON")
+                        
+                        # Verify yesterday section if it was saved
+                        if '__yesterday__' in drive_file_ids:
+                            if country_code in saved_data and 'Yesterday' in saved_data[country_code]:
+                                if 'all_sources' in saved_data[country_code]['Yesterday']:
+                                    print(f"     ✓ Verified Yesterday section")
+                                else:
+                                    print(f"  ⚠ WARNING: Yesterday section missing all_sources")
                         
                     except ValueError as e:
                         print(f"  ✗ JSON validation error: {e}")
@@ -2522,7 +3046,7 @@ def main():
             total_count = sum(total_plots_generated.values())
             print(f"   - {total_count} source plots generated across {len(countries_to_process)} countries")
             for country, count in total_plots_generated.items():
-                print(f"     • {country}: {count}/12 sources")
+                print(f"     • {country}: {count}/12 sources + yesterday")
             print(f"   - Summary tables updated in Google Sheets")
         print("=" * 80)
         
