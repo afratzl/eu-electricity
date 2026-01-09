@@ -46,7 +46,7 @@ jobs:
           GOOGLE_CREDENTIALS_JSON: ${{ secrets.GOOGLE_CREDENTIALS_JSON }}
         run: |
           echo "Running daily historical data plotting..."
-          python scripts/eu_energy_plotting.py
+          python scripts/eu_energy_plotting.py --years 2015 2016
       
       - name: Generate Summary Table JSON
         env:
