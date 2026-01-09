@@ -2335,10 +2335,10 @@ def generate_yesterday_plots(corrected_data, country_code='EU'):
     # Get yesterday's date for title
     yesterday_date = (datetime.now() - timedelta(days=1)).strftime('%Y-%m-%d')
     
-    # Define the 10 sources in the order we want to plot them
+    # Define the 10 sources in the order we want to plot them (MUST match intraday script)
     source_list = [
-        'Solar', 'Wind', 'Hydro', 'Biomass', 'Geothermal',
-        'Gas', 'Coal', 'Nuclear', 'Oil', 'Waste'
+        'solar', 'wind', 'hydro', 'biomass', 'geothermal',
+        'gas', 'coal', 'nuclear', 'oil', 'waste'
     ]
     
     # Country display names
@@ -2496,21 +2496,21 @@ def generate_yesterday_plots(corrected_data, country_code='EU'):
     reordered_labels = []
     
     # Row 1: Wind, Hydro, Solar
-    for name in ['Wind', 'Hydro', 'Solar']:
+    for name in ['wind', 'hydro', 'solar']:
         if name in source_to_idx:
             idx = source_to_idx[name]
             reordered_handles.append(lines_pct[idx])
-            reordered_labels.append(name)
+            reordered_labels.append(name.title())  # Display as title case
         else:
             reordered_handles.append(empty)
             reordered_labels.append('')
     
     # Row 2: Biomass, Geothermal, [empty]
-    for name in ['Biomass', 'Geothermal']:
+    for name in ['biomass', 'geothermal']:
         if name in source_to_idx:
             idx = source_to_idx[name]
             reordered_handles.append(lines_pct[idx])
-            reordered_labels.append(name)
+            reordered_labels.append(name.title())  # Display as title case
         else:
             reordered_handles.append(empty)
             reordered_labels.append('')
@@ -2518,21 +2518,21 @@ def generate_yesterday_plots(corrected_data, country_code='EU'):
     reordered_labels.append('')
     
     # Row 3: Nuclear, Gas, Coal
-    for name in ['Nuclear', 'Gas', 'Coal']:
+    for name in ['nuclear', 'gas', 'coal']:
         if name in source_to_idx:
             idx = source_to_idx[name]
             reordered_handles.append(lines_pct[idx])
-            reordered_labels.append(name)
+            reordered_labels.append(name.title())  # Display as title case
         else:
             reordered_handles.append(empty)
             reordered_labels.append('')
     
     # Row 4: Waste, Oil, [empty]
-    for name in ['Waste', 'Oil']:
+    for name in ['waste', 'oil']:
         if name in source_to_idx:
             idx = source_to_idx[name]
             reordered_handles.append(lines_pct[idx])
-            reordered_labels.append(name)
+            reordered_labels.append(name.title())  # Display as title case
         else:
             reordered_handles.append(empty)
             reordered_labels.append('')
@@ -2597,21 +2597,21 @@ def generate_yesterday_plots(corrected_data, country_code='EU'):
     reordered_labels_abs = []
     
     # Row 1: Wind, Hydro, Solar
-    for name in ['Wind', 'Hydro', 'Solar']:
+    for name in ['wind', 'hydro', 'solar']:
         if name in source_to_idx_abs:
             idx = source_to_idx_abs[name]
             reordered_handles_abs.append(lines_abs[idx])
-            reordered_labels_abs.append(name)
+            reordered_labels_abs.append(name.title())  # Display as title case
         else:
             reordered_handles_abs.append(empty)
             reordered_labels_abs.append('')
     
     # Row 2: Biomass, Geothermal, [empty]
-    for name in ['Biomass', 'Geothermal']:
+    for name in ['biomass', 'geothermal']:
         if name in source_to_idx_abs:
             idx = source_to_idx_abs[name]
             reordered_handles_abs.append(lines_abs[idx])
-            reordered_labels_abs.append(name)
+            reordered_labels_abs.append(name.title())  # Display as title case
         else:
             reordered_handles_abs.append(empty)
             reordered_labels_abs.append('')
@@ -2619,21 +2619,21 @@ def generate_yesterday_plots(corrected_data, country_code='EU'):
     reordered_labels_abs.append('')
     
     # Row 3: Nuclear, Gas, Coal
-    for name in ['Nuclear', 'Gas', 'Coal']:
+    for name in ['nuclear', 'gas', 'coal']:
         if name in source_to_idx_abs:
             idx = source_to_idx_abs[name]
             reordered_handles_abs.append(lines_abs[idx])
-            reordered_labels_abs.append(name)
+            reordered_labels_abs.append(name.title())  # Display as title case
         else:
             reordered_handles_abs.append(empty)
             reordered_labels_abs.append('')
     
     # Row 4: Waste, Oil, [empty]
-    for name in ['Waste', 'Oil']:
+    for name in ['waste', 'oil']:
         if name in source_to_idx_abs:
             idx = source_to_idx_abs[name]
             reordered_handles_abs.append(lines_abs[idx])
-            reordered_labels_abs.append(name)
+            reordered_labels_abs.append(name.title())  # Display as title case
         else:
             reordered_handles_abs.append(empty)
             reordered_labels_abs.append('')
@@ -2652,6 +2652,97 @@ def generate_yesterday_plots(corrected_data, country_code='EU'):
     print(f"  ✓ Saved: {absolute_file}")
     
     return percentage_file, absolute_file
+
+
+def upload_yesterday_plot_to_drive(file_path, country='EU'):
+    """
+    Upload yesterday plot to Google Drive
+    Structure: EU-Electricity-Plots/[Country]/Yesterday/[plot].png
+    
+    Returns: Drive file ID or None if failed
+    """
+    import os
+    import json
+    from google.oauth2.service_account import Credentials as ServiceAccountCredentials
+    from googleapiclient.discovery import build
+    from googleapiclient.http import MediaFileUpload
+    
+    try:
+        # Get credentials from environment
+        google_creds_json = os.getenv('GOOGLE_CREDENTIALS_JSON')
+        if not google_creds_json:
+            print("  ⚠ GOOGLE_CREDENTIALS_JSON not set")
+            return None
+        
+        creds_dict = json.loads(google_creds_json)
+        credentials = ServiceAccountCredentials.from_service_account_info(
+            creds_dict,
+            scopes=['https://www.googleapis.com/auth/drive.file']
+        )
+        
+        service = build('drive', 'v3', credentials=credentials)
+        
+        # Helper function to get or create folder
+        def get_or_create_folder(folder_name, parent_id=None):
+            query = f"name='{folder_name}' and mimeType='application/vnd.google-apps.folder' and trashed=false"
+            if parent_id:
+                query += f" and '{parent_id}' in parents"
+            
+            results = service.files().list(q=query, spaces='drive', fields='files(id)').execute()
+            folders = results.get('files', [])
+            
+            if folders:
+                return folders[0]['id']
+            else:
+                file_metadata = {
+                    'name': folder_name,
+                    'mimeType': 'application/vnd.google-apps.folder'
+                }
+                if parent_id:
+                    file_metadata['parents'] = [parent_id]
+                folder = service.files().create(body=file_metadata, fields='id').execute()
+                return folder.get('id')
+        
+        # Create folder structure: EU-Electricity-Plots/[Country]/Yesterday/
+        root_folder_id = get_or_create_folder('EU-Electricity-Plots')
+        country_folder_id = get_or_create_folder(country, root_folder_id)
+        yesterday_folder_id = get_or_create_folder('Yesterday', country_folder_id)
+        
+        # Get filename
+        filename = os.path.basename(file_path)
+        
+        # Check if file already exists
+        query = f"name='{filename}' and '{yesterday_folder_id}' in parents and trashed=false"
+        results = service.files().list(q=query, spaces='drive', fields='files(id)').execute()
+        existing_files = results.get('files', [])
+        
+        if existing_files:
+            # Update existing file
+            file_id = existing_files[0]['id']
+            media = MediaFileUpload(file_path, mimetype='image/png')
+            service.files().update(fileId=file_id, media_body=media).execute()
+        else:
+            # Create new file
+            file_metadata = {
+                'name': filename,
+                'parents': [yesterday_folder_id]
+            }
+            media = MediaFileUpload(file_path, mimetype='image/png')
+            file = service.files().create(body=file_metadata, media_body=media, fields='id').execute()
+            file_id = file.get('id')
+        
+        # Set permissions: Anyone with link can view
+        try:
+            permission = {'type': 'anyone', 'role': 'reader'}
+            service.permissions().create(fileId=file_id, body=permission).execute()
+        except:
+            pass
+        
+        return file_id
+        
+    except Exception as e:
+        print(f"  ⚠ Drive upload failed for {os.path.basename(file_path)}: {e}")
+        return None
 
 
 def upload_yesterday_plot_to_drive(file_path, country='EU'):
