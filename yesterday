@@ -1,0 +1,685 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <title>Yesterday's Generation - EU Electricity</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <span class="nav-title">
+                <img src="flags/EU.svg" width="32" height="21" alt="EU flag" style="vertical-align: middle; margin-right: 10px;">
+                EU Electricity Generation
+            </span>
+            <div class="nav-links">
+                <a href="index.html">Home</a>
+                <a href="live.html">Intraday</a>
+                <a href="yesterday.html" class="active">Yesterday</a>
+                <a href="monthly.html">Monthly</a>
+                <a href="trends.html">Trends</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container" style="margin-bottom: 20px;">
+        <header class="page-header">
+            <h1>Yesterday's Electricity Generation</h1>
+            <p class="subtitle">Complete breakdown by source for the previous day</p>
+        </header>
+
+        <!-- COMPACT SELECTOR BOX -->
+        <div class="compact-selector-box">
+            <!-- Country/Region Selector -->
+            <div class="selector-item">
+                <label for="country-select">
+                    <img id="country-flag-indicator" src="flags/EU.svg" width="20" height="15" alt="Country flag" style="display: inline-block; margin-right: 6px; vertical-align: middle;">
+                    Country/Region:
+                </label>
+                <select id="country-select" onchange="updateChart()">
+                    <optgroup label="Region">
+                        <option value="EU" selected>European Union</option>
+                    </optgroup>
+                    <optgroup label="EU Member States">
+                        <option value="AT" disabled>Austria</option>
+                        <option value="BE" disabled>Belgium</option>
+                        <option value="BG" disabled>Bulgaria</option>
+                        <option value="HR" disabled>Croatia</option>
+                        <option value="CY" disabled>Cyprus</option>
+                        <option value="CZ" disabled>Czechia</option>
+                        <option value="DK" disabled>Denmark</option>
+                        <option value="EE" disabled>Estonia</option>
+                        <option value="FI" disabled>Finland</option>
+                        <option value="FR">France</option>
+                        <option value="DE">Germany</option>
+                        <option value="GR" disabled>Greece</option>
+                        <option value="HU" disabled>Hungary</option>
+                        <option value="IE" disabled>Ireland</option>
+                        <option value="IT" disabled>Italy</option>
+                        <option value="LV" disabled>Latvia</option>
+                        <option value="LT" disabled>Lithuania</option>
+                        <option value="LU" disabled>Luxembourg</option>
+                        <option value="MT" disabled>Malta</option>
+                        <option value="NL" disabled>Netherlands</option>
+                        <option value="PL" disabled>Poland</option>
+                        <option value="PT" disabled>Portugal</option>
+                        <option value="RO" disabled>Romania</option>
+                        <option value="SK" disabled>Slovakia</option>
+                        <option value="SI" disabled>Slovenia</option>
+                        <option value="ES">Spain</option>
+                        <option value="SE" disabled>Sweden</option>
+                    </optgroup>
+                    <optgroup label="Other European Countries">
+                        <option value="MD" disabled>Moldova</option>
+                        <option value="NO" disabled>Norway</option>
+                        <option value="CH" disabled>Switzerland</option>
+                        <option value="GB" disabled>United Kingdom</option>
+                    </optgroup>
+                </select>
+            </div>
+
+            <!-- Display Toggle -->
+            <div class="selector-item selector-item-toggle">
+                <label>Display:</label>
+                <div class="toggle-group-compact">
+                    <button id="toggle-percentage" class="toggle-btn-compact active" onclick="showPercentagePlot()">
+                        Relative
+                    </button>
+                    <button id="toggle-absolute" class="toggle-btn-compact" onclick="showAbsolutePlot()">
+                        Absolute
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- DYNAMIC CHART DISPLAY -->
+        <div id="chart-display" class="chart-container">
+            <!-- Charts will be loaded here by JavaScript -->
+        </div>
+
+        <div id="chart-info-bar" class="chart-info-bar">
+            <span id="last-update" class="timestamp">
+                <!-- Last update timestamp will be loaded here -->
+            </span>
+            <button id="refresh-btn" class="refresh-btn" onclick="refreshChart()" title="Refresh chart">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="23 4 23 10 17 10"></polyline>
+                    <polyline points="1 20 1 14 7 14"></polyline>
+                    <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+                </svg>
+                <span>Refresh</span>
+            </button>
+            <button id="download-btn" class="download-btn" onclick="downloadChart()" title="Download current chart">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                    <polyline points="7 10 12 15 17 10"></polyline>
+                    <line x1="12" y1="15" x2="12" y2="3"></line>
+                </svg>
+                <span>Download Chart</span>
+            </button>
+        </div>
+    </div>
+
+    <footer>
+        <p>Built with data from <a href="https://transparency.entsoe.eu/" target="_blank">ENTSO-E</a> | 
+           Source code on <a href="https://github.com/afratzl/eu-energy-analysis" target="_blank">GitHub</a> | 
+           Built by <a href="https://www.linkedin.com/in/alexfratzl/" target="_blank">Alex Fratzl</a> with Claude Sonnet</p>
+    </footer>
+
+    <script>
+        // Drive links cache
+        let driveLinks = null;
+
+        // Load Drive links from JSON
+        async function loadDriveLinks() {
+            if (driveLinks) return driveLinks;
+            
+            try {
+                // Add cache-buster to force reload of JSON
+                const cacheBuster = Date.now();
+                const response = await fetch(`plots/drive_links.json?t=${cacheBuster}`);
+                driveLinks = await response.json();
+                
+                // Log JSON info for debugging
+                console.log('📄 JSON loaded at:', new Date().toLocaleTimeString());
+                console.log('Sample URL from JSON:', driveLinks?.EU?.Yesterday?.all_sources?.percentage?.direct_url);
+                
+                return driveLinks;
+            } catch (error) {
+                console.error('Failed to load Drive links:', error);
+                return null;
+            }
+        }
+
+        // Update chart based on country selection
+        function updateChart() {
+            const countrySelect = document.getElementById('country-select');
+            const countryId = countrySelect.value;
+            
+            // Update flag image
+            const flagImg = document.getElementById('country-flag-indicator');
+            if (flagImg) {
+                flagImg.src = `flags/${countryId}.svg`;
+                flagImg.alt = `${countryId} flag`;
+            }
+            
+            showYesterdayChart(countryId);
+        }
+
+        // Show yesterday's chart - loads from Google Drive
+        async function showYesterdayChart(countryId = 'EU') {
+            const display = document.getElementById('chart-display');
+            
+            // Get Drive URLs
+            const links = await loadDriveLinks();
+            let percentageUrl, absoluteUrl;
+            
+            if (links && links[countryId] && links[countryId].Yesterday && links[countryId].Yesterday.all_sources) {
+                // Use Drive direct URLs - exact URL from JSON
+                percentageUrl = links[countryId].Yesterday.all_sources.percentage.direct_url;
+                absoluteUrl = links[countryId].Yesterday.all_sources.absolute.direct_url;
+                
+                // Check for refresh parameter
+                const urlParams = new URLSearchParams(window.location.search);
+                console.log('Current URL params:', window.location.search);
+                console.log('Has refresh param?', urlParams.has('refresh'));
+                
+                // Extract the size from JSON URL for reference
+                const jsonSizeMatch = percentageUrl.match(/sz=w(\d+)/);
+                const jsonSize = jsonSizeMatch ? parseInt(jsonSizeMatch[1]) : 2000;
+                console.log('📌 Size from JSON:', jsonSize);
+                
+                // ALWAYS use timestamp-based size
+                console.log('🎯 Using timestamp-based size');
+                
+                // Generate size based on day of year (odd/even) + hour
+                const now = new Date();
+                const startOfYear = new Date(now.getFullYear(), 0, 0);
+                const diff = now - startOfYear;
+                const oneDay = 1000 * 60 * 60 * 24;
+                const dayOfYear = Math.floor(diff / oneDay);  // 1-365
+                
+                const hour = now.getHours();  // 0-23
+                const isOddDay = dayOfYear % 2 === 1;
+                
+                // Odd days: 2000-2023, Even days: 2024-2047
+                const size = 2000 + (isOddDay ? 0 : 24) + hour;
+                
+                console.log(`🕐 Day of year: ${dayOfYear} (${isOddDay ? 'odd' : 'even'}), Hour: ${hour}`);
+                console.log(`🔄 Using timestamp size: w${size}`);
+                console.log(`   Range: ${isOddDay ? '2000-2023 (odd days)' : '2024-2047 (even days)'}`);
+                console.log('Original URL:', percentageUrl);
+                
+                // Replace size in URL
+                percentageUrl = percentageUrl.replace(/sz=w[\d.]+/, `sz=w${size}`);
+                absoluteUrl = absoluteUrl.replace(/sz=w[\d.]+/, `sz=w${size}`);
+                
+                console.log('Modified URL:', percentageUrl);
+            } else {
+                // Fallback to GitHub plots
+                percentageUrl = `plots/${countryId}_yesterday_all_sources_percentage.png`;
+                absoluteUrl = `plots/${countryId}_yesterday_all_sources_absolute.png`;
+                
+                // Add cache-buster for GitHub fallback
+                const cacheBuster = Date.now();
+                percentageUrl += `?t=${cacheBuster}`;
+                absoluteUrl += `?t=${cacheBuster}`;
+                
+                console.warn(`Drive link not found for ${countryId}/Yesterday, using GitHub fallback`);
+            }
+            
+            // Check CURRENT toggle state before regenerating HTML
+            const absoluteBtn = document.getElementById('toggle-absolute');
+            const isAbsoluteActive = absoluteBtn && absoluteBtn.classList.contains('active');
+            
+            // FORCE IMAGE RECREATION: Destroy and recreate DOM elements to bypass cache
+            display.innerHTML = '';
+            
+            // Create percentage plot container
+            const percentageContainer = document.createElement('div');
+            percentageContainer.id = 'percentage-plot-container';
+            
+            // Create fresh percentage image element
+            const percentageImg = document.createElement('img');
+            percentageImg.src = percentageUrl;
+            percentageImg.alt = `Yesterday All Sources - Percentage`;
+            percentageImg.className = 'chart-img';
+            percentageImg.onerror = function() {
+                handleImageError(this, 'percentage', countryId);
+            };
+            
+            percentageContainer.appendChild(percentageImg);
+            display.appendChild(percentageContainer);
+            
+            // Create absolute plot container
+            const absoluteContainer = document.createElement('div');
+            absoluteContainer.id = 'absolute-plot-container';
+            absoluteContainer.style.display = 'none';
+            
+            // Create fresh absolute image element
+            const absoluteImg = document.createElement('img');
+            absoluteImg.src = absoluteUrl;
+            absoluteImg.alt = `Yesterday All Sources - Absolute Generation`;
+            absoluteImg.className = 'chart-img';
+            absoluteImg.onerror = function() {
+                handleImageError(this, 'absolute', countryId);
+            };
+            
+            absoluteContainer.appendChild(absoluteImg);
+            display.appendChild(absoluteContainer);
+            
+            // Restore previous toggle state
+            if (isAbsoluteActive) {
+                showAbsolutePlot();
+            } else {
+                showPercentagePlot();
+            }
+            
+            // Only scroll if user manually changed selection
+            if (window.pageYOffset > 0 || document.documentElement.scrollTop > 0) {
+                display.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+        }
+
+        function handleImageError(img, plotType, countryId) {
+            // Try GitHub fallback if Drive fails
+            if (img.src.includes('drive.google.com')) {
+                console.warn(`Drive image failed for ${plotType}, trying GitHub fallback`);
+                img.src = `plots/${countryId}_yesterday_all_sources_${plotType}.png`;
+            } else {
+                img.parentElement.innerHTML = `
+                    <div style="background: #fee; color: #c33; padding: 20px; border-radius: 10px; margin: 20px 0; border-left: 4px solid #c33;">
+                        <strong>Plot not available</strong><br>
+                        Yesterday's ${plotType} plot is currently unavailable. Please try again later.
+                    </div>
+                `;
+            }
+        }
+
+        // Load timestamp
+        function loadTimestamp() {
+            fetch('plots/last_update.html')
+                .then(response => response.text())
+                .then(html => {
+                    document.getElementById('last-update').innerHTML = html;
+                })
+                .catch(error => {
+                    document.getElementById('last-update').innerHTML = 'Update time unavailable';
+                });
+        }
+
+        // Refresh current chart
+        function refreshChart() {
+            console.log('🔄 Refresh button clicked!');
+            
+            const countryId = document.getElementById('country-select').value;
+            
+            console.log('Current selection:', countryId);
+            console.log('Will use timestamp-based size for fresh cache');
+            
+            // Reload page with params
+            const url = new URL(window.location);
+            url.searchParams.set('country', countryId);
+            url.searchParams.set('refresh', Date.now());
+            
+            console.log('Reloading to:', url.toString());
+            
+            window.location.href = url.toString();
+        }
+
+        // Download current chart
+        function downloadChart() {
+            const countryId = document.getElementById('country-select').value;
+            
+            // Determine if percentage or absolute is showing
+            const isAbsolute = document.getElementById('toggle-absolute').classList.contains('active');
+            const plotType = isAbsolute ? 'Absolute' : 'Relative';
+            const plotTypeFile = isAbsolute ? 'absolute' : 'percentage';
+            
+            // Get timestamp from last-update div
+            const timestampText = document.getElementById('last-update').textContent;
+            const timestampMatch = timestampText.match(/(\d{4}-\d{2}-\d{2})\s+(\d{2}):(\d{2}):(\d{2})/);
+            const timestamp = timestampMatch ? `${timestampMatch[1]}_${timestampMatch[2]}${timestampMatch[3]}${timestampMatch[4]}` : new Date().toISOString().slice(0,10);
+            
+            // Get yesterday's date for filename
+            const yesterday = new Date();
+            yesterday.setDate(yesterday.getDate() - 1);
+            const yesterdayStr = yesterday.toISOString().slice(0,10);
+            
+            // Construct filename: CountryCode_Yesterday_YYYY-MM-DD_PlotType_Timestamp.png
+            const filename = `${countryId}_Yesterday_${yesterdayStr}_${plotType}_${timestamp}.png`;
+            
+            // Get the image source
+            const container = isAbsolute ? document.getElementById('absolute-plot-container') : document.getElementById('percentage-plot-container');
+            const img = container.querySelector('img');
+            
+            if (!img || !img.src) {
+                alert('No chart available to download');
+                return;
+            }
+            
+            let downloadUrl = img.src;
+            
+            // Special handling for ALL Google Drive URL formats
+            if (downloadUrl.includes('drive.google.com')) {
+                let fileId = null;
+                
+                // Format 1: thumbnail?id=FILE_ID
+                if (downloadUrl.includes('thumbnail?id=')) {
+                    fileId = downloadUrl.split('thumbnail?id=')[1].split('&')[0];
+                }
+                // Format 2: uc?export=view&id=FILE_ID or uc?id=FILE_ID&export=view
+                else if (downloadUrl.includes('/uc?')) {
+                    const match = downloadUrl.match(/[?&]id=([^&]+)/);
+                    if (match) fileId = match[1];
+                }
+                // Format 3: file/d/FILE_ID/view
+                else if (downloadUrl.includes('/file/d/')) {
+                    const match = downloadUrl.match(/\/file\/d\/([^\/]+)/);
+                    if (match) fileId = match[1];
+                }
+                
+                // If we found a file ID, construct proper download URL
+                if (fileId) {
+                    downloadUrl = `https://drive.google.com/uc?export=download&id=${fileId}`;
+                    
+                    const link = document.createElement('a');
+                    link.href = downloadUrl;
+                    link.download = filename;
+                    link.target = '_blank';
+                    link.rel = 'noopener noreferrer';
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    return;
+                }
+            }
+            
+            // For GitHub/same-origin images, download with custom filename
+            const link = document.createElement('a');
+            link.href = downloadUrl;
+            link.download = filename;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        // Toggle functions for plot type
+        function showPercentagePlot() {
+            const percentageContainer = document.getElementById('percentage-plot-container');
+            const absoluteContainer = document.getElementById('absolute-plot-container');
+            
+            if (percentageContainer && absoluteContainer) {
+                percentageContainer.style.display = 'block';
+                absoluteContainer.style.display = 'none';
+            }
+            
+            document.getElementById('toggle-percentage').classList.add('active');
+            document.getElementById('toggle-absolute').classList.remove('active');
+        }
+
+        function showAbsolutePlot() {
+            const percentageContainer = document.getElementById('percentage-plot-container');
+            const absoluteContainer = document.getElementById('absolute-plot-container');
+            
+            if (percentageContainer && absoluteContainer) {
+                percentageContainer.style.display = 'none';
+                absoluteContainer.style.display = 'block';
+            }
+            
+            document.getElementById('toggle-percentage').classList.remove('active');
+            document.getElementById('toggle-absolute').classList.add('active');
+        }
+
+        // Load default chart on page load
+        window.addEventListener('DOMContentLoaded', async () => {
+            // Check URL params for refresh-preserved selection
+            const urlParams = new URLSearchParams(window.location.search);
+            const paramCountry = urlParams.get('country');
+            
+            let country = 'EU';
+            
+            if (paramCountry) {
+                // Restore from URL params (after refresh button)
+                country = paramCountry;
+                
+                // Update dropdown to match
+                document.getElementById('country-select').value = country;
+            }
+            
+            await showYesterdayChart(country);
+            loadTimestamp();
+            
+            // Clean URL after loading
+            if (paramCountry) {
+                console.log('🧹 Cleaning URL params...');
+                window.history.replaceState({}, '', window.location.pathname);
+                console.log('✅ URL cleaned, new URL:', window.location.href);
+            }
+            
+            // Reload timestamp every 5 minutes
+            setInterval(loadTimestamp, 300000);
+        });
+    </script>
+
+    <style>
+        /* Compact selector box - 2 columns for yesterday (no source selector) */
+        .compact-selector-box {
+            background: #f7fafc;
+            border: 2px solid #cbd5e0;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 24px;
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 20px;
+            align-items: end;
+        }
+        
+        .selector-item {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        
+        .selector-item label {
+            font-weight: 500;
+            font-size: 0.95em;
+            color: #4a5568;
+            display: flex;
+            align-items: center;
+        }
+        
+        .selector-item select {
+            padding: 8px 10px;
+            font-size: 1em;
+            border: 2px solid #cbd5e0;
+            border-radius: 4px;
+            background: white;
+            width: 100%;
+        }
+        
+        .selector-item-toggle {
+            min-width: 200px;
+        }
+        
+        .toggle-group-compact {
+            display: flex;
+            background: white;
+            border: 2px solid #cbd5e0;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        
+        .toggle-btn-compact {
+            flex: 1;
+            padding: 8px 16px;
+            border: none;
+            background: white;
+            color: #4a5568;
+            cursor: pointer;
+            font-size: 0.95em;
+            font-weight: 600;
+            transition: all 0.2s ease;
+        }
+        
+        .toggle-btn-compact.active {
+            background: #003399;
+            color: white;
+        }
+        
+        .toggle-btn-compact:hover:not(.active) {
+            background: #f0f4f8;
+        }
+        
+        .chart-container {
+            margin-bottom: 8px;
+            padding-bottom: 0;
+        }
+        
+        .chart-img {
+            display: block;
+            margin-bottom: 0;
+        }
+        
+        /* Chart info bar */
+        .chart-info-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #f7fafc;
+            border-top: 1px solid #e2e8f0;
+            border-bottom: 1px solid #e2e8f0;
+            padding: 6px 24px;
+            margin-top: 0px;
+            margin-bottom: 8px;
+            gap: 20px;
+        }
+        
+        .timestamp {
+            color: #666;
+            font-size: 14px;
+        }
+        
+        .download-btn {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 16px;
+            background: white;
+            border: 1px solid #cbd5e0;
+            border-radius: 4px;
+            color: #4a5568;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .download-btn:hover {
+            background: #003399;
+            color: white;
+            border-color: #003399;
+        }
+        
+        .refresh-btn {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 16px;
+            background: white;
+            border: 1px solid #cbd5e0;
+            border-radius: 4px;
+            color: #4a5568;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .refresh-btn:hover {
+            background: #003399;
+            color: white;
+            border-color: #003399;
+        }
+        
+        .download-btn svg {
+            width: 16px;
+            height: 16px;
+        }
+        
+        .download-btn:active {
+            transform: translateY(1px);
+        }
+        
+        .subtitle {
+            color: #666;
+            font-size: 1.1em;
+            margin-top: 10px;
+        }
+        
+        /* Mobile: Stack info bar */
+        @media (max-width: 768px) {
+            .chart-info-bar {
+                flex-direction: column;
+                text-align: center;
+                padding: 12px 16px;
+                gap: 12px;
+            }
+            
+            .download-btn {
+                width: 100%;
+                justify-content: center;
+            }
+            
+            .refresh-btn {
+                width: 100%;
+                justify-content: center;
+            }
+        }
+        
+        /* Mobile: Stack vertically */
+        @media (max-width: 768px) {
+            .compact-selector-box {
+                grid-template-columns: 1fr !important;
+                gap: 16px;
+                padding: 16px;
+            }
+            
+            .selector-item-toggle {
+                min-width: unset;
+            }
+            
+            .selector-item label {
+                font-size: 0.9em;
+            }
+            
+            .selector-item select {
+                font-size: 0.95em;
+            }
+        }
+        
+        /* Responsive image sizing - 60% on desktop */
+        .chart-img {
+            width: 100%;
+            height: auto;
+        }
+        
+        @media (min-width: 1024px) {
+            .chart-img {
+                width: 60%;
+                margin: 0 auto;
+                display: block;
+            }
+        }
+    </style>
+
+    <!-- GoatCounter Analytics -->
+    <script data-goatcounter="https://eu-electricity.goatcounter.com/count"
+            async src="//gc.zgo.at/count.js"></script>
+</body>
+</html>
