@@ -2655,7 +2655,7 @@ def main():
     args = parser.parse_args()
     
     # Define countries to process (should match data collection script)
-    countries_to_process = ['EU', 'DE', 'ES']
+    countries_to_process = ['EU', 'DE', 'ES', 'FR']
     
     # If specific country requested, only process that one
     if args.country:
