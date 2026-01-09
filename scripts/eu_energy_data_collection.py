@@ -768,6 +768,8 @@ def main():
     parser = argparse.ArgumentParser(description='Collect EU energy data from ENTSO-E')
     parser.add_argument('--update-type', choices=['daily', 'full'], default=None,
                        help='Update type: daily (current year only) or full (all years 2015-present)')
+    parser.add_argument('--years', nargs=2, type=int, metavar=('START', 'END'),
+                       help='Year range to process (e.g., --years 2020 2023). Overrides --update-type.')
     args = parser.parse_args()
     
     # Verify environment variables are set
@@ -794,28 +796,43 @@ def main():
     current_day = current_date.day
     
     # Determine update strategy
-    if args.update_type:
+    if args.years:
+        # Manual year range specified (highest priority)
+        start_year, end_year = args.years
+        if start_year > end_year:
+            print(f"\n⚠️  ERROR: Start year ({start_year}) cannot be greater than end year ({end_year})")
+            sys.exit(1)
+        years_to_analyze = range(start_year, end_year + 1)
+        update_type = 'custom'
+        print(f"\n📋 Custom year range specified: {start_year}-{end_year}")
+    elif args.update_type:
         # Command line argument overrides automatic detection
         update_type = args.update_type
         print(f"\n📋 Update type specified via argument: {update_type}")
+        if update_type == 'full':
+            years_to_analyze = range(2015, current_year + 1)
+        else:  # daily
+            years_to_analyze = [current_year]
     else:
         # Automatic detection: 1st of month = full, otherwise = daily
         if current_day == 1:
             update_type = 'full'
+            years_to_analyze = range(2015, current_year + 1)
             print(f"\n📅 It's the 1st of the month - Running FULL refresh")
         else:
             update_type = 'daily'
+            years_to_analyze = [current_year]
             print(f"\n📅 Running DAILY update (current year only)")
     
-    # Set years to analyze based on update type
+    # Print year range info
     if update_type == 'full':
-        years_to_analyze = range(2015, current_year + 1)
         print(f"Years to process: 2015-{current_year} ({len(list(years_to_analyze))} years)")
-        print(f"Estimated API calls: ~{len(eu_countries) * len(list(years_to_analyze))}")
+    elif update_type == 'custom':
+        print(f"Years to process: {list(years_to_analyze)[0]}-{list(years_to_analyze)[-1]} ({len(list(years_to_analyze))} years)")
     else:  # daily
-        years_to_analyze = [current_year]
         print(f"Years to process: {current_year} only")
-        print(f"Estimated API calls: ~{len(eu_countries)}")
+    
+    print(f"Estimated API calls: ~{len(eu_countries) * len(list(years_to_analyze))}")
     
     # Define month names in order (January to December)
     month_names = [calendar.month_abbr[i] for i in range(1, 13)]
