@@ -1055,7 +1055,7 @@ def plot_analysis(stats_data, source_type, output_file_base, country_code='EU'):
     
     # Country display names
     COUNTRY_DISPLAY_NAMES = {
-        'EU': 'European Union',
+        'EU': 'EU',
         'DE': 'Germany',
         'MD': 'Moldova',
         'FR': 'France',
@@ -2368,7 +2368,7 @@ def generate_yesterday_plots(corrected_data, country_code='EU'):
     
     # Country display names
     COUNTRY_DISPLAY_NAMES = {
-        'EU': 'European Union',
+        'EU': 'EU',
         'DE': 'Germany',
         'ES': 'Spain',
         'FR': 'France',
@@ -2879,7 +2879,7 @@ def generate_yesterday_aggregates_plots(corrected_data, country_code='EU'):
     
     # Country display names
     COUNTRY_DISPLAY_NAMES = {
-        'EU': 'European Union',
+        'EU': 'EU',
         'DE': 'Germany',
         'ES': 'Spain',
         'FR': 'France',
