@@ -664,7 +664,7 @@ def create_all_charts(all_data, country_code='EU'):
                    ncol=5, fontsize=18, frameon=False)
 
         absolute_filename = f'plots/{country_code.lower()}_monthly_{source_name.lower().replace(" ", "_")}_absolute_10years.png'
-        plt.savefig(absolute_filename, dpi=150, bbox_inches=)
+        plt.savefig(absolute_filename, dpi=150)
         print(f"  ✓ Saved: {absolute_filename}")
         
         # Upload to Drive (ADDED FROM AFTER)
