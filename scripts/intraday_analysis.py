@@ -2328,9 +2328,21 @@ def generate_yesterday_plots(corrected_data, country_code='EU'):
     # Check if we have yesterday_projected data
     if 'yesterday_projected' not in corrected_data:
         print("  ⚠ No yesterday_projected data available")
+        print(f"  Available keys in corrected_data: {list(corrected_data.keys())}")
         return None, None
     
     yesterday_data = corrected_data['yesterday_projected']
+    
+    # Debug: Show what's actually in yesterday_data
+    print(f"  📊 yesterday_projected keys: {list(yesterday_data.keys())}")
+    
+    # Access atomic_sources (nested structure)
+    if 'atomic_sources' not in yesterday_data:
+        print("  ⚠ No atomic_sources in yesterday_projected")
+        return None, None
+    
+    atomic_sources = yesterday_data['atomic_sources']
+    print(f"  📊 atomic_sources keys: {list(atomic_sources.keys())}")
     
     # Get yesterday's date for title
     yesterday_date = (datetime.now() - timedelta(days=1)).strftime('%Y-%m-%d')
@@ -2415,21 +2427,43 @@ def generate_yesterday_plots(corrected_data, country_code='EU'):
     # Create output directory
     os.makedirs('plots', exist_ok=True)
     
-    # Extract data for each source
+    # Extract data for each source (sum across countries for each timestamp)
     source_data = {}
-    hours = None
+    timestamps = None
     
+    print(f"  🔍 Extracting data for {len(source_list)} sources...")
     for source_name in source_list:
-        if source_name in yesterday_data:
-            data = yesterday_data[source_name]
-            if data is not None and len(data) > 0:
-                source_data[source_name] = data
-                if hours is None:
-                    hours = np.arange(len(data))
+        if source_name in atomic_sources:
+            source_timestamps = atomic_sources[source_name]
+            if source_timestamps:
+                # Sum across countries for each timestamp
+                time_series = []
+                sorted_timestamps = sorted(source_timestamps.keys())
+                
+                for timestamp in sorted_timestamps:
+                    country_values = source_timestamps[timestamp]
+                    total = sum(country_values.values())
+                    time_series.append(total)
+                
+                if time_series:
+                    source_data[source_name] = np.array(time_series)
+                    if timestamps is None:
+                        timestamps = sorted_timestamps
+                    print(f"    ✓ {source_name}: {len(time_series)} data points")
+                else:
+                    print(f"    ⚠ {source_name}: no valid timestamps")
+            else:
+                print(f"    ⚠ {source_name}: empty data")
+        else:
+            print(f"    ✗ {source_name}: not found in atomic_sources")
     
-    if not source_data or hours is None:
+    if not source_data or timestamps is None:
         print("  ⚠ No valid source data for yesterday")
+        print(f"  Sources found: {list(source_data.keys())}")
         return None, None
+    
+    # Convert timestamps to hours (0-23)
+    hours = np.arange(len(timestamps))
     
     # Calculate total generation for percentage calculation
     total_gen = np.zeros(len(hours))
@@ -2652,97 +2686,6 @@ def generate_yesterday_plots(corrected_data, country_code='EU'):
     print(f"  ✓ Saved: {absolute_file}")
     
     return percentage_file, absolute_file
-
-
-def upload_yesterday_plot_to_drive(file_path, country='EU'):
-    """
-    Upload yesterday plot to Google Drive
-    Structure: EU-Electricity-Plots/[Country]/Yesterday/[plot].png
-    
-    Returns: Drive file ID or None if failed
-    """
-    import os
-    import json
-    from google.oauth2.service_account import Credentials as ServiceAccountCredentials
-    from googleapiclient.discovery import build
-    from googleapiclient.http import MediaFileUpload
-    
-    try:
-        # Get credentials from environment
-        google_creds_json = os.getenv('GOOGLE_CREDENTIALS_JSON')
-        if not google_creds_json:
-            print("  ⚠ GOOGLE_CREDENTIALS_JSON not set")
-            return None
-        
-        creds_dict = json.loads(google_creds_json)
-        credentials = ServiceAccountCredentials.from_service_account_info(
-            creds_dict,
-            scopes=['https://www.googleapis.com/auth/drive.file']
-        )
-        
-        service = build('drive', 'v3', credentials=credentials)
-        
-        # Helper function to get or create folder
-        def get_or_create_folder(folder_name, parent_id=None):
-            query = f"name='{folder_name}' and mimeType='application/vnd.google-apps.folder' and trashed=false"
-            if parent_id:
-                query += f" and '{parent_id}' in parents"
-            
-            results = service.files().list(q=query, spaces='drive', fields='files(id)').execute()
-            folders = results.get('files', [])
-            
-            if folders:
-                return folders[0]['id']
-            else:
-                file_metadata = {
-                    'name': folder_name,
-                    'mimeType': 'application/vnd.google-apps.folder'
-                }
-                if parent_id:
-                    file_metadata['parents'] = [parent_id]
-                folder = service.files().create(body=file_metadata, fields='id').execute()
-                return folder.get('id')
-        
-        # Create folder structure: EU-Electricity-Plots/[Country]/Yesterday/
-        root_folder_id = get_or_create_folder('EU-Electricity-Plots')
-        country_folder_id = get_or_create_folder(country, root_folder_id)
-        yesterday_folder_id = get_or_create_folder('Yesterday', country_folder_id)
-        
-        # Get filename
-        filename = os.path.basename(file_path)
-        
-        # Check if file already exists
-        query = f"name='{filename}' and '{yesterday_folder_id}' in parents and trashed=false"
-        results = service.files().list(q=query, spaces='drive', fields='files(id)').execute()
-        existing_files = results.get('files', [])
-        
-        if existing_files:
-            # Update existing file
-            file_id = existing_files[0]['id']
-            media = MediaFileUpload(file_path, mimetype='image/png')
-            service.files().update(fileId=file_id, media_body=media).execute()
-        else:
-            # Create new file
-            file_metadata = {
-                'name': filename,
-                'parents': [yesterday_folder_id]
-            }
-            media = MediaFileUpload(file_path, mimetype='image/png')
-            file = service.files().create(body=file_metadata, media_body=media, fields='id').execute()
-            file_id = file.get('id')
-        
-        # Set permissions: Anyone with link can view
-        try:
-            permission = {'type': 'anyone', 'role': 'reader'}
-            service.permissions().create(fileId=file_id, body=permission).execute()
-        except:
-            pass
-        
-        return file_id
-        
-    except Exception as e:
-        print(f"  ⚠ Drive upload failed for {os.path.basename(file_path)}: {e}")
-        return None
 
 
 def upload_yesterday_plot_to_drive(file_path, country='EU'):
