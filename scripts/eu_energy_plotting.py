@@ -436,7 +436,7 @@ def add_flag_and_labels(fig, country_code, main_title, subtitle):
              ha='center', va='top')
     
     # Add subtitle
-    fig.text(0.55, 0.895, subtitle,
+    fig.text(0.55, 0.855, subtitle,
              fontsize=24, fontweight='normal',
              ha='center', va='top')
     
@@ -550,7 +550,7 @@ def create_all_charts(all_data, country_code='EU'):
 
         # PLOT 1: Percentage
         fig1, ax1 = plt.subplots(figsize=(12, 12))
-        plt.subplots_adjust(left=0.15, right=0.94, top=0.86, bottom=0.25)
+        plt.subplots_adjust(left=0.15, right=0.94, top=0.82, bottom=0.25)
 
         max_pct_value = 0
         
