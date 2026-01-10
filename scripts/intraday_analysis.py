@@ -3276,15 +3276,43 @@ def main():
                         print(f"  ⚠ Drive upload not available")
                 else:
                     print(f"  ⚠ Failed to generate yesterday plots")
-                # === END YESTERDAY PLOTS ===
+                # === END YESTERDAY ALL-SOURCES PLOTS ===
+                
+                # === GENERATE YESTERDAY AGGREGATES PLOTS ===
+                print(f"\n" + "=" * 80)
+                print(f"GENERATING YESTERDAY AGGREGATES PLOTS FOR {country_code}")
+                print("=" * 80)
+                yesterday_agg_perc, yesterday_agg_abs = generate_yesterday_aggregates_plots(corrected_data, country_code=country_code)
+                
+                if yesterday_agg_perc and yesterday_agg_abs:
+                    if GDRIVE_AVAILABLE:
+                        print(f"  📤 Uploading yesterday aggregates plots to Drive...")
+                        yesterday_agg_perc_id = upload_yesterday_plot_to_drive(yesterday_agg_perc, country=country_code)
+                        yesterday_agg_abs_id = upload_yesterday_plot_to_drive(yesterday_agg_abs, country=country_code)
+                        
+                        if yesterday_agg_perc_id and yesterday_agg_abs_id:
+                            drive_file_ids['__yesterday_aggregates__'] = {
+                                'percentage': yesterday_agg_perc_id,
+                                'absolute': yesterday_agg_abs_id
+                            }
+                            print(f"  ✓ Uploaded yesterday aggregates plots to Drive: {country_code}/Yesterday/")
+                        else:
+                            print(f"  ⚠ Failed to upload yesterday aggregates plots to Drive")
+                    else:
+                        print(f"  ⚠ Drive upload not available")
+                else:
+                    print(f"  ⚠ Failed to generate yesterday aggregates plots")
+                # === END YESTERDAY AGGREGATES PLOTS ===
                 
                 # Save Drive file IDs to JSON
                 if drive_file_ids:
                     print(f"\n📤 Saving Drive links for {len(drive_file_ids)} items...")
-                    individual_sources = [k for k in drive_file_ids.keys() if k != '__yesterday__']
+                    individual_sources = [k for k in drive_file_ids.keys() if not k.startswith('__')]
                     print(f"   Individual sources: {', '.join(individual_sources)}")
                     if '__yesterday__' in drive_file_ids:
                         print(f"   Yesterday: all_sources")
+                    if '__yesterday_aggregates__' in drive_file_ids:
+                        print(f"   Yesterday: aggregates")
                     
                     drive_links_file = 'plots/drive_links.json'
                     drive_links = {}
@@ -3309,8 +3337,8 @@ def main():
                     
                     # Save individual source plots
                     for source, file_ids in drive_file_ids.items():
-                        if source == '__yesterday__':
-                            continue  # Handle separately below
+                        if source.startswith('__'):
+                            continue  # Handle yesterday plots separately below
                         
                         drive_links[country_code]['Intraday'][source] = {
                             'percentage': {
@@ -3327,25 +3355,43 @@ def main():
                         }
                     
                     # Save yesterday plots (separate section)
-                    if '__yesterday__' in drive_file_ids:
+                    if '__yesterday__' in drive_file_ids or '__yesterday_aggregates__' in drive_file_ids:
                         if 'Yesterday' not in drive_links[country_code]:
                             drive_links[country_code]['Yesterday'] = {}
-                        
+                    
+                    # Save yesterday all-sources plots
+                    if '__yesterday__' in drive_file_ids:
                         yesterday_ids = drive_file_ids['__yesterday__']
-                        drive_links[country_code]['Yesterday'] = {
-                            'all_sources': {
-                                'percentage': {
-                                    'file_id': yesterday_ids['percentage'],
-                                    'view_url': f'https://drive.google.com/file/d/{yesterday_ids["percentage"]}/view',
-                                    'direct_url': f'https://drive.google.com/thumbnail?id={yesterday_ids["percentage"]}&sz=w{thumbnail_size}',
-                                    'updated': datetime.now().isoformat()
-                                },
-                                'absolute': {
-                                    'file_id': yesterday_ids['absolute'],
-                                    'view_url': f'https://drive.google.com/file/d/{yesterday_ids["absolute"]}/view',
-                                    'direct_url': f'https://drive.google.com/thumbnail?id={yesterday_ids["absolute"]}&sz=w{thumbnail_size}',
-                                    'updated': datetime.now().isoformat()
-                                }
+                        drive_links[country_code]['Yesterday']['all_sources'] = {
+                            'percentage': {
+                                'file_id': yesterday_ids['percentage'],
+                                'view_url': f'https://drive.google.com/file/d/{yesterday_ids["percentage"]}/view',
+                                'direct_url': f'https://drive.google.com/thumbnail?id={yesterday_ids["percentage"]}&sz=w{thumbnail_size}',
+                                'updated': datetime.now().isoformat()
+                            },
+                            'absolute': {
+                                'file_id': yesterday_ids['absolute'],
+                                'view_url': f'https://drive.google.com/file/d/{yesterday_ids["absolute"]}/view',
+                                'direct_url': f'https://drive.google.com/thumbnail?id={yesterday_ids["absolute"]}&sz=w{thumbnail_size}',
+                                'updated': datetime.now().isoformat()
+                            }
+                        }
+                    
+                    # Save yesterday aggregates plots
+                    if '__yesterday_aggregates__' in drive_file_ids:
+                        yesterday_agg_ids = drive_file_ids['__yesterday_aggregates__']
+                        drive_links[country_code]['Yesterday']['aggregates'] = {
+                            'percentage': {
+                                'file_id': yesterday_agg_ids['percentage'],
+                                'view_url': f'https://drive.google.com/file/d/{yesterday_agg_ids["percentage"]}/view',
+                                'direct_url': f'https://drive.google.com/thumbnail?id={yesterday_agg_ids["percentage"]}&sz=w{thumbnail_size}',
+                                'updated': datetime.now().isoformat()
+                            },
+                            'absolute': {
+                                'file_id': yesterday_agg_ids['absolute'],
+                                'view_url': f'https://drive.google.com/file/d/{yesterday_agg_ids["absolute"]}/view',
+                                'direct_url': f'https://drive.google.com/thumbnail?id={yesterday_agg_ids["absolute"]}&sz=w{thumbnail_size}',
+                                'updated': datetime.now().isoformat()
                             }
                         }
                     
@@ -3378,7 +3424,7 @@ def main():
                         os.replace(temp_file, drive_links_file)
                         
                         # Verify structure
-                        individual_sources = [k for k in drive_file_ids.keys() if k != '__yesterday__']
+                        individual_sources = [k for k in drive_file_ids.keys() if not k.startswith('__')]
                         sample_source = individual_sources[0] if individual_sources else None
                         
                         if sample_source:
@@ -3396,13 +3442,20 @@ def main():
                                 else:
                                     print(f"  ⚠ WARNING: Source {sample_source} not in saved JSON")
                         
-                        # Verify yesterday section if it was saved
+                        # Verify yesterday sections if they were saved
                         if '__yesterday__' in drive_file_ids:
                             if country_code in saved_data and 'Yesterday' in saved_data[country_code]:
                                 if 'all_sources' in saved_data[country_code]['Yesterday']:
-                                    print(f"     ✓ Verified Yesterday section")
+                                    print(f"     ✓ Verified Yesterday all_sources section")
                                 else:
                                     print(f"  ⚠ WARNING: Yesterday section missing all_sources")
+                        
+                        if '__yesterday_aggregates__' in drive_file_ids:
+                            if country_code in saved_data and 'Yesterday' in saved_data[country_code]:
+                                if 'aggregates' in saved_data[country_code]['Yesterday']:
+                                    print(f"     ✓ Verified Yesterday aggregates section")
+                                else:
+                                    print(f"  ⚠ WARNING: Yesterday section missing aggregates")
                         
                     except ValueError as e:
                         print(f"  ✗ JSON validation error: {e}")
@@ -3446,7 +3499,7 @@ def main():
             total_count = sum(total_plots_generated.values())
             print(f"   - {total_count} source plots generated across {len(countries_to_process)} countries")
             for country, count in total_plots_generated.items():
-                print(f"     • {country}: {count}/12 sources + yesterday")
+                print(f"     • {country}: {count}/12 sources + yesterday (all + aggregates)")
             print(f"   - Summary tables updated in Google Sheets")
         print("=" * 80)
         
