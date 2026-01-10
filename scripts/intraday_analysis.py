@@ -84,6 +84,7 @@ import argparse
 import time
 import json
 import random
+from matplotlib.patches import Rectangle
 
 # Google Drive imports (for plot hosting)
 try:
