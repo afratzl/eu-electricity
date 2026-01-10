@@ -1255,7 +1255,7 @@ def plot_analysis(stats_data, source_type, output_file_base, country_code='EU'):
     
     # Titles in figure coordinates (not axes coordinates)
     # Main title
-    fig1.text(0.55, 0.89, 'Electricity Generation',
+    fig1.text(0.55, 0.875, 'Electricity Generation',
              fontsize=30, fontweight='bold',
              ha='center', va='top')
     
@@ -1375,7 +1375,7 @@ def plot_analysis(stats_data, source_type, output_file_base, country_code='EU'):
     
     # Titles in figure coordinates (not axes coordinates)
     # Main title
-    fig2.text(0.55, 0.89, 'Electricity Generation',
+    fig2.text(0.55, 0.875, 'Electricity Generation',
              fontsize=30, fontweight='bold',
              ha='center', va='top')
     
