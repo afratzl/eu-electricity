@@ -425,7 +425,7 @@ def add_flag_and_labels(fig, country_code, main_title, subtitle):
     
     # Add country name
     country_display = COUNTRY_DISPLAY_NAMES.get(country_code, country_code)
-    fig.text(0.1, 0.843, country_display,
+    fig.text(0.8, 0.843, country_display,
              fontsize=18, fontweight='normal',
              ha='left', va='top',
              color='#333')
