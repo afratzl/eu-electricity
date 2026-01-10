@@ -44,7 +44,7 @@ ENTSOE_COLORS = {
 
 # Country display names
 COUNTRY_DISPLAY_NAMES = {
-    'EU': 'EU',
+    'EU': 'European Union',
     'DE': 'Germany',
     'FR': 'France',
     'ES': 'Spain',
@@ -425,9 +425,9 @@ def add_flag_and_labels(fig, country_code, main_title, subtitle):
     
     # Add country name
     country_display = COUNTRY_DISPLAY_NAMES.get(country_code, country_code)
-    fig.text(0.22, 0.813, country_display,
-             fontsize=16, fontweight='normal',
-             ha='right', va='top',
+    fig.text(0.22, 0.907, country_display,
+             fontsize=20, fontweight='normal',
+             ha='right', va='bottom',
              color='#333')
     
     # Add main title
