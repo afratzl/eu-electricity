@@ -416,7 +416,7 @@ def add_flag_and_labels(fig, country_code, main_title, subtitle):
     if os.path.exists(flag_path):
         try:
             # Create axes for flag - positioned for 12×12 canvas
-            ax_flag = fig.add_axes([0.1, 0.82, 0.12, 0.08])
+            ax_flag = fig.add_axes([0.03, 0.87, 0.12, 0.08])
             flag_img = mpimg.imread(flag_path)
             ax_flag.imshow(flag_img, aspect='auto')
             ax_flag.axis('off')
@@ -425,28 +425,28 @@ def add_flag_and_labels(fig, country_code, main_title, subtitle):
     
     # Add country name
     country_display = COUNTRY_DISPLAY_NAMES.get(country_code, country_code)
-    fig.text(0.22, 0.907, country_display,
+    fig.text(0.03, 0.907, country_display,
              fontsize=20, fontweight='normal',
-             ha='right', va='bottom',
+             ha='left', va='bottom',
              color='#333')
     
     # Add main title
-    fig.text(0.55, 0.885, main_title,
+    fig.text(0.55, 0.94, main_title,
              fontsize=30, fontweight='bold',
              ha='center', va='top')
     
     # Add subtitle
-    fig.text(0.55, 0.835, subtitle,
+    fig.text(0.55, 0.895, subtitle,
              fontsize=24, fontweight='normal',
              ha='center', va='top')
     
     # Add watermark and timestamp
     timestamp = datetime.now().strftime('%Y-%m-%d %H:%M UTC')
-    fig.text(0.2, 0.125, "afratzl.github.io/eu-electricity",
+    fig.text(0.15, 0.075, "afratzl.github.io/eu-electricity",
               ha='left', va='top',
               fontsize=12, color='#666',
               style='italic')
-    fig.text(0.9, 0.125, f"Generated: {timestamp}",
+    fig.text(0.94, 0.075, f"Generated: {timestamp}",
               ha='right', va='top',
               fontsize=12, color='#666',
               style='italic')
@@ -550,7 +550,7 @@ def create_all_charts(all_data, country_code='EU'):
 
         # PLOT 1: Percentage
         fig1, ax1 = plt.subplots(figsize=(12, 12))
-        plt.subplots_adjust(left=0.22, right=0.9, top=0.80, bottom=0.35)
+        plt.subplots_adjust(left=0.15, right=0.94, top=0.86, bottom=0.25)
 
         max_pct_value = 0
         
@@ -599,7 +599,7 @@ def create_all_charts(all_data, country_code='EU'):
         ax1.tick_params(axis='both', labelsize=22, length=8, pad=8)
         ax1.grid(True, linestyle='--', alpha=0.7)
 
-        ax1.legend(loc='upper left', bbox_to_anchor=(0.165, 0.255), 
+        ax1.legend(loc='upper left', bbox_to_anchor=(0.165, 0.17), 
                    bbox_transform=fig1.transFigure,
                    ncol=5, fontsize=18, frameon=False)
 
