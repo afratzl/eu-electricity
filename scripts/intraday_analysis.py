@@ -2527,7 +2527,7 @@ def generate_yesterday_plots(corrected_data, country_code='EU'):
     
     # Formatting
     ax1.set_xlabel('Time of Day (Brussels)', fontsize=24, fontweight='bold', labelpad=8)
-    ax1.set_ylabel('Generation (%)', fontsize=24, fontweight='bold', labelpad=8)
+    ax1.set_ylabel('Electrical Power (%)', fontsize=24, fontweight='bold', labelpad=8)
     ax1.grid(True, linestyle='--', alpha=0.7, linewidth=1.5)
     ax1.set_xlim(0, len(time_labels))
     ax1.set_ylim(0, max_pct_value * 1.2)  # 20% margin
@@ -2539,10 +2539,10 @@ def generate_yesterday_plots(corrected_data, country_code='EU'):
     # Tick parameters
     ax1.tick_params(axis='both', labelsize=22, length=8, pad=8)
     
-    # Title (without country name)
-    fig1.text(0.525, 0.92, 'Electricity Generation', 
+    # Title
+    fig1.text(0.55, 0.875, 'Electricity Generation', 
               fontsize=30, fontweight='bold', ha='center')
-    fig1.text(0.525, 0.89, f'Yesterday ({yesterday_date}) · All Sources', 
+    fig1.text(0.55, 0.835, f'Yesterday ({yesterday_date}) · Fraction of Total', 
               fontsize=24, ha='center', color='#333')
     
     # Flag
@@ -2660,7 +2660,7 @@ def generate_yesterday_plots(corrected_data, country_code='EU'):
     
     # Formatting
     ax2.set_xlabel('Time of Day (Brussels)', fontsize=24, fontweight='bold', labelpad=8)
-    ax2.set_ylabel('Generation (GW)', fontsize=24, fontweight='bold', labelpad=8)
+    ax2.set_ylabel('Electrical Power (GW)', fontsize=24, fontweight='bold', labelpad=8)
     ax2.grid(True, linestyle='--', alpha=0.7, linewidth=1.5)
     ax2.set_xlim(0, len(time_labels))
     ax2.set_ylim(0, max_abs_value * 1.2)  # 20% margin
@@ -2672,10 +2672,10 @@ def generate_yesterday_plots(corrected_data, country_code='EU'):
     # Tick parameters
     ax2.tick_params(axis='both', labelsize=22, length=8, pad=8)
     
-    # Title (without country name)
-    fig2.text(0.525, 0.92, 'Electricity Generation', 
+    # Title
+    fig2.text(0.55, 0.875, 'Electricity Generation', 
               fontsize=30, fontweight='bold', ha='center')
-    fig2.text(0.525, 0.89, f'Yesterday ({yesterday_date}) · All Sources', 
+    fig2.text(0.55, 0.835, f'Yesterday ({yesterday_date}) · Absolute Values', 
               fontsize=24, ha='center', color='#333')
     
     # Flag
