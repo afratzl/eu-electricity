@@ -599,7 +599,7 @@ def create_all_charts(all_data, country_code='EU'):
         ax1.tick_params(axis='both', labelsize=22, length=8, pad=8)
         ax1.grid(True, linestyle='--', alpha=0.7)
 
-        ax1.legend(loc='upper left', bbox_to_anchor=(0.155, 0.255), 
+        ax1.legend(loc='upper left', bbox_to_anchor=(0.165, 0.255), 
                    bbox_transform=fig1.transFigure,
                    ncol=5, fontsize=18, frameon=False)
 
@@ -659,7 +659,7 @@ def create_all_charts(all_data, country_code='EU'):
         ax2.tick_params(axis='both', labelsize=22, length=8, pad=8)
         ax2.grid(True, linestyle='--', alpha=0.7)
 
-        ax2.legend(loc='upper left', bbox_to_anchor=(0.155, 0.255),
+        ax2.legend(loc='upper left', bbox_to_anchor=(0.165, 0.255),
                    bbox_transform=fig2.transFigure,
                    ncol=5, fontsize=18, frameon=False)
 
@@ -1257,7 +1257,7 @@ def create_all_charts(all_data, country_code='EU'):
                 labels[9], labels[8], '',
             ]
             
-            ax1.legend(reordered_handles, reordered_labels, loc='upper left', bbox_to_anchor=(0.20, 0.255),
+            ax1.legend(reordered_handles, reordered_labels, loc='upper left', bbox_to_anchor=(0.19, 0.255),
                        bbox_transform=fig1.transFigure, ncol=4,
                        fontsize=18, frameon=False)
 
@@ -1324,7 +1324,7 @@ def create_all_charts(all_data, country_code='EU'):
                 labels[9], labels[8], '',
             ]
             
-            ax2.legend(reordered_handles, reordered_labels, loc='upper left', bbox_to_anchor=(0.20, 0.255),
+            ax2.legend(reordered_handles, reordered_labels, loc='upper left', bbox_to_anchor=(0.19, 0.255),
                        bbox_transform=fig2.transFigure, ncol=4,
                        fontsize=18, frameon=False)
 
@@ -1606,7 +1606,7 @@ def create_all_charts(all_data, country_code='EU'):
                 labels[9], labels[8], '',
             ]
             
-            ax1.legend(reordered_handles, reordered_labels, loc='upper left', bbox_to_anchor=(0.20, 0.255),
+            ax1.legend(reordered_handles, reordered_labels, loc='upper left', bbox_to_anchor=(0.19, 0.255),
                        bbox_transform=fig1.transFigure, ncol=4,
                        fontsize=18, frameon=False)
 
@@ -1727,7 +1727,7 @@ def create_all_charts(all_data, country_code='EU'):
                 labels[9], labels[8], '',
             ]
             
-            ax2.legend(reordered_handles, reordered_labels, loc='upper left', bbox_to_anchor=(0.20, 0.255),
+            ax2.legend(reordered_handles, reordered_labels, loc='upper left', bbox_to_anchor=(0.19, 0.255),
                        bbox_transform=fig2.transFigure, ncol=4,
                        fontsize=18, frameon=False)
 
