@@ -2358,7 +2358,7 @@ def generate_yesterday_plots(corrected_data, country_code='EU'):
     print(f"  📊 atomic_sources keys: {list(atomic_sources.keys())}")
     
     # Get yesterday's date for title
-    yesterday_date = (datetime.now() - timedelta(days=1)).strftime('%Y-%m-%d')
+    yesterday_date = (datetime.now() - timedelta(days=1)).strftime('%d.%m.%y')
     
     # Define the 10 sources in the order we want to plot them (MUST match intraday script)
     source_list = [
@@ -2541,9 +2541,9 @@ def generate_yesterday_plots(corrected_data, country_code='EU'):
     
     # Title
     fig1.text(0.55, 0.875, 'Electricity Generation', 
-              fontsize=30, fontweight='bold', ha='center')
+              fontsize=30, fontweight='bold', ha='center', va='top')
     fig1.text(0.55, 0.835, f'Yesterday ({yesterday_date}) · Fraction of Total', 
-              fontsize=24, ha='center', color='#333')
+              fontsize=24, ha='center', va='top', color='#333')
     
     # Flag
     load_flag(fig1, country_code)
@@ -2674,9 +2674,9 @@ def generate_yesterday_plots(corrected_data, country_code='EU'):
     
     # Title
     fig2.text(0.55, 0.875, 'Electricity Generation', 
-              fontsize=30, fontweight='bold', ha='center')
+              fontsize=30, fontweight='bold', ha='center', va='top')
     fig2.text(0.55, 0.835, f'Yesterday ({yesterday_date}) · Absolute Values', 
-              fontsize=24, ha='center', color='#333')
+              fontsize=24, ha='center', va='top', color='#333')
     
     # Flag
     load_flag(fig2, country_code)
