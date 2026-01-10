@@ -2501,25 +2501,36 @@ def generate_yesterday_plots(corrected_data, country_code='EU'):
     plt.subplots_adjust(left=0.22, right=0.9, top=0.80, bottom=0.35)
     ax1 = fig1.add_subplot(111)
     
-    # Plot each source
+    # Plot each source with z-order (higher = on top)
     lines_pct = []
     labels_pct = []
+    max_pct_value = 0
+    
+    # Z-order mapping (top to bottom)
+    zorder_map = {
+        'solar': 10, 'wind': 9, 'hydro': 8, 'nuclear': 7, 'gas': 6,
+        'coal': 5, 'biomass': 4, 'geothermal': 3, 'oil': 2, 'waste': 1
+    }
+    
     for source_name in source_list:
         if source_name in source_data:
             data = source_data[source_name]
             if len(data) == len(x_values):
                 pct_data = (data / total_gen) * 100
+                max_pct_value = max(max_pct_value, np.max(pct_data))
                 color = ENTSOE_COLORS.get(source_name, 'black')
-                line, = ax1.plot(x_values, pct_data, color=color, linewidth=6, label=source_name)
+                zorder = zorder_map.get(source_name, 0)
+                line, = ax1.plot(x_values, pct_data, color=color, linewidth=6, 
+                               label=source_name, zorder=zorder)
                 lines_pct.append(line)
                 labels_pct.append(source_name)
     
     # Formatting
-    ax1.set_xlabel('Hour of Day', fontsize=24, fontweight='bold', labelpad=8)
+    ax1.set_xlabel('Time of Day (Brussels)', fontsize=24, fontweight='bold', labelpad=8)
     ax1.set_ylabel('Generation (%)', fontsize=24, fontweight='bold', labelpad=8)
     ax1.grid(True, linestyle='--', alpha=0.7, linewidth=1.5)
     ax1.set_xlim(0, len(time_labels))
-    ax1.set_ylim(0, max(100, ax1.get_ylim()[1] * 1.2))  # 20% margin
+    ax1.set_ylim(0, max_pct_value * 1.2)  # 20% margin
     
     # X-axis ticks
     ax1.set_xticks(tick_positions)
@@ -2528,14 +2539,26 @@ def generate_yesterday_plots(corrected_data, country_code='EU'):
     # Tick parameters
     ax1.tick_params(axis='both', labelsize=22, length=8, pad=8)
     
-    # Title
+    # Title (without country name)
     fig1.text(0.525, 0.92, 'Electricity Generation', 
-              fontsize=18, fontweight='bold', ha='center')
-    fig1.text(0.525, 0.89, f'{country_name} · Yesterday ({yesterday_date}) · All Sources', 
-              fontsize=14, ha='center', color='#333')
+              fontsize=30, fontweight='bold', ha='center')
+    fig1.text(0.525, 0.89, f'Yesterday ({yesterday_date}) · All Sources', 
+              fontsize=24, ha='center', color='#333')
     
     # Flag
     load_flag(fig1, country_code)
+    
+    # Country name below flag
+    fig1.text(0.1, 0.843, country_name, 
+              fontsize=18, fontweight='normal', ha='left', va='top', color='#333')
+    
+    # Watermark and timestamp
+    from datetime import datetime
+    timestamp = datetime.now().strftime('%Y-%m-%d %H:%M UTC')
+    fig1.text(0.2, 0.125, "afratzl.github.io/eu-electricity",
+              ha='left', va='top', fontsize=12, color='#666', style='italic')
+    fig1.text(0.9, 0.125, f"Generated: {timestamp}",
+              ha='right', va='top', fontsize=12, color='#666', style='italic')
     
     # Legend: 4-column layout with custom reordering
     # Desired order:
@@ -2600,7 +2623,7 @@ def generate_yesterday_plots(corrected_data, country_code='EU'):
     # Add legend with 4-column layout matching trends
     ax1.legend(reordered_handles, reordered_labels,
               loc='upper left', 
-              bbox_to_anchor=(0.14, 0.255),
+              bbox_to_anchor=(0.2, 0.255),
               bbox_transform=fig1.transFigure,
               ncol=4, 
               fontsize=18, 
@@ -2617,28 +2640,30 @@ def generate_yesterday_plots(corrected_data, country_code='EU'):
     plt.subplots_adjust(left=0.22, right=0.9, top=0.80, bottom=0.35)
     ax2 = fig2.add_subplot(111)
     
-    # Plot each source
+    # Plot each source with z-order (higher = on top)
     lines_abs = []
     labels_abs = []
+    max_abs_value = 0
+    
     for source_name in source_list:
         if source_name in source_data:
             data = source_data[source_name]
             if len(data) == len(x_values):
                 gw_data = data / 1000  # Convert MW to GW
+                max_abs_value = max(max_abs_value, np.max(gw_data))
                 color = ENTSOE_COLORS.get(source_name, 'black')
-                line, = ax2.plot(x_values, gw_data, color=color, linewidth=6, label=source_name)
+                zorder = zorder_map.get(source_name, 0)
+                line, = ax2.plot(x_values, gw_data, color=color, linewidth=6, 
+                               label=source_name, zorder=zorder)
                 lines_abs.append(line)
                 labels_abs.append(source_name)
     
     # Formatting
-    ax2.set_xlabel('Hour of Day', fontsize=24, fontweight='bold', labelpad=8)
+    ax2.set_xlabel('Time of Day (Brussels)', fontsize=24, fontweight='bold', labelpad=8)
     ax2.set_ylabel('Generation (GW)', fontsize=24, fontweight='bold', labelpad=8)
     ax2.grid(True, linestyle='--', alpha=0.7, linewidth=1.5)
     ax2.set_xlim(0, len(time_labels))
-    
-    # Y-axis with 20% margin
-    current_max = ax2.get_ylim()[1]
-    ax2.set_ylim(0, current_max * 1.2)
+    ax2.set_ylim(0, max_abs_value * 1.2)  # 20% margin
     
     # X-axis ticks
     ax2.set_xticks(tick_positions)
@@ -2647,14 +2672,24 @@ def generate_yesterday_plots(corrected_data, country_code='EU'):
     # Tick parameters
     ax2.tick_params(axis='both', labelsize=22, length=8, pad=8)
     
-    # Title
+    # Title (without country name)
     fig2.text(0.525, 0.92, 'Electricity Generation', 
-              fontsize=18, fontweight='bold', ha='center')
-    fig2.text(0.525, 0.89, f'{country_name} · Yesterday ({yesterday_date}) · All Sources', 
-              fontsize=14, ha='center', color='#333')
+              fontsize=30, fontweight='bold', ha='center')
+    fig2.text(0.525, 0.89, f'Yesterday ({yesterday_date}) · All Sources', 
+              fontsize=24, ha='center', color='#333')
     
     # Flag
     load_flag(fig2, country_code)
+    
+    # Country name below flag
+    fig2.text(0.1, 0.843, country_name, 
+              fontsize=18, fontweight='normal', ha='left', va='top', color='#333')
+    
+    # Watermark and timestamp
+    fig2.text(0.2, 0.125, "afratzl.github.io/eu-electricity",
+              ha='left', va='top', fontsize=12, color='#666', style='italic')
+    fig2.text(0.9, 0.125, f"Generated: {timestamp}",
+              ha='right', va='top', fontsize=12, color='#666', style='italic')
     
     # Legend: same reordering as percentage plot
     source_to_idx_abs = {labels_abs[i]: i for i in range(len(labels_abs))}
@@ -2709,7 +2744,7 @@ def generate_yesterday_plots(corrected_data, country_code='EU'):
     # Add legend with 4-column layout matching trends
     ax2.legend(reordered_handles_abs, reordered_labels_abs,
               loc='upper left', 
-              bbox_to_anchor=(0.14, 0.255),
+              bbox_to_anchor=(0.2, 0.255),
               bbox_transform=fig2.transFigure,
               ncol=4, 
               fontsize=18, 
