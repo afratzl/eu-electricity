@@ -44,7 +44,7 @@ ENTSOE_COLORS = {
 
 # Country display names
 COUNTRY_DISPLAY_NAMES = {
-    'EU': 'European Union',
+    'EU': 'EU',
     'DE': 'Germany',
     'FR': 'France',
     'ES': 'Spain',
