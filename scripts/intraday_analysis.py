@@ -2848,7 +2848,303 @@ def upload_yesterday_plot_to_drive(file_path, country='EU'):
     except Exception as e:
         print(f"  ⚠ Drive upload failed for {os.path.basename(file_path)}: {e}")
         return None
-
+def generate_yesterday_aggregates_plots(corrected_data, country_code='EU'):
+    """
+    Generate two yesterday plots (absolute and percentage) showing only aggregates:
+    - All Renewables
+    - All Non-Renewables
+    
+    Args:
+        corrected_data: Dictionary containing yesterday_projected data
+        country_code: Country code (EU, DE, ES, etc.)
+    
+    Returns:
+        tuple: (percentage_file, absolute_file) paths or (None, None) if failed
+    """
+    import os
+    from datetime import datetime, timedelta
+    
+    # Check if we have yesterday_projected data
+    if 'yesterday_projected' not in corrected_data:
+        print("  ⚠ No yesterday_projected data available")
+        return None, None
+    
+    yesterday_data = corrected_data['yesterday_projected']
+    
+    # Get yesterday's date for title
+    yesterday_date = (datetime.now() - timedelta(days=1)).strftime('%d.%m.%y')
+    
+    # Aggregates are at top level of yesterday_projected
+    aggregate_names = ['all-renewables', 'all-non-renewables']
+    
+    # Country display names
+    COUNTRY_DISPLAY_NAMES = {
+        'EU': 'European Union',
+        'DE': 'Germany',
+        'ES': 'Spain',
+        'FR': 'France',
+        'IT': 'Italy',
+        'MD': 'Moldova',
+        'PL': 'Poland',
+        'NL': 'Netherlands',
+        'BE': 'Belgium',
+        'AT': 'Austria',
+        'SE': 'Sweden',
+        'DK': 'Denmark',
+        'FI': 'Finland',
+        'NO': 'Norway',
+        'CH': 'Switzerland',
+        'GB': 'United Kingdom',
+        'PT': 'Portugal',
+        'GR': 'Greece',
+        'CZ': 'Czechia',
+        'RO': 'Romania',
+        'HU': 'Hungary',
+        'BG': 'Bulgaria',
+        'SK': 'Slovakia',
+        'SI': 'Slovenia',
+        'HR': 'Croatia',
+        'LT': 'Lithuania',
+        'LV': 'Latvia',
+        'EE': 'Estonia',
+        'IE': 'Ireland',
+        'LU': 'Luxembourg',
+        'MT': 'Malta',
+        'CY': 'Cyprus'
+    }
+    
+    country_name = COUNTRY_DISPLAY_NAMES.get(country_code, country_code)
+    
+    def load_flag(fig, country_code):
+        """Load real flag PNG or fall back to placeholder"""
+        import os
+        from matplotlib import image as mpimg
+        
+        flag_path = f'flags/{country_code}.png'
+        
+        if os.path.exists(flag_path):
+            try:
+                ax_flag = fig.add_axes([0.1, 0.85, 0.075, 0.05])
+                flag_img = mpimg.imread(flag_path)
+                ax_flag.imshow(flag_img, aspect='auto')
+                ax_flag.axis('off')
+                return ax_flag
+            except:
+                pass
+        
+        # Fallback: colored rectangle with country code
+        ax_flag = fig.add_axes([0.1, 0.85, 0.075, 0.05])
+        colors_map = {
+            'EU': '#003399', 'DE': '#000000', 'ES': '#AA151B',
+            'FR': '#0055A4', 'MD': '#0046AE',
+        }
+        bg_color = colors_map.get(country_code, '#4A90E2')
+        ax_flag.add_patch(plt.Rectangle((0, 0), 1, 1, facecolor=bg_color, 
+                                        edgecolor='#CCCCCC', linewidth=2))
+        ax_flag.text(0.5, 0.5, country_code, color='white', 
+                    fontsize=14, fontweight='bold', ha='center', va='center')
+        ax_flag.set_xlim(0, 1)
+        ax_flag.set_ylim(0, 1)
+        ax_flag.axis('off')
+        return ax_flag
+    
+    # Create output directory
+    os.makedirs('plots', exist_ok=True)
+    
+    # Extract aggregate data (sum across countries for each timestamp)
+    aggregate_data = {}
+    timestamps = None
+    
+    print(f"  🔍 Extracting aggregate data...")
+    for agg_name in aggregate_names:
+        if agg_name in yesterday_data:
+            agg_timestamps = yesterday_data[agg_name]
+            if agg_timestamps:
+                # Sum across countries for each timestamp
+                time_series = []
+                sorted_timestamps = sorted(agg_timestamps.keys())
+                
+                for timestamp in sorted_timestamps:
+                    country_values = agg_timestamps[timestamp]
+                    total = sum(country_values.values())
+                    time_series.append(total)
+                
+                if time_series:
+                    aggregate_data[agg_name] = np.array(time_series)
+                    if timestamps is None:
+                        timestamps = sorted_timestamps
+                    print(f"    ✓ {agg_name}: {len(time_series)} data points")
+            else:
+                print(f"    ⚠ {agg_name}: empty data")
+        else:
+            print(f"    ✗ {agg_name}: not found in yesterday_projected")
+    
+    if not aggregate_data or timestamps is None:
+        print("  ⚠ No valid aggregate data for yesterday")
+        return None, None
+    
+    # Create x-axis values (0-95 for 96 timestamps)
+    x_values = np.arange(len(timestamps))
+    
+    # Create time labels and tick positions (matching intraday script)
+    time_labels = create_time_axis()  # 96 labels: 00:00, 00:15, ..., 23:45
+    tick_positions = list(range(0, len(time_labels), 16))  # Every 4 hours
+    tick_positions.append(len(time_labels))  # Add position for 24:00
+    tick_labels_axis = [time_labels[i] if i < len(time_labels) else '' for i in tick_positions[:-1]]
+    tick_labels_axis.append('24:00')
+    
+    # Calculate total generation for percentage calculation
+    total_gen = np.zeros(len(x_values))
+    for agg_name, data in aggregate_data.items():
+        if len(data) == len(x_values):
+            total_gen += data
+    
+    # Prevent division by zero
+    total_gen = np.where(total_gen == 0, 1, total_gen)
+    
+    print(f"\n📊 Generating yesterday aggregates plots for {country_code}...")
+    
+    # Display names for legend
+    display_names = {
+        'all-renewables': 'Renewables',
+        'all-non-renewables': 'Non-Renewables'
+    }
+    
+    # ========== PLOT 1: PERCENTAGE ==========
+    fig1 = plt.figure(figsize=(12, 12))
+    plt.subplots_adjust(left=0.22, right=0.9, top=0.80, bottom=0.35)
+    ax1 = fig1.add_subplot(111)
+    
+    # Plot each aggregate with z-order (renewables on top)
+    max_pct_value = 0
+    
+    # Plot non-renewables first (below), then renewables (on top)
+    for agg_name in ['all-non-renewables', 'all-renewables']:
+        if agg_name in aggregate_data:
+            data = aggregate_data[agg_name]
+            if len(data) == len(x_values):
+                pct_data = (data / total_gen) * 100
+                max_pct_value = max(max_pct_value, np.max(pct_data))
+                color = ENTSOE_COLORS.get(agg_name, 'black')
+                zorder = 2 if agg_name == 'all-renewables' else 1
+                ax1.plot(x_values, pct_data, color=color, linewidth=6, 
+                        label=display_names[agg_name], zorder=zorder)
+    
+    # Formatting
+    ax1.set_xlabel('Time of Day (Brussels)', fontsize=24, fontweight='bold', labelpad=8)
+    ax1.set_ylabel('Electrical Power (%)', fontsize=24, fontweight='bold', labelpad=8)
+    ax1.grid(True, linestyle='--', alpha=0.7, linewidth=1.5)
+    ax1.set_xlim(0, len(time_labels))
+    ax1.set_ylim(0, max_pct_value * 1.2)  # 20% margin
+    
+    # X-axis ticks
+    ax1.set_xticks(tick_positions)
+    ax1.set_xticklabels(tick_labels_axis)
+    
+    # Tick parameters
+    ax1.tick_params(axis='both', labelsize=22, length=8, pad=8)
+    
+    # Title
+    fig1.text(0.55, 0.875, 'Electricity Generation', 
+              fontsize=30, fontweight='bold', ha='center', va='top')
+    fig1.text(0.55, 0.835, f'Yesterday ({yesterday_date}) · Fraction of Total', 
+              fontsize=24, ha='center', va='top', color='#333')
+    
+    # Flag
+    load_flag(fig1, country_code)
+    
+    # Country name below flag
+    fig1.text(0.1, 0.843, country_name, 
+              fontsize=18, fontweight='normal', ha='left', va='top', color='#333')
+    
+    # Watermark and timestamp
+    timestamp = datetime.now().strftime('%Y-%m-%d %H:%M UTC')
+    fig1.text(0.2, 0.125, "afratzl.github.io/eu-electricity",
+              ha='left', va='top', fontsize=12, color='#666', style='italic')
+    fig1.text(0.9, 0.125, f"Generated: {timestamp}",
+              ha='right', va='top', fontsize=12, color='#666', style='italic')
+    
+    # Simple legend (just 2 items, no reordering needed)
+    ax1.legend(loc='upper left', 
+              bbox_to_anchor=(0.2, 0.255),
+              bbox_transform=fig1.transFigure,
+              fontsize=18, 
+              frameon=False)
+    
+    # Save percentage plot
+    percentage_file = f'plots/{country_code}_yesterday_aggregates_percentage.png'
+    fig1.savefig(percentage_file, dpi=150, bbox_inches='tight', facecolor='white')
+    plt.close(fig1)
+    print(f"  ✓ Saved: {percentage_file}")
+    
+    # ========== PLOT 2: ABSOLUTE (GW) ==========
+    fig2 = plt.figure(figsize=(12, 12))
+    plt.subplots_adjust(left=0.22, right=0.9, top=0.80, bottom=0.35)
+    ax2 = fig2.add_subplot(111)
+    
+    # Plot each aggregate
+    max_abs_value = 0
+    
+    # Plot non-renewables first (below), then renewables (on top)
+    for agg_name in ['all-non-renewables', 'all-renewables']:
+        if agg_name in aggregate_data:
+            data = aggregate_data[agg_name]
+            if len(data) == len(x_values):
+                gw_data = data / 1000  # Convert MW to GW
+                max_abs_value = max(max_abs_value, np.max(gw_data))
+                color = ENTSOE_COLORS.get(agg_name, 'black')
+                zorder = 2 if agg_name == 'all-renewables' else 1
+                ax2.plot(x_values, gw_data, color=color, linewidth=6, 
+                        label=display_names[agg_name], zorder=zorder)
+    
+    # Formatting
+    ax2.set_xlabel('Time of Day (Brussels)', fontsize=24, fontweight='bold', labelpad=8)
+    ax2.set_ylabel('Electrical Power (GW)', fontsize=24, fontweight='bold', labelpad=8)
+    ax2.grid(True, linestyle='--', alpha=0.7, linewidth=1.5)
+    ax2.set_xlim(0, len(time_labels))
+    ax2.set_ylim(0, max_abs_value * 1.2)  # 20% margin
+    
+    # X-axis ticks
+    ax2.set_xticks(tick_positions)
+    ax2.set_xticklabels(tick_labels_axis)
+    
+    # Tick parameters
+    ax2.tick_params(axis='both', labelsize=22, length=8, pad=8)
+    
+    # Title
+    fig2.text(0.55, 0.875, 'Electricity Generation', 
+              fontsize=30, fontweight='bold', ha='center', va='top')
+    fig2.text(0.55, 0.835, f'Yesterday ({yesterday_date}) · Absolute Values', 
+              fontsize=24, ha='center', va='top', color='#333')
+    
+    # Flag
+    load_flag(fig2, country_code)
+    
+    # Country name below flag
+    fig2.text(0.1, 0.843, country_name, 
+              fontsize=18, fontweight='normal', ha='left', va='top', color='#333')
+    
+    # Watermark and timestamp
+    fig2.text(0.2, 0.125, "afratzl.github.io/eu-electricity",
+              ha='left', va='top', fontsize=12, color='#666', style='italic')
+    fig2.text(0.9, 0.125, f"Generated: {timestamp}",
+              ha='right', va='top', fontsize=12, color='#666', style='italic')
+    
+    # Simple legend (just 2 items)
+    ax2.legend(loc='upper left', 
+              bbox_to_anchor=(0.2, 0.255),
+              bbox_transform=fig2.transFigure,
+              fontsize=18, 
+              frameon=False)
+    
+    # Save absolute plot
+    absolute_file = f'plots/{country_code}_yesterday_aggregates_absolute.png'
+    fig2.savefig(absolute_file, dpi=150, bbox_inches='tight', facecolor='white')
+    plt.close(fig2)
+    print(f"  ✓ Saved: {absolute_file}")
+    
+    return percentage_file, absolute_file
+  
 def main():
     """
     Main function - orchestrates the 3 phases
