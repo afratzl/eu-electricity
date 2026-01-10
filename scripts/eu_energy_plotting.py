@@ -442,11 +442,11 @@ def add_flag_and_labels(fig, country_code, main_title, subtitle):
     
     # Add watermark and timestamp
     timestamp = datetime.now().strftime('%Y-%m-%d %H:%M UTC')
-    fig.text(0.15, 0.075, "afratzl.github.io/eu-electricity",
+    fig.text(0.15, 0.05, "afratzl.github.io/eu-electricity",
               ha='left', va='top',
               fontsize=12, color='#666',
               style='italic')
-    fig.text(0.94, 0.075, f"Generated: {timestamp}",
+    fig.text(0.94, 0.05, f"Generated: {timestamp}",
               ha='right', va='top',
               fontsize=12, color='#666',
               style='italic')
