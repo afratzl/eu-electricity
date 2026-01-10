@@ -81,6 +81,15 @@
                 </select>
             </div>
 
+            <!-- Source Type Selector -->
+            <div class="selector-item">
+                <label for="source-type-select">Source Type:</label>
+                <select id="source-type-select" onchange="updateChart()">
+                    <option value="all_sources" selected>Individual Sources</option>
+                    <option value="aggregates">Aggregates (Renewables vs Non-Renewables)</option>
+                </select>
+            </div>
+
             <!-- Display Toggle -->
             <div class="selector-item selector-item-toggle">
                 <label>Display:</label>
@@ -157,7 +166,9 @@
         // Update chart based on country selection
         function updateChart() {
             const countrySelect = document.getElementById('country-select');
+            const sourceTypeSelect = document.getElementById('source-type-select');
             const countryId = countrySelect.value;
+            const sourceType = sourceTypeSelect.value;
             
             // Update flag image
             const flagImg = document.getElementById('country-flag-indicator');
@@ -166,21 +177,21 @@
                 flagImg.alt = `${countryId} flag`;
             }
             
-            showYesterdayChart(countryId);
+            showYesterdayChart(countryId, sourceType);
         }
 
         // Show yesterday's chart - loads from Google Drive
-        async function showYesterdayChart(countryId = 'EU') {
+        async function showYesterdayChart(countryId = 'EU', sourceType = 'all_sources') {
             const display = document.getElementById('chart-display');
             
             // Get Drive URLs
             const links = await loadDriveLinks();
             let percentageUrl, absoluteUrl;
             
-            if (links && links[countryId] && links[countryId].Yesterday && links[countryId].Yesterday.all_sources) {
+            if (links && links[countryId] && links[countryId].Yesterday && links[countryId].Yesterday[sourceType]) {
                 // Use Drive direct URLs - exact URL from JSON
-                percentageUrl = links[countryId].Yesterday.all_sources.percentage.direct_url;
-                absoluteUrl = links[countryId].Yesterday.all_sources.absolute.direct_url;
+                percentageUrl = links[countryId].Yesterday[sourceType].percentage.direct_url;
+                absoluteUrl = links[countryId].Yesterday[sourceType].absolute.direct_url;
                 
                 // Check for refresh parameter
                 const urlParams = new URLSearchParams(window.location.search);
@@ -220,15 +231,16 @@
                 console.log('Modified URL:', percentageUrl);
             } else {
                 // Fallback to GitHub plots
-                percentageUrl = `plots/${countryId}_yesterday_all_sources_percentage.png`;
-                absoluteUrl = `plots/${countryId}_yesterday_all_sources_absolute.png`;
+                const sourceTypeSuffix = sourceType === 'aggregates' ? 'aggregates' : 'all_sources';
+                percentageUrl = `plots/${countryId}_yesterday_${sourceTypeSuffix}_percentage.png`;
+                absoluteUrl = `plots/${countryId}_yesterday_${sourceTypeSuffix}_absolute.png`;
                 
                 // Add cache-buster for GitHub fallback
                 const cacheBuster = Date.now();
                 percentageUrl += `?t=${cacheBuster}`;
                 absoluteUrl += `?t=${cacheBuster}`;
                 
-                console.warn(`Drive link not found for ${countryId}/Yesterday, using GitHub fallback`);
+                console.warn(`Drive link not found for ${countryId}/Yesterday/${sourceType}, using GitHub fallback`);
             }
             
             // Check CURRENT toggle state before regenerating HTML
@@ -245,10 +257,10 @@
             // Create fresh percentage image element
             const percentageImg = document.createElement('img');
             percentageImg.src = percentageUrl;
-            percentageImg.alt = `Yesterday All Sources - Percentage`;
+            percentageImg.alt = `Yesterday ${sourceType === 'aggregates' ? 'Aggregates' : 'All Sources'} - Percentage`;
             percentageImg.className = 'chart-img';
             percentageImg.onerror = function() {
-                handleImageError(this, 'percentage', countryId);
+                handleImageError(this, 'percentage', countryId, sourceType);
             };
             
             percentageContainer.appendChild(percentageImg);
@@ -262,10 +274,10 @@
             // Create fresh absolute image element
             const absoluteImg = document.createElement('img');
             absoluteImg.src = absoluteUrl;
-            absoluteImg.alt = `Yesterday All Sources - Absolute Generation`;
+            absoluteImg.alt = `Yesterday ${sourceType === 'aggregates' ? 'Aggregates' : 'All Sources'} - Absolute Generation`;
             absoluteImg.className = 'chart-img';
             absoluteImg.onerror = function() {
-                handleImageError(this, 'absolute', countryId);
+                handleImageError(this, 'absolute', countryId, sourceType);
             };
             
             absoluteContainer.appendChild(absoluteImg);
@@ -284,11 +296,12 @@
             }
         }
 
-        function handleImageError(img, plotType, countryId) {
+        function handleImageError(img, plotType, countryId, sourceType) {
             // Try GitHub fallback if Drive fails
             if (img.src.includes('drive.google.com')) {
                 console.warn(`Drive image failed for ${plotType}, trying GitHub fallback`);
-                img.src = `plots/${countryId}_yesterday_all_sources_${plotType}.png`;
+                const sourceTypeSuffix = sourceType === 'aggregates' ? 'aggregates' : 'all_sources';
+                img.src = `plots/${countryId}_yesterday_${sourceTypeSuffix}_${plotType}.png`;
             } else {
                 img.parentElement.innerHTML = `
                     <div style="background: #fee; color: #c33; padding: 20px; border-radius: 10px; margin: 20px 0; border-left: 4px solid #c33;">
@@ -316,13 +329,15 @@
             console.log('🔄 Refresh button clicked!');
             
             const countryId = document.getElementById('country-select').value;
+            const sourceType = document.getElementById('source-type-select').value;
             
-            console.log('Current selection:', countryId);
+            console.log('Current selection:', countryId, sourceType);
             console.log('Will use timestamp-based size for fresh cache');
             
             // Reload page with params
             const url = new URL(window.location);
             url.searchParams.set('country', countryId);
+            url.searchParams.set('sourceType', sourceType);
             url.searchParams.set('refresh', Date.now());
             
             console.log('Reloading to:', url.toString());
@@ -333,6 +348,7 @@
         // Download current chart
         function downloadChart() {
             const countryId = document.getElementById('country-select').value;
+            const sourceType = document.getElementById('source-type-select').value;
             
             // Determine if percentage or absolute is showing
             const isAbsolute = document.getElementById('toggle-absolute').classList.contains('active');
@@ -349,8 +365,11 @@
             yesterday.setDate(yesterday.getDate() - 1);
             const yesterdayStr = yesterday.toISOString().slice(0,10);
             
-            // Construct filename: CountryCode_Yesterday_YYYY-MM-DD_PlotType_Timestamp.png
-            const filename = `${countryId}_Yesterday_${yesterdayStr}_${plotType}_${timestamp}.png`;
+            // Add source type to filename
+            const sourceTypeName = sourceType === 'aggregates' ? 'Aggregates' : 'AllSources';
+            
+            // Construct filename: CountryCode_Yesterday_YYYY-MM-DD_SourceType_PlotType_Timestamp.png
+            const filename = `${countryId}_Yesterday_${yesterdayStr}_${sourceTypeName}_${plotType}_${timestamp}.png`;
             
             // Get the image source
             const container = isAbsolute ? document.getElementById('absolute-plot-container') : document.getElementById('percentage-plot-container');
@@ -439,8 +458,10 @@
             // Check URL params for refresh-preserved selection
             const urlParams = new URLSearchParams(window.location.search);
             const paramCountry = urlParams.get('country');
+            const paramSourceType = urlParams.get('sourceType');
             
             let country = 'EU';
+            let sourceType = 'all_sources';
             
             if (paramCountry) {
                 // Restore from URL params (after refresh button)
@@ -450,11 +471,18 @@
                 document.getElementById('country-select').value = country;
             }
             
-            await showYesterdayChart(country);
+            if (paramSourceType) {
+                sourceType = paramSourceType;
+                
+                // Update dropdown to match
+                document.getElementById('source-type-select').value = sourceType;
+            }
+            
+            await showYesterdayChart(country, sourceType);
             loadTimestamp();
             
             // Clean URL after loading
-            if (paramCountry) {
+            if (paramCountry || paramSourceType) {
                 console.log('🧹 Cleaning URL params...');
                 window.history.replaceState({}, '', window.location.pathname);
                 console.log('✅ URL cleaned, new URL:', window.location.href);
@@ -466,7 +494,7 @@
     </script>
 
     <style>
-        /* Compact selector box - 2 columns for yesterday (no source selector) */
+        /* Compact selector box - 3 columns for yesterday (country, source type, display toggle) */
         .compact-selector-box {
             background: #f7fafc;
             border: 2px solid #cbd5e0;
@@ -474,7 +502,7 @@
             padding: 20px;
             margin-bottom: 24px;
             display: grid;
-            grid-template-columns: 1fr auto;
+            grid-template-columns: 1fr 1fr auto;
             gap: 20px;
             align-items: end;
         }
