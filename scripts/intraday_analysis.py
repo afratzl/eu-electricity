@@ -19,27 +19,28 @@ from entsoe import EntsoePandasClient
 import entsoe.entsoe
 import entsoe.parsers
 
-# Source colors (consistent with monthly/trends plots)
+# Source colors from monthly/trends script (lowercase keys to match intraday)
 ENTSOE_COLORS = {
     # Renewables
-    'Solar': '#FFD700',  # Gold
-    'Wind': '#228B22',  # Forest Green
-    'Wind Onshore': '#2E8B57',  # Sea Green
-    'Wind Offshore': '#008B8B',  # Dark Cyan
-    'Hydro': '#1E90FF',  # Dodger Blue
-    'Biomass': '#9ACD32',  # Yellow Green
-    'Geothermal': '#708090',  # Slate Gray
+    'solar': '#FFD700',  # Gold
+    'wind': '#228B22',  # Forest Green
+    'wind-onshore': '#2E8B57',  # Sea Green
+    'wind-offshore': '#008B8B',  # Dark Cyan
+    'hydro': '#1E90FF',  # Dodger Blue
+    'biomass': '#9ACD32',  # Yellow Green
+    'geothermal': '#708090',  # Slate Gray
 
     # Non-renewables
-    'Gas': '#FF1493',  # Deep Pink
-    'Coal': '#8B008B',  # Dark Magenta
-    'Nuclear': '#8B4513',  # Saddle Brown
-    'Oil': '#191970',  # Midnight Blue
-    'Waste': '#808000',  # Olive
+    'gas': '#FF1493',  # Deep Pink
+    'coal': '#8B008B',  # Dark Magenta
+    'nuclear': '#8B4513',  # Saddle Brown
+    'oil': '#191970',  # Midnight Blue
+    'waste': '#808000',  # Olive
 
     # Totals
-    'All Renewables': '#32CD32',  # Lime Green
-    'Total Generation': '#000000',  # Black
+    'all-renewables': '#32CD32',  # Lime Green
+    'all-non-renewables': '#000000',  # Black
+    'total-generation': '#000000',  # Black
 }
 
 # CRITICAL: Set new API endpoint (ENTSO-E migration November 2024)
@@ -2312,6 +2313,17 @@ def upload_plot_to_drive(file_path, country='EU'):
         print(f"  ⚠ Drive upload failed for {os.path.basename(file_path)}: {e}")
         return None
 
+def create_time_axis():
+    """
+    Create time axis for 15-minute bins
+    """
+    times = []
+    for hour in range(24):
+        for minute in [0, 15, 30, 45]:
+            times.append(f"{hour:02d}:{minute:02d}")
+    return times
+
+
 def generate_yesterday_plots(corrected_data, country_code='EU'):
     """
     Generate two yesterday plots (absolute and percentage) showing all 10 sources
@@ -2463,8 +2475,15 @@ def generate_yesterday_plots(corrected_data, country_code='EU'):
         print(f"  Sources found: {list(source_data.keys())}")
         return None, None
     
-    # Convert timestamps to hours (0-23)
-    hours = np.arange(len(timestamps))
+    # Create x-axis values (0-95 for 96 timestamps)
+    x_values = np.arange(len(timestamps))
+    
+    # Create time labels and tick positions (matching intraday script)
+    time_labels = create_time_axis()  # 96 labels: 00:00, 00:15, ..., 23:45
+    tick_positions = list(range(0, len(time_labels), 16))  # Every 4 hours (16 * 15min = 4h)
+    tick_positions.append(len(time_labels))  # Add position for 24:00
+    tick_labels_axis = [time_labels[i] if i < len(time_labels) else '' for i in tick_positions[:-1]]
+    tick_labels_axis.append('24:00')
     
     # Calculate total generation for percentage calculation
     total_gen = np.zeros(len(hours))
@@ -2479,7 +2498,8 @@ def generate_yesterday_plots(corrected_data, country_code='EU'):
     
     # ========== PLOT 1: PERCENTAGE ==========
     fig1 = plt.figure(figsize=(12, 12))
-    ax1 = fig1.add_axes([0.1, 0.15, 0.85, 0.68])
+    plt.subplots_adjust(left=0.22, right=0.9, top=0.80, bottom=0.35)
+    ax1 = fig1.add_subplot(111)
     
     # Plot each source
     lines_pct = []
@@ -2487,23 +2507,26 @@ def generate_yesterday_plots(corrected_data, country_code='EU'):
     for source_name in source_list:
         if source_name in source_data:
             data = source_data[source_name]
-            if len(data) == len(hours):
+            if len(data) == len(x_values):
                 pct_data = (data / total_gen) * 100
                 color = ENTSOE_COLORS.get(source_name, 'black')
-                line, = ax1.plot(hours, pct_data, color=color, linewidth=2, label=source_name)
+                line, = ax1.plot(x_values, pct_data, color=color, linewidth=6, label=source_name)
                 lines_pct.append(line)
                 labels_pct.append(source_name)
     
     # Formatting
-    ax1.set_xlabel('Hour of Day', fontsize=14, fontweight='bold')
-    ax1.set_ylabel('Generation (%)', fontsize=14, fontweight='bold')
-    ax1.grid(True, alpha=0.3)
-    ax1.set_xlim(0, 23)
+    ax1.set_xlabel('Hour of Day', fontsize=24, fontweight='bold', labelpad=8)
+    ax1.set_ylabel('Generation (%)', fontsize=24, fontweight='bold', labelpad=8)
+    ax1.grid(True, linestyle='--', alpha=0.7, linewidth=1.5)
+    ax1.set_xlim(0, len(time_labels))
     ax1.set_ylim(0, max(100, ax1.get_ylim()[1] * 1.2))  # 20% margin
     
-    # X-axis: 0, 6, 12, 18, 23
-    ax1.set_xticks([0, 6, 12, 18, 23])
-    ax1.set_xticklabels(['00:00', '06:00', '12:00', '18:00', '23:00'])
+    # X-axis ticks
+    ax1.set_xticks(tick_positions)
+    ax1.set_xticklabels(tick_labels_axis)
+    
+    # Tick parameters
+    ax1.tick_params(axis='both', labelsize=22, length=8, pad=8)
     
     # Title
     fig1.text(0.525, 0.92, 'Electricity Generation', 
@@ -2574,10 +2597,14 @@ def generate_yesterday_plots(corrected_data, country_code='EU'):
     reordered_handles.append(empty)
     reordered_labels.append('')
     
-    # Add legend
+    # Add legend with 4-column layout matching trends
     ax1.legend(reordered_handles, reordered_labels,
-              loc='upper center', bbox_to_anchor=(0.5, -0.08),
-              ncol=3, frameon=True, fontsize=11)
+              loc='upper left', 
+              bbox_to_anchor=(0.14, 0.255),
+              bbox_transform=fig1.transFigure,
+              ncol=4, 
+              fontsize=18, 
+              frameon=False)
     
     # Save percentage plot
     percentage_file = f'plots/{country_code}_yesterday_all_sources_percentage.png'
@@ -2587,7 +2614,8 @@ def generate_yesterday_plots(corrected_data, country_code='EU'):
     
     # ========== PLOT 2: ABSOLUTE (GW) ==========
     fig2 = plt.figure(figsize=(12, 12))
-    ax2 = fig2.add_axes([0.1, 0.15, 0.85, 0.68])
+    plt.subplots_adjust(left=0.22, right=0.9, top=0.80, bottom=0.35)
+    ax2 = fig2.add_subplot(111)
     
     # Plot each source
     lines_abs = []
@@ -2595,26 +2623,29 @@ def generate_yesterday_plots(corrected_data, country_code='EU'):
     for source_name in source_list:
         if source_name in source_data:
             data = source_data[source_name]
-            if len(data) == len(hours):
+            if len(data) == len(x_values):
                 gw_data = data / 1000  # Convert MW to GW
                 color = ENTSOE_COLORS.get(source_name, 'black')
-                line, = ax2.plot(hours, gw_data, color=color, linewidth=2, label=source_name)
+                line, = ax2.plot(x_values, gw_data, color=color, linewidth=6, label=source_name)
                 lines_abs.append(line)
                 labels_abs.append(source_name)
     
     # Formatting
-    ax2.set_xlabel('Hour of Day', fontsize=14, fontweight='bold')
-    ax2.set_ylabel('Generation (GW)', fontsize=14, fontweight='bold')
-    ax2.grid(True, alpha=0.3)
-    ax2.set_xlim(0, 23)
+    ax2.set_xlabel('Hour of Day', fontsize=24, fontweight='bold', labelpad=8)
+    ax2.set_ylabel('Generation (GW)', fontsize=24, fontweight='bold', labelpad=8)
+    ax2.grid(True, linestyle='--', alpha=0.7, linewidth=1.5)
+    ax2.set_xlim(0, len(time_labels))
     
     # Y-axis with 20% margin
     current_max = ax2.get_ylim()[1]
     ax2.set_ylim(0, current_max * 1.2)
     
-    # X-axis: 0, 6, 12, 18, 23
-    ax2.set_xticks([0, 6, 12, 18, 23])
-    ax2.set_xticklabels(['00:00', '06:00', '12:00', '18:00', '23:00'])
+    # X-axis ticks
+    ax2.set_xticks(tick_positions)
+    ax2.set_xticklabels(tick_labels_axis)
+    
+    # Tick parameters
+    ax2.tick_params(axis='both', labelsize=22, length=8, pad=8)
     
     # Title
     fig2.text(0.525, 0.92, 'Electricity Generation', 
@@ -2675,10 +2706,14 @@ def generate_yesterday_plots(corrected_data, country_code='EU'):
     reordered_handles_abs.append(empty)
     reordered_labels_abs.append('')
     
-    # Add legend
+    # Add legend with 4-column layout matching trends
     ax2.legend(reordered_handles_abs, reordered_labels_abs,
-              loc='upper center', bbox_to_anchor=(0.5, -0.08),
-              ncol=3, frameon=True, fontsize=11)
+              loc='upper left', 
+              bbox_to_anchor=(0.14, 0.255),
+              bbox_transform=fig2.transFigure,
+              ncol=4, 
+              fontsize=18, 
+              frameon=False)
     
     # Save absolute plot
     absolute_file = f'plots/{country_code}_yesterday_all_sources_absolute.png'
@@ -2778,7 +2813,6 @@ def upload_yesterday_plot_to_drive(file_path, country='EU'):
     except Exception as e:
         print(f"  ⚠ Drive upload failed for {os.path.basename(file_path)}: {e}")
         return None
-
 
 def main():
     """
