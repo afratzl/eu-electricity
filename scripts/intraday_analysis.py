@@ -1309,7 +1309,7 @@ def plot_analysis(stats_data, source_type, output_file_base, country_code='EU'):
     ax1.set_xticks(tick_positions)
     ax1.set_xticklabels(tick_labels_axis)
     
-    ax1.grid(True, alpha=0.3, linewidth=1.5)
+    ax1.grid(True, linestyle='--', alpha=0.7, linewidth=1.5)
     
     # Reorder legend for 3-2-2 layout:
     # Row 1: Previous Week, Last Year, Two Years Ago
@@ -1431,7 +1431,7 @@ def plot_analysis(stats_data, source_type, output_file_base, country_code='EU'):
     ax2.set_xticks(tick_positions)
     ax2.set_xticklabels(tick_labels_axis)
     
-    ax2.grid(True, alpha=0.3, linewidth=1.5)
+    ax2.grid(True, linestyle='--', alpha=0.7, linewidth=1.5)
     
     # ========================================================================
     # AUTO UNIT CONVERSION: Check y-tick spacing and convert GW→MW→kW if needed
@@ -1506,7 +1506,7 @@ def plot_analysis(stats_data, source_type, output_file_base, country_code='EU'):
             ax2.set_xlim(0, len(time_labels))
             ax2.set_xticks(tick_positions)
             ax2.set_xticklabels(tick_labels_axis)
-            ax2.grid(True, alpha=0.3, linewidth=1.5)
+            ax2.grid(True, linestyle='--', alpha=0.7, linewidth=1.5)
     
     # Reorder legend to match percentage plot (3-2-2 layout)
     handles2, labels_list2 = ax2.get_legend_handles_labels()
