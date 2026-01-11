@@ -38,9 +38,8 @@ ENTSOE_COLORS = {
     'waste': '#808000',  # Olive
 
     # Totals
-    'all-renewables': '#32CD32',  # Lime Green
+    'all-renewables': '#00CED1',  # Dark Turquoise
     'all-non-renewables': '#000000',  # Black
-    'total-generation': '#000000',  # Black
 }
 
 # CRITICAL: Set new API endpoint (ENTSO-E migration November 2024)
@@ -1107,7 +1106,7 @@ def plot_analysis(stats_data, source_type, output_file_base, country_code='EU'):
         """
         # Create rectangular flag area - positioned for 12×12 canvas
         # x=0.1, y=0.85, width=0.075, height=0.05
-        ax_flag = fig.add_axes([0.1, 0.85, 0.075, 0.05])
+        ax_flag = fig.add_axes([0.03, 0.88, 0.12, 0.08])
         
         # Country-specific colors (or default blue)
         colors_map = {
@@ -1160,7 +1159,7 @@ def plot_analysis(stats_data, source_type, output_file_base, country_code='EU'):
             try:
                 # Create axes for flag - positioned for 12×12 canvas
                 # x=0.1, y=0.85, width=0.075, height=0.05
-                ax_flag = fig.add_axes([0.1, 0.85, 0.075, 0.05])
+                ax_flag = fig.add_axes([0.03, 0.88, 0.12, 0.08])
                 
                 # Load and display PNG
                 flag_img = mpimg.imread(flag_path)
@@ -1241,30 +1240,30 @@ def plot_analysis(stats_data, source_type, output_file_base, country_code='EU'):
     fig1, ax1 = plt.subplots(figsize=(12, 12))  # Canvas: 12 wide × 12 tall
     
     # Set exact plot area positioning
-    plt.subplots_adjust(left=0.22, right=0.9, top=0.80, bottom=0.35)
+    plt.subplots_adjust(left=0.15, right=0.94, top=0.83, bottom=0.25)
     
     # Add flag (top-left) - loads real SVG or uses placeholder
     load_flag(fig1, country_code)
     
     # Add country name below flag (figure coordinates)
     country_display = COUNTRY_DISPLAY_NAMES.get(country_code, country_code)
-    fig1.text(0.1, 0.843, country_display,
-             fontsize=18, fontweight='normal',
+    fig1.text(0.03, 0.873, country_display,
+             fontsize=20, fontweight='normal',
              ha='left', va='top',
              color='#333')
     
     # Titles in figure coordinates (not axes coordinates)
     # Main title
-    fig1.text(0.55, 0.885, 'Electricity Generation',
-             fontsize=30, fontweight='bold',
+    fig1.text(0.55, 0.935, 'Electricity Generation',
+             fontsize=36, fontweight='bold',
              ha='center', va='top')
     
     # Subtitle
-    fig1.text(0.55, 0.835, f'{source_name} · Fraction of Total',
-             fontsize=24, fontweight='normal',
+    fig1.text(0.55, 0.87, f'{source_name} · Fraction of Total',
+             fontsize=28, fontweight='normal',
              ha='center', va='top')
-    ax1.set_xlabel('Time of Day (Brussels)', fontsize=24, fontweight='bold', labelpad=8)
-    ax1.set_ylabel('Electrical Power (%)', fontsize=24, fontweight='bold', labelpad=8)
+    ax1.set_xlabel('Time of Day (Brussels)', fontsize=24, fontweight='bold', labelpad=10)
+    ax1.set_ylabel('Electrical Power (%)', fontsize=24, fontweight='bold', labelpad=10)
 
     max_percentage = 0
 
@@ -1332,7 +1331,7 @@ def plot_analysis(stats_data, source_type, output_file_base, country_code='EU'):
             ordered_labels.append(period_label)
     
     ax1.legend(ordered_handles, ordered_labels, 
-              loc='upper left', bbox_to_anchor=(0.14, 0.255),  # Figure coordinates
+              loc='upper left', bbox_to_anchor=(0.14, 0.16),  # Figure coordinates
               bbox_transform=fig1.transFigure,  # Use figure coordinate system
               ncol=3, fontsize=18, frameon=False)
     
@@ -1341,18 +1340,18 @@ def plot_analysis(stats_data, source_type, output_file_base, country_code='EU'):
     timestamp = datetime.now().strftime('%Y-%m-%d %H:%M UTC')
     
     # Watermark (left) - aligned with plot left edge
-    fig1.text(0.2, 0.125, "afratzl.github.io/eu-electricity",
+    fig1.text(0.15, 0.04, "afratzl.github.io/eu-electricity",
               ha='left', va='top',
               fontsize=12, color='#666',
               style='italic')
     
     # Timestamp (right) - aligned with plot right edge
-    fig1.text(0.9, 0.125, f"Generated: {timestamp}",
+    fig1.text(0.94, 0.04, f"Generated: {timestamp}",
               ha='right', va='top',
               fontsize=12, color='#666',
               style='italic')
     
-    plt.savefig(output_file_percentage, dpi=150, bbox_inches='tight')
+    plt.savefig(output_file_percentage, dpi=150)
     print(f"  ✓ Saved percentage plot: {output_file_percentage}")
     plt.close()
     
@@ -1362,29 +1361,29 @@ def plot_analysis(stats_data, source_type, output_file_base, country_code='EU'):
     fig2, ax2 = plt.subplots(figsize=(12, 12))  # Canvas: 12 wide × 12 tall
     
     # Set exact plot area positioning
-    plt.subplots_adjust(left=0.22, right=0.9, top=0.80, bottom=0.35)
+    plt.subplots_adjust(left=0.15, right=0.94, top=0.83, bottom=0.25)
     
     # Add flag (top-left) - loads real SVG or uses placeholder
     load_flag(fig2, country_code)
     
     # Add country name below flag (figure coordinates)
-    fig2.text(0.1, 0.843, country_display,
-             fontsize=18, fontweight='normal',
+    fig2.text(0.03, 0.873, country_display,
+             fontsize=20, fontweight='normal',
              ha='left', va='top',
              color='#333')
     
     # Titles in figure coordinates (not axes coordinates)
     # Main title
-    fig2.text(0.55, 0.885, 'Electricity Generation',
-             fontsize=30, fontweight='bold',
+    fig2.text(0.55, 0.935, 'Electricity Generation',
+             fontsize=36, fontweight='bold',
              ha='center', va='top')
     
     # Subtitle
-    fig2.text(0.55, 0.835, f'{source_name} · Absolute Values',
-             fontsize=24, fontweight='normal',
+    fig2.text(0.55, 0.87, f'{source_name} · Absolute Values',
+             fontsize=28, fontweight='normal',
              ha='center', va='top')
-    ax2.set_xlabel('Time of Day (Brussels)', fontsize=24, fontweight='bold', labelpad=8)
-    ax2.set_ylabel('Electrical Power (GW)', fontsize=24, fontweight='bold', labelpad=8)
+    ax2.set_xlabel('Time of Day (Brussels)', fontsize=24, fontweight='bold', labelpad=10)
+    ax2.set_ylabel('Electrical Power (GW)', fontsize=24, fontweight='bold', labelpad=10)
 
     max_energy = 0
 
@@ -1499,8 +1498,8 @@ def plot_analysis(stats_data, source_type, output_file_base, country_code='EU'):
                     ax2.fill_between(x_values, lower_bound, upper_bound, color=color, alpha=0.2)
             
             # Reapply formatting
-            ax2.set_xlabel('Time of Day (Brussels)', fontsize=24, fontweight='bold', labelpad=8)
-            ax2.set_ylabel(unit_label, fontsize=24, fontweight='bold', labelpad=8)
+            ax2.set_xlabel('Time of Day (Brussels)', fontsize=24, fontweight='bold', labelpad=10)
+            ax2.set_ylabel(unit_label, fontsize=24, fontweight='bold', labelpad=10)
             ax2.tick_params(axis='both', labelsize=22, length=8, pad=8)
             ax2.set_ylim(0, max_energy_converted * 1.20)
             ax2.set_xlim(0, len(time_labels))
@@ -1522,24 +1521,24 @@ def plot_analysis(stats_data, source_type, output_file_base, country_code='EU'):
             ordered_labels2.append(period_label)
     
     ax2.legend(ordered_handles2, ordered_labels2,
-              loc='upper left', bbox_to_anchor=(0.14, 0.255),  # Figure coordinates
+              loc='upper left', bbox_to_anchor=(0.14, 0.16),  # Figure coordinates
               bbox_transform=fig2.transFigure,  # Use figure coordinate system
               ncol=3, fontsize=18, frameon=False)
     
     # Add watermark (bottom-left) and timestamp (bottom-right)
     # Watermark (left) - aligned with plot left edge
-    fig2.text(0.2, 0.125, "afratzl.github.io/eu-electricity",
+    fig2.text(0.15, 0.04, "afratzl.github.io/eu-electricity",
               ha='left', va='top',
               fontsize=12, color='#666',
               style='italic')
     
     # Timestamp (right) - aligned with plot right edge
-    fig2.text(0.9, 0.125, f"Generated: {timestamp}",
+    fig2.text(0.94, 0.04, f"Generated: {timestamp}",
               ha='right', va='top',
               fontsize=12, color='#666',
               style='italic')
     
-    plt.savefig(output_file_absolute, dpi=150, bbox_inches='tight')
+    plt.savefig(output_file_absolute, dpi=150)
     print(f"  ✓ Saved absolute plot: {output_file_absolute}")
     plt.close()
     
@@ -2413,7 +2412,7 @@ def generate_yesterday_plots(corrected_data, country_code='EU'):
         
         if os.path.exists(flag_path):
             try:
-                ax_flag = fig.add_axes([0.1, 0.85, 0.075, 0.05])
+                ax_flag = fig.add_axes([0.03, 0.88, 0.12, 0.08])
                 flag_img = mpimg.imread(flag_path)
                 ax_flag.imshow(flag_img, aspect='auto')
                 ax_flag.axis('off')
@@ -2422,7 +2421,7 @@ def generate_yesterday_plots(corrected_data, country_code='EU'):
                 pass
         
         # Fallback: colored rectangle with country code
-        ax_flag = fig.add_axes([0.1, 0.85, 0.075, 0.05])
+        ax_flag = fig.add_axes([0.03, 0.88, 0.12, 0.08])
         colors_map = {
             'EU': '#003399', 'DE': '#000000', 'ES': '#AA151B',
             'FR': '#0055A4', 'MD': '#0046AE',
@@ -2498,7 +2497,7 @@ def generate_yesterday_plots(corrected_data, country_code='EU'):
     
     # ========== PLOT 1: PERCENTAGE ==========
     fig1 = plt.figure(figsize=(12, 12))
-    plt.subplots_adjust(left=0.22, right=0.9, top=0.80, bottom=0.35)
+    plt.subplots_adjust(left=0.15, right=0.94, top=0.83, bottom=0.25)
     ax1 = fig1.add_subplot(111)
     
     # Plot each source with z-order (higher = on top)
@@ -2526,8 +2525,8 @@ def generate_yesterday_plots(corrected_data, country_code='EU'):
                 labels_pct.append(source_name)
     
     # Formatting
-    ax1.set_xlabel('Time of Day (Brussels)', fontsize=24, fontweight='bold', labelpad=8)
-    ax1.set_ylabel('Electrical Power (%)', fontsize=24, fontweight='bold', labelpad=8)
+    ax1.set_xlabel('Time of Day (Brussels)', fontsize=24, fontweight='bold', labelpad=10)
+    ax1.set_ylabel('Electrical Power (%)', fontsize=24, fontweight='bold', labelpad=10)
     ax1.grid(True, linestyle='--', alpha=0.7, linewidth=1.5)
     ax1.set_xlim(0, len(time_labels))
     ax1.set_ylim(0, max_pct_value * 1.2)  # 20% margin
@@ -2540,24 +2539,24 @@ def generate_yesterday_plots(corrected_data, country_code='EU'):
     ax1.tick_params(axis='both', labelsize=22, length=8, pad=8)
     
     # Title
-    fig1.text(0.55, 0.885, 'Electricity Generation', 
-              fontsize=30, fontweight='bold', ha='center', va='top')
-    fig1.text(0.55, 0.835, f'Yesterday ({yesterday_date}) · Fraction of Total', 
-              fontsize=24, ha='center', va='top', color='#333')
+    fig1.text(0.55, 0.935, 'Electricity Generation', 
+              fontsize=36, fontweight='bold', ha='center', va='top')
+    fig1.text(0.55, 0.87, f'Yesterday ({yesterday_date}) · Fraction of Total', 
+              fontsize=28, ha='center', va='top', color='#333')
     
     # Flag
     load_flag(fig1, country_code)
     
     # Country name below flag
-    fig1.text(0.1, 0.843, country_name, 
-              fontsize=18, fontweight='normal', ha='left', va='top', color='#333')
+    fig1.text(0.03, 0.873, country_name, 
+              fontsize=20, fontweight='normal', ha='left', va='top', color='#333')
     
     # Watermark and timestamp
     from datetime import datetime
     timestamp = datetime.now().strftime('%Y-%m-%d %H:%M UTC')
-    fig1.text(0.2, 0.125, "afratzl.github.io/eu-electricity",
+    fig1.text(0.15, 0.04, "afratzl.github.io/eu-electricity",
               ha='left', va='top', fontsize=12, color='#666', style='italic')
-    fig1.text(0.9, 0.125, f"Generated: {timestamp}",
+    fig1.text(0.94, 0.04, f"Generated: {timestamp}",
               ha='right', va='top', fontsize=12, color='#666', style='italic')
     
     # Legend: 4-column layout with custom reordering
@@ -2623,7 +2622,7 @@ def generate_yesterday_plots(corrected_data, country_code='EU'):
     # Add legend with 4-column layout matching trends
     ax1.legend(reordered_handles, reordered_labels,
               loc='upper left', 
-              bbox_to_anchor=(0.2, 0.255),
+              bbox_to_anchor=(0.2, 0.16),
               bbox_transform=fig1.transFigure,
               ncol=4, 
               fontsize=18, 
@@ -2631,13 +2630,13 @@ def generate_yesterday_plots(corrected_data, country_code='EU'):
     
     # Save percentage plot
     percentage_file = f'plots/{country_code}_yesterday_all_sources_percentage.png'
-    fig1.savefig(percentage_file, dpi=150, bbox_inches='tight', facecolor='white')
+    fig1.savefig(percentage_file, dpi=150, facecolor='white')
     plt.close(fig1)
     print(f"  ✓ Saved: {percentage_file}")
     
     # ========== PLOT 2: ABSOLUTE (GW) ==========
     fig2 = plt.figure(figsize=(12, 12))
-    plt.subplots_adjust(left=0.22, right=0.9, top=0.80, bottom=0.35)
+    plt.subplots_adjust(left=0.15, right=0.94, top=0.83, bottom=0.25)
     ax2 = fig2.add_subplot(111)
     
     # Plot each source with z-order (higher = on top)
@@ -2659,8 +2658,8 @@ def generate_yesterday_plots(corrected_data, country_code='EU'):
                 labels_abs.append(source_name)
     
     # Formatting
-    ax2.set_xlabel('Time of Day (Brussels)', fontsize=24, fontweight='bold', labelpad=8)
-    ax2.set_ylabel('Electrical Power (GW)', fontsize=24, fontweight='bold', labelpad=8)
+    ax2.set_xlabel('Time of Day (Brussels)', fontsize=24, fontweight='bold', labelpad=10)
+    ax2.set_ylabel('Electrical Power (GW)', fontsize=24, fontweight='bold', labelpad=10)
     ax2.grid(True, linestyle='--', alpha=0.7, linewidth=1.5)
     ax2.set_xlim(0, len(time_labels))
     ax2.set_ylim(0, max_abs_value * 1.2)  # 20% margin
@@ -2673,22 +2672,22 @@ def generate_yesterday_plots(corrected_data, country_code='EU'):
     ax2.tick_params(axis='both', labelsize=22, length=8, pad=8)
     
     # Title
-    fig2.text(0.55, 0.885, 'Electricity Generation', 
-              fontsize=30, fontweight='bold', ha='center', va='top')
-    fig2.text(0.55, 0.835, f'Yesterday ({yesterday_date}) · Absolute Values', 
-              fontsize=24, ha='center', va='top', color='#333')
+    fig2.text(0.55, 0.935, 'Electricity Generation', 
+              fontsize=36, fontweight='bold', ha='center', va='top')
+    fig2.text(0.55, 0.87, f'Yesterday ({yesterday_date}) · Absolute Values', 
+              fontsize=28, ha='center', va='top', color='#333')
     
     # Flag
     load_flag(fig2, country_code)
     
     # Country name below flag
-    fig2.text(0.1, 0.843, country_name, 
-              fontsize=18, fontweight='normal', ha='left', va='top', color='#333')
+    fig2.text(0.03, 0.873, country_name, 
+              fontsize=20, fontweight='normal', ha='left', va='top', color='#333')
     
     # Watermark and timestamp
-    fig2.text(0.2, 0.125, "afratzl.github.io/eu-electricity",
+    fig2.text(0.15, 0.04, "afratzl.github.io/eu-electricity",
               ha='left', va='top', fontsize=12, color='#666', style='italic')
-    fig2.text(0.9, 0.125, f"Generated: {timestamp}",
+    fig2.text(0.94, 0.04, f"Generated: {timestamp}",
               ha='right', va='top', fontsize=12, color='#666', style='italic')
     
     # Legend: same reordering as percentage plot
@@ -2744,7 +2743,7 @@ def generate_yesterday_plots(corrected_data, country_code='EU'):
     # Add legend with 4-column layout matching trends
     ax2.legend(reordered_handles_abs, reordered_labels_abs,
               loc='upper left', 
-              bbox_to_anchor=(0.2, 0.255),
+              bbox_to_anchor=(0.2, 0.16),
               bbox_transform=fig2.transFigure,
               ncol=4, 
               fontsize=18, 
@@ -2752,7 +2751,7 @@ def generate_yesterday_plots(corrected_data, country_code='EU'):
     
     # Save absolute plot
     absolute_file = f'plots/{country_code}_yesterday_all_sources_absolute.png'
-    fig2.savefig(absolute_file, dpi=150, bbox_inches='tight', facecolor='white')
+    fig2.savefig(absolute_file, dpi=150, facecolor='white')
     plt.close(fig2)
     print(f"  ✓ Saved: {absolute_file}")
     
@@ -2924,7 +2923,7 @@ def generate_yesterday_aggregates_plots(corrected_data, country_code='EU'):
         
         if os.path.exists(flag_path):
             try:
-                ax_flag = fig.add_axes([0.1, 0.85, 0.075, 0.05])
+                ax_flag = fig.add_axes([0.03, 0.88, 0.12, 0.08])
                 flag_img = mpimg.imread(flag_path)
                 ax_flag.imshow(flag_img, aspect='auto')
                 ax_flag.axis('off')
@@ -2933,7 +2932,7 @@ def generate_yesterday_aggregates_plots(corrected_data, country_code='EU'):
                 pass
         
         # Fallback: colored rectangle with country code
-        ax_flag = fig.add_axes([0.1, 0.85, 0.075, 0.05])
+        ax_flag = fig.add_axes([0.03, 0.88, 0.12, 0.08])
         colors_map = {
             'EU': '#003399', 'DE': '#000000', 'ES': '#AA151B',
             'FR': '#0055A4', 'MD': '#0046AE',
@@ -3012,7 +3011,7 @@ def generate_yesterday_aggregates_plots(corrected_data, country_code='EU'):
     
     # ========== PLOT 1: PERCENTAGE ==========
     fig1 = plt.figure(figsize=(12, 12))
-    plt.subplots_adjust(left=0.22, right=0.9, top=0.80, bottom=0.35)
+    plt.subplots_adjust(left=0.15, right=0.94, top=0.83, bottom=0.25)
     ax1 = fig1.add_subplot(111)
     
     # Plot each aggregate with z-order (renewables on top)
@@ -3031,8 +3030,8 @@ def generate_yesterday_aggregates_plots(corrected_data, country_code='EU'):
                         label=display_names[agg_name], zorder=zorder)
     
     # Formatting
-    ax1.set_xlabel('Time of Day (Brussels)', fontsize=24, fontweight='bold', labelpad=8)
-    ax1.set_ylabel('Electrical Power (%)', fontsize=24, fontweight='bold', labelpad=8)
+    ax1.set_xlabel('Time of Day (Brussels)', fontsize=24, fontweight='bold', labelpad=10)
+    ax1.set_ylabel('Electrical Power (%)', fontsize=24, fontweight='bold', labelpad=10)
     ax1.grid(True, linestyle='--', alpha=0.7, linewidth=1.5)
     ax1.set_xlim(0, len(time_labels))
     ax1.set_ylim(0, max_pct_value * 1.2)  # 20% margin
@@ -3046,40 +3045,40 @@ def generate_yesterday_aggregates_plots(corrected_data, country_code='EU'):
     
     # Title
     fig1.text(0.55, 0.875, 'Electricity Generation', 
-              fontsize=30, fontweight='bold', ha='center', va='top')
-    fig1.text(0.55, 0.835, f'Yesterday ({yesterday_date}) · Fraction of Total', 
-              fontsize=24, ha='center', va='top', color='#333')
+              fontsize=36, fontweight='bold', ha='center', va='top')
+    fig1.text(0.55, 0.87, f'Yesterday ({yesterday_date}) · Fraction of Total', 
+              fontsize=28, ha='center', va='top', color='#333')
     
     # Flag
     load_flag(fig1, country_code)
     
     # Country name below flag
-    fig1.text(0.1, 0.843, country_name, 
-              fontsize=18, fontweight='normal', ha='left', va='top', color='#333')
+    fig1.text(0.03, 0.873, country_name, 
+              fontsize=20, fontweight='normal', ha='left', va='top', color='#333')
     
     # Watermark and timestamp
     timestamp = datetime.now().strftime('%Y-%m-%d %H:%M UTC')
-    fig1.text(0.2, 0.125, "afratzl.github.io/eu-electricity",
+    fig1.text(0.15, 0.04, "afratzl.github.io/eu-electricity",
               ha='left', va='top', fontsize=12, color='#666', style='italic')
-    fig1.text(0.9, 0.125, f"Generated: {timestamp}",
+    fig1.text(0.94, 0.04, f"Generated: {timestamp}",
               ha='right', va='top', fontsize=12, color='#666', style='italic')
     
     # Simple legend (just 2 items, no reordering needed)
     ax1.legend(loc='upper left', 
-              bbox_to_anchor=(0.2, 0.255),
+              bbox_to_anchor=(0.2, 0.16),
               bbox_transform=fig1.transFigure,
               fontsize=18, 
               frameon=False)
     
     # Save percentage plot
     percentage_file = f'plots/{country_code}_yesterday_aggregates_percentage.png'
-    fig1.savefig(percentage_file, dpi=150, bbox_inches='tight', facecolor='white')
+    fig1.savefig(percentage_file, dpi=150, facecolor='white')
     plt.close(fig1)
     print(f"  ✓ Saved: {percentage_file}")
     
     # ========== PLOT 2: ABSOLUTE (GW) ==========
     fig2 = plt.figure(figsize=(12, 12))
-    plt.subplots_adjust(left=0.22, right=0.9, top=0.80, bottom=0.35)
+    plt.subplots_adjust(left=0.15, right=0.94, top=0.83, bottom=0.25)
     ax2 = fig2.add_subplot(111)
     
     # Plot each aggregate
@@ -3098,8 +3097,8 @@ def generate_yesterday_aggregates_plots(corrected_data, country_code='EU'):
                         label=display_names[agg_name], zorder=zorder)
     
     # Formatting
-    ax2.set_xlabel('Time of Day (Brussels)', fontsize=24, fontweight='bold', labelpad=8)
-    ax2.set_ylabel('Electrical Power (GW)', fontsize=24, fontweight='bold', labelpad=8)
+    ax2.set_xlabel('Time of Day (Brussels)', fontsize=24, fontweight='bold', labelpad=10)
+    ax2.set_ylabel('Electrical Power (GW)', fontsize=24, fontweight='bold', labelpad=10)
     ax2.grid(True, linestyle='--', alpha=0.7, linewidth=1.5)
     ax2.set_xlim(0, len(time_labels))
     ax2.set_ylim(0, max_abs_value * 1.2)  # 20% margin
@@ -3113,33 +3112,33 @@ def generate_yesterday_aggregates_plots(corrected_data, country_code='EU'):
     
     # Title
     fig2.text(0.55, 0.875, 'Electricity Generation', 
-              fontsize=30, fontweight='bold', ha='center', va='top')
-    fig2.text(0.55, 0.835, f'Yesterday ({yesterday_date}) · Absolute Values', 
-              fontsize=24, ha='center', va='top', color='#333')
+              fontsize=36, fontweight='bold', ha='center', va='top')
+    fig2.text(0.55, 0.87, f'Yesterday ({yesterday_date}) · Absolute Values', 
+              fontsize=28, ha='center', va='top', color='#333')
     
     # Flag
     load_flag(fig2, country_code)
     
     # Country name below flag
-    fig2.text(0.1, 0.843, country_name, 
-              fontsize=18, fontweight='normal', ha='left', va='top', color='#333')
+    fig2.text(0.03, 0.873, country_name, 
+              fontsize=20, fontweight='normal', ha='left', va='top', color='#333')
     
     # Watermark and timestamp
-    fig2.text(0.2, 0.125, "afratzl.github.io/eu-electricity",
+    fig2.text(0.15, 0.04, "afratzl.github.io/eu-electricity",
               ha='left', va='top', fontsize=12, color='#666', style='italic')
-    fig2.text(0.9, 0.125, f"Generated: {timestamp}",
+    fig2.text(0.94, 0.04, f"Generated: {timestamp}",
               ha='right', va='top', fontsize=12, color='#666', style='italic')
     
     # Simple legend (just 2 items)
     ax2.legend(loc='upper left', 
-              bbox_to_anchor=(0.2, 0.255),
+              bbox_to_anchor=(0.2, 0.16),
               bbox_transform=fig2.transFigure,
               fontsize=18, 
               frameon=False)
     
     # Save absolute plot
     absolute_file = f'plots/{country_code}_yesterday_aggregates_absolute.png'
-    fig2.savefig(absolute_file, dpi=150, bbox_inches='tight', facecolor='white')
+    fig2.savefig(absolute_file, dpi=150, facecolor='white')
     plt.close(fig2)
     print(f"  ✓ Saved: {absolute_file}")
     
