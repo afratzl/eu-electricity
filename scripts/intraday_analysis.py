@@ -1106,7 +1106,7 @@ def plot_analysis(stats_data, source_type, output_file_base, country_code='EU'):
         """
         # Create rectangular flag area - positioned for 12×12 canvas
         # x=0.1, y=0.85, width=0.075, height=0.05
-        ax_flag = fig.add_axes([0.06, 0.90, 0.09, 0.06])
+        ax_flag = fig.add_axes([0.06, 0.905, 0.09, 0.06])
         
         # Country-specific colors (or default blue)
         colors_map = {
@@ -1159,7 +1159,7 @@ def plot_analysis(stats_data, source_type, output_file_base, country_code='EU'):
             try:
                 # Create axes for flag - positioned for 12×12 canvas
                 # x=0.1, y=0.85, width=0.075, height=0.05
-                ax_flag = fig.add_axes([0.06, 0.90, 0.09, 0.06])
+                ax_flag = fig.add_axes([0.06, 0.905, 0.09, 0.06])
                 
                 # Load and display PNG
                 flag_img = mpimg.imread(flag_path)
@@ -1247,14 +1247,14 @@ def plot_analysis(stats_data, source_type, output_file_base, country_code='EU'):
     
     # Add country name below flag (figure coordinates)
     country_display = COUNTRY_DISPLAY_NAMES.get(country_code, country_code)
-    fig1.text(0.06, 0.893, country_display,
+    fig1.text(0.06, 0.9, country_display,
              fontsize=16, fontweight='normal',
              ha='left', va='top',
              color='#333')
     
     # Titles in figure coordinates (not axes coordinates)
     # Main title
-    fig1.text(0.55, 0.96, 'Electricity Generation',
+    fig1.text(0.55, 0.955, 'Electricity Generation',
              fontsize=36, fontweight='bold',
              ha='center', va='top')
     
@@ -1367,14 +1367,14 @@ def plot_analysis(stats_data, source_type, output_file_base, country_code='EU'):
     load_flag(fig2, country_code)
     
     # Add country name below flag (figure coordinates)
-    fig2.text(0.06, 0.893, country_display,
+    fig2.text(0.06, 0.9, country_display,
              fontsize=16, fontweight='normal',
              ha='left', va='top',
              color='#333')
     
     # Titles in figure coordinates (not axes coordinates)
     # Main title
-    fig2.text(0.55, 0.96, 'Electricity Generation',
+    fig2.text(0.55, 0.955, 'Electricity Generation',
              fontsize=36, fontweight='bold',
              ha='center', va='top')
     
@@ -2412,7 +2412,7 @@ def generate_yesterday_plots(corrected_data, country_code='EU'):
         
         if os.path.exists(flag_path):
             try:
-                ax_flag = fig.add_axes([0.06, 0.90, 0.09, 0.06])
+                ax_flag = fig.add_axes([0.06, 0.905, 0.09, 0.06])
                 flag_img = mpimg.imread(flag_path)
                 ax_flag.imshow(flag_img, aspect='auto')
                 ax_flag.axis('off')
@@ -2421,7 +2421,7 @@ def generate_yesterday_plots(corrected_data, country_code='EU'):
                 pass
         
         # Fallback: colored rectangle with country code
-        ax_flag = fig.add_axes([0.06, 0.90, 0.09, 0.06])
+        ax_flag = fig.add_axes([0.06, 0.905, 0.09, 0.06])
         colors_map = {
             'EU': '#003399', 'DE': '#000000', 'ES': '#AA151B',
             'FR': '#0055A4', 'MD': '#0046AE',
@@ -2539,7 +2539,7 @@ def generate_yesterday_plots(corrected_data, country_code='EU'):
     ax1.tick_params(axis='both', labelsize=22, length=8, pad=8)
     
     # Title
-    fig1.text(0.55, 0.96, 'Electricity Generation', 
+    fig1.text(0.55, 0.955, 'Electricity Generation', 
               fontsize=36, fontweight='bold', ha='center', va='top')
     fig1.text(0.55, 0.90, f'Yesterday ({yesterday_date}) · Fraction of Total', 
               fontsize=28, ha='center', va='top', color='#333')
@@ -2548,7 +2548,7 @@ def generate_yesterday_plots(corrected_data, country_code='EU'):
     load_flag(fig1, country_code)
     
     # Country name below flag
-    fig1.text(0.06, 0.893, country_name, 
+    fig1.text(0.06, 0.9, country_name, 
               fontsize=16, fontweight='normal', ha='left', va='top', color='#333')
     
     # Watermark and timestamp
@@ -2672,7 +2672,7 @@ def generate_yesterday_plots(corrected_data, country_code='EU'):
     ax2.tick_params(axis='both', labelsize=22, length=8, pad=8)
     
     # Title
-    fig2.text(0.55, 0.96, 'Electricity Generation', 
+    fig2.text(0.55, 0.955, 'Electricity Generation', 
               fontsize=36, fontweight='bold', ha='center', va='top')
     fig2.text(0.55, 0.90, f'Yesterday ({yesterday_date}) · Absolute Values', 
               fontsize=28, ha='center', va='top', color='#333')
@@ -2681,7 +2681,7 @@ def generate_yesterday_plots(corrected_data, country_code='EU'):
     load_flag(fig2, country_code)
     
     # Country name below flag
-    fig2.text(0.06, 0.893, country_name, 
+    fig2.text(0.06, 0.9, country_name, 
               fontsize=16, fontweight='normal', ha='left', va='top', color='#333')
     
     # Watermark and timestamp
@@ -2923,7 +2923,7 @@ def generate_yesterday_aggregates_plots(corrected_data, country_code='EU'):
         
         if os.path.exists(flag_path):
             try:
-                ax_flag = fig.add_axes([0.06, 0.90, 0.09, 0.06])
+                ax_flag = fig.add_axes([0.06, 0.905, 0.09, 0.06])
                 flag_img = mpimg.imread(flag_path)
                 ax_flag.imshow(flag_img, aspect='auto')
                 ax_flag.axis('off')
@@ -2932,7 +2932,7 @@ def generate_yesterday_aggregates_plots(corrected_data, country_code='EU'):
                 pass
         
         # Fallback: colored rectangle with country code
-        ax_flag = fig.add_axes([0.06, 0.90, 0.09, 0.06])
+        ax_flag = fig.add_axes([0.06, 0.905, 0.09, 0.06])
         colors_map = {
             'EU': '#003399', 'DE': '#000000', 'ES': '#AA151B',
             'FR': '#0055A4', 'MD': '#0046AE',
@@ -3044,7 +3044,7 @@ def generate_yesterday_aggregates_plots(corrected_data, country_code='EU'):
     ax1.tick_params(axis='both', labelsize=22, length=8, pad=8)
     
     # Title
-    fig1.text(0.55, 0.96, 'Electricity Generation', 
+    fig1.text(0.55, 0.955, 'Electricity Generation', 
               fontsize=36, fontweight='bold', ha='center', va='top')
     fig1.text(0.55, 0.90, f'Yesterday ({yesterday_date}) · Fraction of Total', 
               fontsize=28, ha='center', va='top', color='#333')
@@ -3053,7 +3053,7 @@ def generate_yesterday_aggregates_plots(corrected_data, country_code='EU'):
     load_flag(fig1, country_code)
     
     # Country name below flag
-    fig1.text(0.06, 0.893, country_name, 
+    fig1.text(0.06, 0.9, country_name, 
               fontsize=16, fontweight='normal', ha='left', va='top', color='#333')
     
     # Watermark and timestamp
@@ -3121,7 +3121,7 @@ def generate_yesterday_aggregates_plots(corrected_data, country_code='EU'):
     load_flag(fig2, country_code)
     
     # Country name below flag
-    fig2.text(0.06, 0.893, country_name, 
+    fig2.text(0.06, 0.9, country_name, 
               fontsize=16, fontweight='normal', ha='left', va='top', color='#333')
     
     # Watermark and timestamp
