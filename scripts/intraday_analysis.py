@@ -1247,7 +1247,7 @@ def plot_analysis(stats_data, source_type, output_file_base, country_code='EU'):
     
     # Add country name below flag (figure coordinates)
     country_display = COUNTRY_DISPLAY_NAMES.get(country_code, country_code)
-    fig1.text(0.06, 0.873, country_display,
+    fig1.text(0.06, 0.893, country_display,
              fontsize=16, fontweight='normal',
              ha='left', va='top',
              color='#333')
@@ -1367,7 +1367,7 @@ def plot_analysis(stats_data, source_type, output_file_base, country_code='EU'):
     load_flag(fig2, country_code)
     
     # Add country name below flag (figure coordinates)
-    fig2.text(0.06, 0.873, country_display,
+    fig2.text(0.06, 0.893, country_display,
              fontsize=16, fontweight='normal',
              ha='left', va='top',
              color='#333')
@@ -2548,7 +2548,7 @@ def generate_yesterday_plots(corrected_data, country_code='EU'):
     load_flag(fig1, country_code)
     
     # Country name below flag
-    fig1.text(0.06, 0.873, country_name, 
+    fig1.text(0.06, 0.893, country_name, 
               fontsize=16, fontweight='normal', ha='left', va='top', color='#333')
     
     # Watermark and timestamp
@@ -2681,7 +2681,7 @@ def generate_yesterday_plots(corrected_data, country_code='EU'):
     load_flag(fig2, country_code)
     
     # Country name below flag
-    fig2.text(0.06, 0.873, country_name, 
+    fig2.text(0.06, 0.893, country_name, 
               fontsize=16, fontweight='normal', ha='left', va='top', color='#333')
     
     # Watermark and timestamp
@@ -3053,7 +3053,7 @@ def generate_yesterday_aggregates_plots(corrected_data, country_code='EU'):
     load_flag(fig1, country_code)
     
     # Country name below flag
-    fig1.text(0.06, 0.873, country_name, 
+    fig1.text(0.06, 0.893, country_name, 
               fontsize=16, fontweight='normal', ha='left', va='top', color='#333')
     
     # Watermark and timestamp
@@ -3121,7 +3121,7 @@ def generate_yesterday_aggregates_plots(corrected_data, country_code='EU'):
     load_flag(fig2, country_code)
     
     # Country name below flag
-    fig2.text(0.06, 0.873, country_name, 
+    fig2.text(0.06, 0.893, country_name, 
               fontsize=16, fontweight='normal', ha='left', va='top', color='#333')
     
     # Watermark and timestamp
