@@ -431,8 +431,8 @@ def add_flag_and_labels(fig, country_code, main_title, subtitle):
              color='#333')
     
     # Add main title
-    fig.text(0.55, 0.93, main_title,
-             fontsize=32, fontweight='bold',
+    fig.text(0.55, 0.94, main_title,
+             fontsize=36, fontweight='bold',
              ha='center', va='top')
     
     # Add subtitle
@@ -442,11 +442,11 @@ def add_flag_and_labels(fig, country_code, main_title, subtitle):
     
     # Add watermark and timestamp
     timestamp = datetime.now().strftime('%Y-%m-%d %H:%M UTC')
-    fig.text(0.15, 0.05, "afratzl.github.io/eu-electricity",
+    fig.text(0.15, 0.04, "afratzl.github.io/eu-electricity",
               ha='left', va='top',
               fontsize=12, color='#666',
               style='italic')
-    fig.text(0.94, 0.05, f"Generated: {timestamp}",
+    fig.text(0.94, 0.04, f"Generated: {timestamp}",
               ha='right', va='top',
               fontsize=12, color='#666',
               style='italic')
@@ -590,8 +590,8 @@ def create_all_charts(all_data, country_code='EU'):
         # Add flag, country name, titles, watermark, timestamp
         add_flag_and_labels(fig1, country_code, 'Electricity Generation', f'{source_name} · Fraction of Total')
         
-        ax1.set_xlabel('Month', fontsize=24, fontweight='bold', labelpad=8)
-        ax1.set_ylabel('Electricity Generation (%)', fontsize=24, fontweight='bold', labelpad=8)
+        ax1.set_xlabel('Month', fontsize=24, fontweight='bold', labelpad=10)
+        ax1.set_ylabel('Electricity Generation (%)', fontsize=24, fontweight='bold', labelpad=10)
         
         # Set y-axis with 20% margin
         ax1.set_ylim(0, max_pct_value * 1.2 if max_pct_value > 0 else 10)
@@ -620,7 +620,7 @@ def create_all_charts(all_data, country_code='EU'):
 
         # PLOT 2: Absolute
         fig2, ax2 = plt.subplots(figsize=(12, 12))
-        plt.subplots_adjust(left=0.22, right=0.9, top=0.80, bottom=0.35)
+        plt.subplots_adjust(left=0.15, right=0.94, top=0.83, bottom=0.25)
 
         max_abs_value = 0
         
@@ -650,8 +650,8 @@ def create_all_charts(all_data, country_code='EU'):
         # Add flag, country name, titles, watermark, timestamp
         add_flag_and_labels(fig2, country_code, 'Electricity Generation', f'{source_name} · Absolute Values')
         
-        ax2.set_xlabel('Month', fontsize=24, fontweight='bold', labelpad=8)
-        ax2.set_ylabel('Electricity Generation (TWh)', fontsize=24, fontweight='bold', labelpad=8)
+        ax2.set_xlabel('Month', fontsize=24, fontweight='bold', labelpad=10)
+        ax2.set_ylabel('Electricity Generation (TWh)', fontsize=24, fontweight='bold', labelpad=10)
         
         # Set y-axis with 20% margin
         ax2.set_ylim(0, max_abs_value * 1.2 if max_abs_value > 0 else 10)
@@ -817,7 +817,7 @@ def create_all_charts(all_data, country_code='EU'):
 
             # PLOT 1: PERCENTAGE
             fig1, ax1 = plt.subplots(figsize=(12, 12))
-            plt.subplots_adjust(left=0.22, right=0.9, top=0.80, bottom=0.35)
+            plt.subplots_adjust(left=0.15, right=0.94, top=0.83, bottom=0.25)
 
             # Force plot all 10 sources, use zeros for missing ones
             for source_name in all_sources:
@@ -834,8 +834,8 @@ def create_all_charts(all_data, country_code='EU'):
                               'Electricity Generation',
                               f'{period["name"]} Average · Fraction of Total')
             
-            ax1.set_xlabel('Month', fontsize=24, fontweight='bold', labelpad=8)
-            ax1.set_ylabel('Electricity Generation (%)', fontsize=24, fontweight='bold', labelpad=8)
+            ax1.set_xlabel('Month', fontsize=24, fontweight='bold', labelpad=10)
+            ax1.set_ylabel('Electricity Generation (%)', fontsize=24, fontweight='bold', labelpad=10)
             ax1.set_ylim(0, max_pct_all_periods)
             ax1.tick_params(axis='both', labelsize=22, length=8, pad=8)
             ax1.grid(True, linestyle='--', alpha=0.7)
@@ -865,7 +865,7 @@ def create_all_charts(all_data, country_code='EU'):
 
             period_name_clean = period['name'].replace('-', '_')
             percentage_filename = f'plots/{country_code.lower()}_monthly_energy_sources_mean_{period_name_clean}_percentage.png'
-            plt.savefig(percentage_filename, dpi=150, bbox_inches='tight')
+            plt.savefig(percentage_filename, dpi=150)
             print(f"  ✓ Saved: {percentage_filename}")
             
             if drive_service:
@@ -880,7 +880,7 @@ def create_all_charts(all_data, country_code='EU'):
 
             # PLOT 2: ABSOLUTE
             fig2, ax2 = plt.subplots(figsize=(12, 12))
-            plt.subplots_adjust(left=0.22, right=0.9, top=0.80, bottom=0.35)
+            plt.subplots_adjust(left=0.15, right=0.94, top=0.83, bottom=0.25)
 
             # Force plot all 10 sources, use zeros for missing ones
             for source_name in all_sources:
@@ -898,8 +898,8 @@ def create_all_charts(all_data, country_code='EU'):
                               'Electricity Generation',
                               f'{period["name"]} Average · Absolute Values')
             
-            ax2.set_xlabel('Month', fontsize=24, fontweight='bold', labelpad=8)
-            ax2.set_ylabel('Electricity Generation (TWh)', fontsize=24, fontweight='bold', labelpad=8)
+            ax2.set_xlabel('Month', fontsize=24, fontweight='bold', labelpad=10)
+            ax2.set_ylabel('Electricity Generation (TWh)', fontsize=24, fontweight='bold', labelpad=10)
             ax2.set_ylim(0, max_abs_all_periods)
             ax2.tick_params(axis='both', labelsize=22, length=8, pad=8)
             ax2.grid(True, linestyle='--', alpha=0.7)
@@ -928,7 +928,7 @@ def create_all_charts(all_data, country_code='EU'):
                        fontsize=18, frameon=False)
 
             absolute_filename = f'plots/{country_code.lower()}_monthly_energy_sources_mean_{period_name_clean}_absolute.png'
-            plt.savefig(absolute_filename, dpi=150, bbox_inches='tight')
+            plt.savefig(absolute_filename, dpi=150)
             print(f"  ✓ Saved: {absolute_filename}")
             
             if drive_service:
@@ -1061,7 +1061,7 @@ def create_all_charts(all_data, country_code='EU'):
 
             # PLOT 1: PERCENTAGE
             fig1, ax1 = plt.subplots(figsize=(12, 12))
-            plt.subplots_adjust(left=0.22, right=0.9, top=0.80, bottom=0.35)
+            plt.subplots_adjust(left=0.15, right=0.94, top=0.83, bottom=0.25)
 
             for category_name in ['All Renewables', 'All Non-Renewables']:
                 color = ENTSOE_COLORS[category_name]
@@ -1072,8 +1072,8 @@ def create_all_charts(all_data, country_code='EU'):
                               'Electricity Generation',
                               f'{period["name"]} Average · Fraction of Total')
             
-            ax1.set_xlabel('Month', fontsize=24, fontweight='bold', labelpad=8)
-            ax1.set_ylabel('Electricity Generation (%)', fontsize=24, fontweight='bold', labelpad=8)
+            ax1.set_xlabel('Month', fontsize=24, fontweight='bold', labelpad=10)
+            ax1.set_ylabel('Electricity Generation (%)', fontsize=24, fontweight='bold', labelpad=10)
             ax1.set_ylim(0, 100)
             ax1.tick_params(axis='both', labelsize=22, length=8, pad=8)
             ax1.grid(True, linestyle='--', alpha=0.7)
@@ -1083,7 +1083,7 @@ def create_all_charts(all_data, country_code='EU'):
 
             period_name_clean = period['name'].replace('-', '_')
             percentage_filename = f'plots/{country_code.lower()}_monthly_renewable_vs_nonrenewable_mean_{period_name_clean}_percentage.png'
-            plt.savefig(percentage_filename, dpi=150, bbox_inches='tight')
+            plt.savefig(percentage_filename, dpi=150)
             print(f"  ✓ Saved: {percentage_filename}")
             
             if drive_service:
@@ -1098,7 +1098,7 @@ def create_all_charts(all_data, country_code='EU'):
 
             # PLOT 2: ABSOLUTE
             fig2, ax2 = plt.subplots(figsize=(12, 12))
-            plt.subplots_adjust(left=0.22, right=0.9, top=0.80, bottom=0.35)
+            plt.subplots_adjust(left=0.15, right=0.94, top=0.83, bottom=0.25)
 
             for category_name in ['All Renewables', 'All Non-Renewables']:
                 color = ENTSOE_COLORS[category_name]
@@ -1110,8 +1110,8 @@ def create_all_charts(all_data, country_code='EU'):
                               'Electricity Generation',
                               f'{period["name"]} Average · Absolute Values')
             
-            ax2.set_xlabel('Month', fontsize=24, fontweight='bold', labelpad=8)
-            ax2.set_ylabel('Electricity Generation (TWh)', fontsize=24, fontweight='bold', labelpad=8)
+            ax2.set_xlabel('Month', fontsize=24, fontweight='bold', labelpad=10)
+            ax2.set_ylabel('Electricity Generation (TWh)', fontsize=24, fontweight='bold', labelpad=10)
             ax2.set_ylim(0, max_abs_renewable_periods)
             ax2.tick_params(axis='both', labelsize=22, length=8, pad=8)
             ax2.grid(True, linestyle='--', alpha=0.7)
@@ -1120,7 +1120,7 @@ def create_all_charts(all_data, country_code='EU'):
                        fontsize=18, frameon=False)
 
             absolute_filename = f'plots/{country_code.lower()}_monthly_renewable_vs_nonrenewable_mean_{period_name_clean}_absolute.png'
-            plt.savefig(absolute_filename, dpi=150, bbox_inches='tight')
+            plt.savefig(absolute_filename, dpi=150)
             print(f"  ✓ Saved: {absolute_filename}")
             
             if drive_service:
@@ -1195,7 +1195,7 @@ def create_all_charts(all_data, country_code='EU'):
 
         # PLOT 1: PERCENTAGE
         fig1, ax1 = plt.subplots(figsize=(12, 12))
-        plt.subplots_adjust(left=0.22, right=0.9, top=0.80, bottom=0.35)
+        plt.subplots_adjust(left=0.15, right=0.94, top=0.83, bottom=0.25)
 
         # Force plot all 10 sources
         for source_name in all_sources:
@@ -1232,8 +1232,8 @@ def create_all_charts(all_data, country_code='EU'):
                               'Electricity Generation',
                               'Fraction of Total')
             
-            ax1.set_xlabel('Year', fontsize=24, fontweight='bold', labelpad=8)
-            ax1.set_ylabel('Electricity Generation (%)', fontsize=24, fontweight='bold', labelpad=8)
+            ax1.set_xlabel('Year', fontsize=24, fontweight='bold', labelpad=10)
+            ax1.set_ylabel('Electricity Generation (%)', fontsize=24, fontweight='bold', labelpad=10)
             ax1.set_ylim(0, max_annual_pct)
             ax1.tick_params(axis='both', labelsize=22, length=8, pad=8)
             ax1.grid(True, linestyle='--', alpha=0.7)
@@ -1262,7 +1262,7 @@ def create_all_charts(all_data, country_code='EU'):
                        fontsize=18, frameon=False)
 
             percentage_filename = f'plots/{country_code.lower()}_annual_all_sources_percentage.png'
-            plt.savefig(percentage_filename, dpi=150, bbox_inches='tight')
+            plt.savefig(percentage_filename, dpi=150)
             print(f"  ✓ Saved: {percentage_filename}")
             
             if drive_service:
@@ -1276,7 +1276,7 @@ def create_all_charts(all_data, country_code='EU'):
 
         # PLOT 2: ABSOLUTE
         fig2, ax2 = plt.subplots(figsize=(12, 12))
-        plt.subplots_adjust(left=0.22, right=0.9, top=0.80, bottom=0.35)
+        plt.subplots_adjust(left=0.15, right=0.94, top=0.83, bottom=0.25)
 
         # Force plot all 10 sources
         for source_name in all_sources:
@@ -1299,8 +1299,8 @@ def create_all_charts(all_data, country_code='EU'):
                               'Electricity Generation',
                               'Absolute Values')
             
-            ax2.set_xlabel('Year', fontsize=24, fontweight='bold', labelpad=8)
-            ax2.set_ylabel('Electricity Generation (TWh)', fontsize=24, fontweight='bold', labelpad=8)
+            ax2.set_xlabel('Year', fontsize=24, fontweight='bold', labelpad=10)
+            ax2.set_ylabel('Electricity Generation (TWh)', fontsize=24, fontweight='bold', labelpad=10)
             ax2.set_ylim(0, max_annual_twh)
             ax2.tick_params(axis='both', labelsize=22, length=8, pad=8)
             ax2.grid(True, linestyle='--', alpha=0.7)
@@ -1329,7 +1329,7 @@ def create_all_charts(all_data, country_code='EU'):
                        fontsize=18, frameon=False)
 
             absolute_filename = f'plots/{country_code.lower()}_annual_all_sources_absolute.png'
-            plt.savefig(absolute_filename, dpi=150, bbox_inches='tight')
+            plt.savefig(absolute_filename, dpi=150)
             print(f"  ✓ Saved: {absolute_filename}")
             
             if drive_service:
@@ -1347,7 +1347,7 @@ def create_all_charts(all_data, country_code='EU'):
 
         # PLOT 1: PERCENTAGE
         fig1, ax1 = plt.subplots(figsize=(12, 12))
-        plt.subplots_adjust(left=0.22, right=0.9, top=0.80, bottom=0.35)
+        plt.subplots_adjust(left=0.15, right=0.94, top=0.83, bottom=0.25)
 
         lines_plotted = 0
         for source_name in available_totals:
@@ -1379,8 +1379,8 @@ def create_all_charts(all_data, country_code='EU'):
                               'Electricity Generation',
                               'Fraction of Total')
             
-            ax1.set_xlabel('Year', fontsize=24, fontweight='bold', labelpad=8)
-            ax1.set_ylabel('Electricity Generation (%)', fontsize=24, fontweight='bold', labelpad=8)
+            ax1.set_xlabel('Year', fontsize=24, fontweight='bold', labelpad=10)
+            ax1.set_ylabel('Electricity Generation (%)', fontsize=24, fontweight='bold', labelpad=10)
             ax1.set_ylim(0, 100)
             ax1.tick_params(axis='both', labelsize=22, length=8, pad=8)
             ax1.grid(True, linestyle='--', alpha=0.7)
@@ -1389,7 +1389,7 @@ def create_all_charts(all_data, country_code='EU'):
                        fontsize=18, frameon=False)
 
             percentage_filename = f'plots/{country_code.lower()}_annual_renewable_vs_non_renewable_percentage.png'
-            plt.savefig(percentage_filename, dpi=150, bbox_inches='tight')
+            plt.savefig(percentage_filename, dpi=150)
             print(f"  ✓ Saved: {percentage_filename}")
             
             if drive_service:
@@ -1403,7 +1403,7 @@ def create_all_charts(all_data, country_code='EU'):
 
         # PLOT 2: ABSOLUTE
         fig2, ax2 = plt.subplots(figsize=(12, 12))
-        plt.subplots_adjust(left=0.22, right=0.9, top=0.80, bottom=0.35)
+        plt.subplots_adjust(left=0.15, right=0.94, top=0.83, bottom=0.25)
 
         lines_plotted = 0
         max_renewable_abs = 0
@@ -1423,8 +1423,8 @@ def create_all_charts(all_data, country_code='EU'):
                               'Electricity Generation',
                               'Absolute Values')
             
-            ax2.set_xlabel('Year', fontsize=24, fontweight='bold', labelpad=8)
-            ax2.set_ylabel('Electricity Generation (TWh)', fontsize=24, fontweight='bold', labelpad=8)
+            ax2.set_xlabel('Year', fontsize=24, fontweight='bold', labelpad=10)
+            ax2.set_ylabel('Electricity Generation (TWh)', fontsize=24, fontweight='bold', labelpad=10)
             ax2.set_ylim(0, max_renewable_abs * 1.2 if max_renewable_abs > 0 else 10)
             ax2.tick_params(axis='both', labelsize=22, length=8, pad=8)
             ax2.grid(True, linestyle='--', alpha=0.7)
@@ -1433,7 +1433,7 @@ def create_all_charts(all_data, country_code='EU'):
                        fontsize=18, frameon=False)
 
             absolute_filename = f'plots/{country_code.lower()}_annual_renewable_vs_non_renewable_absolute.png'
-            plt.savefig(absolute_filename, dpi=150, bbox_inches='tight')
+            plt.savefig(absolute_filename, dpi=150)
             print(f"  ✓ Saved: {absolute_filename}")
             
             if drive_service:
@@ -1503,7 +1503,7 @@ def create_all_charts(all_data, country_code='EU'):
 
         # PLOT 1: PERCENTAGE CHANGE
         fig1, ax1 = plt.subplots(figsize=(12, 12))
-        plt.subplots_adjust(left=0.22, right=0.9, top=0.80, bottom=0.35)
+        plt.subplots_adjust(left=0.15, right=0.94, top=0.83, bottom=0.25)
 
         all_yoy_pct_values = []
         
@@ -1580,8 +1580,8 @@ def create_all_charts(all_data, country_code='EU'):
                               'Electricity Generation',
                               'Change from 2015 · Relative')
             
-            ax1.set_xlabel('Year', fontsize=24, fontweight='bold', labelpad=8)
-            ax1.set_ylabel('Change from 2015 (%)', fontsize=24, fontweight='bold', labelpad=8)
+            ax1.set_xlabel('Year', fontsize=24, fontweight='bold', labelpad=10)
+            ax1.set_ylabel('Change from 2015 (%)', fontsize=24, fontweight='bold', labelpad=10)
             ax1.set_ylim(y_min_limit, y_max_limit)
             ax1.axhline(y=0, color='black', linestyle='--', linewidth=1, alpha=0.5)
             ax1.tick_params(axis='both', labelsize=22, length=8, pad=8)
@@ -1611,7 +1611,7 @@ def create_all_charts(all_data, country_code='EU'):
                        fontsize=18, frameon=False)
 
             percentage_filename = f'plots/{country_code.lower()}_annual_yoy_all_sources_vs_2015_percentage.png'
-            plt.savefig(percentage_filename, dpi=150, bbox_inches='tight')
+            plt.savefig(percentage_filename, dpi=150)
             print(f"  ✓ Saved: {percentage_filename}")
             
             if drive_service:
@@ -1625,7 +1625,7 @@ def create_all_charts(all_data, country_code='EU'):
 
         # PLOT 2: ABSOLUTE CHANGE (TWh)
         fig2, ax2 = plt.subplots(figsize=(12, 12))
-        plt.subplots_adjust(left=0.22, right=0.9, top=0.80, bottom=0.35)
+        plt.subplots_adjust(left=0.15, right=0.94, top=0.83, bottom=0.25)
 
         all_yoy_abs_values = []
         
@@ -1701,8 +1701,8 @@ def create_all_charts(all_data, country_code='EU'):
                               'Electricity Generation',
                               'Change from 2015 · Absolute')
             
-            ax2.set_xlabel('Year', fontsize=24, fontweight='bold', labelpad=8)
-            ax2.set_ylabel('Change from 2015 (TWh)', fontsize=24, fontweight='bold', labelpad=8)
+            ax2.set_xlabel('Year', fontsize=24, fontweight='bold', labelpad=10)
+            ax2.set_ylabel('Change from 2015 (TWh)', fontsize=24, fontweight='bold', labelpad=10)
             ax2.set_ylim(y_min_limit, y_max_limit)
             ax2.axhline(y=0, color='black', linestyle='--', linewidth=1, alpha=0.5)
             ax2.tick_params(axis='both', labelsize=22, length=8, pad=8)
@@ -1732,7 +1732,7 @@ def create_all_charts(all_data, country_code='EU'):
                        fontsize=18, frameon=False)
 
             absolute_filename = f'plots/{country_code.lower()}_annual_yoy_all_sources_vs_2015_absolute.png'
-            plt.savefig(absolute_filename, dpi=150, bbox_inches='tight')
+            plt.savefig(absolute_filename, dpi=150)
             print(f"  ✓ Saved: {absolute_filename}")
             
             if drive_service:
@@ -1751,7 +1751,7 @@ def create_all_charts(all_data, country_code='EU'):
 
         # PLOT 1: PERCENTAGE CHANGE
         fig3, ax3 = plt.subplots(figsize=(12, 12))
-        plt.subplots_adjust(left=0.22, right=0.9, top=0.80, bottom=0.35)
+        plt.subplots_adjust(left=0.15, right=0.94, top=0.83, bottom=0.25)
 
         all_yoy_agg_pct_values = []
         lines_plotted = 0
@@ -1813,8 +1813,8 @@ def create_all_charts(all_data, country_code='EU'):
                               'Electricity Generation',
                               'Change from 2015 · Relative')
             
-            ax3.set_xlabel('Year', fontsize=24, fontweight='bold', labelpad=8)
-            ax3.set_ylabel('Change from 2015 (%)', fontsize=24, fontweight='bold', labelpad=8)
+            ax3.set_xlabel('Year', fontsize=24, fontweight='bold', labelpad=10)
+            ax3.set_ylabel('Change from 2015 (%)', fontsize=24, fontweight='bold', labelpad=10)
             ax3.set_ylim(y_min_limit, y_max_limit)
             ax3.axhline(y=0, color='black', linestyle='--', linewidth=1, alpha=0.5)
             ax3.tick_params(axis='both', labelsize=22, length=8, pad=8)
@@ -1824,7 +1824,7 @@ def create_all_charts(all_data, country_code='EU'):
                        fontsize=18, frameon=False)
 
             percentage_filename = f'plots/{country_code.lower()}_annual_yoy_aggregates_vs_2015_percentage.png'
-            plt.savefig(percentage_filename, dpi=150, bbox_inches='tight')
+            plt.savefig(percentage_filename, dpi=150)
             print(f"  ✓ Saved: {percentage_filename}")
             
             if drive_service:
@@ -1838,7 +1838,7 @@ def create_all_charts(all_data, country_code='EU'):
 
         # PLOT 2: ABSOLUTE CHANGE (TWh)
         fig4, ax4 = plt.subplots(figsize=(12, 12))
-        plt.subplots_adjust(left=0.22, right=0.9, top=0.80, bottom=0.35)
+        plt.subplots_adjust(left=0.15, right=0.94, top=0.83, bottom=0.25)
 
         all_yoy_agg_abs_values = []
         lines_plotted = 0
@@ -1899,8 +1899,8 @@ def create_all_charts(all_data, country_code='EU'):
                               'Electricity Generation',
                               'Change from 2015 · Absolute')
             
-            ax4.set_xlabel('Year', fontsize=24, fontweight='bold', labelpad=8)
-            ax4.set_ylabel('Change from 2015 (TWh)', fontsize=24, fontweight='bold', labelpad=8)
+            ax4.set_xlabel('Year', fontsize=24, fontweight='bold', labelpad=10)
+            ax4.set_ylabel('Change from 2015 (TWh)', fontsize=24, fontweight='bold', labelpad=10)
             ax4.set_ylim(y_min_limit, y_max_limit)
             ax4.axhline(y=0, color='black', linestyle='--', linewidth=1, alpha=0.5)
             ax4.tick_params(axis='both', labelsize=22, length=8, pad=8)
@@ -1910,7 +1910,7 @@ def create_all_charts(all_data, country_code='EU'):
                        fontsize=18, frameon=False)
 
             absolute_filename = f'plots/{country_code.lower()}_annual_yoy_aggregates_vs_2015_absolute.png'
-            plt.savefig(absolute_filename, dpi=150, bbox_inches='tight')
+            plt.savefig(absolute_filename, dpi=150)
             print(f"  ✓ Saved: {absolute_filename}")
             
             if drive_service:
