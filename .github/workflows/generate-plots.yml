@@ -33,7 +33,10 @@ jobs:
         
     - name: Commit and push plots
       run: |
+      run: |
         git config --local user.email "github-actions[bot]@users.noreply.github.com"
-        git config --local user.name "github-actions[bot]"  
-        git add plots/*.html plots/*.json
-        git diff --quiet && git diff --staged --quiet || (git commit -m "Generate historical plots and summary JSON" && git push)
+        git config --local user.name "github-actions[bot]"
+        git add plots/
+        git commit -m "Generate historical plots and summary JSON" || echo "No changes to commit"
+        git pull --rebase origin main  # ← ADD THIS LINE
+        git push)
