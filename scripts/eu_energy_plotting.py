@@ -1077,7 +1077,7 @@ def create_all_charts(all_data, country_code='EU'):
             ax1.set_ylim(0, 100)
             ax1.tick_params(axis='both', labelsize=22, length=8, pad=8)
             ax1.grid(True, linestyle='--', alpha=0.7)
-            ax1.legend(loc='upper left', bbox_to_anchor=(0.30, 0.165),
+            ax1.legend(loc='upper left', bbox_to_anchor=(0.30, 0.15),
                        bbox_transform=fig1.transFigure, ncol=2,
                        fontsize=18, frameon=False)
 
@@ -1115,7 +1115,7 @@ def create_all_charts(all_data, country_code='EU'):
             ax2.set_ylim(0, max_abs_renewable_periods)
             ax2.tick_params(axis='both', labelsize=22, length=8, pad=8)
             ax2.grid(True, linestyle='--', alpha=0.7)
-            ax2.legend(loc='upper left', bbox_to_anchor=(0.30, 0.165),
+            ax2.legend(loc='upper left', bbox_to_anchor=(0.30, 0.15),
                        bbox_transform=fig2.transFigure, ncol=2,
                        fontsize=18, frameon=False)
 
@@ -1384,7 +1384,7 @@ def create_all_charts(all_data, country_code='EU'):
             ax1.set_ylim(0, 100)
             ax1.tick_params(axis='both', labelsize=22, length=8, pad=8)
             ax1.grid(True, linestyle='--', alpha=0.7)
-            ax1.legend(loc='upper left', bbox_to_anchor=(0.30, 0.165),
+            ax1.legend(loc='upper left', bbox_to_anchor=(0.30, 0.15),
                        bbox_transform=fig1.transFigure, ncol=2,
                        fontsize=18, frameon=False)
 
@@ -1428,7 +1428,7 @@ def create_all_charts(all_data, country_code='EU'):
             ax2.set_ylim(0, max_renewable_abs * 1.2 if max_renewable_abs > 0 else 10)
             ax2.tick_params(axis='both', labelsize=22, length=8, pad=8)
             ax2.grid(True, linestyle='--', alpha=0.7)
-            ax2.legend(loc='upper left', bbox_to_anchor=(0.30, 0.165),
+            ax2.legend(loc='upper left', bbox_to_anchor=(0.30, 0.15),
                        bbox_transform=fig2.transFigure, ncol=2,
                        fontsize=18, frameon=False)
 
@@ -1836,7 +1836,7 @@ def create_all_charts(all_data, country_code='EU'):
             ax3.axhline(y=0, color='black', linestyle='--', linewidth=1, alpha=0.5)
             ax3.tick_params(axis='both', labelsize=22, length=8, pad=8)
             ax3.grid(True, linestyle='--', alpha=0.7)
-            ax3.legend(loc='upper left', bbox_to_anchor=(0.30, 0.165),
+            ax3.legend(loc='upper left', bbox_to_anchor=(0.30, 0.15),
                        bbox_transform=fig3.transFigure, ncol=2,
                        fontsize=18, frameon=False)
 
@@ -1922,7 +1922,7 @@ def create_all_charts(all_data, country_code='EU'):
             ax4.axhline(y=0, color='black', linestyle='--', linewidth=1, alpha=0.5)
             ax4.tick_params(axis='both', labelsize=22, length=8, pad=8)
             ax4.grid(True, linestyle='--', alpha=0.7)
-            ax4.legend(loc='upper left', bbox_to_anchor=(0.30, 0.165),
+            ax4.legend(loc='upper left', bbox_to_anchor=(0.30, 0.15),
                        bbox_transform=fig4.transFigure, ncol=2,
                        fontsize=18, frameon=False)
 
