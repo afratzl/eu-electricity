@@ -3047,7 +3047,7 @@ def generate_yesterday_aggregates_plots(corrected_data, country_code='EU'):
     max_pct_value = 0
     
     # Plot non-renewables first (below), then renewables (on top)
-    for agg_name in ['all-non-renewables', 'all-renewables']:
+    for agg_name in ['all-renewables','all-non-renewables']:
         if agg_name in aggregate_data:
             data = aggregate_data[agg_name]
             if len(data) == len(x_values):
@@ -3115,7 +3115,7 @@ def generate_yesterday_aggregates_plots(corrected_data, country_code='EU'):
     max_abs_value = 0
     
     # Plot non-renewables first (below), then renewables (on top)
-    for agg_name in ['all-non-renewables', 'all-renewables']:
+    for agg_name in ['all-renewables','all-non-renewables']:
         if agg_name in aggregate_data:
             data = aggregate_data[agg_name]
             if len(data) == len(x_values):
