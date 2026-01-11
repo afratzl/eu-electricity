@@ -1,46 +1,69 @@
-name: Generate Historical Plots
+name: Update Historical Data
 on:
-  workflow_dispatch:  # Manual trigger
+  schedule:
+    # Daily updates for historical data (at 3:00 AM UTC)
+    - cron: '0 3 * * *'
+  
+  workflow_dispatch:  # Manual triggers still allowed
+
+permissions:
+  contents: write
+
 jobs:
-  generate-plots:
+  update-historical:
     runs-on: ubuntu-latest
     
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v3
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
       
-    - name: Set up Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: '3.12'
-        
-    - name: Install dependencies
-      run: |
-        pip install pandas matplotlib numpy gspread google-auth google-auth-oauthlib google-auth-httplib2 google-api-python-client
-        
-    - name: Generate historical plots
-      env:
-        GOOGLE_CREDENTIALS_JSON: ${{ secrets.GOOGLE_CREDENTIALS_JSON }}
-      run: |
-        python scripts/eu_energy_plotting.py
-    
-    - name: Generate Summary Table JSON
-      env:
-        GOOGLE_CREDENTIALS_JSON: ${{ secrets.GOOGLE_CREDENTIALS_JSON }}
-      run: |
-        echo "Generating summary table JSON..."
-        python scripts/generate_summary_table_json.py || echo "Failed to generate JSON"
-        
-    - name: Commit and push plots
-      run: |
-        git config --local user.email "github-actions[bot]@users.noreply.github.com"
-        git config --local user.name "github-actions[bot]"
-        
-        # Pull latest changes with rebase and autostash
-        git pull --rebase --autostash origin main
-        
-        # Add all plots (monthly, trends, and JSON)
-        git add plots/*.html plots/*.json
-        
-        # Commit if there are changes
-        git diff --quiet && git diff --staged --quiet || (git commit -m "Generate historical plots and summary JSON" && git push)
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install entsoe-py pandas matplotlib numpy gspread google-auth pytz scipy google-api-python-client
+      
+      - name: Create plots directory
+        run: mkdir -p plots
+      
+      - name: Run Historical Data Collection
+        env:
+          ENTSOE_API_KEY: ${{ secrets.ENTSOE_API_KEY }}
+          GOOGLE_CREDENTIALS_JSON: ${{ secrets.GOOGLE_CREDENTIALS_JSON }}
+        run: |
+          echo "Running daily historical data collection..."
+          python scripts/eu_energy_data_collection.py 
+      
+      - name: Run Historical Data Plotting
+        env:
+          GOOGLE_CREDENTIALS_JSON: ${{ secrets.GOOGLE_CREDENTIALS_JSON }}
+        run: |
+          echo "Running daily historical data plotting..."
+          python scripts/eu_energy_plotting.py
+      
+      - name: Generate Summary Table JSON
+        env:
+          GOOGLE_CREDENTIALS_JSON: ${{ secrets.GOOGLE_CREDENTIALS_JSON }}
+        run: |
+          echo "Generating summary table JSON..."
+          python scripts/generate_summary_table_json.py || echo "Failed to generate JSON"
+      
+      - name: Commit and push changes
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          
+          # Pull latest changes with rebase and autostash
+          git pull --rebase --autostash origin main
+          
+          # Add all plots
+          git add plots/
+          
+          # Commit if there are changes
+          git diff --quiet && git diff --staged --quiet || (git commit -m "Update historical plots and summary JSON [daily]" && git push)
