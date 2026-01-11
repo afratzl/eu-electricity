@@ -1106,7 +1106,7 @@ def plot_analysis(stats_data, source_type, output_file_base, country_code='EU'):
         """
         # Create rectangular flag area - positioned for 12×12 canvas
         # x=0.1, y=0.85, width=0.075, height=0.05
-        ax_flag = fig.add_axes([0.03, 0.88, 0.12, 0.08])
+        ax_flag = fig.add_axes([0.06, 0.88, 0.09, 0.06])
         
         # Country-specific colors (or default blue)
         colors_map = {
@@ -1159,7 +1159,7 @@ def plot_analysis(stats_data, source_type, output_file_base, country_code='EU'):
             try:
                 # Create axes for flag - positioned for 12×12 canvas
                 # x=0.1, y=0.85, width=0.075, height=0.05
-                ax_flag = fig.add_axes([0.03, 0.88, 0.12, 0.08])
+                ax_flag = fig.add_axes([0.06, 0.88, 0.09, 0.06])
                 
                 # Load and display PNG
                 flag_img = mpimg.imread(flag_path)
@@ -1247,8 +1247,8 @@ def plot_analysis(stats_data, source_type, output_file_base, country_code='EU'):
     
     # Add country name below flag (figure coordinates)
     country_display = COUNTRY_DISPLAY_NAMES.get(country_code, country_code)
-    fig1.text(0.03, 0.873, country_display,
-             fontsize=20, fontweight='normal',
+    fig1.text(0.06, 0.873, country_display,
+             fontsize=16, fontweight='normal',
              ha='left', va='top',
              color='#333')
     
@@ -1367,8 +1367,8 @@ def plot_analysis(stats_data, source_type, output_file_base, country_code='EU'):
     load_flag(fig2, country_code)
     
     # Add country name below flag (figure coordinates)
-    fig2.text(0.03, 0.873, country_display,
-             fontsize=20, fontweight='normal',
+    fig2.text(0.06, 0.873, country_display,
+             fontsize=16, fontweight='normal',
              ha='left', va='top',
              color='#333')
     
@@ -2412,7 +2412,7 @@ def generate_yesterday_plots(corrected_data, country_code='EU'):
         
         if os.path.exists(flag_path):
             try:
-                ax_flag = fig.add_axes([0.03, 0.88, 0.12, 0.08])
+                ax_flag = fig.add_axes([0.06, 0.88, 0.09, 0.06])
                 flag_img = mpimg.imread(flag_path)
                 ax_flag.imshow(flag_img, aspect='auto')
                 ax_flag.axis('off')
@@ -2421,7 +2421,7 @@ def generate_yesterday_plots(corrected_data, country_code='EU'):
                 pass
         
         # Fallback: colored rectangle with country code
-        ax_flag = fig.add_axes([0.03, 0.88, 0.12, 0.08])
+        ax_flag = fig.add_axes([0.06, 0.88, 0.09, 0.06])
         colors_map = {
             'EU': '#003399', 'DE': '#000000', 'ES': '#AA151B',
             'FR': '#0055A4', 'MD': '#0046AE',
@@ -2548,8 +2548,8 @@ def generate_yesterday_plots(corrected_data, country_code='EU'):
     load_flag(fig1, country_code)
     
     # Country name below flag
-    fig1.text(0.03, 0.873, country_name, 
-              fontsize=20, fontweight='normal', ha='left', va='top', color='#333')
+    fig1.text(0.06, 0.873, country_name, 
+              fontsize=16, fontweight='normal', ha='left', va='top', color='#333')
     
     # Watermark and timestamp
     from datetime import datetime
@@ -2681,8 +2681,8 @@ def generate_yesterday_plots(corrected_data, country_code='EU'):
     load_flag(fig2, country_code)
     
     # Country name below flag
-    fig2.text(0.03, 0.873, country_name, 
-              fontsize=20, fontweight='normal', ha='left', va='top', color='#333')
+    fig2.text(0.06, 0.873, country_name, 
+              fontsize=16, fontweight='normal', ha='left', va='top', color='#333')
     
     # Watermark and timestamp
     fig2.text(0.15, 0.04, "afratzl.github.io/eu-electricity",
@@ -2923,7 +2923,7 @@ def generate_yesterday_aggregates_plots(corrected_data, country_code='EU'):
         
         if os.path.exists(flag_path):
             try:
-                ax_flag = fig.add_axes([0.03, 0.88, 0.12, 0.08])
+                ax_flag = fig.add_axes([0.06, 0.88, 0.09, 0.06])
                 flag_img = mpimg.imread(flag_path)
                 ax_flag.imshow(flag_img, aspect='auto')
                 ax_flag.axis('off')
@@ -2932,7 +2932,7 @@ def generate_yesterday_aggregates_plots(corrected_data, country_code='EU'):
                 pass
         
         # Fallback: colored rectangle with country code
-        ax_flag = fig.add_axes([0.03, 0.88, 0.12, 0.08])
+        ax_flag = fig.add_axes([0.06, 0.88, 0.09, 0.06])
         colors_map = {
             'EU': '#003399', 'DE': '#000000', 'ES': '#AA151B',
             'FR': '#0055A4', 'MD': '#0046AE',
@@ -3053,8 +3053,8 @@ def generate_yesterday_aggregates_plots(corrected_data, country_code='EU'):
     load_flag(fig1, country_code)
     
     # Country name below flag
-    fig1.text(0.03, 0.873, country_name, 
-              fontsize=20, fontweight='normal', ha='left', va='top', color='#333')
+    fig1.text(0.06, 0.873, country_name, 
+              fontsize=16, fontweight='normal', ha='left', va='top', color='#333')
     
     # Watermark and timestamp
     timestamp = datetime.now().strftime('%Y-%m-%d %H:%M UTC')
@@ -3120,8 +3120,8 @@ def generate_yesterday_aggregates_plots(corrected_data, country_code='EU'):
     load_flag(fig2, country_code)
     
     # Country name below flag
-    fig2.text(0.03, 0.873, country_name, 
-              fontsize=20, fontweight='normal', ha='left', va='top', color='#333')
+    fig2.text(0.06, 0.873, country_name, 
+              fontsize=16, fontweight='normal', ha='left', va='top', color='#333')
     
     # Watermark and timestamp
     fig2.text(0.15, 0.04, "afratzl.github.io/eu-electricity",
