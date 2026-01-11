@@ -2907,7 +2907,7 @@ def generate_yesterday_aggregates_plots(corrected_data, country_code='EU'):
     
     # Country display names
     COUNTRY_DISPLAY_NAMES = {
-        'EU': 'EU',
+        'EU': 'European Union',
         'DE': 'Germany',
         'ES': 'Spain',
         'FR': 'France',
