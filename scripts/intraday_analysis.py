@@ -2571,7 +2571,7 @@ def generate_yesterday_plots(corrected_data, country_code='EU'):
     fig1.text(0.55, 0.955, 'Electricity Generation', 
               fontsize=36, fontweight='bold', ha='center', va='top')
     fig1.text(0.55, 0.90, f'Yesterday ({yesterday_date}) · Fraction of Total', 
-              fontsize=28, ha='center', va='top', color='#333')
+              fontsize=28, fontweight='normal' ha='center', va='top')
     
     # Flag
     load_flag(fig1, country_code)
@@ -2703,8 +2703,8 @@ def generate_yesterday_plots(corrected_data, country_code='EU'):
     # Title
     fig2.text(0.55, 0.955, 'Electricity Generation', 
               fontsize=36, fontweight='bold', ha='center', va='top')
-    fig2.text(0.55, 0.90, f'Yesterday ({yesterday_date}) · Absolute Values', 
-              fontsize=28, ha='center', va='top', color='#333')
+    fig2.text(0.55, 0.90, f'Yesterday ({yesterday_date}) · Fraction of Total', 
+              fontsize=28, fontweight='normal' ha='center', va='top')
     
     # Flag
     load_flag(fig2, country_code)
@@ -3075,8 +3075,8 @@ def generate_yesterday_aggregates_plots(corrected_data, country_code='EU'):
     # Title
     fig1.text(0.55, 0.955, 'Electricity Generation', 
               fontsize=36, fontweight='bold', ha='center', va='top')
-    fig1.text(0.55, 0.90, f'Yesterday ({yesterday_date}) · Fraction of Total', 
-              fontsize=28, ha='center', va='top', color='#333')
+    fig1.text(0.55, 0.90, f'Yesterday ({yesterday_date}) · Fraction of Total',
+              fontsize=28, fontweight='normal' ha='center', va='top')
     
     # Flag
     load_flag(fig1, country_code)
@@ -3141,10 +3141,10 @@ def generate_yesterday_aggregates_plots(corrected_data, country_code='EU'):
     ax2.tick_params(axis='both', labelsize=22, length=8, pad=8)
     
     # Title
-    fig2.text(0.55, 0.905, 'Electricity Generation', 
+    fig2.text(0.55, 0.955, 'Electricity Generation', 
               fontsize=36, fontweight='bold', ha='center', va='top')
     fig2.text(0.55, 0.90, f'Yesterday ({yesterday_date}) · Absolute Values', 
-              fontsize=28, ha='center', va='top', color='#333')
+              fontsize=28, fontweight='normal', ha='center', va='top')
     
     # Flag
     load_flag(fig2, country_code)
