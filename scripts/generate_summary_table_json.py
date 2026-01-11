@@ -252,7 +252,42 @@ def generate_summary_json():
                 }
                 
                 sources_list.append(source_data)
+
+            # RENORMALIZE: Force renewables + non-renewables = 100% for each period
+            print(f"  🔄 Renormalizing percentages for {country_code}...")
             
+            # Find aggregate rows
+            renewables_idx = None
+            non_renewables_idx = None
+            
+            for idx, source in enumerate(sources_list):
+                if source["source"] == "All Renewables":
+                    renewables_idx = idx
+                elif source["source"] == "All Non-Renewables":
+                    non_renewables_idx = idx
+            
+            if renewables_idx is not None and non_renewables_idx is not None:
+                # Renormalize each period
+                for period in ["yesterday", "last_week", "ytd_2025", "year_2024"]:
+                    ren_pct = sources_list[renewables_idx][period]["percentage"]
+                    non_ren_pct = sources_list[non_renewables_idx][period]["percentage"]
+                    total = ren_pct + non_ren_pct
+                    
+                    if total > 0 and abs(total - 100.0) > 0.01:  # Only renormalize if not already 100%
+                        norm_factor = 100.0 / total
+                        
+                        # Scale both aggregates
+                        sources_list[renewables_idx][period]["percentage"] = round(ren_pct * norm_factor, 2)
+                        sources_list[non_renewables_idx][period]["percentage"] = round(non_ren_pct * norm_factor, 2)
+                        
+                        # Scale all individual sources in same proportion
+                        for source in sources_list:
+                            if source["category"] in ["renewable", "non-renewable"]:
+                                old_pct = source[period]["percentage"]
+                                source[period]["percentage"] = round(old_pct * norm_factor, 2)
+                        
+                        print(f"    {period}: {total:.2f}% → 100.00% (factor: {norm_factor:.6f})")
+                        
             # Define source order by contribution
             source_order_map = {
                 'All Renewables': 0,
