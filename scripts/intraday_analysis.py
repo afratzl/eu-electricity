@@ -1276,9 +1276,9 @@ def plot_analysis(stats_data, source_type, output_file_base, country_code='EU'):
     
     # Add country name below flag (figure coordinates)
     country_display = COUNTRY_DISPLAY_NAMES.get(country_code, country_code)
-    fig1.text(0.06, 0.9, country_display,
+    fig1.text(0.105, 0.897, country_display,
              fontsize=16, fontweight='normal',
-             ha='left', va='top',
+             ha='center', va='top',
              color='#333')
     
     # Titles in figure coordinates (not axes coordinates)
@@ -1396,9 +1396,9 @@ def plot_analysis(stats_data, source_type, output_file_base, country_code='EU'):
     load_flag(fig2, country_code)
     
     # Add country name below flag (figure coordinates)
-    fig2.text(0.06, 0.9, country_display,
+    fig2.text(0.105, 0.897, country_display,
              fontsize=16, fontweight='normal',
-             ha='left', va='top',
+             ha='center', va='top',
              color='#333')
     
     # Titles in figure coordinates (not axes coordinates)
@@ -2577,8 +2577,8 @@ def generate_yesterday_plots(corrected_data, country_code='EU'):
     load_flag(fig1, country_code)
     
     # Country name below flag
-    fig1.text(0.06, 0.9, country_name, 
-              fontsize=16, fontweight='normal', ha='left', va='top', color='#333')
+    fig1.text(0.105, 0.897, country_name, 
+              fontsize=16, fontweight='normal', ha='center', va='top', color='#333')
     
     # Watermark and timestamp
     from datetime import datetime
@@ -2710,8 +2710,8 @@ def generate_yesterday_plots(corrected_data, country_code='EU'):
     load_flag(fig2, country_code)
     
     # Country name below flag
-    fig2.text(0.06, 0.9, country_name, 
-              fontsize=16, fontweight='normal', ha='left', va='top', color='#333')
+    fig2.text(0.105, 0.897, country_name, 
+              fontsize=16, fontweight='normal', ha='center', va='top', color='#333')
     
     # Watermark and timestamp
     fig2.text(0.15, 0.035, "afratzl.github.io/eu-electricity",
@@ -3082,8 +3082,8 @@ def generate_yesterday_aggregates_plots(corrected_data, country_code='EU'):
     load_flag(fig1, country_code)
     
     # Country name below flag
-    fig1.text(0.06, 0.9, country_name, 
-              fontsize=16, fontweight='normal', ha='left', va='top', color='#333')
+    fig1.text(0.105, 0.897, country_name, 
+              fontsize=16, fontweight='normal', ha='center', va='top', color='#333')
     
     # Watermark and timestamp
     timestamp = datetime.now().strftime('%Y-%m-%d %H:%M UTC')
@@ -3150,8 +3150,8 @@ def generate_yesterday_aggregates_plots(corrected_data, country_code='EU'):
     load_flag(fig2, country_code)
     
     # Country name below flag
-    fig2.text(0.06, 0.9, country_name, 
-              fontsize=16, fontweight='normal', ha='left', va='top', color='#333')
+    fig2.text(0.105, 0.897, country_name, 
+              fontsize=16, fontweight='normal', ha='center', va='top', color='#333')
     
     # Watermark and timestamp
     fig2.text(0.15, 0.035, "afratzl.github.io/eu-electricity",
