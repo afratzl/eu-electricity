@@ -37,5 +37,12 @@ jobs:
         git config --local user.name "github-actions[bot]"
         git add plots/
         git commit -m "Generate historical plots and summary JSON" || echo "No changes to commit"
-        git pull --rebase origin main  # ← ADD THIS LINE
-        git push)
+        
+        # Pull with automatic conflict resolution (keep our version)
+        git pull --rebase -X ours origin main || {
+          echo "⚠️  Rebase conflict detected, auto-resolving..."
+          git add .
+          git rebase --continue
+        }
+        
+        git push
