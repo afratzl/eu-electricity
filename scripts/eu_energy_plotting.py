@@ -416,7 +416,7 @@ def add_flag_and_labels(fig, country_code, main_title, subtitle):
     if os.path.exists(flag_path):
         try:
             # Create axes for flag - positioned for 12×12 canvas
-            ax_flag = fig.add_axes([0.06, 0.9, 0.09, 0.06])
+            ax_flag = fig.add_axes([0.06, 0.905, 0.09, 0.06])
             flag_img = mpimg.imread(flag_path)
             ax_flag.imshow(flag_img, aspect='auto')
             ax_flag.axis('off')
@@ -425,13 +425,13 @@ def add_flag_and_labels(fig, country_code, main_title, subtitle):
     
     # Add country name
     country_display = COUNTRY_DISPLAY_NAMES.get(country_code, country_code)
-    fig.text(0.06, 0.893, country_display,
+    fig.text(0.06, 0.9, country_display,
              fontsize=16, fontweight='normal',
              ha='left', va='top',
              color='#333')
     
     # Add main title
-    fig.text(0.55, 0.96, main_title,
+    fig.text(0.55, 0.955, main_title,
              fontsize=36, fontweight='bold',
              ha='center', va='top')
     
