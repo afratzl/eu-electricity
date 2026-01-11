@@ -63,7 +63,7 @@ jobs:
           git pull --rebase --autostash origin main
           
           # Add all plots
-          git add plots/
+          git add plots/*.html plots/*.json
           
           # Commit if there are changes
           git diff --quiet && git diff --staged --quiet || (git commit -m "Update historical plots and summary JSON [daily]" && git push)
