@@ -1254,7 +1254,7 @@ def plot_analysis(stats_data, source_type, output_file_base, country_code='EU'):
     
     # Titles in figure coordinates (not axes coordinates)
     # Main title
-    fig1.text(0.55, 0.935, 'Electricity Generation',
+    fig1.text(0.55, 0.93, 'Electricity Generation',
              fontsize=36, fontweight='bold',
              ha='center', va='top')
     
@@ -1374,7 +1374,7 @@ def plot_analysis(stats_data, source_type, output_file_base, country_code='EU'):
     
     # Titles in figure coordinates (not axes coordinates)
     # Main title
-    fig2.text(0.55, 0.935, 'Electricity Generation',
+    fig2.text(0.55, 0.93, 'Electricity Generation',
              fontsize=36, fontweight='bold',
              ha='center', va='top')
     
@@ -2539,7 +2539,7 @@ def generate_yesterday_plots(corrected_data, country_code='EU'):
     ax1.tick_params(axis='both', labelsize=22, length=8, pad=8)
     
     # Title
-    fig1.text(0.55, 0.935, 'Electricity Generation', 
+    fig1.text(0.55, 0.93, 'Electricity Generation', 
               fontsize=36, fontweight='bold', ha='center', va='top')
     fig1.text(0.55, 0.87, f'Yesterday ({yesterday_date}) · Fraction of Total', 
               fontsize=28, ha='center', va='top', color='#333')
@@ -2672,7 +2672,7 @@ def generate_yesterday_plots(corrected_data, country_code='EU'):
     ax2.tick_params(axis='both', labelsize=22, length=8, pad=8)
     
     # Title
-    fig2.text(0.55, 0.935, 'Electricity Generation', 
+    fig2.text(0.55, 0.93, 'Electricity Generation', 
               fontsize=36, fontweight='bold', ha='center', va='top')
     fig2.text(0.55, 0.87, f'Yesterday ({yesterday_date}) · Absolute Values', 
               fontsize=28, ha='center', va='top', color='#333')
