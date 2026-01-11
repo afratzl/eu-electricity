@@ -431,12 +431,12 @@ def add_flag_and_labels(fig, country_code, main_title, subtitle):
              color='#333')
     
     # Add main title
-    fig.text(0.55, 0.955, main_title,
+    fig.text(0.55, 0.965, main_title,
              fontsize=36, fontweight='bold',
              ha='center', va='top')
     
     # Add subtitle
-    fig.text(0.55, 0.9, subtitle,
+    fig.text(0.55, 0.91, subtitle,
              fontsize=28, fontweight='normal',
              ha='center', va='top')
     
