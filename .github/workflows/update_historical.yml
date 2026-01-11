@@ -40,7 +40,7 @@ jobs:
         git pull --rebase --autostash origin main
         
         # Add all plots (monthly, trends, and JSON)
-        git add plots/
+        git add plots/*.html plots/*.json
         
         # Commit if there are changes
         git diff --quiet && git diff --staged --quiet || (git commit -m "Generate historical plots and summary JSON" && git push)
