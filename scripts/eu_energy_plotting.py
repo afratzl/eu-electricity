@@ -416,7 +416,7 @@ def add_flag_and_labels(fig, country_code, main_title, subtitle):
     if os.path.exists(flag_path):
         try:
             # Create axes for flag - positioned for 12×12 canvas
-            ax_flag = fig.add_axes([0.06, 0.88, 0.09, 0.06])
+            ax_flag = fig.add_axes([0.06, 0.9, 0.09, 0.06])
             flag_img = mpimg.imread(flag_path)
             ax_flag.imshow(flag_img, aspect='auto')
             ax_flag.axis('off')
@@ -425,28 +425,28 @@ def add_flag_and_labels(fig, country_code, main_title, subtitle):
     
     # Add country name
     country_display = COUNTRY_DISPLAY_NAMES.get(country_code, country_code)
-    fig.text(0.06, 0.873, country_display,
+    fig.text(0.06, 0.893, country_display,
              fontsize=16, fontweight='normal',
              ha='left', va='top',
              color='#333')
     
     # Add main title
-    fig.text(0.55, 0.93, main_title,
+    fig.text(0.55, 0.96, main_title,
              fontsize=36, fontweight='bold',
              ha='center', va='top')
     
     # Add subtitle
-    fig.text(0.55, 0.87, subtitle,
+    fig.text(0.55, 0.9, subtitle,
              fontsize=28, fontweight='normal',
              ha='center', va='top')
     
     # Add watermark and timestamp
     timestamp = datetime.now().strftime('%Y-%m-%d %H:%M UTC')
-    fig.text(0.15, 0.04, "afratzl.github.io/eu-electricity",
+    fig.text(0.15, 0.035, "afratzl.github.io/eu-electricity",
               ha='left', va='top',
               fontsize=12, color='#666',
               style='italic')
-    fig.text(0.94, 0.04, f"Generated: {timestamp}",
+    fig.text(0.94, 0.035, f"Generated: {timestamp}",
               ha='right', va='top',
               fontsize=12, color='#666',
               style='italic')
@@ -550,7 +550,7 @@ def create_all_charts(all_data, country_code='EU'):
 
         # PLOT 1: Percentage
         fig1, ax1 = plt.subplots(figsize=(12, 12))
-        plt.subplots_adjust(left=0.15, right=0.94, top=0.83, bottom=0.25)
+        plt.subplots_adjust(left=0.15, right=0.94, top=0.86, bottom=0.25)
 
         max_pct_value = 0
         
@@ -599,7 +599,7 @@ def create_all_charts(all_data, country_code='EU'):
         ax1.tick_params(axis='both', labelsize=22, length=8, pad=8)
         ax1.grid(True, linestyle='--', alpha=0.7)
 
-        ax1.legend(loc='upper left', bbox_to_anchor=(0.165, 0.16), 
+        ax1.legend(loc='upper left', bbox_to_anchor=(0.165, 0.165), 
                    bbox_transform=fig1.transFigure,
                    ncol=5, fontsize=18, frameon=False)
 
@@ -620,7 +620,7 @@ def create_all_charts(all_data, country_code='EU'):
 
         # PLOT 2: Absolute
         fig2, ax2 = plt.subplots(figsize=(12, 12))
-        plt.subplots_adjust(left=0.15, right=0.94, top=0.83, bottom=0.25)
+        plt.subplots_adjust(left=0.15, right=0.94, top=0.86, bottom=0.25)
 
         max_abs_value = 0
         
@@ -659,7 +659,7 @@ def create_all_charts(all_data, country_code='EU'):
         ax2.tick_params(axis='both', labelsize=22, length=8, pad=8)
         ax2.grid(True, linestyle='--', alpha=0.7)
 
-        ax2.legend(loc='upper left', bbox_to_anchor=(0.165, 0.16),
+        ax2.legend(loc='upper left', bbox_to_anchor=(0.165, 0.165),
                    bbox_transform=fig2.transFigure,
                    ncol=5, fontsize=18, frameon=False)
 
@@ -817,7 +817,7 @@ def create_all_charts(all_data, country_code='EU'):
 
             # PLOT 1: PERCENTAGE
             fig1, ax1 = plt.subplots(figsize=(12, 12))
-            plt.subplots_adjust(left=0.15, right=0.94, top=0.83, bottom=0.25)
+            plt.subplots_adjust(left=0.15, right=0.94, top=0.86, bottom=0.25)
 
             # Force plot all 10 sources, use zeros for missing ones
             for source_name in all_sources:
@@ -859,7 +859,7 @@ def create_all_charts(all_data, country_code='EU'):
                 labels[9], labels[8], '',
             ]
             
-            ax1.legend(reordered_handles, reordered_labels, loc='upper left', bbox_to_anchor=(0.2, 0.16),
+            ax1.legend(reordered_handles, reordered_labels, loc='upper left', bbox_to_anchor=(0.2, 0.165),
                        bbox_transform=fig1.transFigure, ncol=4,
                        fontsize=18, frameon=False)
 
@@ -880,7 +880,7 @@ def create_all_charts(all_data, country_code='EU'):
 
             # PLOT 2: ABSOLUTE
             fig2, ax2 = plt.subplots(figsize=(12, 12))
-            plt.subplots_adjust(left=0.15, right=0.94, top=0.83, bottom=0.25)
+            plt.subplots_adjust(left=0.15, right=0.94, top=0.86, bottom=0.25)
 
             # Force plot all 10 sources, use zeros for missing ones
             for source_name in all_sources:
@@ -923,7 +923,7 @@ def create_all_charts(all_data, country_code='EU'):
                 labels[9], labels[8], '',
             ]
             
-            ax2.legend(reordered_handles, reordered_labels, loc='upper left', bbox_to_anchor=(0.2, 0.16),
+            ax2.legend(reordered_handles, reordered_labels, loc='upper left', bbox_to_anchor=(0.2, 0.165),
                        bbox_transform=fig2.transFigure, ncol=4,
                        fontsize=18, frameon=False)
 
@@ -1061,7 +1061,7 @@ def create_all_charts(all_data, country_code='EU'):
 
             # PLOT 1: PERCENTAGE
             fig1, ax1 = plt.subplots(figsize=(12, 12))
-            plt.subplots_adjust(left=0.15, right=0.94, top=0.83, bottom=0.25)
+            plt.subplots_adjust(left=0.15, right=0.94, top=0.86, bottom=0.25)
 
             for category_name in ['All Renewables', 'All Non-Renewables']:
                 color = ENTSOE_COLORS[category_name]
@@ -1077,7 +1077,7 @@ def create_all_charts(all_data, country_code='EU'):
             ax1.set_ylim(0, 100)
             ax1.tick_params(axis='both', labelsize=22, length=8, pad=8)
             ax1.grid(True, linestyle='--', alpha=0.7)
-            ax1.legend(loc='upper left', bbox_to_anchor=(0.30, 0.16),
+            ax1.legend(loc='upper left', bbox_to_anchor=(0.30, 0.165),
                        bbox_transform=fig1.transFigure, ncol=2,
                        fontsize=18, frameon=False)
 
@@ -1098,7 +1098,7 @@ def create_all_charts(all_data, country_code='EU'):
 
             # PLOT 2: ABSOLUTE
             fig2, ax2 = plt.subplots(figsize=(12, 12))
-            plt.subplots_adjust(left=0.15, right=0.94, top=0.83, bottom=0.25)
+            plt.subplots_adjust(left=0.15, right=0.94, top=0.86, bottom=0.25)
 
             for category_name in ['All Renewables', 'All Non-Renewables']:
                 color = ENTSOE_COLORS[category_name]
@@ -1115,7 +1115,7 @@ def create_all_charts(all_data, country_code='EU'):
             ax2.set_ylim(0, max_abs_renewable_periods)
             ax2.tick_params(axis='both', labelsize=22, length=8, pad=8)
             ax2.grid(True, linestyle='--', alpha=0.7)
-            ax2.legend(loc='upper left', bbox_to_anchor=(0.30, 0.16),
+            ax2.legend(loc='upper left', bbox_to_anchor=(0.30, 0.165),
                        bbox_transform=fig2.transFigure, ncol=2,
                        fontsize=18, frameon=False)
 
@@ -1195,7 +1195,7 @@ def create_all_charts(all_data, country_code='EU'):
 
         # PLOT 1: PERCENTAGE
         fig1, ax1 = plt.subplots(figsize=(12, 12))
-        plt.subplots_adjust(left=0.15, right=0.94, top=0.83, bottom=0.25)
+        plt.subplots_adjust(left=0.15, right=0.94, top=0.86, bottom=0.25)
 
         # Force plot all 10 sources
         for source_name in all_sources:
@@ -1257,7 +1257,7 @@ def create_all_charts(all_data, country_code='EU'):
                 labels[9], labels[8], '',
             ]
             
-            ax1.legend(reordered_handles, reordered_labels, loc='upper left', bbox_to_anchor=(0.19, 0.16),
+            ax1.legend(reordered_handles, reordered_labels, loc='upper left', bbox_to_anchor=(0.19, 0.165),
                        bbox_transform=fig1.transFigure, ncol=4,
                        fontsize=18, frameon=False)
 
@@ -1276,7 +1276,7 @@ def create_all_charts(all_data, country_code='EU'):
 
         # PLOT 2: ABSOLUTE
         fig2, ax2 = plt.subplots(figsize=(12, 12))
-        plt.subplots_adjust(left=0.15, right=0.94, top=0.83, bottom=0.25)
+        plt.subplots_adjust(left=0.15, right=0.94, top=0.86, bottom=0.25)
 
         # Force plot all 10 sources
         for source_name in all_sources:
@@ -1324,7 +1324,7 @@ def create_all_charts(all_data, country_code='EU'):
                 labels[9], labels[8], '',
             ]
             
-            ax2.legend(reordered_handles, reordered_labels, loc='upper left', bbox_to_anchor=(0.19, 0.16),
+            ax2.legend(reordered_handles, reordered_labels, loc='upper left', bbox_to_anchor=(0.19, 0.165),
                        bbox_transform=fig2.transFigure, ncol=4,
                        fontsize=18, frameon=False)
 
@@ -1347,7 +1347,7 @@ def create_all_charts(all_data, country_code='EU'):
 
         # PLOT 1: PERCENTAGE
         fig1, ax1 = plt.subplots(figsize=(12, 12))
-        plt.subplots_adjust(left=0.15, right=0.94, top=0.83, bottom=0.25)
+        plt.subplots_adjust(left=0.15, right=0.94, top=0.86, bottom=0.25)
 
         lines_plotted = 0
         for source_name in available_totals:
@@ -1384,7 +1384,7 @@ def create_all_charts(all_data, country_code='EU'):
             ax1.set_ylim(0, 100)
             ax1.tick_params(axis='both', labelsize=22, length=8, pad=8)
             ax1.grid(True, linestyle='--', alpha=0.7)
-            ax1.legend(loc='upper left', bbox_to_anchor=(0.30, 0.16),
+            ax1.legend(loc='upper left', bbox_to_anchor=(0.30, 0.165),
                        bbox_transform=fig1.transFigure, ncol=2,
                        fontsize=18, frameon=False)
 
@@ -1403,7 +1403,7 @@ def create_all_charts(all_data, country_code='EU'):
 
         # PLOT 2: ABSOLUTE
         fig2, ax2 = plt.subplots(figsize=(12, 12))
-        plt.subplots_adjust(left=0.15, right=0.94, top=0.83, bottom=0.25)
+        plt.subplots_adjust(left=0.15, right=0.94, top=0.86, bottom=0.25)
 
         lines_plotted = 0
         max_renewable_abs = 0
@@ -1428,7 +1428,7 @@ def create_all_charts(all_data, country_code='EU'):
             ax2.set_ylim(0, max_renewable_abs * 1.2 if max_renewable_abs > 0 else 10)
             ax2.tick_params(axis='both', labelsize=22, length=8, pad=8)
             ax2.grid(True, linestyle='--', alpha=0.7)
-            ax2.legend(loc='upper left', bbox_to_anchor=(0.30, 0.16),
+            ax2.legend(loc='upper left', bbox_to_anchor=(0.30, 0.165),
                        bbox_transform=fig2.transFigure, ncol=2,
                        fontsize=18, frameon=False)
 
@@ -1520,7 +1520,7 @@ def create_all_charts(all_data, country_code='EU'):
 
         # PLOT 1: PERCENTAGE CHANGE
         fig1, ax1 = plt.subplots(figsize=(12, 12))
-        plt.subplots_adjust(left=0.15, right=0.94, top=0.83, bottom=0.25)
+        plt.subplots_adjust(left=0.15, right=0.94, top=0.86, bottom=0.25)
 
         all_yoy_pct_values = []
         
@@ -1623,7 +1623,7 @@ def create_all_charts(all_data, country_code='EU'):
                 labels[9], labels[8], '',
             ]
             
-            ax1.legend(reordered_handles, reordered_labels, loc='upper left', bbox_to_anchor=(0.19, 0.16),
+            ax1.legend(reordered_handles, reordered_labels, loc='upper left', bbox_to_anchor=(0.19, 0.165),
                        bbox_transform=fig1.transFigure, ncol=4,
                        fontsize=18, frameon=False)
 
@@ -1642,7 +1642,7 @@ def create_all_charts(all_data, country_code='EU'):
 
         # PLOT 2: ABSOLUTE CHANGE (TWh)
         fig2, ax2 = plt.subplots(figsize=(12, 12))
-        plt.subplots_adjust(left=0.15, right=0.94, top=0.83, bottom=0.25)
+        plt.subplots_adjust(left=0.15, right=0.94, top=0.86, bottom=0.25)
 
         all_yoy_abs_values = []
         
@@ -1744,7 +1744,7 @@ def create_all_charts(all_data, country_code='EU'):
                 labels[9], labels[8], '',
             ]
             
-            ax2.legend(reordered_handles, reordered_labels, loc='upper left', bbox_to_anchor=(0.19, 0.16),
+            ax2.legend(reordered_handles, reordered_labels, loc='upper left', bbox_to_anchor=(0.19, 0.165),
                        bbox_transform=fig2.transFigure, ncol=4,
                        fontsize=18, frameon=False)
 
@@ -1768,7 +1768,7 @@ def create_all_charts(all_data, country_code='EU'):
 
         # PLOT 1: PERCENTAGE CHANGE
         fig3, ax3 = plt.subplots(figsize=(12, 12))
-        plt.subplots_adjust(left=0.15, right=0.94, top=0.83, bottom=0.25)
+        plt.subplots_adjust(left=0.15, right=0.94, top=0.86, bottom=0.25)
 
         all_yoy_agg_pct_values = []
         lines_plotted = 0
@@ -1836,7 +1836,7 @@ def create_all_charts(all_data, country_code='EU'):
             ax3.axhline(y=0, color='black', linestyle='--', linewidth=1, alpha=0.5)
             ax3.tick_params(axis='both', labelsize=22, length=8, pad=8)
             ax3.grid(True, linestyle='--', alpha=0.7)
-            ax3.legend(loc='upper left', bbox_to_anchor=(0.30, 0.255),
+            ax3.legend(loc='upper left', bbox_to_anchor=(0.30, 0.165),
                        bbox_transform=fig3.transFigure, ncol=2,
                        fontsize=18, frameon=False)
 
@@ -1855,7 +1855,7 @@ def create_all_charts(all_data, country_code='EU'):
 
         # PLOT 2: ABSOLUTE CHANGE (TWh)
         fig4, ax4 = plt.subplots(figsize=(12, 12))
-        plt.subplots_adjust(left=0.15, right=0.94, top=0.83, bottom=0.25)
+        plt.subplots_adjust(left=0.15, right=0.94, top=0.86, bottom=0.25)
 
         all_yoy_agg_abs_values = []
         lines_plotted = 0
@@ -1922,7 +1922,7 @@ def create_all_charts(all_data, country_code='EU'):
             ax4.axhline(y=0, color='black', linestyle='--', linewidth=1, alpha=0.5)
             ax4.tick_params(axis='both', labelsize=22, length=8, pad=8)
             ax4.grid(True, linestyle='--', alpha=0.7)
-            ax4.legend(loc='upper left', bbox_to_anchor=(0.30, 0.16),
+            ax4.legend(loc='upper left', bbox_to_anchor=(0.30, 0.165),
                        bbox_transform=fig4.transFigure, ncol=2,
                        fontsize=18, frameon=False)
 
