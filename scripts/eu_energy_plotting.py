@@ -1495,6 +1495,23 @@ def create_all_charts(all_data, country_code='EU'):
                 baseline_year_prorated[source_name] = ytd_baseline
         
         print(f"  ✓ Calculated YTD for {current_year} and prorated baseline for comparison")
+        
+        # Calculate YTD and prorated baseline for aggregates
+        for aggregate_name in totals_for_yoy:
+            if aggregate_name == 'All Renewables':
+                sources = available_renewables
+            elif aggregate_name == 'All Non-Renewables':
+                sources = available_non_renewables
+            else:
+                continue
+            
+            # Sum current year YTD
+            current_year_ytd[aggregate_name] = sum(current_year_ytd.get(s, 0) for s in sources)
+            
+            # Sum baseline year prorated
+            baseline_year_prorated[aggregate_name] = sum(baseline_year_prorated.get(s, 0) for s in sources)
+        
+        print(f"  ✓ Calculated YTD for aggregates: {totals_for_yoy}")
 
         # ====================================================================
         # Chart 1: YoY Change - ALL SOURCES
