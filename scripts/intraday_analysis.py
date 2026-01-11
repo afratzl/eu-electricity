@@ -813,6 +813,35 @@ def apply_corrections_for_period(data_matrix, target_period, reference_period):
         result['corrected'][agg_source] = corrected_sources[agg_source]
         result['actual'][agg_source] = actual_sources[agg_source]
     
+    # RENORMALIZE: Force aggregates to sum to exactly total_generation
+    print(f"  🔄 Renormalizing to force aggregates sum to 100%...")
+    
+    for timestamp in full_timestamp_range:
+        # Get the two aggregate values
+        renewable_value = corrected_sources['all-renewables'][timestamp].get('EU', 0)
+        non_renewable_value = corrected_sources['all-non-renewables'][timestamp].get('EU', 0)
+        
+        aggregate_sum = renewable_value + non_renewable_value
+        
+        if aggregate_sum > 0 and corrected_total_gen[timestamp] > 0:
+            # Calculate normalization factor
+            norm_factor = corrected_total_gen[timestamp] / aggregate_sum
+            
+            # Scale ALL atomic sources
+            for source in ATOMIC_SOURCES:
+                if timestamp in corrected_sources[source]:
+                    for country in corrected_sources[source][timestamp]:
+                        corrected_sources[source][timestamp][country] *= norm_factor
+            
+            # Scale BOTH aggregates
+            corrected_sources['all-renewables'][timestamp]['EU'] *= norm_factor
+            corrected_sources['all-non-renewables'][timestamp]['EU'] *= norm_factor
+            
+            # Update total generation (should now match exactly)
+            corrected_total_gen[timestamp] *= norm_factor
+    
+    print(f"  ✓ Renormalization complete")
+    
     return result
 
 
