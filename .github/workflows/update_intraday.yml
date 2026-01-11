@@ -75,6 +75,7 @@ jobs:
           # Only commit if there are changes
           if ! git diff --staged --quiet; then
             git commit -m "Update intraday plots and summary JSON [hourly]"
+            git pull --rebase origin main
             git push origin main
           else
             echo "No changes to commit"
