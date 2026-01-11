@@ -220,7 +220,7 @@ body {
     width: 100%;
     height: auto;
     display: block;
-    margin: 0rem 0;
+    margin: 0;
     border-radius: 4px;
 }
 
@@ -375,7 +375,7 @@ footer a:hover {
     }
 
     .container {
-        padding: 1rem;
+        padding: 0rem;
     }
 
     .page-header h1 {
