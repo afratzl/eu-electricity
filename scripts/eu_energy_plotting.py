@@ -1922,7 +1922,7 @@ def create_all_charts(all_data, country_code='EU'):
             ax4.axhline(y=0, color='black', linestyle='--', linewidth=1, alpha=0.5)
             ax4.tick_params(axis='both', labelsize=22, length=8, pad=8)
             ax4.grid(True, linestyle='--', alpha=0.7)
-            ax4.legend(loc='upper left', bbox_to_anchor=(0.30, 0.255),
+            ax4.legend(loc='upper left', bbox_to_anchor=(0.30, 0.16),
                        bbox_transform=fig4.transFigure, ncol=2,
                        fontsize=18, frameon=False)
 
