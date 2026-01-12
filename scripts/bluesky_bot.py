@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
 """
 Bluesky Bot for EU Electricity Generation
-Posts daily updates with yesterday's percentage plot
-Shows 6 main sources in 2-column layout with percentages only
+Downloads plot from Google Drive and posts to Bluesky
 """
 
 import os
@@ -10,21 +9,76 @@ import sys
 from datetime import datetime, timedelta
 from atproto import Client
 import json
+import requests
 
-def get_yesterday_plot_path():
-    """Get the path to yesterday's EU percentage plot"""
-    plot_path = 'plots/EU_yesterday_all_sources_percentage.png'
+def download_file_from_google_drive(file_id, destination):
+    """Download a file from Google Drive"""
+    URL = "https://drive.google.com/uc?export=download"
     
-    if not os.path.exists(plot_path):
-        print(f"❌ Plot not found: {plot_path}")
+    session = requests.Session()
+    response = session.get(URL, params={'id': file_id}, stream=True)
+    
+    # Save to file
+    with open(destination, "wb") as f:
+        for chunk in response.iter_content(32768):
+            if chunk:
+                f.write(chunk)
+    
+    return destination
+
+def get_plot_from_drive():
+    """Get yesterday's plot file ID from drive_links.json and download it"""
+    json_path = 'plots/drive_links.json'
+    
+    if not os.path.exists(json_path):
+        print(f"❌ drive_links.json not found: {json_path}")
         return None
     
-    return plot_path
+    try:
+        with open(json_path, 'r') as f:
+            links = json.load(f)
+        
+        # Navigate to EU -> Yesterday -> all_sources -> percentage
+        if 'EU' not in links:
+            print("❌ EU not found in drive_links.json")
+            return None
+        
+        if 'Yesterday' not in links['EU']:
+            print("❌ Yesterday not found in EU section")
+            return None
+        
+        if 'all_sources' not in links['EU']['Yesterday']:
+            print("❌ all_sources not found in Yesterday section")
+            return None
+        
+        file_id = links['EU']['Yesterday']['all_sources']['percentage']['file_id']
+        
+        if not file_id:
+            print("❌ No file_id found for yesterday percentage plot")
+            return None
+        
+        print(f"✓ Found plot file_id: {file_id}")
+        
+        # Download the file
+        plot_path = 'plots/EU_yesterday_all_sources_percentage.png'
+        os.makedirs('plots', exist_ok=True)
+        
+        print(f"📥 Downloading plot from Google Drive...")
+        download_file_from_google_drive(file_id, plot_path)
+        print(f"✓ Downloaded to: {plot_path}")
+        
+        return plot_path
+        
+    except Exception as e:
+        print(f"❌ Error getting plot from Drive: {e}")
+        import traceback
+        traceback.print_exc()
+        return None
 
 def get_stats_from_json():
     """
     Get yesterday's source percentages from energy_summary_table.json
-    Returns: dict with source percentages or None if not found
+    This should already be in the repo from the intraday run
     """
     json_path = 'plots/energy_summary_table.json'
     
@@ -77,13 +131,13 @@ def format_percentage(value):
 def create_post_text():
     """Create the post text with yesterday's stats"""
     yesterday = datetime.now() - timedelta(days=1)
-    date_str = yesterday.strftime('%B %d, %Y')  # e.g., "January 11, 2026"
+    date_str = yesterday.strftime('%B %d, %Y')
     
     # Get stats from JSON
     stats = get_stats_from_json()
     
     if stats and len(stats) == 6:
-        # Format the 6 sources in 2 columns using spacing
+        # Format the 6 sources in 2 columns
         wind_pct = format_percentage(stats['wind'])
         hydro_pct = format_percentage(stats['hydro'])
         solar_pct = format_percentage(stats['solar'])
@@ -126,16 +180,13 @@ def post_to_bluesky():
     
     if not handle or not password:
         print("❌ Error: BLUESKY_HANDLE and BLUESKY_PASSWORD must be set")
-        print("   Set them as environment variables or GitHub secrets")
         sys.exit(1)
     
-    # Get plot path
-    plot_path = get_yesterday_plot_path()
+    # Download plot from Google Drive
+    plot_path = get_plot_from_drive()
     if not plot_path:
-        print("❌ Error: Yesterday's plot not found")
+        print("❌ Error: Could not get yesterday's plot from Google Drive")
         sys.exit(1)
-    
-    print(f"✓ Found plot: {plot_path}")
     
     # Create post text
     post_text = create_post_text()
@@ -149,7 +200,7 @@ def post_to_bluesky():
         print(f"✓ Logged in as {handle}")
         
         # Upload image
-        print("📤 Uploading image...")
+        print("📤 Uploading image to Bluesky...")
         with open(plot_path, 'rb') as f:
             img_data = f.read()
         
