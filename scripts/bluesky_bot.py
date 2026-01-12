@@ -2,12 +2,13 @@
 """
 Bluesky Bot for EU Electricity Generation
 Downloads plot from Google Drive and posts to Bluesky
+With clickable links and hashtags, and right-aligned percentages
 """
 
 import os
 import sys
 from datetime import datetime, timedelta
-from atproto import Client
+from atproto import Client, models
 import json
 import requests
 
@@ -122,14 +123,15 @@ def get_stats_from_json():
         return None
 
 def format_percentage(value):
-    """Format percentage: remove decimal if whole number"""
-    if value % 1 == 0:
-        return f"{int(value)}%"
-    else:
-        return f"{value:.1f}%"
+    """
+    Format percentage with right-alignment using spaces
+    Always 2 decimals, right-padded to width 6 (e.g., " 4.16%", "18.30%")
+    """
+    formatted = f"{value:>5.2f}%"  # Right-align in 5 chars, then add %
+    return formatted
 
-def create_post_text():
-    """Create the post text with yesterday's stats"""
+def create_post_text_and_facets():
+    """Create the post text with yesterday's stats and facets for clickable links/hashtags"""
     yesterday = datetime.now() - timedelta(days=1)
     date_str = yesterday.strftime('%B %d, %Y')
     
@@ -137,7 +139,7 @@ def create_post_text():
     stats = get_stats_from_json()
     
     if stats and len(stats) == 6:
-        # Format the 6 sources in 2 columns
+        # Format the 6 sources in 2 columns with right-aligned percentages
         wind_pct = format_percentage(stats['wind'])
         hydro_pct = format_percentage(stats['hydro'])
         solar_pct = format_percentage(stats['solar'])
@@ -154,7 +156,7 @@ Solar: {solar_pct}       Coal: {coal_pct}
 Data: ENTSO-E
 afratzl.github.io/eu-electricity
 
-#Electricity #EU #Energy #Renewables"""
+#Energy #EU #Renewables #Electricity"""
     else:
         # Fallback if JSON data not available
         post_text = f"""EU Electricity Generation - {date_str}
@@ -164,9 +166,41 @@ Yesterday's electricity generation breakdown across all EU member states.
 Data: ENTSO-E
 afratzl.github.io/eu-electricity
 
-#Electricity #EU #Energy #Renewables"""
+#Energy #EU #Renewables #Electricity"""
     
-    return post_text
+    # Create facets for clickable link and hashtags
+    facets = []
+    
+    # Find the website link position
+    link_text = "afratzl.github.io/eu-electricity"
+    link_start = post_text.find(link_text)
+    if link_start != -1:
+        facets.append(
+            models.AppBskyRichtextFacet.Main(
+                features=[models.AppBskyRichtextFacet.Link(uri=f"https://{link_text}")],
+                index=models.AppBskyRichtextFacet.ByteSlice(
+                    byteStart=len(post_text[:link_start].encode('utf-8')),
+                    byteEnd=len(post_text[:link_start + len(link_text)].encode('utf-8'))
+                )
+            )
+        )
+    
+    # Find hashtag positions (updated order)
+    hashtags = ['#Energy', '#EU', '#Renewables', '#Electricity']
+    for tag in hashtags:
+        tag_start = post_text.find(tag)
+        if tag_start != -1:
+            facets.append(
+                models.AppBskyRichtextFacet.Main(
+                    features=[models.AppBskyRichtextFacet.Tag(tag=tag[1:])],  # Remove # from tag
+                    index=models.AppBskyRichtextFacet.ByteSlice(
+                        byteStart=len(post_text[:tag_start].encode('utf-8')),
+                        byteEnd=len(post_text[:tag_start + len(tag)].encode('utf-8'))
+                    )
+                )
+            )
+    
+    return post_text, facets
 
 def post_to_bluesky():
     """Main function to post to Bluesky"""
@@ -188,9 +222,10 @@ def post_to_bluesky():
         print("❌ Error: Could not get yesterday's plot from Google Drive")
         sys.exit(1)
     
-    # Create post text
-    post_text = create_post_text()
+    # Create post text and facets
+    post_text, facets = create_post_text_and_facets()
     print(f"\n📝 Post text:\n{post_text}\n")
+    print(f"✓ Created {len(facets)} facets (clickable links/hashtags)")
     
     try:
         # Login to Bluesky
@@ -206,10 +241,11 @@ def post_to_bluesky():
         
         upload_response = client.upload_blob(img_data)
         
-        # Create post with image
+        # Create post with image and facets
         print("📮 Posting to Bluesky...")
         client.send_post(
             text=post_text,
+            facets=facets,
             embed={
                 '$type': 'app.bsky.embed.images',
                 'images': [{
