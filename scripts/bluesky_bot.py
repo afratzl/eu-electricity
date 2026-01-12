@@ -2,7 +2,7 @@
 """
 Bluesky Bot for EU Electricity Generation
 Downloads plot from Google Drive and posts to Bluesky
-With clickable links and hashtags, and correctly aligned columns
+With clickable links and hashtags, and exact spacing as specified
 """
 
 import os
@@ -147,12 +147,16 @@ def create_post_text_and_facets():
         gas_pct = format_percentage(stats['gas'])
         coal_pct = format_percentage(stats['coal'])
         
-        # Right-pad source names to 7 chars (length of "Nuclear")
+        # EXACT spacing as specified:
+        # Solar: add 1 space BEFORE the percentage (after colon)
+        # Nuclear: -2 spaces (move left by 2)
+        # Gas: +1 space before "Gas"
+        
         post_text = f"""EU Electricity Generation - {date_str}
 
-   Wind: {wind_pct}       Nuclear: {nuclear_pct}
-  Hydro: {hydro_pct}            Gas: {gas_pct}
-  Solar: {solar_pct}           Coal: {coal_pct}
+Wind: {wind_pct}    Nuclear: {nuclear_pct}
+Hydro: {hydro_pct}     Gas: {gas_pct}
+Solar:  {solar_pct}    Coal: {coal_pct}
 
 Data: ENTSO-E
 afratzl.github.io/eu-electricity
