@@ -3355,6 +3355,16 @@ def main():
                         except:
                             pass
                     
+                    # PRESERVE existing Monthly/Trends data that intraday doesn't touch
+                    preserved_sections = {}
+                    if country_code in drive_links:
+                        if 'Monthly' in drive_links[country_code]:
+                            preserved_sections['Monthly'] = drive_links[country_code]['Monthly']
+                        if 'Trends' in drive_links[country_code]:
+                            preserved_sections['Trends'] = drive_links[country_code]['Trends']
+                        if preserved_sections:
+                            print(f"  💾 Preserving existing sections: {', '.join(preserved_sections.keys())}")
+                    
                     # Initialize country structure
                     if country_code not in drive_links:
                         drive_links[country_code] = {}
@@ -3425,6 +3435,12 @@ def main():
                             }
                         }
                     
+                    # RESTORE preserved Monthly/Trends sections before saving
+                    if preserved_sections:
+                        for section_name, section_data in preserved_sections.items():
+                            drive_links[country_code][section_name] = section_data
+                        print(f"  ✓ Restored preserved sections: {', '.join(preserved_sections.keys())}")
+                    
                     # Save back to file (atomic write with validation)
                     drive_links_file_path = os.path.abspath(drive_links_file)
                     temp_file = drive_links_file + '.tmp'
@@ -3486,6 +3502,14 @@ def main():
                                     print(f"     ✓ Verified Yesterday aggregates section")
                                 else:
                                     print(f"  ⚠ WARNING: Yesterday section missing aggregates")
+                        
+                        # Verify preserved sections were restored
+                        if preserved_sections:
+                            for section_name in preserved_sections.keys():
+                                if country_code in saved_data and section_name in saved_data[country_code]:
+                                    print(f"     ✓ Verified preserved {section_name} section")
+                                else:
+                                    print(f"  ⚠ WARNING: Failed to restore {section_name} section")
                         
                     except ValueError as e:
                         print(f"  ✗ JSON validation error: {e}")
