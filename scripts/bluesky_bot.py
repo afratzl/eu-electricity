@@ -2,7 +2,7 @@
 """
 Bluesky Bot for EU Electricity Generation
 Downloads plot from Google Drive and posts to Bluesky
-With clickable links and hashtags, and right-aligned percentages
+With clickable links and hashtags, and correctly aligned columns
 """
 
 import os
@@ -139,7 +139,7 @@ def create_post_text_and_facets():
     stats = get_stats_from_json()
     
     if stats and len(stats) == 6:
-        # Format the 6 sources in 2 columns with right-aligned percentages
+        # Format percentages
         wind_pct = format_percentage(stats['wind'])
         hydro_pct = format_percentage(stats['hydro'])
         solar_pct = format_percentage(stats['solar'])
@@ -147,11 +147,12 @@ def create_post_text_and_facets():
         gas_pct = format_percentage(stats['gas'])
         coal_pct = format_percentage(stats['coal'])
         
+        # Right-pad source names to 7 chars (length of "Nuclear")
         post_text = f"""EU Electricity Generation - {date_str}
 
-Wind: {wind_pct}       Nuclear: {nuclear_pct}
-Hydro: {hydro_pct}      Gas: {gas_pct}
-Solar: {solar_pct}       Coal: {coal_pct}
+   Wind: {wind_pct}       Nuclear: {nuclear_pct}
+  Hydro: {hydro_pct}            Gas: {gas_pct}
+  Solar: {solar_pct}           Coal: {coal_pct}
 
 Data: ENTSO-E
 afratzl.github.io/eu-electricity
@@ -185,7 +186,7 @@ afratzl.github.io/eu-electricity
             )
         )
     
-    # Find hashtag positions (updated order)
+    # Find hashtag positions
     hashtags = ['#Energy', '#EU', '#Renewables', '#Electricity']
     for tag in hashtags:
         tag_start = post_text.find(tag)
