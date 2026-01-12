@@ -3161,7 +3161,7 @@ def generate_yesterday_aggregates_plots(corrected_data, country_code='EU'):
     
     # Simple legend (just 2 items)
     ax2.legend(loc='upper left', 
-              bbox_to_anchor=(0.2, 0.15),
+              bbox_to_anchor=(0.3, 0.15),
               bbox_transform=fig2.transFigure,
               ncol=2,
               fontsize=18, 
