@@ -2,8 +2,8 @@ name: Post to Bluesky
 
 on:
   schedule:
-    # Run daily at 14:00 UTC (after intraday has finished)
-    - cron: '0 14 * * *'
+    # Run daily at 11:30 UTC (after intraday has finished)
+    - cron: '30 10 * * *'
   workflow_dispatch:  # Allow manual triggering
 
 jobs:
