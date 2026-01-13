@@ -152,8 +152,7 @@ def create_post_text_and_facets():
         non_ren_pct = format_percentage(stats['non_renewables'])
         
         # EXACT spacing as specified:
-        post_text = f"""🇪🇺 EU Electricity Generation - {date_str}
-
+        post_text = f"""EU Electricity Generation - {date_str}
 {ren_pct} of EU electricity was renewable.
 
 Wind:    {wind_pct}         Nuclear:   {nuclear_pct}
@@ -161,11 +160,10 @@ Hydro:   {hydro_pct}         Gas:          {gas_pct}
 Solar:      {solar_pct}         Coal:          {coal_pct}
 
 afratzl.github.io/eu-electricity
-
 #Energy #EU #Renewables #Electricity"""
     else:
         # Fallback if JSON data not available
-        post_text = f"""🇪🇺 EU Electricity Generation - {date_str}
+        post_text = f"""EU Electricity Generation - {date_str}
 
 Yesterday's electricity generation breakdown across all EU member states.
 
