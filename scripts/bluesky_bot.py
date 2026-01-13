@@ -154,7 +154,7 @@ def create_post_text_and_facets():
         # EXACT spacing as specified:
         post_text = f"""EU Electricity Generation - {date_str}
 
-{ren_pct} of the EU's electricity generation was renewable.
+{ren_pct} of EU electricity generation was renewable.
 
 Wind:    {wind_pct}         Nuclear:   {nuclear_pct}
 Hydro:   {hydro_pct}         Gas:          {gas_pct}
