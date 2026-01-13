@@ -98,7 +98,7 @@ def get_stats_from_json():
         
         sources = data['EU']['sources']
         
-        # Extract the 6 main sources
+        # Extract the 6 main sources AND the aggregates
         stats = {}
         source_map = {
             'Wind': 'wind',
@@ -106,7 +106,9 @@ def get_stats_from_json():
             'Solar': 'solar',
             'Nuclear': 'nuclear',
             'Gas': 'gas',
-            'Coal': 'coal'
+            'Coal': 'coal',
+            'All Renewables': 'renewables',
+            'All Non-Renewables': 'non_renewables'
         }
         
         for source in sources:
@@ -116,7 +118,7 @@ def get_stats_from_json():
                 if pct is not None:
                     stats[source_map[source_name]] = pct
         
-        return stats if len(stats) == 6 else None
+        return stats if len(stats) == 8 else None
     
     except Exception as e:
         print(f"⚠️  Error reading JSON: {e}")
@@ -138,7 +140,7 @@ def create_post_text_and_facets():
     # Get stats from JSON
     stats = get_stats_from_json()
     
-    if stats and len(stats) == 6:
+    if stats and len(stats) == 8:
         # Format percentages
         wind_pct = format_percentage(stats['wind'])
         hydro_pct = format_percentage(stats['hydro'])
@@ -146,13 +148,13 @@ def create_post_text_and_facets():
         nuclear_pct = format_percentage(stats['nuclear'])
         gas_pct = format_percentage(stats['gas'])
         coal_pct = format_percentage(stats['coal'])
+        ren_pct = format_percentage(stats['renewables'])
+        non_ren_pct = format_percentage(stats['non_renewables'])
         
         # EXACT spacing as specified:
-        # Solar: add 1 space BEFORE the percentage (after colon)
-        # Nuclear: -2 spaces (move left by 2)
-        # Gas: +1 space before "Gas"
-        
-        post_text = f"""EU Electricity Generation - {date_str}
+        post_text = f"""🇪🇺 EU Electricity Generation - {date_str}
+
+{ren_pct} of EU electricity was renewable.
 
 Wind:    {wind_pct}         Nuclear:   {nuclear_pct}
 Hydro:   {hydro_pct}         Gas:          {gas_pct}
@@ -164,7 +166,7 @@ afratzl.github.io/eu-electricity
 #Energy #EU #Renewables #Electricity"""
     else:
         # Fallback if JSON data not available
-        post_text = f"""EU Electricity Generation - {date_str}
+        post_text = f"""🇪🇺 EU Electricity Generation - {date_str}
 
 Yesterday's electricity generation breakdown across all EU member states.
 
