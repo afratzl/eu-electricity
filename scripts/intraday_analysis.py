@@ -2570,7 +2570,7 @@ def generate_yesterday_plots(corrected_data, country_code='EU'):
     # Title
     fig1.text(0.55, 0.965, 'Electricity Generation', 
               fontsize=36, fontweight='bold', ha='center', va='top')
-    fig1.text(0.55, 0.91, f'Yesterday ({yesterday_date}) · Fraction of Total', 
+    fig1.text(0.55, 0.91, f'{yesterday_date} · Fraction of Total', 
               fontsize=28, fontweight='normal', ha='center', va='top')
     
     # Flag
@@ -2703,7 +2703,7 @@ def generate_yesterday_plots(corrected_data, country_code='EU'):
     # Title
     fig2.text(0.55, 0.965, 'Electricity Generation', 
               fontsize=36, fontweight='bold', ha='center', va='top')
-    fig2.text(0.55, 0.91, f'Yesterday ({yesterday_date}) · Absolute Values', 
+    fig2.text(0.55, 0.91, f'{yesterday_date} · Absolute Values', 
               fontsize=28, fontweight='normal', ha='center', va='top')
     
     # Flag
@@ -3075,7 +3075,7 @@ def generate_yesterday_aggregates_plots(corrected_data, country_code='EU'):
     # Title
     fig1.text(0.55, 0.965, 'Electricity Generation', 
               fontsize=36, fontweight='bold', ha='center', va='top')
-    fig1.text(0.55, 0.91, f'Yesterday ({yesterday_date}) · Fraction of Total',
+    fig1.text(0.55, 0.91, f'{yesterday_date} · Fraction of Total',
               fontsize=28, fontweight='normal', ha='center', va='top')
     
     # Flag
@@ -3143,7 +3143,7 @@ def generate_yesterday_aggregates_plots(corrected_data, country_code='EU'):
     # Title
     fig2.text(0.55, 0.965, 'Electricity Generation', 
               fontsize=36, fontweight='bold', ha='center', va='top')
-    fig2.text(0.55, 0.91, f'Yesterday ({yesterday_date}) · Absolute Values', 
+    fig2.text(0.55, 0.91, f'{yesterday_date} · Absolute Values', 
               fontsize=28, fontweight='normal', ha='center', va='top')
     
     # Flag
