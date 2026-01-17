@@ -3211,7 +3211,7 @@ def main():
         raw_data_matrix, periods, fetch_time = collect_all_data(api_key)
         
         # Countries to process
-        countries_to_process = ['EU', eu_countries]
+        countries_to_process = ['EU', EU_COUNTRIES]
         total_plots_generated = {}  # Track plots per country
         
         print(f"\n" + "=" * 80)
