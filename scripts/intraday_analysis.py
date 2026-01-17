@@ -540,7 +540,7 @@ def extract_country_from_raw_data(raw_data_matrix, country_code):
 
 def apply_projections_and_corrections(data_matrix):
     """
-    Phase 2: Apply 10% threshold and correct aggregates/total_gen using atomic sources
+    Phase 2: Apply 5% threshold and correct aggregates/total_gen using atomic sources
     Uses weekly hourly averages (e.g., average of all 15:00 times from past week)
     Returns BOTH actual (uncorrected) and projected (corrected) versions for today/yesterday
     """
@@ -674,7 +674,7 @@ def apply_corrections_for_period(data_matrix, target_period, reference_period):
                             week_avg = weekly_hourly_avgs[source].loc[time_str, country]
                             
                             if not pd.isna(week_avg) and week_avg > 0:
-                                threshold = 0.1 * week_avg
+                                threshold = 0.05 * week_avg
                                 
                                 # Check if below threshold
                                 if pd.isna(actual_val) or actual_val < threshold:
