@@ -863,7 +863,9 @@ def main():
     print("=" * 80)
     
     # Define countries to save (EU aggregate + individual countries)
-    countries_to_save = ['EU', eu_countries]
+    countries_to_save = ['EU','AT', 'BE', 'BG', 'HR', 'CY', 'CZ', 'DK', 'EE', 'FI', 'FR',
+    'DE', 'GR', 'HU', 'IE', 'IT', 'LV', 'LT', 'LU', 'MT', 'NL',
+    'PL', 'PT', 'RO', 'SK', 'SI', 'ES', 'SE']
     saved_urls = {}
     
     for country in countries_to_save:
