@@ -1288,13 +1288,13 @@ def plot_analysis(stats_data, source_type, output_file_base, country_code='EU'):
     banner = Rectangle(
         (0, 0.87),           # Bottom-left corner (x, y) - starts at 87% height
         1.0,                 # Width: full width of plot (0 to 1)
-        0.12,                # Height: 13% of plot height
+        0.13,                # Height: 13% of plot height
         transform=fig1.transFigure,  # Use axis coordinates (0-1 range)
         facecolor='lightblue',   # or '#ADD8E6' or '#E3F2FD' for lighter
         edgecolor='none',
         zorder=0,            # Behind everything
     )
-    ax1.add_patch(banner)
+    fig1.patches.append(banner)  # Add to figure, not axis
 
   
     # Titles in figure coordinates (not axes coordinates)
