@@ -1267,10 +1267,25 @@ def plot_analysis(stats_data, source_type, output_file_base, country_code='EU'):
     # PLOT 1: PERCENTAGE
     # ========================================================================
     fig1, ax1 = plt.subplots(figsize=(12, 12))  # Canvas: 12 wide × 12 tall
-    
+
+    from matplotlib.patches import Rectangle
+
+    # After creating your axis (ax), before plotting data:
+    # Add rectangle: (x, y, width, height) in axis coordinates
+    banner = Rectangle(
+        (0, 0.85),           # Bottom-left corner (x, y) - starts at 87% height
+        1.0,                 # Width: full width of plot (0 to 1)
+        0.15,                # Height: 15% of plot height
+        transform=fig1.transFigure,  # Use axis coordinates (0-1 range)
+        facecolor='#d3d3d3',   #
+        edgecolor='none',
+        zorder=0,            # Behind everything
+    )
+    fig1.patches.append(banner)  # Add to figure, not axis
+  
     # Set exact plot area positioning
-    plt.subplots_adjust(left=0.15, right=0.94, top=0.84, bottom=0.25)
-    
+    plt.subplots_adjust(left=0.15, right=0.94, top=0.82, bottom=0.25)    
+  
     # Add flag (top-left) - loads real SVG or uses placeholder
     load_flag(fig1, country_code)
     
@@ -1281,30 +1296,15 @@ def plot_analysis(stats_data, source_type, output_file_base, country_code='EU'):
              ha='center', va='top',
              color='#333')
         
-    from matplotlib.patches import Rectangle
-
-    # After creating your axis (ax), before plotting data:
-    # Add rectangle: (x, y, width, height) in axis coordinates
-    banner = Rectangle(
-        (0, 0.87),           # Bottom-left corner (x, y) - starts at 87% height
-        1.0,                 # Width: full width of plot (0 to 1)
-        0.13,                # Height: 13% of plot height
-        transform=fig1.transFigure,  # Use axis coordinates (0-1 range)
-        facecolor='lightblue',   # or '#ADD8E6' or '#E3F2FD' for lighter
-        edgecolor='none',
-        zorder=0,            # Behind everything
-    )
-    fig1.patches.append(banner)  # Add to figure, not axis
-
   
     # Titles in figure coordinates (not axes coordinates)
     # Main title
-    fig1.text(0.55, 0.965, 'Electricity Generation',
+    fig1.text(0.50, 0.965, 'Electricity Generation',
              fontsize=36, fontweight='bold',
              ha='center', va='top')
     
     # Subtitle
-    fig1.text(0.55, 0.91, f'{source_name} · Fraction of Total',
+    fig1.text(0.50, 0.91, f'{source_name} · Fraction of Total',
              fontsize=28, fontweight='normal',
              ha='center', va='top')
     ax1.set_xlabel('Time of Day (Brussels)', fontsize=24, fontweight='bold', labelpad=10)
@@ -1404,9 +1404,24 @@ def plot_analysis(stats_data, source_type, output_file_base, country_code='EU'):
     # PLOT 2: ABSOLUTE
     # ========================================================================
     fig2, ax2 = plt.subplots(figsize=(12, 12))  # Canvas: 12 wide × 12 tall
-    
+        
+    from matplotlib.patches import Rectangle
+
+    # After creating your axis (ax), before plotting data:
+    # Add rectangle: (x, y, width, height) in axis coordinates
+    banner = Rectangle(
+        (0, 0.85),           # Bottom-left corner (x, y) - starts at 87% height
+        1.0,                 # Width: full width of plot (0 to 1)
+        0.15,                # Height: 15% of plot height
+        transform=fig2.transFigure,  # Use axis coordinates (0-1 range)
+        facecolor='#d3d3d3',   #
+        edgecolor='none',
+        zorder=0,            # Behind everything
+    )
+    fig2.patches.append(banner)  # Add to figure, not axis
+
     # Set exact plot area positioning
-    plt.subplots_adjust(left=0.15, right=0.94, top=0.86, bottom=0.25)
+    plt.subplots_adjust(left=0.15, right=0.94, top=0.83, bottom=0.25)
     
     # Add flag (top-left) - loads real SVG or uses placeholder
     load_flag(fig2, country_code)
@@ -1419,12 +1434,12 @@ def plot_analysis(stats_data, source_type, output_file_base, country_code='EU'):
     
     # Titles in figure coordinates (not axes coordinates)
     # Main title
-    fig2.text(0.55, 0.965, 'Electricity Generation',
+    fig2.text(0.5, 0.965, 'Electricity Generation',
              fontsize=36, fontweight='bold',
              ha='center', va='top')
     
     # Subtitle
-    fig2.text(0.55, 0.91, f'{source_name} · Absolute Values',
+    fig2.text(0.5, 0.91, f'{source_name} · Absolute Values',
              fontsize=28, fontweight='normal',
              ha='center', va='top')
     ax2.set_xlabel('Time of Day (Brussels)', fontsize=24, fontweight='bold', labelpad=10)
@@ -2542,7 +2557,23 @@ def generate_yesterday_plots(corrected_data, country_code='EU'):
     
     # ========== PLOT 1: PERCENTAGE ==========
     fig1 = plt.figure(figsize=(12, 12))
-    plt.subplots_adjust(left=0.15, right=0.94, top=0.86, bottom=0.25)
+
+    from matplotlib.patches import Rectangle
+
+    # After creating your axis (ax), before plotting data:
+    # Add rectangle: (x, y, width, height) in axis coordinates
+    banner = Rectangle(
+        (0, 0.85),           # Bottom-left corner (x, y) - starts at 87% height
+        1.0,                 # Width: full width of plot (0 to 1)
+        0.15,                # Height: 15% of plot height
+        transform=fig1.transFigure,  # Use axis coordinates (0-1 range)
+        facecolor='#d3d3d3',   #
+        edgecolor='none',
+        zorder=0,            # Behind everything
+    )
+    fig1.patches.append(banner)  # Add to figure, not axis
+
+    plt.subplots_adjust(left=0.15, right=0.94, top=0.82, bottom=0.25)
     ax1 = fig1.add_subplot(111)
     
     # Plot each source with z-order (higher = on top)
@@ -2584,9 +2615,9 @@ def generate_yesterday_plots(corrected_data, country_code='EU'):
     ax1.tick_params(axis='both', labelsize=22, length=8, pad=8)
     
     # Title
-    fig1.text(0.55, 0.965, 'Electricity Generation', 
+    fig1.text(0.5, 0.965, 'Electricity Generation', 
               fontsize=36, fontweight='bold', ha='center', va='top')
-    fig1.text(0.55, 0.91, f'{yesterday_date} · Fraction of Total', 
+    fig1.text(0.5, 0.91, f'{yesterday_date} · Fraction of Total', 
               fontsize=28, fontweight='normal', ha='center', va='top')
     
     # Flag
@@ -2681,7 +2712,23 @@ def generate_yesterday_plots(corrected_data, country_code='EU'):
     
     # ========== PLOT 2: ABSOLUTE (GW) ==========
     fig2 = plt.figure(figsize=(12, 12))
-    plt.subplots_adjust(left=0.15, right=0.94, top=0.86, bottom=0.25)
+
+    from matplotlib.patches import Rectangle
+
+    # After creating your axis (ax), before plotting data:
+    # Add rectangle: (x, y, width, height) in axis coordinates
+    banner = Rectangle(
+        (0, 0.85),           # Bottom-left corner (x, y) - starts at 87% height
+        1.0,                 # Width: full width of plot (0 to 1)
+        0.15,                # Height: 15% of plot height
+        transform=fig2.transFigure,  # Use axis coordinates (0-1 range)
+        facecolor='#d3d3d3',   #
+        edgecolor='none',
+        zorder=0,            # Behind everything
+    )
+    fig2.patches.append(banner)  # Add to figure, not axis
+
+    plt.subplots_adjust(left=0.15, right=0.94, top=0.82, bottom=0.25)
     ax2 = fig2.add_subplot(111)
     
     # Plot each source with z-order (higher = on top)
@@ -2717,9 +2764,9 @@ def generate_yesterday_plots(corrected_data, country_code='EU'):
     ax2.tick_params(axis='both', labelsize=22, length=8, pad=8)
     
     # Title
-    fig2.text(0.55, 0.965, 'Electricity Generation', 
+    fig2.text(0.5, 0.965, 'Electricity Generation', 
               fontsize=36, fontweight='bold', ha='center', va='top')
-    fig2.text(0.55, 0.91, f'{yesterday_date} · Absolute Values', 
+    fig2.text(0.5, 0.91, f'{yesterday_date} · Absolute Values', 
               fontsize=28, fontweight='normal', ha='center', va='top')
     
     # Flag
@@ -3056,7 +3103,23 @@ def generate_yesterday_aggregates_plots(corrected_data, country_code='EU'):
     
     # ========== PLOT 1: PERCENTAGE ==========
     fig1 = plt.figure(figsize=(12, 12))
-    plt.subplots_adjust(left=0.15, right=0.94, top=0.86, bottom=0.25)
+
+    from matplotlib.patches import Rectangle
+
+    # After creating your axis (ax), before plotting data:
+    # Add rectangle: (x, y, width, height) in axis coordinates
+    banner = Rectangle(
+        (0, 0.85),           # Bottom-left corner (x, y) - starts at 87% height
+        1.0,                 # Width: full width of plot (0 to 1)
+        0.15,                # Height: 15% of plot height
+        transform=fig1.transFigure,  # Use axis coordinates (0-1 range)
+        facecolor='#d3d3d3',   #
+        edgecolor='none',
+        zorder=0,            # Behind everything
+    )
+    fig1.patches.append(banner)  # Add to figure, not axis
+  
+    plt.subplots_adjust(left=0.15, right=0.94, top=0.82, bottom=0.25)
     ax1 = fig1.add_subplot(111)
     
     # Plot each aggregate with z-order (renewables on top)
@@ -3089,9 +3152,9 @@ def generate_yesterday_aggregates_plots(corrected_data, country_code='EU'):
     ax1.tick_params(axis='both', labelsize=22, length=8, pad=8)
     
     # Title
-    fig1.text(0.55, 0.965, 'Electricity Generation', 
+    fig1.text(0.5, 0.965, 'Electricity Generation', 
               fontsize=36, fontweight='bold', ha='center', va='top')
-    fig1.text(0.55, 0.91, f'{yesterday_date} · Fraction of Total',
+    fig1.text(0.5, 0.91, f'{yesterday_date} · Fraction of Total',
               fontsize=28, fontweight='normal', ha='center', va='top')
     
     # Flag
@@ -3124,7 +3187,23 @@ def generate_yesterday_aggregates_plots(corrected_data, country_code='EU'):
     
     # ========== PLOT 2: ABSOLUTE (GW) ==========
     fig2 = plt.figure(figsize=(12, 12))
-    plt.subplots_adjust(left=0.15, right=0.94, top=0.86, bottom=0.25)
+
+    from matplotlib.patches import Rectangle
+
+    # After creating your axis (ax), before plotting data:
+    # Add rectangle: (x, y, width, height) in axis coordinates
+    banner = Rectangle(
+        (0, 0.85),           # Bottom-left corner (x, y) - starts at 87% height
+        1.0,                 # Width: full width of plot (0 to 1)
+        0.15,                # Height: 15% of plot height
+        transform=fig2.transFigure,  # Use axis coordinates (0-1 range)
+        facecolor='#d3d3d3',   #
+        edgecolor='none',
+        zorder=0,            # Behind everything
+    )
+    fig2.patches.append(banner)  # Add to figure, not axis
+  
+    plt.subplots_adjust(left=0.15, right=0.94, top=0.82, bottom=0.25)
     ax2 = fig2.add_subplot(111)
     
     # Plot each aggregate
@@ -3157,9 +3236,9 @@ def generate_yesterday_aggregates_plots(corrected_data, country_code='EU'):
     ax2.tick_params(axis='both', labelsize=22, length=8, pad=8)
     
     # Title
-    fig2.text(0.55, 0.965, 'Electricity Generation', 
+    fig2.text(0.5, 0.965, 'Electricity Generation', 
               fontsize=36, fontweight='bold', ha='center', va='top')
-    fig2.text(0.55, 0.91, f'{yesterday_date} · Absolute Values', 
+    fig2.text(0.5, 0.91, f'{yesterday_date} · Absolute Values', 
               fontsize=28, fontweight='normal', ha='center', va='top')
     
     # Flag
