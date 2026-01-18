@@ -1194,7 +1194,8 @@ def plot_analysis(stats_data, source_type, output_file_base, country_code='EU'):
                 flag_img = mpimg.imread(flag_path)
                 ax_flag.imshow(flag_img, aspect='auto')
                 ax_flag.axis('off')
-                
+                ax_flag.set_zorder(10)  # Put flag axes on top of everything
+
                 print(f"  ✓ Loaded flag: {flag_path}")
                 return ax_flag
             except Exception as e:
@@ -1273,18 +1274,18 @@ def plot_analysis(stats_data, source_type, output_file_base, country_code='EU'):
     # After creating your axis (ax), before plotting data:
     # Add rectangle: (x, y, width, height) in axis coordinates
     banner = Rectangle(
-        (0, 0.85),           # Bottom-left corner (x, y) - starts at 87% height
+        (0, 0.86),           # Bottom-left corner (x, y) - starts at 87% height
         1.0,                 # Width: full width of plot (0 to 1)
-        0.15,                # Height: 15% of plot height
+        0.14,                # Height: 14% of plot height
         transform=fig1.transFigure,  # Use axis coordinates (0-1 range)
-        facecolor='#d3d3d3',   #
+        facecolor='#EBEBEB',   #
         edgecolor='none',
         zorder=0,            # Behind everything
     )
     fig1.patches.append(banner)  # Add to figure, not axis
   
     # Set exact plot area positioning
-    plt.subplots_adjust(left=0.15, right=0.94, top=0.82, bottom=0.25)    
+    plt.subplots_adjust(left=0.15, right=0.94, top=0.83, bottom=0.25)    
   
     # Add flag (top-left) - loads real SVG or uses placeholder
     load_flag(fig1, country_code)
@@ -1410,11 +1411,11 @@ def plot_analysis(stats_data, source_type, output_file_base, country_code='EU'):
     # After creating your axis (ax), before plotting data:
     # Add rectangle: (x, y, width, height) in axis coordinates
     banner = Rectangle(
-        (0, 0.85),           # Bottom-left corner (x, y) - starts at 87% height
+        (0, 0.86),           # Bottom-left corner (x, y) - starts at 87% height
         1.0,                 # Width: full width of plot (0 to 1)
-        0.15,                # Height: 15% of plot height
+        0.14,                # Height: 14% of plot height
         transform=fig2.transFigure,  # Use axis coordinates (0-1 range)
-        facecolor='#d3d3d3',   #
+        facecolor='#EBEBEB',   #
         edgecolor='none',
         zorder=0,            # Behind everything
     )
@@ -2563,17 +2564,17 @@ def generate_yesterday_plots(corrected_data, country_code='EU'):
     # After creating your axis (ax), before plotting data:
     # Add rectangle: (x, y, width, height) in axis coordinates
     banner = Rectangle(
-        (0, 0.85),           # Bottom-left corner (x, y) - starts at 87% height
+        (0, 0.86),           # Bottom-left corner (x, y) - starts at 87% height
         1.0,                 # Width: full width of plot (0 to 1)
-        0.15,                # Height: 15% of plot height
+        0.14,                # Height: 14% of plot height
         transform=fig1.transFigure,  # Use axis coordinates (0-1 range)
-        facecolor='#d3d3d3',   #
+        facecolor='#EBEBEB',   #
         edgecolor='none',
         zorder=0,            # Behind everything
     )
     fig1.patches.append(banner)  # Add to figure, not axis
 
-    plt.subplots_adjust(left=0.15, right=0.94, top=0.82, bottom=0.25)
+    plt.subplots_adjust(left=0.15, right=0.94, top=0.83, bottom=0.25)
     ax1 = fig1.add_subplot(111)
     
     # Plot each source with z-order (higher = on top)
@@ -2718,17 +2719,17 @@ def generate_yesterday_plots(corrected_data, country_code='EU'):
     # After creating your axis (ax), before plotting data:
     # Add rectangle: (x, y, width, height) in axis coordinates
     banner = Rectangle(
-        (0, 0.85),           # Bottom-left corner (x, y) - starts at 87% height
+        (0, 0.86),           # Bottom-left corner (x, y) - starts at 87% height
         1.0,                 # Width: full width of plot (0 to 1)
-        0.15,                # Height: 15% of plot height
+        0.14,                # Height: 14% of plot height
         transform=fig2.transFigure,  # Use axis coordinates (0-1 range)
-        facecolor='#d3d3d3',   #
+        facecolor='#EBEBEB',   #
         edgecolor='none',
         zorder=0,            # Behind everything
     )
     fig2.patches.append(banner)  # Add to figure, not axis
 
-    plt.subplots_adjust(left=0.15, right=0.94, top=0.82, bottom=0.25)
+    plt.subplots_adjust(left=0.15, right=0.94, top=0.83, bottom=0.25)
     ax2 = fig2.add_subplot(111)
     
     # Plot each source with z-order (higher = on top)
@@ -3109,17 +3110,17 @@ def generate_yesterday_aggregates_plots(corrected_data, country_code='EU'):
     # After creating your axis (ax), before plotting data:
     # Add rectangle: (x, y, width, height) in axis coordinates
     banner = Rectangle(
-        (0, 0.85),           # Bottom-left corner (x, y) - starts at 87% height
+        (0, 0.86),           # Bottom-left corner (x, y) - starts at 87% height
         1.0,                 # Width: full width of plot (0 to 1)
-        0.15,                # Height: 15% of plot height
+        0.14,                # Height: 14% of plot height
         transform=fig1.transFigure,  # Use axis coordinates (0-1 range)
-        facecolor='#d3d3d3',   #
+        facecolor='#EBEBEB',   #
         edgecolor='none',
         zorder=0,            # Behind everything
     )
     fig1.patches.append(banner)  # Add to figure, not axis
   
-    plt.subplots_adjust(left=0.15, right=0.94, top=0.82, bottom=0.25)
+    plt.subplots_adjust(left=0.15, right=0.94, top=0.83, bottom=0.25)
     ax1 = fig1.add_subplot(111)
     
     # Plot each aggregate with z-order (renewables on top)
@@ -3193,17 +3194,17 @@ def generate_yesterday_aggregates_plots(corrected_data, country_code='EU'):
     # After creating your axis (ax), before plotting data:
     # Add rectangle: (x, y, width, height) in axis coordinates
     banner = Rectangle(
-        (0, 0.85),           # Bottom-left corner (x, y) - starts at 87% height
+        (0, 0.86),           # Bottom-left corner (x, y) - starts at 87% height
         1.0,                 # Width: full width of plot (0 to 1)
-        0.15,                # Height: 15% of plot height
+        0.14,                # Height: 14% of plot height
         transform=fig2.transFigure,  # Use axis coordinates (0-1 range)
-        facecolor='#d3d3d3',   #
+        facecolor='#EBEBEB',   #
         edgecolor='none',
         zorder=0,            # Behind everything
     )
     fig2.patches.append(banner)  # Add to figure, not axis
   
-    plt.subplots_adjust(left=0.15, right=0.94, top=0.82, bottom=0.25)
+    plt.subplots_adjust(left=0.15, right=0.94, top=0.83, bottom=0.25)
     ax2 = fig2.add_subplot(111)
     
     # Plot each aggregate
