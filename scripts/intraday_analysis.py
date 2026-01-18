@@ -1280,7 +1280,24 @@ def plot_analysis(stats_data, source_type, output_file_base, country_code='EU'):
              fontsize=16, fontweight='normal',
              ha='center', va='top',
              color='#333')
-    
+        
+    from matplotlib.patches import Rectangle
+
+    # After creating your axis (ax), before plotting data:
+    # Add rectangle: (x, y, width, height) in axis coordinates
+    banner = Rectangle(
+        (0, 0.9),           # Bottom-left corner (x, y) - starts at 90% height
+        1.0,                 # Width: full width of plot (0 to 1)
+        0.1,                # Height: 10% of plot height
+        transform=ax.transAxes,  # Use axis coordinates (0-1 range)
+        facecolor='lightblue',   # or '#ADD8E6' or '#E3F2FD' for lighter
+        edgecolor='none',
+        zorder=0,            # Behind everything
+        alpha=0.3            # Transparency (0=transparent, 1=opaque)
+    )
+    ax.add_patch(banner)
+
+  
     # Titles in figure coordinates (not axes coordinates)
     # Main title
     fig1.text(0.55, 0.965, 'Electricity Generation',
