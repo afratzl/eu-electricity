@@ -1289,13 +1289,13 @@ def plot_analysis(stats_data, source_type, output_file_base, country_code='EU'):
         (0, 0.87),           # Bottom-left corner (x, y) - starts at 87% height
         1.0,                 # Width: full width of plot (0 to 1)
         0.12,                # Height: 13% of plot height
-        transform=ax.transAxes,  # Use axis coordinates (0-1 range)
+        transform=ax1.transAxes,  # Use axis coordinates (0-1 range)
         facecolor='lightblue',   # or '#ADD8E6' or '#E3F2FD' for lighter
         edgecolor='none',
         zorder=0,            # Behind everything
         alpha=0.3            # Transparency (0=transparent, 1=opaque)
     )
-    ax.add_patch(banner)
+    ax1.add_patch(banner)
 
   
     # Titles in figure coordinates (not axes coordinates)
