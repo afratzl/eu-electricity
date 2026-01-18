@@ -1269,7 +1269,7 @@ def plot_analysis(stats_data, source_type, output_file_base, country_code='EU'):
     fig1, ax1 = plt.subplots(figsize=(12, 12))  # Canvas: 12 wide × 12 tall
     
     # Set exact plot area positioning
-    plt.subplots_adjust(left=0.15, right=0.94, top=0.86, bottom=0.25)
+    plt.subplots_adjust(left=0.15, right=0.94, top=0.84, bottom=0.25)
     
     # Add flag (top-left) - loads real SVG or uses placeholder
     load_flag(fig1, country_code)
@@ -1286,9 +1286,9 @@ def plot_analysis(stats_data, source_type, output_file_base, country_code='EU'):
     # After creating your axis (ax), before plotting data:
     # Add rectangle: (x, y, width, height) in axis coordinates
     banner = Rectangle(
-        (0, 0.9),           # Bottom-left corner (x, y) - starts at 90% height
+        (0, 0.87),           # Bottom-left corner (x, y) - starts at 87% height
         1.0,                 # Width: full width of plot (0 to 1)
-        0.1,                # Height: 10% of plot height
+        0.12,                # Height: 13% of plot height
         transform=ax.transAxes,  # Use axis coordinates (0-1 range)
         facecolor='lightblue',   # or '#ADD8E6' or '#E3F2FD' for lighter
         edgecolor='none',
