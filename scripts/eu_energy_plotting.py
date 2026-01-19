@@ -1293,7 +1293,7 @@ def create_all_charts(all_data, country_code='EU'):
         # PLOT 1: PERCENTAGE
         fig1, ax1 = plt.subplots(figsize=(12, 12))
 
-            from matplotlib.patches import Rectangle
+        from matplotlib.patches import Rectangle
 
         # After creating your axis (ax), before plotting data:
         # Add rectangle: (x, y, width, height) in axis coordinates
