@@ -1377,7 +1377,7 @@ def plot_analysis(stats_data, source_type, output_file_base, country_code='EU'):
             ordered_labels.append(period_label)
     
     ax1.legend(ordered_handles, ordered_labels, 
-              loc='upper left', bbox_to_anchor=(0.14, 0.165),  # Figure coordinates
+              loc='upper left', bbox_to_anchor=(0.14, 0.1625),  # Figure coordinates
               bbox_transform=fig1.transFigure,  # Use figure coordinate system
               ncol=3, fontsize=18, frameon=False)
     
@@ -1582,7 +1582,7 @@ def plot_analysis(stats_data, source_type, output_file_base, country_code='EU'):
             ordered_labels2.append(period_label)
     
     ax2.legend(ordered_handles2, ordered_labels2,
-              loc='upper left', bbox_to_anchor=(0.14, 0.165),  # Figure coordinates
+              loc='upper left', bbox_to_anchor=(0.14, 0.1625),  # Figure coordinates
               bbox_transform=fig2.transFigure,  # Use figure coordinate system
               ncol=3, fontsize=18, frameon=False)
     
@@ -2720,7 +2720,7 @@ def generate_yesterday_plots(corrected_data, country_code='EU'):
     # Add legend with 4-column layout matching trends
     ax1.legend(reordered_handles, reordered_labels,
               loc='upper left', 
-              bbox_to_anchor=(0.2, 0.165),
+              bbox_to_anchor=(0.2, 0.1625),
               bbox_transform=fig1.transFigure,
               ncol=4, 
               fontsize=18, 
@@ -2857,7 +2857,7 @@ def generate_yesterday_plots(corrected_data, country_code='EU'):
     # Add legend with 4-column layout matching trends
     ax2.legend(reordered_handles_abs, reordered_labels_abs,
               loc='upper left', 
-              bbox_to_anchor=(0.2, 0.165),
+              bbox_to_anchor=(0.2, 0.1625),
               bbox_transform=fig2.transFigure,
               ncol=4, 
               fontsize=18, 
