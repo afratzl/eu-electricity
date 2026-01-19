@@ -192,29 +192,78 @@
                 </div>
             </div>
 
-            <!-- Energy Source Selector -->
+            <!-- Energy Source Selector - Custom Dropdown -->
             <div class="selector-item">
-                <label for="source-select">
-                    Energy Source:
-                </label>
-                <select id="source-select" onchange="updateCharts()">
-                    <optgroup label="Renewable Sources">
-                        <option value="all-renewables" selected data-color="#00CED1">All Renewables</option>
-                        <option value="wind" data-color="#228B22">Wind</option>
-                        <option value="hydro" data-color="#1E90FF">Hydro</option>
-                        <option value="solar" data-color="#FFD700">Solar</option>
-                        <option value="biomass" data-color="#9ACD32">Biomass</option>
-                        <option value="geothermal" data-color="#708090">Geothermal</option>
-                    </optgroup>
-                    <optgroup label="Non-Renewable Sources">
-                        <option value="all-non-renewables" data-color="#000000">All Non-Renewables</option>
-                        <option value="nuclear" data-color="#8B4513">Nuclear</option>
-                        <option value="gas" data-color="#FF1493">Gas</option>
-                        <option value="coal" data-color="#8B008B">Coal</option>
-                        <option value="waste" data-color="#808000">Waste</option>
-                        <option value="oil" data-color="#191970">Oil</option>
-                    </optgroup>
-                </select>
+                <label>Energy Source:</label>
+                <div class="custom-select-container" id="source-select-custom">
+                    <!-- Trigger -->
+                    <div class="custom-select-trigger">
+                        <span class="color-dot" style="background-color: #00CED1;"></span>
+                        <span class="label">All Renewables</span>
+                        <span class="arrow"></span>
+                    </div>
+                    
+                    <!-- Dropdown -->
+                    <div class="custom-select-dropdown">
+                        <!-- Renewable Sources -->
+                        <div class="custom-select-group">
+                            <div class="custom-select-group-label">Renewable Sources</div>
+                            <div class="custom-select-option selected" data-value="all-renewables" data-color="#00CED1">
+                                <span class="color-dot" style="background-color: #00CED1;"></span>
+                                <span>All Renewables</span>
+                            </div>
+                            <div class="custom-select-option" data-value="wind" data-color="#228B22">
+                                <span class="color-dot" style="background-color: #228B22;"></span>
+                                <span>Wind</span>
+                            </div>
+                            <div class="custom-select-option" data-value="hydro" data-color="#1E90FF">
+                                <span class="color-dot" style="background-color: #1E90FF;"></span>
+                                <span>Hydro</span>
+                            </div>
+                            <div class="custom-select-option" data-value="solar" data-color="#FFD700">
+                                <span class="color-dot" style="background-color: #FFD700;"></span>
+                                <span>Solar</span>
+                            </div>
+                            <div class="custom-select-option" data-value="biomass" data-color="#9ACD32">
+                                <span class="color-dot" style="background-color: #9ACD32;"></span>
+                                <span>Biomass</span>
+                            </div>
+                            <div class="custom-select-option" data-value="geothermal" data-color="#708090">
+                                <span class="color-dot" style="background-color: #708090;"></span>
+                                <span>Geothermal</span>
+                            </div>
+                        </div>
+
+                        <!-- Non-Renewable Sources -->
+                        <div class="custom-select-group">
+                            <div class="custom-select-group-label">Non-Renewable Sources</div>
+                            <div class="custom-select-option" data-value="all-non-renewables" data-color="#000000">
+                                <span class="color-dot" style="background-color: #000000;"></span>
+                                <span>All Non-Renewables</span>
+                            </div>
+                            <div class="custom-select-option" data-value="nuclear" data-color="#8B4513">
+                                <span class="color-dot" style="background-color: #8B4513;"></span>
+                                <span>Nuclear</span>
+                            </div>
+                            <div class="custom-select-option" data-value="gas" data-color="#FF1493">
+                                <span class="color-dot" style="background-color: #FF1493;"></span>
+                                <span>Gas</span>
+                            </div>
+                            <div class="custom-select-option" data-value="coal" data-color="#8B008B">
+                                <span class="color-dot" style="background-color: #8B008B;"></span>
+                                <span>Coal</span>
+                            </div>
+                            <div class="custom-select-option" data-value="waste" data-color="#808000">
+                                <span class="color-dot" style="background-color: #808000;"></span>
+                                <span>Waste</span>
+                            </div>
+                            <div class="custom-select-option" data-value="oil" data-color="#191970">
+                                <span class="color-dot" style="background-color: #191970;"></span>
+                                <span>Oil</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <!-- Display Toggle -->
@@ -343,7 +392,21 @@
 
             select(value, flag, text) {
                 // Update trigger
-                this.trigger.querySelector('img').src = flag;
+                const img = this.trigger.querySelector('img');
+                const colorDot = this.trigger.querySelector('.color-dot');
+                
+                if (img && flag) {
+                    // Country select with flag
+                    img.src = flag;
+                } else if (colorDot) {
+                    // Source select with color dot
+                    const option = this.container.querySelector(`[data-value="${value}"]`);
+                    const color = option ? option.getAttribute('data-color') : null;
+                    if (color) {
+                        colorDot.style.backgroundColor = color;
+                    }
+                }
+                
                 this.trigger.querySelector('.label').textContent = text;
                 
                 // Update selected state
@@ -398,6 +461,7 @@
 
         // Initialize custom select
         let countrySelect;
+        let sourceSelect;
         
         // Energy source configurations
         const sources = {
@@ -442,7 +506,7 @@
         // Update charts based on both country and source selection
         function updateCharts() {
             const countryId = countrySelect.getValue();
-            const sourceId = document.getElementById('source-select').value;
+            const sourceId = sourceSelect.getValue();
             
             showSource(sourceId, countryId);
         }
@@ -607,7 +671,7 @@
             console.log('🔄 Refresh button clicked!');
             
             const countryId = countrySelect.getValue();
-            const sourceId = document.getElementById('source-select').value;
+            const sourceId = sourceSelect.getValue();
             
             console.log('Current selection:', countryId, sourceId);
             console.log('Will use timestamp-based size for fresh cache');
@@ -626,7 +690,7 @@
         // Download current chart
         function downloadChart() {
             const countryId = countrySelect.getValue();
-            const sourceId = document.getElementById('source-select').value;
+            const sourceId = sourceSelect.getValue();
             const sourceName = sources[sourceId];
             const cleanId = sourceId.replace(/-/g, '_');
             
@@ -729,8 +793,9 @@
 
         // Load default source on page load
         window.addEventListener('DOMContentLoaded', async () => {
-            // Initialize custom select
+            // Initialize both custom selects
             countrySelect = new CustomSelect('country-select-custom');
+            sourceSelect = new CustomSelect('source-select-custom');
             
             // Check URL params for refresh-preserved selection
             const urlParams = new URLSearchParams(window.location.search);
@@ -747,7 +812,7 @@
                 
                 // Update dropdowns to match
                 countrySelect.setValue(country);
-                document.getElementById('source-select').value = source;
+                sourceSelect.setValue(source);
                 
                 // DON'T clean URL yet - showSource needs to check for refresh param first
             }
@@ -781,7 +846,7 @@
             display: flex;
             align-items: center;
             padding: 8px 10px;
-            background: #FAFAFA;  /* 98% white (250/255 = 0.98) */
+            background: white;
             border: 2px solid #cbd5e0;
             border-radius: 4px;
             cursor: pointer;
@@ -808,6 +873,15 @@
             flex-shrink: 0;
         }
 
+        .custom-select-trigger .color-dot {
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            margin-right: 8px;
+            flex-shrink: 0;
+            border: 2px solid #333;
+        }
+
         .custom-select-trigger .label {
             flex: 1;
             color: #333;
@@ -832,7 +906,7 @@
             top: 100%;
             left: 0;
             right: 0;
-            background: #FAFAFA;  /* 98% white - match trigger */
+            background: white;
             border: 2px solid #003399;
             border-top: none;
             border-radius: 0 0 4px 4px;
@@ -867,11 +941,11 @@
             padding: 8px 12px 8px 24px;
             cursor: pointer;
             transition: background 0.1s;
-            background: #FAFAFA;  /* Match dropdown background */
+            background: white;
         }
 
         .custom-select-option:hover {
-            background: white;  /* Pure white on hover for contrast */
+            background: #e8f4ff;
         }
 
         .custom-select-option.selected {
@@ -885,7 +959,7 @@
         }
 
         .custom-select-option.disabled:hover {
-            background: #FAFAFA;  /* No hover effect for disabled */
+            background: white;
         }
 
         .custom-select-option img {
@@ -893,6 +967,15 @@
             height: 15px;
             margin-right: 8px;
             flex-shrink: 0;
+        }
+
+        .custom-select-option .color-dot {
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            margin-right: 8px;
+            flex-shrink: 0;
+            border: 2px solid #333;
         }
 
         /* Mobile optimizations */
