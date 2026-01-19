@@ -33,52 +33,163 @@
 
         <!-- COMPACT SELECTOR BOX -->
         <div class="compact-selector-box">
-            <!-- Country/Region Selector -->
+            <!-- Country/Region Selector - Custom Dropdown with Flags -->
             <div class="selector-item">
-                <label for="country-select">
-                    <img id="country-flag-indicator" src="flags/EU.svg" width="20" height="15" alt="Country flag" style="display: inline-block; margin-right: 6px; vertical-align: middle;">
-                    Country/Region:
-                </label>
-                <select id="country-select" onchange="updateCharts()">
-                    <optgroup label="Region">
-                        <option value="EU" selected>European Union</option>
-                    </optgroup>
-                    <optgroup label="EU Member States">
-                        <option value="AT">Austria</option>
-                        <option value="BE">Belgium</option>
-                        <option value="BG">Bulgaria</option>
-                        <option value="HR">Croatia</option>
-                        <option value="CY">Cyprus</option>
-                        <option value="CZ">Czechia</option>
-                        <option value="DK">Denmark</option>
-                        <option value="EE">Estonia</option>
-                        <option value="FI">Finland</option>
-                        <option value="FR">France</option>
-                        <option value="DE">Germany</option>
-                        <option value="GR">Greece</option>
-                        <option value="HU">Hungary</option>
-                        <option value="IE">Ireland</option>
-                        <option value="IT">Italy</option>
-                        <option value="LV">Latvia</option>
-                        <option value="LT">Lithuania</option>
-                        <option value="LU">Luxembourg</option>
-                        <option value="MT">Malta</option>
-                        <option value="NL">Netherlands</option>
-                        <option value="PL">Poland</option>
-                        <option value="PT">Portugal</option>
-                        <option value="RO">Romania</option>
-                        <option value="SK">Slovakia</option>
-                        <option value="SI">Slovenia</option>
-                        <option value="ES">Spain</option>
-                        <option value="SE">Sweden</option>
-                    </optgroup>
-                    <optgroup label="Other European Countries">
-                        <option value="MD" disabled>Moldova</option>
-                        <option value="NO" disabled>Norway</option>
-                        <option value="CH" disabled>Switzerland</option>
-                        <option value="GB" disabled>United Kingdom</option>
-                    </optgroup>
-                </select>
+                <label>Country/Region:</label>
+                <div class="custom-select-container" id="country-select-custom">
+                    <!-- Trigger -->
+                    <div class="custom-select-trigger">
+                        <img src="flags/EU.svg" alt="EU flag">
+                        <span class="label">European Union</span>
+                        <span class="arrow"></span>
+                    </div>
+                    
+                    <!-- Dropdown -->
+                    <div class="custom-select-dropdown">
+                        <!-- Region -->
+                        <div class="custom-select-group">
+                            <div class="custom-select-group-label">Region</div>
+                            <div class="custom-select-option selected" data-value="EU" data-flag="flags/EU.svg">
+                                <img src="flags/EU.svg" alt="EU">
+                                <span>European Union</span>
+                            </div>
+                        </div>
+
+                        <!-- EU Member States -->
+                        <div class="custom-select-group">
+                            <div class="custom-select-group-label">EU Member States</div>
+                            <div class="custom-select-option" data-value="AT" data-flag="flags/AT.svg">
+                                <img src="flags/AT.svg" alt="AT">
+                                <span>Austria</span>
+                            </div>
+                            <div class="custom-select-option" data-value="BE" data-flag="flags/BE.svg">
+                                <img src="flags/BE.svg" alt="BE">
+                                <span>Belgium</span>
+                            </div>
+                            <div class="custom-select-option" data-value="BG" data-flag="flags/BG.svg">
+                                <img src="flags/BG.svg" alt="BG">
+                                <span>Bulgaria</span>
+                            </div>
+                            <div class="custom-select-option" data-value="HR" data-flag="flags/HR.svg">
+                                <img src="flags/HR.svg" alt="HR">
+                                <span>Croatia</span>
+                            </div>
+                            <div class="custom-select-option" data-value="CY" data-flag="flags/CY.svg">
+                                <img src="flags/CY.svg" alt="CY">
+                                <span>Cyprus</span>
+                            </div>
+                            <div class="custom-select-option" data-value="CZ" data-flag="flags/CZ.svg">
+                                <img src="flags/CZ.svg" alt="CZ">
+                                <span>Czechia</span>
+                            </div>
+                            <div class="custom-select-option" data-value="DK" data-flag="flags/DK.svg">
+                                <img src="flags/DK.svg" alt="DK">
+                                <span>Denmark</span>
+                            </div>
+                            <div class="custom-select-option" data-value="EE" data-flag="flags/EE.svg">
+                                <img src="flags/EE.svg" alt="EE">
+                                <span>Estonia</span>
+                            </div>
+                            <div class="custom-select-option" data-value="FI" data-flag="flags/FI.svg">
+                                <img src="flags/FI.svg" alt="FI">
+                                <span>Finland</span>
+                            </div>
+                            <div class="custom-select-option" data-value="FR" data-flag="flags/FR.svg">
+                                <img src="flags/FR.svg" alt="FR">
+                                <span>France</span>
+                            </div>
+                            <div class="custom-select-option" data-value="DE" data-flag="flags/DE.svg">
+                                <img src="flags/DE.svg" alt="DE">
+                                <span>Germany</span>
+                            </div>
+                            <div class="custom-select-option" data-value="GR" data-flag="flags/GR.svg">
+                                <img src="flags/GR.svg" alt="GR">
+                                <span>Greece</span>
+                            </div>
+                            <div class="custom-select-option" data-value="HU" data-flag="flags/HU.svg">
+                                <img src="flags/HU.svg" alt="HU">
+                                <span>Hungary</span>
+                            </div>
+                            <div class="custom-select-option" data-value="IE" data-flag="flags/IE.svg">
+                                <img src="flags/IE.svg" alt="IE">
+                                <span>Ireland</span>
+                            </div>
+                            <div class="custom-select-option" data-value="IT" data-flag="flags/IT.svg">
+                                <img src="flags/IT.svg" alt="IT">
+                                <span>Italy</span>
+                            </div>
+                            <div class="custom-select-option" data-value="LV" data-flag="flags/LV.svg">
+                                <img src="flags/LV.svg" alt="LV">
+                                <span>Latvia</span>
+                            </div>
+                            <div class="custom-select-option" data-value="LT" data-flag="flags/LT.svg">
+                                <img src="flags/LT.svg" alt="LT">
+                                <span>Lithuania</span>
+                            </div>
+                            <div class="custom-select-option" data-value="LU" data-flag="flags/LU.svg">
+                                <img src="flags/LU.svg" alt="LU">
+                                <span>Luxembourg</span>
+                            </div>
+                            <div class="custom-select-option" data-value="MT" data-flag="flags/MT.svg">
+                                <img src="flags/MT.svg" alt="MT">
+                                <span>Malta</span>
+                            </div>
+                            <div class="custom-select-option" data-value="NL" data-flag="flags/NL.svg">
+                                <img src="flags/NL.svg" alt="NL">
+                                <span>Netherlands</span>
+                            </div>
+                            <div class="custom-select-option" data-value="PL" data-flag="flags/PL.svg">
+                                <img src="flags/PL.svg" alt="PL">
+                                <span>Poland</span>
+                            </div>
+                            <div class="custom-select-option" data-value="PT" data-flag="flags/PT.svg">
+                                <img src="flags/PT.svg" alt="PT">
+                                <span>Portugal</span>
+                            </div>
+                            <div class="custom-select-option" data-value="RO" data-flag="flags/RO.svg">
+                                <img src="flags/RO.svg" alt="RO">
+                                <span>Romania</span>
+                            </div>
+                            <div class="custom-select-option" data-value="SK" data-flag="flags/SK.svg">
+                                <img src="flags/SK.svg" alt="SK">
+                                <span>Slovakia</span>
+                            </div>
+                            <div class="custom-select-option" data-value="SI" data-flag="flags/SI.svg">
+                                <img src="flags/SI.svg" alt="SI">
+                                <span>Slovenia</span>
+                            </div>
+                            <div class="custom-select-option" data-value="ES" data-flag="flags/ES.svg">
+                                <img src="flags/ES.svg" alt="ES">
+                                <span>Spain</span>
+                            </div>
+                            <div class="custom-select-option" data-value="SE" data-flag="flags/SE.svg">
+                                <img src="flags/SE.svg" alt="SE">
+                                <span>Sweden</span>
+                            </div>
+                        </div>
+
+                        <!-- Other European Countries -->
+                        <div class="custom-select-group">
+                            <div class="custom-select-group-label">Other European Countries</div>
+                            <div class="custom-select-option disabled" data-value="MD" data-flag="flags/MD.svg">
+                                <img src="flags/MD.svg" alt="MD">
+                                <span>Moldova</span>
+                            </div>
+                            <div class="custom-select-option disabled" data-value="NO" data-flag="flags/NO.svg">
+                                <img src="flags/NO.svg" alt="NO">
+                                <span>Norway</span>
+                            </div>
+                            <div class="custom-select-option disabled" data-value="CH" data-flag="flags/CH.svg">
+                                <img src="flags/CH.svg" alt="CH">
+                                <span>Switzerland</span>
+                            </div>
+                            <div class="custom-select-option disabled" data-value="GB" data-flag="flags/GB.svg">
+                                <img src="flags/GB.svg" alt="GB">
+                                <span>United Kingdom</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <!-- Energy Source Selector -->
@@ -156,6 +267,139 @@
     </footer>
 
     <script>
+        // ===== CUSTOM SELECT CLASS =====
+        class CustomSelect {
+            constructor(containerId) {
+                this.container = document.getElementById(containerId);
+                this.trigger = this.container.querySelector('.custom-select-trigger');
+                this.dropdown = this.container.querySelector('.custom-select-dropdown');
+                this.options = this.container.querySelectorAll('.custom-select-option:not(.disabled)');
+                this.selectedValue = 'EU';
+                
+                this.init();
+            }
+
+            init() {
+                // Toggle dropdown
+                this.trigger.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    this.toggle();
+                });
+
+                // Select option
+                this.options.forEach(option => {
+                    option.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        const value = option.dataset.value;
+                        const flag = option.dataset.flag;
+                        const text = option.querySelector('span').textContent;
+                        this.select(value, flag, text);
+                    });
+                });
+
+                // Close on outside click
+                document.addEventListener('click', () => {
+                    this.close();
+                });
+
+                // Keyboard support
+                document.addEventListener('keydown', (e) => {
+                    if (this.isOpen()) {
+                        if (e.key === 'Escape') {
+                            this.close();
+                        } else if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+                            e.preventDefault();
+                            this.navigateOptions(e.key === 'ArrowDown' ? 1 : -1);
+                        } else if (e.key === 'Enter') {
+                            const focused = Array.from(this.options).find(opt => 
+                                opt.style.background === 'rgb(232, 244, 255)' || opt.classList.contains('keyboard-focused')
+                            );
+                            if (focused) focused.click();
+                        }
+                    }
+                });
+            }
+
+            toggle() {
+                if (this.isOpen()) {
+                    this.close();
+                } else {
+                    this.open();
+                }
+            }
+
+            open() {
+                this.trigger.classList.add('open');
+                this.dropdown.classList.add('open');
+            }
+
+            close() {
+                this.trigger.classList.remove('open');
+                this.dropdown.classList.remove('open');
+            }
+
+            isOpen() {
+                return this.dropdown.classList.contains('open');
+            }
+
+            select(value, flag, text) {
+                // Update trigger
+                this.trigger.querySelector('img').src = flag;
+                this.trigger.querySelector('.label').textContent = text;
+                
+                // Update selected state
+                this.options.forEach(opt => opt.classList.remove('selected'));
+                const selected = this.container.querySelector(`[data-value="${value}"]`);
+                if (selected) selected.classList.add('selected');
+                
+                this.selectedValue = value;
+                this.close();
+                
+                // Call existing updateCharts function
+                updateCharts();
+            }
+
+            getValue() {
+                return this.selectedValue;
+            }
+
+            setValue(value) {
+                const option = Array.from(this.options).find(opt => 
+                    opt.getAttribute('data-value') === value
+                );
+                
+                if (option && !option.classList.contains('disabled')) {
+                    const flag = option.getAttribute('data-flag');
+                    const text = option.querySelector('span').textContent;
+                    this.select(value, flag, text);
+                }
+            }
+
+            navigateOptions(direction) {
+                const optionsArray = Array.from(this.options);
+                const currentIndex = optionsArray.findIndex(opt => opt.classList.contains('selected'));
+                let newIndex = currentIndex + direction;
+                
+                // Wrap around
+                if (newIndex < 0) newIndex = optionsArray.length - 1;
+                if (newIndex >= optionsArray.length) newIndex = 0;
+                
+                const newOption = optionsArray[newIndex];
+                newOption.scrollIntoView({ block: 'nearest' });
+                
+                // Simulate hover for keyboard navigation
+                optionsArray.forEach(opt => {
+                    opt.style.background = '';
+                    opt.classList.remove('keyboard-focused');
+                });
+                newOption.style.background = '#e8f4ff';
+                newOption.classList.add('keyboard-focused');
+            }
+        }
+
+        // Initialize custom select
+        let countrySelect;
+        
         // Energy source configurations
         const sources = {
             'solar': 'Solar',
@@ -198,16 +442,8 @@
 
         // Update charts based on both country and source selection
         function updateCharts() {
-            const countrySelect = document.getElementById('country-select');
-            const countryId = countrySelect.value;
+            const countryId = countrySelect.getValue();
             const sourceId = document.getElementById('source-select').value;
-            
-            // Update flag image
-            const flagImg = document.getElementById('country-flag-indicator');
-            if (flagImg) {
-                flagImg.src = `flags/${countryId}.svg`;
-                flagImg.alt = `${countryId} flag`;
-            }
             
             showSource(sourceId, countryId);
         }
@@ -380,7 +616,7 @@
         function refreshChart() {
             console.log('🔄 Refresh button clicked!');
             
-            const countryId = document.getElementById('country-select').value;
+            const countryId = countrySelect.getValue();
             const sourceId = document.getElementById('source-select').value;
             
             console.log('Current selection:', countryId, sourceId);
@@ -399,7 +635,7 @@
 
         // Download current chart
         function downloadChart() {
-            const countryId = document.getElementById('country-select').value;
+            const countryId = countrySelect.getValue();
             const sourceId = document.getElementById('source-select').value;
             const sourceName = sources[sourceId];
             const cleanId = sourceId.replace(/-/g, '_');
@@ -503,6 +739,9 @@
 
         // Load default source on page load
         window.addEventListener('DOMContentLoaded', async () => {
+            // Initialize custom select
+            countrySelect = new CustomSelect('country-select-custom');
+            
             // Check URL params for refresh-preserved selection
             const urlParams = new URLSearchParams(window.location.search);
             const paramCountry = urlParams.get('country');
@@ -517,7 +756,7 @@
                 source = paramSource;
                 
                 // Update dropdowns to match
-                document.getElementById('country-select').value = country;
+                countrySelect.setValue(country);
                 document.getElementById('source-select').value = source;
                 
                 // DON'T clean URL yet - showSource needs to check for refresh param first
@@ -542,6 +781,136 @@
     </script>
 
     <style>
+        /* ===== CUSTOM SELECT STYLES ===== */
+        .custom-select-container {
+            position: relative;
+            width: 100%;
+        }
+
+        .custom-select-trigger {
+            display: flex;
+            align-items: center;
+            padding: 8px 10px;
+            background: white;
+            border: 2px solid #cbd5e0;
+            border-radius: 4px;
+            cursor: pointer;
+            user-select: none;
+            position: relative;
+        }
+
+        .custom-select-trigger:hover {
+            border-color: #999;
+        }
+
+        .custom-select-trigger.open {
+            border-color: #003399;
+            border-bottom-left-radius: 0;
+            border-bottom-right-radius: 0;
+        }
+
+        .custom-select-trigger img {
+            width: 20px;
+            height: 15px;
+            margin-right: 8px;
+            flex-shrink: 0;
+        }
+
+        .custom-select-trigger .label {
+            flex: 1;
+            color: #333;
+            font-size: 1em;
+        }
+
+        .custom-select-trigger .arrow {
+            margin-left: 8px;
+            border: solid #666;
+            border-width: 0 2px 2px 0;
+            padding: 3px;
+            transform: rotate(45deg);
+            transition: transform 0.2s;
+        }
+
+        .custom-select-trigger.open .arrow {
+            transform: rotate(-135deg);
+        }
+
+        .custom-select-dropdown {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            border: 2px solid #003399;
+            border-top: none;
+            border-radius: 0 0 4px 4px;
+            max-height: 300px;
+            overflow-y: auto;
+            z-index: 1000;
+            display: none;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .custom-select-dropdown.open {
+            display: block;
+        }
+
+        .custom-select-group {
+            padding: 0;
+        }
+
+        .custom-select-group-label {
+            padding: 8px 12px;
+            font-weight: bold;
+            font-size: 11px;
+            color: #666;
+            background: #f5f5f5;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .custom-select-option {
+            display: flex;
+            align-items: center;
+            padding: 8px 12px 8px 24px;
+            cursor: pointer;
+            transition: background 0.1s;
+        }
+
+        .custom-select-option:hover {
+            background: #e8f4ff;
+        }
+
+        .custom-select-option.selected {
+            background: #003399;
+            color: white;
+        }
+
+        .custom-select-option.disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .custom-select-option.disabled:hover {
+            background: transparent;
+        }
+
+        .custom-select-option img {
+            width: 20px;
+            height: 15px;
+            margin-right: 8px;
+            flex-shrink: 0;
+        }
+
+        /* Mobile optimizations */
+        @media (max-width: 768px) {
+            .custom-select-dropdown {
+                max-height: 250px;
+            }
+        }
+        
+        /* ===== REST OF EXISTING STYLES ===== */
+        
         /* Color-coded dropdown options */
         select option[value="solar"] { color: #FFD700; font-weight: bold; }
         select option[value="wind"] { color: #228B22; font-weight: bold; }
