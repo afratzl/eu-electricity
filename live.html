@@ -195,7 +195,6 @@
             <!-- Energy Source Selector -->
             <div class="selector-item">
                 <label for="source-select">
-                    <span id="color-indicator" style="display: inline-block; width: 14px; height: 14px; border-radius: 50%; background-color: #00CED1; margin-right: 6px; vertical-align: middle; border: 2px solid #333;"></span>
                     Energy Source:
                 </label>
                 <select id="source-select" onchange="updateCharts()">
@@ -455,15 +454,6 @@
         async function showSource(sourceId, countryId = 'EU') {
             const sourceName = sources[sourceId];
             const display = document.getElementById('chart-display');
-            
-            // Update color indicator
-            const select = document.getElementById('source-select');
-            const selectedOption = select.options[select.selectedIndex];
-            const color = selectedOption.getAttribute('data-color');
-            const indicator = document.getElementById('color-indicator');
-            if (indicator && color) {
-                indicator.style.backgroundColor = color;
-            }
             
             // Clean source ID for lookup (replace hyphens with underscores for compatibility)
             const cleanId = sourceId.replace(/-/g, '_');
@@ -791,12 +781,13 @@
             display: flex;
             align-items: center;
             padding: 8px 10px;
-            background: white;
+            background: #F2F2F2;  /* Very light gray - makes white flags visible */
             border: 2px solid #cbd5e0;
             border-radius: 4px;
             cursor: pointer;
             user-select: none;
             position: relative;
+            min-height: 38px;  /* Match native select height */
         }
 
         .custom-select-trigger:hover {
@@ -840,7 +831,7 @@
             top: 100%;
             left: 0;
             right: 0;
-            background: white;
+            background: #F2F2F2;  /* Match trigger background */
             border: 2px solid #003399;
             border-top: none;
             border-radius: 0 0 4px 4px;
@@ -875,10 +866,11 @@
             padding: 8px 12px 8px 24px;
             cursor: pointer;
             transition: background 0.1s;
+            background: #F2F2F2;  /* Match dropdown background */
         }
 
         .custom-select-option:hover {
-            background: #e8f4ff;
+            background: white;  /* White on hover for contrast */
         }
 
         .custom-select-option.selected {
@@ -892,7 +884,7 @@
         }
 
         .custom-select-option.disabled:hover {
-            background: transparent;
+            background: #F2F2F2;  /* No hover effect for disabled */
         }
 
         .custom-select-option img {
