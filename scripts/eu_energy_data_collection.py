@@ -605,6 +605,8 @@ def save_all_data_to_google_sheets_with_merge(all_data, month_names, country_cod
 
                 # Get existing data
                 existing_values = worksheet.get_all_values()
+                time.sleep(2)  # Delay after read
+                
                 print(f"    Found {len(existing_values)} rows in existing sheet")
 
                 if len(existing_values) >= 2:
@@ -726,17 +728,17 @@ def save_all_data_to_google_sheets_with_merge(all_data, month_names, country_cod
 
             # Clear and update the worksheet WITH DELAYS between operations
             worksheet.clear()
-            time.sleep(1)  # Delay after clear
+            time.sleep(2)  # Delay after clear
             
             worksheet.update(final_rows)
-            time.sleep(1)  # Delay after update
+            time.sleep(2)  # Delay after update
 
             # Format the sheet
             worksheet.format('A1:Z1', {'textFormat': {'bold': True}})
-            time.sleep(1)  # Delay after first format
+            time.sleep(2)  # Delay after first format
             
             worksheet.format('A:A', {'textFormat': {'bold': True}})
-            time.sleep(1)  # Delay after second format
+            time.sleep(2)  # Delay after second format
 
             # Report what was updated
             new_years_str = ', '.join([str(year) for year in sorted(new_years, reverse=True)]) if new_years else 'None'
