@@ -75,44 +75,142 @@
             </div>
             
             <div class="table-controls-pro">
-                <!-- Country Selector -->
+                <!-- Country Selector - Custom Dropdown -->
                 <div class="country-selector-group">
                     <span class="control-label-pro">Country/Region:</span>
-                    <img id="country-flag" src="flags/EU.svg" width="24" height="16" alt="Country flag" style="margin: 0 8px; vertical-align: middle;">
-                    <select id="country-select" class="country-select-pro" onchange="updateTable()">
-                        <optgroup label="Region">
-                            <option value="EU" selected>European Union</option>
-                        </optgroup>
-                        <optgroup label="EU Member States">
-                            <option value="AT">Austria</option>
-                            <option value="BE">Belgium</option>
-                            <option value="BG">Bulgaria</option>
-                            <option value="HR">Croatia</option>
-                            <option value="CY">Cyprus</option>
-                            <option value="CZ">Czechia</option>
-                            <option value="DK">Denmark</option>
-                            <option value="EE">Estonia</option>
-                            <option value="FI">Finland</option>
-                            <option value="FR">France</option>
-                            <option value="DE">Germany</option>
-                            <option value="GR">Greece</option>
-                            <option value="HU">Hungary</option>
-                            <option value="IE">Ireland</option>
-                            <option value="IT">Italy</option>
-                            <option value="LV">Latvia</option>
-                            <option value="LT">Lithuania</option>
-                            <option value="LU">Luxembourg</option>
-                            <option value="MT">Malta</option>
-                            <option value="NL">Netherlands</option>
-                            <option value="PL">Poland</option>
-                            <option value="PT">Portugal</option>
-                            <option value="RO">Romania</option>
-                            <option value="SK">Slovakia</option>
-                            <option value="SI">Slovenia</option>
-                            <option value="ES">Spain</option>
-                            <option value="SE">Sweden</option>
-                        </optgroup>
-                    </select>
+                    <div class="custom-select-container" id="country-select-custom" style="display: inline-block; min-width: 250px; margin-left: 8px;">
+                        <!-- Trigger -->
+                        <div class="custom-select-trigger">
+                            <img src="flags/EU.svg" alt="EU flag">
+                            <span class="label">European Union</span>
+                            <span class="arrow"></span>
+                        </div>
+                        
+                        <!-- Dropdown -->
+                        <div class="custom-select-dropdown">
+                            <!-- Region -->
+                            <div class="custom-select-group">
+                                <div class="custom-select-group-label">Region</div>
+                                <div class="custom-select-option selected" data-value="EU" data-flag="flags/EU.svg">
+                                    <img src="flags/EU.svg" alt="EU">
+                                    <span>European Union</span>
+                                </div>
+                            </div>
+
+                            <!-- EU Member States -->
+                            <div class="custom-select-group">
+                                <div class="custom-select-group-label">EU Member States</div>
+                                <div class="custom-select-option" data-value="AT" data-flag="flags/AT.svg">
+                                    <img src="flags/AT.svg" alt="AT">
+                                    <span>Austria</span>
+                                </div>
+                                <div class="custom-select-option" data-value="BE" data-flag="flags/BE.svg">
+                                    <img src="flags/BE.svg" alt="BE">
+                                    <span>Belgium</span>
+                                </div>
+                                <div class="custom-select-option" data-value="BG" data-flag="flags/BG.svg">
+                                    <img src="flags/BG.svg" alt="BG">
+                                    <span>Bulgaria</span>
+                                </div>
+                                <div class="custom-select-option" data-value="HR" data-flag="flags/HR.svg">
+                                    <img src="flags/HR.svg" alt="HR">
+                                    <span>Croatia</span>
+                                </div>
+                                <div class="custom-select-option" data-value="CY" data-flag="flags/CY.svg">
+                                    <img src="flags/CY.svg" alt="CY">
+                                    <span>Cyprus</span>
+                                </div>
+                                <div class="custom-select-option" data-value="CZ" data-flag="flags/CZ.svg">
+                                    <img src="flags/CZ.svg" alt="CZ">
+                                    <span>Czechia</span>
+                                </div>
+                                <div class="custom-select-option" data-value="DK" data-flag="flags/DK.svg">
+                                    <img src="flags/DK.svg" alt="DK">
+                                    <span>Denmark</span>
+                                </div>
+                                <div class="custom-select-option" data-value="EE" data-flag="flags/EE.svg">
+                                    <img src="flags/EE.svg" alt="EE">
+                                    <span>Estonia</span>
+                                </div>
+                                <div class="custom-select-option" data-value="FI" data-flag="flags/FI.svg">
+                                    <img src="flags/FI.svg" alt="FI">
+                                    <span>Finland</span>
+                                </div>
+                                <div class="custom-select-option" data-value="FR" data-flag="flags/FR.svg">
+                                    <img src="flags/FR.svg" alt="FR">
+                                    <span>France</span>
+                                </div>
+                                <div class="custom-select-option" data-value="DE" data-flag="flags/DE.svg">
+                                    <img src="flags/DE.svg" alt="DE">
+                                    <span>Germany</span>
+                                </div>
+                                <div class="custom-select-option" data-value="GR" data-flag="flags/GR.svg">
+                                    <img src="flags/GR.svg" alt="GR">
+                                    <span>Greece</span>
+                                </div>
+                                <div class="custom-select-option" data-value="HU" data-flag="flags/HU.svg">
+                                    <img src="flags/HU.svg" alt="HU">
+                                    <span>Hungary</span>
+                                </div>
+                                <div class="custom-select-option" data-value="IE" data-flag="flags/IE.svg">
+                                    <img src="flags/IE.svg" alt="IE">
+                                    <span>Ireland</span>
+                                </div>
+                                <div class="custom-select-option" data-value="IT" data-flag="flags/IT.svg">
+                                    <img src="flags/IT.svg" alt="IT">
+                                    <span>Italy</span>
+                                </div>
+                                <div class="custom-select-option" data-value="LV" data-flag="flags/LV.svg">
+                                    <img src="flags/LV.svg" alt="LV">
+                                    <span>Latvia</span>
+                                </div>
+                                <div class="custom-select-option" data-value="LT" data-flag="flags/LT.svg">
+                                    <img src="flags/LT.svg" alt="LT">
+                                    <span>Lithuania</span>
+                                </div>
+                                <div class="custom-select-option" data-value="LU" data-flag="flags/LU.svg">
+                                    <img src="flags/LU.svg" alt="LU">
+                                    <span>Luxembourg</span>
+                                </div>
+                                <div class="custom-select-option" data-value="MT" data-flag="flags/MT.svg">
+                                    <img src="flags/MT.svg" alt="MT">
+                                    <span>Malta</span>
+                                </div>
+                                <div class="custom-select-option" data-value="NL" data-flag="flags/NL.svg">
+                                    <img src="flags/NL.svg" alt="NL">
+                                    <span>Netherlands</span>
+                                </div>
+                                <div class="custom-select-option" data-value="PL" data-flag="flags/PL.svg">
+                                    <img src="flags/PL.svg" alt="PL">
+                                    <span>Poland</span>
+                                </div>
+                                <div class="custom-select-option" data-value="PT" data-flag="flags/PT.svg">
+                                    <img src="flags/PT.svg" alt="PT">
+                                    <span>Portugal</span>
+                                </div>
+                                <div class="custom-select-option" data-value="RO" data-flag="flags/RO.svg">
+                                    <img src="flags/RO.svg" alt="RO">
+                                    <span>Romania</span>
+                                </div>
+                                <div class="custom-select-option" data-value="SK" data-flag="flags/SK.svg">
+                                    <img src="flags/SK.svg" alt="SK">
+                                    <span>Slovakia</span>
+                                </div>
+                                <div class="custom-select-option" data-value="SI" data-flag="flags/SI.svg">
+                                    <img src="flags/SI.svg" alt="SI">
+                                    <span>Slovenia</span>
+                                </div>
+                                <div class="custom-select-option" data-value="ES" data-flag="flags/ES.svg">
+                                    <img src="flags/ES.svg" alt="ES">
+                                    <span>Spain</span>
+                                </div>
+                                <div class="custom-select-option" data-value="SE" data-flag="flags/SE.svg">
+                                    <img src="flags/SE.svg" alt="SE">
+                                    <span>Sweden</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
                 
                 <!-- Display Toggle -->
