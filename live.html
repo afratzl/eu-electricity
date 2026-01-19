@@ -340,7 +340,9 @@
                         e.stopPropagation();
                         const value = option.dataset.value;
                         const flag = option.dataset.flag;
-                        const text = option.querySelector('span').textContent;
+                        // Get text from the last span (not color-dot span)
+                        const spans = option.querySelectorAll('span');
+                        const text = spans.length > 1 ? spans[spans.length - 1].textContent : option.querySelector('span').textContent;
                         this.select(value, flag, text);
                     });
                 });
@@ -432,7 +434,9 @@
                 
                 if (option && !option.classList.contains('disabled')) {
                     const flag = option.getAttribute('data-flag');
-                    const text = option.querySelector('span').textContent;
+                    // Get text from the last span (not color-dot span)
+                    const spans = option.querySelectorAll('span');
+                    const text = spans.length > 1 ? spans[spans.length - 1].textContent : option.querySelector('span').textContent;
                     this.select(value, flag, text);
                 }
             }
@@ -879,7 +883,6 @@
             border-radius: 50%;
             margin-right: 8px;
             flex-shrink: 0;
-            border: 2px solid #333;
         }
 
         .custom-select-trigger .label {
@@ -979,7 +982,6 @@
             border-radius: 50%;
             margin-right: 8px;
             flex-shrink: 0;
-            border: 2px solid #333;
         }
 
         /* Mobile optimizations */
