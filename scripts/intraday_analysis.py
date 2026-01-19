@@ -1701,6 +1701,8 @@ def get_or_create_country_sheet(gc, drive_service, country_code='EU'):
     Sets permissions: Anyone with link can view
     SAVES sheet ID to drive_links.json for sharing with other scripts
     
+    FIXED: Now preserves Intraday, Yesterday, Monthly, and Trends sections
+    
     Args:
         gc: gspread client
         drive_service: Google Drive API service
@@ -1807,7 +1809,7 @@ def get_or_create_country_sheet(gc, drive_service, country_code='EU'):
     except Exception as e:
         print(f"  ⚠ Could not move to Drive folder: {e}")
     
-    # Save sheet ID to JSON (CRITICAL - this is what was missing!)
+    # Save sheet ID to JSON with PRESERVATION of existing sections
     try:
         # Load existing links
         links = {}
@@ -1815,12 +1817,18 @@ def get_or_create_country_sheet(gc, drive_service, country_code='EU'):
             with open(drive_links_file, 'r') as f:
                 links = json.load(f)
         
-        # PRESERVE all existing sections
+        # PRESERVE all existing sections for this country
         preserved_sections = {}
         if country_code in links:
             for section in ['Intraday', 'Yesterday', 'Monthly', 'Trends']:
                 if section in links[country_code]:
                     preserved_sections[section] = links[country_code][section]
+            if preserved_sections:
+                print(f"  💾 Preserving existing sections: {', '.join(preserved_sections.keys())}")
+        
+        # Initialize country if needed
+        if country_code not in links:
+            links[country_code] = {}
         
         # Update ONLY data_sheet_id
         links[country_code]['data_sheet_id'] = spreadsheet.id
@@ -1828,6 +1836,9 @@ def get_or_create_country_sheet(gc, drive_service, country_code='EU'):
         # RESTORE all preserved sections
         for section_name, section_data in preserved_sections.items():
             links[country_code][section_name] = section_data
+        
+        if preserved_sections:
+            print(f"  ✓ Restored preserved sections: {', '.join(preserved_sections.keys())}")
         
         # Save back
         os.makedirs('plots', exist_ok=True)
