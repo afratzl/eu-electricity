@@ -1815,10 +1815,19 @@ def get_or_create_country_sheet(gc, drive_service, country_code='EU'):
             with open(drive_links_file, 'r') as f:
                 links = json.load(f)
         
-        # Update with sheet ID
-        if country_code not in links:
-            links[country_code] = {}
+        # PRESERVE all existing sections
+        preserved_sections = {}
+        if country_code in links:
+            for section in ['Intraday', 'Yesterday', 'Monthly', 'Trends']:
+                if section in links[country_code]:
+                    preserved_sections[section] = links[country_code][section]
+        
+        # Update ONLY data_sheet_id
         links[country_code]['data_sheet_id'] = spreadsheet.id
+        
+        # RESTORE all preserved sections
+        for section_name, section_data in preserved_sections.items():
+            links[country_code][section_name] = section_data
         
         # Save back
         os.makedirs('plots', exist_ok=True)
