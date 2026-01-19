@@ -420,6 +420,7 @@ def add_flag_and_labels(fig, country_code, main_title, subtitle):
             flag_img = mpimg.imread(flag_path)
             ax_flag.imshow(flag_img, aspect='auto')
             ax_flag.axis('off')
+            ax_flag.set_zorder(10)  # Put flag axes on top of everything
         except Exception as e:
             print(f"  ⚠ Could not load flag: {e}")
     
@@ -550,7 +551,23 @@ def create_all_charts(all_data, country_code='EU'):
 
         # PLOT 1: Percentage
         fig1, ax1 = plt.subplots(figsize=(12, 12))
-        plt.subplots_adjust(left=0.15, right=0.94, top=0.86, bottom=0.25)
+            
+        from matplotlib.patches import Rectangle
+
+        # After creating your axis (ax), before plotting data:
+        # Add rectangle: (x, y, width, height) in axis coordinates
+        banner = Rectangle(
+            (0, 0.86),           # Bottom-left corner (x, y) - starts at 87% height
+            1.0,                 # Width: full width of plot (0 to 1)
+            0.14,                # Height: 14% of plot height
+            transform=fig1.transFigure,  # Use axis coordinates (0-1 range)
+            facecolor='#EBEBEB',   #
+            edgecolor='none',
+            zorder=0,            # Behind everything
+        )
+        fig1.patches.append(banner)  # Add to figure, not axis
+        
+        plt.subplots_adjust(left=0.15, right=0.94, top=0.83, bottom=0.25)
 
         max_pct_value = 0
         
@@ -620,7 +637,23 @@ def create_all_charts(all_data, country_code='EU'):
 
         # PLOT 2: Absolute
         fig2, ax2 = plt.subplots(figsize=(12, 12))
-        plt.subplots_adjust(left=0.15, right=0.94, top=0.86, bottom=0.25)
+
+        from matplotlib.patches import Rectangle
+
+        # After creating your axis (ax), before plotting data:
+        # Add rectangle: (x, y, width, height) in axis coordinates
+        banner = Rectangle(
+            (0, 0.86),           # Bottom-left corner (x, y) - starts at 87% height
+            1.0,                 # Width: full width of plot (0 to 1)
+            0.14,                # Height: 14% of plot height
+            transform=fig2.transFigure,  # Use axis coordinates (0-1 range)
+            facecolor='#EBEBEB',   #
+            edgecolor='none',
+            zorder=0,            # Behind everything
+        )
+        fig2.patches.append(banner)  # Add to figure, not axis
+        
+        plt.subplots_adjust(left=0.15, right=0.94, top=0.83, bottom=0.25)
 
         max_abs_value = 0
         
@@ -817,7 +850,23 @@ def create_all_charts(all_data, country_code='EU'):
 
             # PLOT 1: PERCENTAGE
             fig1, ax1 = plt.subplots(figsize=(12, 12))
-            plt.subplots_adjust(left=0.15, right=0.94, top=0.86, bottom=0.25)
+
+            from matplotlib.patches import Rectangle
+
+            # After creating your axis (ax), before plotting data:
+            # Add rectangle: (x, y, width, height) in axis coordinates
+            banner = Rectangle(
+                (0, 0.86),           # Bottom-left corner (x, y) - starts at 87% height
+                1.0,                 # Width: full width of plot (0 to 1)
+                0.14,                # Height: 14% of plot height
+                transform=fig1.transFigure,  # Use axis coordinates (0-1 range)
+                facecolor='#EBEBEB',   #
+                edgecolor='none',
+                zorder=0,            # Behind everything
+            )
+            fig1.patches.append(banner)  # Add to figure, not axis
+            
+            plt.subplots_adjust(left=0.15, right=0.94, top=0.83, bottom=0.25)
 
             # Force plot all 10 sources, use zeros for missing ones
             for source_name in all_sources:
@@ -880,7 +929,23 @@ def create_all_charts(all_data, country_code='EU'):
 
             # PLOT 2: ABSOLUTE
             fig2, ax2 = plt.subplots(figsize=(12, 12))
-            plt.subplots_adjust(left=0.15, right=0.94, top=0.86, bottom=0.25)
+
+            from matplotlib.patches import Rectangle
+
+            # After creating your axis (ax), before plotting data:
+            # Add rectangle: (x, y, width, height) in axis coordinates
+            banner = Rectangle(
+                (0, 0.86),           # Bottom-left corner (x, y) - starts at 87% height
+                1.0,                 # Width: full width of plot (0 to 1)
+                0.14,                # Height: 14% of plot height
+                transform=fig2.transFigure,  # Use axis coordinates (0-1 range)
+                facecolor='#EBEBEB',   #
+                edgecolor='none',
+                zorder=0,            # Behind everything
+            )
+            fig2.patches.append(banner)  # Add to figure, not axis
+            
+            plt.subplots_adjust(left=0.15, right=0.94, top=0.83, bottom=0.25)
 
             # Force plot all 10 sources, use zeros for missing ones
             for source_name in all_sources:
@@ -1061,7 +1126,23 @@ def create_all_charts(all_data, country_code='EU'):
 
             # PLOT 1: PERCENTAGE
             fig1, ax1 = plt.subplots(figsize=(12, 12))
-            plt.subplots_adjust(left=0.15, right=0.94, top=0.86, bottom=0.25)
+
+            from matplotlib.patches import Rectangle
+
+            # After creating your axis (ax), before plotting data:
+            # Add rectangle: (x, y, width, height) in axis coordinates
+            banner = Rectangle(
+                (0, 0.86),           # Bottom-left corner (x, y) - starts at 87% height
+                1.0,                 # Width: full width of plot (0 to 1)
+                0.14,                # Height: 14% of plot height
+                transform=fig1.transFigure,  # Use axis coordinates (0-1 range)
+                facecolor='#EBEBEB',   #
+                edgecolor='none',
+                zorder=0,            # Behind everything
+            )
+            fig1.patches.append(banner)  # Add to figure, not axis
+            
+            plt.subplots_adjust(left=0.15, right=0.94, top=0.83, bottom=0.25)
 
             for category_name in ['All Renewables', 'All Non-Renewables']:
                 color = ENTSOE_COLORS[category_name]
@@ -1098,7 +1179,23 @@ def create_all_charts(all_data, country_code='EU'):
 
             # PLOT 2: ABSOLUTE
             fig2, ax2 = plt.subplots(figsize=(12, 12))
-            plt.subplots_adjust(left=0.15, right=0.94, top=0.86, bottom=0.25)
+
+            from matplotlib.patches import Rectangle
+
+            # After creating your axis (ax), before plotting data:
+            # Add rectangle: (x, y, width, height) in axis coordinates
+            banner = Rectangle(
+                (0, 0.86),           # Bottom-left corner (x, y) - starts at 87% height
+                1.0,                 # Width: full width of plot (0 to 1)
+                0.14,                # Height: 14% of plot height
+                transform=fig2.transFigure,  # Use axis coordinates (0-1 range)
+                facecolor='#EBEBEB',   #
+                edgecolor='none',
+                zorder=0,            # Behind everything
+            )
+            fig2.patches.append(banner)  # Add to figure, not axis
+            
+            plt.subplots_adjust(left=0.15, right=0.94, top=0.83, bottom=0.25)
 
             for category_name in ['All Renewables', 'All Non-Renewables']:
                 color = ENTSOE_COLORS[category_name]
@@ -1195,7 +1292,23 @@ def create_all_charts(all_data, country_code='EU'):
 
         # PLOT 1: PERCENTAGE
         fig1, ax1 = plt.subplots(figsize=(12, 12))
-        plt.subplots_adjust(left=0.15, right=0.94, top=0.86, bottom=0.25)
+
+            from matplotlib.patches import Rectangle
+
+        # After creating your axis (ax), before plotting data:
+        # Add rectangle: (x, y, width, height) in axis coordinates
+        banner = Rectangle(
+            (0, 0.86),           # Bottom-left corner (x, y) - starts at 87% height
+            1.0,                 # Width: full width of plot (0 to 1)
+            0.14,                # Height: 14% of plot height
+            transform=fig1.transFigure,  # Use axis coordinates (0-1 range)
+            facecolor='#EBEBEB',   #
+            edgecolor='none',
+            zorder=0,            # Behind everything
+        )
+        fig1.patches.append(banner)  # Add to figure, not axis
+        
+        plt.subplots_adjust(left=0.15, right=0.94, top=0.83, bottom=0.25)
 
         # Force plot all 10 sources
         for source_name in all_sources:
@@ -1276,7 +1389,23 @@ def create_all_charts(all_data, country_code='EU'):
 
         # PLOT 2: ABSOLUTE
         fig2, ax2 = plt.subplots(figsize=(12, 12))
-        plt.subplots_adjust(left=0.15, right=0.94, top=0.86, bottom=0.25)
+
+        from matplotlib.patches import Rectangle
+
+        # After creating your axis (ax), before plotting data:
+        # Add rectangle: (x, y, width, height) in axis coordinates
+        banner = Rectangle(
+            (0, 0.86),           # Bottom-left corner (x, y) - starts at 87% height
+            1.0,                 # Width: full width of plot (0 to 1)
+            0.14,                # Height: 14% of plot height
+            transform=fig2.transFigure,  # Use axis coordinates (0-1 range)
+            facecolor='#EBEBEB',   #
+            edgecolor='none',
+            zorder=0,            # Behind everything
+        )
+        fig2.patches.append(banner)  # Add to figure, not axis
+        
+        plt.subplots_adjust(left=0.15, right=0.94, top=0.83, bottom=0.25)
 
         # Force plot all 10 sources
         for source_name in all_sources:
@@ -1347,7 +1476,23 @@ def create_all_charts(all_data, country_code='EU'):
 
         # PLOT 1: PERCENTAGE
         fig1, ax1 = plt.subplots(figsize=(12, 12))
-        plt.subplots_adjust(left=0.15, right=0.94, top=0.86, bottom=0.25)
+
+        from matplotlib.patches import Rectangle
+
+        # After creating your axis (ax), before plotting data:
+        # Add rectangle: (x, y, width, height) in axis coordinates
+        banner = Rectangle(
+            (0, 0.86),           # Bottom-left corner (x, y) - starts at 87% height
+            1.0,                 # Width: full width of plot (0 to 1)
+            0.14,                # Height: 14% of plot height
+            transform=fig1.transFigure,  # Use axis coordinates (0-1 range)
+            facecolor='#EBEBEB',   #
+            edgecolor='none',
+            zorder=0,            # Behind everything
+        )
+        fig1.patches.append(banner)  # Add to figure, not axis
+        
+        plt.subplots_adjust(left=0.15, right=0.94, top=0.83, bottom=0.25)
 
         lines_plotted = 0
         for source_name in available_totals:
@@ -1403,7 +1548,23 @@ def create_all_charts(all_data, country_code='EU'):
 
         # PLOT 2: ABSOLUTE
         fig2, ax2 = plt.subplots(figsize=(12, 12))
-        plt.subplots_adjust(left=0.15, right=0.94, top=0.86, bottom=0.25)
+        
+        from matplotlib.patches import Rectangle
+    
+        # After creating your axis (ax), before plotting data:
+        # Add rectangle: (x, y, width, height) in axis coordinates
+        banner = Rectangle(
+            (0, 0.86),           # Bottom-left corner (x, y) - starts at 87% height
+            1.0,                 # Width: full width of plot (0 to 1)
+            0.14,                # Height: 14% of plot height
+            transform=fig2.transFigure,  # Use axis coordinates (0-1 range)
+            facecolor='#EBEBEB',   #
+            edgecolor='none',
+            zorder=0,            # Behind everything
+        )
+        fig2.patches.append(banner)  # Add to figure, not axis
+        
+        plt.subplots_adjust(left=0.15, right=0.94, top=0.83, bottom=0.25)
 
         lines_plotted = 0
         max_renewable_abs = 0
@@ -1520,7 +1681,23 @@ def create_all_charts(all_data, country_code='EU'):
 
         # PLOT 1: PERCENTAGE CHANGE
         fig1, ax1 = plt.subplots(figsize=(12, 12))
-        plt.subplots_adjust(left=0.15, right=0.94, top=0.86, bottom=0.25)
+
+        from matplotlib.patches import Rectangle
+
+        # After creating your axis (ax), before plotting data:
+        # Add rectangle: (x, y, width, height) in axis coordinates
+        banner = Rectangle(
+            (0, 0.86),           # Bottom-left corner (x, y) - starts at 87% height
+            1.0,                 # Width: full width of plot (0 to 1)
+            0.14,                # Height: 14% of plot height
+            transform=fig1.transFigure,  # Use axis coordinates (0-1 range)
+            facecolor='#EBEBEB',   #
+            edgecolor='none',
+            zorder=0,            # Behind everything
+        )
+        fig1.patches.append(banner)  # Add to figure, not axis
+    
+        plt.subplots_adjust(left=0.15, right=0.94, top=0.83, bottom=0.25)
 
         all_yoy_pct_values = []
         
@@ -1642,7 +1819,23 @@ def create_all_charts(all_data, country_code='EU'):
 
         # PLOT 2: ABSOLUTE CHANGE (TWh)
         fig2, ax2 = plt.subplots(figsize=(12, 12))
-        plt.subplots_adjust(left=0.15, right=0.94, top=0.86, bottom=0.25)
+
+        from matplotlib.patches import Rectangle
+
+        # After creating your axis (ax), before plotting data:
+        # Add rectangle: (x, y, width, height) in axis coordinates
+        banner = Rectangle(
+            (0, 0.86),           # Bottom-left corner (x, y) - starts at 87% height
+            1.0,                 # Width: full width of plot (0 to 1)
+            0.14,                # Height: 14% of plot height
+            transform=fig2.transFigure,  # Use axis coordinates (0-1 range)
+            facecolor='#EBEBEB',   #
+            edgecolor='none',
+            zorder=0,            # Behind everything
+        )
+        fig2.patches.append(banner)  # Add to figure, not axis
+    
+        plt.subplots_adjust(left=0.15, right=0.94, top=0.83, bottom=0.25)
 
         all_yoy_abs_values = []
         
@@ -1768,7 +1961,23 @@ def create_all_charts(all_data, country_code='EU'):
 
         # PLOT 1: PERCENTAGE CHANGE
         fig3, ax3 = plt.subplots(figsize=(12, 12))
-        plt.subplots_adjust(left=0.15, right=0.94, top=0.86, bottom=0.25)
+
+        from matplotlib.patches import Rectangle
+
+        # After creating your axis (ax), before plotting data:
+        # Add rectangle: (x, y, width, height) in axis coordinates
+        banner = Rectangle(
+            (0, 0.86),           # Bottom-left corner (x, y) - starts at 87% height
+            1.0,                 # Width: full width of plot (0 to 1)
+            0.14,                # Height: 14% of plot height
+            transform=fig3.transFigure,  # Use axis coordinates (0-1 range)
+            facecolor='#EBEBEB',   #
+            edgecolor='none',
+            zorder=0,            # Behind everything
+        )
+        fig3.patches.append(banner)  # Add to figure, not axis
+            
+        plt.subplots_adjust(left=0.15, right=0.94, top=0.83, bottom=0.25)
 
         all_yoy_agg_pct_values = []
         lines_plotted = 0
@@ -1855,7 +2064,23 @@ def create_all_charts(all_data, country_code='EU'):
 
         # PLOT 2: ABSOLUTE CHANGE (TWh)
         fig4, ax4 = plt.subplots(figsize=(12, 12))
-        plt.subplots_adjust(left=0.15, right=0.94, top=0.86, bottom=0.25)
+
+        from matplotlib.patches import Rectangle
+
+        # After creating your axis (ax), before plotting data:
+        # Add rectangle: (x, y, width, height) in axis coordinates
+        banner = Rectangle(
+            (0, 0.86),           # Bottom-left corner (x, y) - starts at 87% height
+            1.0,                 # Width: full width of plot (0 to 1)
+            0.14,                # Height: 14% of plot height
+            transform=fig4.transFigure,  # Use axis coordinates (0-1 range)
+            facecolor='#EBEBEB',   #
+            edgecolor='none',
+            zorder=0,            # Behind everything
+        )
+        fig4.patches.append(banner)  # Add to figure, not axis
+        
+        plt.subplots_adjust(left=0.15, right=0.94, top=0.83, bottom=0.25)
 
         all_yoy_agg_abs_values = []
         lines_plotted = 0
