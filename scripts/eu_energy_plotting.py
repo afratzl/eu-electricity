@@ -229,17 +229,26 @@ def format_change_percentage(value):
 
 def get_or_create_country_sheet(gc, drive_service, country_code='EU'):
     """
-    Get or create country-specific electricity data sheet
-    Structure: EU-Electricity-Plots/[Country]/[Country] Electricity Production Data
+    Get or create a country-specific Google Sheet and move to correct Drive folder
+    Sets permissions: Anyone with link can view
+    SAVES sheet ID to drive_links.json for sharing with other scripts
+    
+    FIXED: Now preserves Intraday, Yesterday, Monthly, and Trends sections
     
     Args:
         gc: gspread client
-        drive_service: Google Drive API service (or None)
-        country_code: Country code (EU, DE, FR, etc.)
+        drive_service: Google Drive API service
+        country_code: 'EU', 'DE', 'ES', etc.
     
-    Returns: gspread Spreadsheet object
+    Returns:
+        spreadsheet: gspread Spreadsheet object
     """
-    sheet_name = f'{country_code} Electricity Production Data'
+    import json
+    import os
+    
+    sheet_name = f"{country_code} Electricity Production Data"
+    spreadsheet = None
+    is_new_sheet = False
     
     # Try to get from JSON first
     drive_links_file = 'plots/drive_links.json'
@@ -253,43 +262,26 @@ def get_or_create_country_sheet(gc, drive_service, country_code='EU'):
                 sheet_id = links[country_code]['data_sheet_id']
                 try:
                     spreadsheet = gc.open_by_key(sheet_id)
-                    print(f"✓ Opened existing sheet: {sheet_name}")
-                    return spreadsheet
+                    print(f"✓ Opened existing sheet from JSON: {sheet_name}")
                 except:
-                    print(f"  ⚠ Sheet ID in JSON is invalid, will create new")
+                    print(f"  ⚠ Sheet ID in JSON is invalid, will search by name")
         except:
             pass
     
-    # Sheet doesn't exist or JSON doesn't have it - create new
-    print(f"  Creating new sheet: {sheet_name}")
-    spreadsheet = gc.create(sheet_name)
-    
-    # Move to correct Drive folder structure if drive_service provided
-    if drive_service:
+    # If not found in JSON, try to open by name
+    if spreadsheet is None:
         try:
-            # Get or create: EU-Electricity-Plots/[Country]/
-            root_folder_id = get_or_create_drive_folder(drive_service, 'EU-Electricity-Plots')
-            country_folder_id = get_or_create_drive_folder(drive_service, country_code, root_folder_id)
-            
-            # Move spreadsheet to country folder
-            file = drive_service.files().get(fileId=spreadsheet.id, fields='parents').execute()
-            previous_parents = ",".join(file.get('parents', []))
-            
-            drive_service.files().update(
-                fileId=spreadsheet.id,
-                addParents=country_folder_id,
-                removeParents=previous_parents,
-                fields='id, parents'
-            ).execute()
-            
-            print(f"  ✓ Moved sheet to: EU-Electricity-Plots/{country_code}/")
+            spreadsheet = gc.open(sheet_name)
+            print(f"✓ Opened existing sheet by name: {sheet_name}")
+        except gspread.SpreadsheetNotFound:
+            # Create new sheet
+            spreadsheet = gc.create(sheet_name)
+            print(f"✓ Created new sheet: {sheet_name}")
+            is_new_sheet = True
             
             # Set permissions: Anyone with link can view
             try:
-                permission = {
-                    'type': 'anyone',
-                    'role': 'reader'
-                }
+                permission = {'type': 'anyone', 'role': 'reader'}
                 drive_service.permissions().create(
                     fileId=spreadsheet.id,
                     body=permission,
@@ -297,12 +289,59 @@ def get_or_create_country_sheet(gc, drive_service, country_code='EU'):
                 ).execute()
                 print(f"  ✓ Set permissions: Anyone with link can view")
             except Exception as e:
-                print(f"  ⚠ Could not set permissions: {e}")
-                
-        except Exception as e:
-            print(f"  ⚠ Could not organize in Drive: {e}")
+                # Permission might already exist
+                if 'already exists' not in str(e).lower():
+                    print(f"  ⚠ Could not set permissions: {e}")
     
-    # Save sheet ID to JSON
+    # Move to correct Drive folder structure (ALWAYS check, not just for new sheets)
+    try:
+        # Find root folder
+        query = "name='EU-Electricity-Plots' and mimeType='application/vnd.google-apps.folder' and trashed=false"
+        results = drive_service.files().list(q=query, spaces='drive', fields='files(id)').execute()
+        folders = results.get('files', [])
+        
+        if folders:
+            root_folder_id = folders[0]['id']
+            
+            # Find or create country folder
+            query = f"name='{country_code}' and '{root_folder_id}' in parents and mimeType='application/vnd.google-apps.folder' and trashed=false"
+            results = drive_service.files().list(q=query, spaces='drive', fields='files(id)').execute()
+            country_folders = results.get('files', [])
+            
+            if country_folders:
+                country_folder_id = country_folders[0]['id']
+            else:
+                # Create country folder
+                file_metadata = {
+                    'name': country_code,
+                    'mimeType': 'application/vnd.google-apps.folder',
+                    'parents': [root_folder_id]
+                }
+                folder = drive_service.files().create(body=file_metadata, fields='id').execute()
+                country_folder_id = folder.get('id')
+                print(f"  ✓ Created folder: EU-Electricity-Plots/{country_code}/")
+            
+            # Check if sheet is already in correct folder
+            file = drive_service.files().get(fileId=spreadsheet.id, fields='parents').execute()
+            current_parents = file.get('parents', [])
+            
+            if country_folder_id not in current_parents:
+                # Move sheet to country folder
+                previous_parents = ",".join(current_parents)
+                drive_service.files().update(
+                    fileId=spreadsheet.id,
+                    addParents=country_folder_id,
+                    removeParents=previous_parents,
+                    fields='id, parents'
+                ).execute()
+                print(f"  ✓ Moved to: EU-Electricity-Plots/{country_code}/")
+            else:
+                print(f"  ✓ Already in: EU-Electricity-Plots/{country_code}/")
+            
+    except Exception as e:
+        print(f"  ⚠ Could not move to Drive folder: {e}")
+    
+    # Save sheet ID to JSON with PRESERVATION of existing sections
     try:
         # Load existing links
         links = {}
@@ -310,10 +349,28 @@ def get_or_create_country_sheet(gc, drive_service, country_code='EU'):
             with open(drive_links_file, 'r') as f:
                 links = json.load(f)
         
-        # Update with sheet ID
+        # PRESERVE all existing sections for this country
+        preserved_sections = {}
+        if country_code in links:
+            for section in ['Intraday', 'Yesterday', 'Monthly', 'Trends']:
+                if section in links[country_code]:
+                    preserved_sections[section] = links[country_code][section]
+            if preserved_sections:
+                print(f"  💾 Preserving existing sections: {', '.join(preserved_sections.keys())}")
+        
+        # Initialize country if needed
         if country_code not in links:
             links[country_code] = {}
+        
+        # Update ONLY data_sheet_id
         links[country_code]['data_sheet_id'] = spreadsheet.id
+        
+        # RESTORE all preserved sections
+        for section_name, section_data in preserved_sections.items():
+            links[country_code][section_name] = section_data
+        
+        if preserved_sections:
+            print(f"  ✓ Restored preserved sections: {', '.join(preserved_sections.keys())}")
         
         # Save back
         os.makedirs('plots', exist_ok=True)
@@ -325,7 +382,6 @@ def get_or_create_country_sheet(gc, drive_service, country_code='EU'):
         print(f"  ⚠ Could not save to JSON: {e}")
     
     return spreadsheet
-
 
 def load_data_from_google_sheets(country_code='EU'):
     """
