@@ -953,6 +953,10 @@
             color: white;
         }
 
+        .custom-select-option.selected .color-dot {
+            border-color: white;  /* Make border visible on blue background */
+        }
+
         .custom-select-option.disabled {
             opacity: 0.5;
             cursor: not-allowed;
@@ -1009,7 +1013,7 @@
             padding: 20px;
             margin-bottom: 24px;
             display: grid;
-            grid-template-columns: 1fr 1fr auto;
+            grid-template-columns: 1fr 1fr auto;  /* Keep horizontal on desktop */
             gap: 20px;
             align-items: end;
         }
@@ -1047,11 +1051,13 @@
             border: 2px solid #cbd5e0;
             border-radius: 4px;
             overflow: hidden;
+            height: 42px;  /* Match custom dropdown height */
+            box-sizing: border-box;
         }
         
         .toggle-btn-compact {
             flex: 1;
-            padding: 8px 16px;
+            padding: 0 16px;  /* Remove vertical padding, use flex alignment */
             border: none;
             background: white;
             color: #4a5568;
@@ -1059,6 +1065,9 @@
             font-size: 0.95em;
             font-weight: 600;
             transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
         
         .toggle-btn-compact.active {
