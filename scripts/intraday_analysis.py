@@ -1300,12 +1300,12 @@ def plot_analysis(stats_data, source_type, output_file_base, country_code='EU'):
   
     # Titles in figure coordinates (not axes coordinates)
     # Main title
-    fig1.text(0.50, 0.965, 'Electricity Generation',
+    fig1.text(0.55, 0.965, 'Electricity Generation',
              fontsize=36, fontweight='bold',
              ha='center', va='top')
     
     # Subtitle
-    fig1.text(0.50, 0.91, f'{source_name} · Fraction of Total',
+    fig1.text(0.55, 0.91, f'{source_name} · Fraction of Total',
              fontsize=28, fontweight='normal',
              ha='center', va='top')
     ax1.set_xlabel('Time of Day (Brussels)', fontsize=24, fontweight='bold', labelpad=10)
@@ -2477,6 +2477,7 @@ def generate_yesterday_plots(corrected_data, country_code='EU'):
                 flag_img = mpimg.imread(flag_path)
                 ax_flag.imshow(flag_img, aspect='auto')
                 ax_flag.axis('off')
+                ax_flag.set_zorder(10)  # Put flag axes on top of everything
                 return ax_flag
             except:
                 pass
@@ -3020,6 +3021,7 @@ def generate_yesterday_aggregates_plots(corrected_data, country_code='EU'):
                 flag_img = mpimg.imread(flag_path)
                 ax_flag.imshow(flag_img, aspect='auto')
                 ax_flag.axis('off')
+                ax_flag.set_zorder(10)  # Put flag axes on top of everything
                 return ax_flag
             except:
                 pass
