@@ -547,7 +547,7 @@ def save_all_data_to_google_sheets_with_merge(all_data, month_names, country_cod
     Only updates the years being processed, preserves existing data
     Uses environment variables for credentials
     
-    OPTIMIZED VERSION: Minimizes API calls by batching reads and writes
+    OPTIMIZED VERSION: Minimizes API calls with automatic rate limit recovery
     
     Args:
         all_data: Dictionary with all collected data
@@ -587,26 +587,57 @@ def save_all_data_to_google_sheets_with_merge(all_data, month_names, country_cod
         print(f"SAVING DATA FOR: {country_code}")
         print(f"{'='*80}")
 
-        # ===== OPTIMIZATION: Read all worksheets ONCE at start =====
+        # ===== OPTIMIZATION: Read all worksheets ONCE with retry on rate limit =====
         print("\n📖 Pre-loading all existing worksheets...")
-        all_worksheets_list = spreadsheet.worksheets()
-        time.sleep(2)  # Single delay after getting worksheet list
         
-        # Cache worksheet objects and their data
-        worksheet_cache = {}  # {title: worksheet_object}
-        existing_data_cache = {}  # {title: data_rows}
+        max_retries = 2
+        worksheet_cache = {}
+        existing_data_cache = {}
         
-        for ws in all_worksheets_list:
-            worksheet_cache[ws.title] = ws
+        for attempt in range(max_retries):
             try:
-                existing_data_cache[ws.title] = ws.get_all_values()
-                time.sleep(2)  # 2 seconds between reads = 30 reads/min max
-                print(f"  ✓ Cached: {ws.title} ({len(existing_data_cache[ws.title])} rows)")
+                all_worksheets_list = spreadsheet.worksheets()
+                time.sleep(2)  # Delay after getting worksheet list
             except Exception as e:
-                print(f"  ⚠ Could not read {ws.title}: {e}")
-                existing_data_cache[ws.title] = []
-        
-        print(f"✓ Pre-loaded {len(worksheet_cache)} worksheets\n")
+                print(f"  ⚠ Error getting worksheet list: {e}")
+                if attempt < max_retries - 1:
+                    print(f"  ⏳ Waiting 90 seconds...")
+                    time.sleep(90)
+                    continue
+                else:
+                    raise
+            
+            worksheet_cache = {}
+            existing_data_cache = {}
+            failed = False
+            
+            for idx, ws in enumerate(all_worksheets_list, 1):
+                worksheet_cache[ws.title] = ws
+                try:
+                    existing_data_cache[ws.title] = ws.get_all_values()
+                    time.sleep(2)  # 2 seconds between reads = 30 reads/min max
+                    print(f"  ✓ [{idx}/{len(all_worksheets_list)}] Cached: {ws.title} ({len(existing_data_cache[ws.title])} rows)")
+                except Exception as e:
+                    if '429' in str(e):  # Rate limit hit
+                        print(f"  ⚠ Rate limit hit at worksheet {idx}/{len(all_worksheets_list)}")
+                        print(f"  ⏳ Waiting 90 seconds for rate limit to reset...")
+                        time.sleep(90)
+                        failed = True
+                        break  # Exit the worksheet loop, retry from start
+                    else:
+                        # Other error - treat as empty sheet
+                        print(f"  ⚠ Error reading {ws.title}: {e}")
+                        existing_data_cache[ws.title] = []
+            
+            if not failed:
+                # Successfully loaded all worksheets
+                print(f"✓ Pre-loaded {len(worksheet_cache)} worksheets\n")
+                break
+            elif attempt < max_retries - 1:
+                print(f"  🔄 Retrying pre-load (attempt {attempt + 2}/{max_retries})...")
+            else:
+                print(f"  ⚠ Failed to pre-load after {max_retries} attempts")
+                print(f"  ⚠ Continuing with {len(existing_data_cache)} successfully cached worksheets")
         
         # ===== OPTIMIZATION: Prepare all updates, then batch write =====
         updates_to_apply = []  # List of (worksheet, data, title) tuples
@@ -647,7 +678,7 @@ def save_all_data_to_google_sheets_with_merge(all_data, month_names, country_cod
                 existing_df = pd.DataFrame({'Month': month_names})
                 headers = ['Month']
 
-            # Smart merge logic (same as before)
+            # Smart merge logic
             existing_years = set()
             for col in headers:
                 if col != 'Month' and col.isdigit():
