@@ -547,6 +547,8 @@ def save_all_data_to_google_sheets_with_merge(all_data, month_names, country_cod
     Only updates the years being processed, preserves existing data
     Uses environment variables for credentials
     
+    OPTIMIZED VERSION: Minimizes API calls by batching reads and writes
+    
     Args:
         all_data: Dictionary with all collected data
         month_names: List of month abbreviations
@@ -585,6 +587,30 @@ def save_all_data_to_google_sheets_with_merge(all_data, month_names, country_cod
         print(f"SAVING DATA FOR: {country_code}")
         print(f"{'='*80}")
 
+        # ===== OPTIMIZATION: Read all worksheets ONCE at start =====
+        print("\n📖 Pre-loading all existing worksheets...")
+        all_worksheets_list = spreadsheet.worksheets()
+        time.sleep(2)  # Single delay after getting worksheet list
+        
+        # Cache worksheet objects and their data
+        worksheet_cache = {}  # {title: worksheet_object}
+        existing_data_cache = {}  # {title: data_rows}
+        
+        for ws in all_worksheets_list:
+            worksheet_cache[ws.title] = ws
+            try:
+                existing_data_cache[ws.title] = ws.get_all_values()
+                time.sleep(2)  # 2 seconds between reads = 30 reads/min max
+                print(f"  ✓ Cached: {ws.title} ({len(existing_data_cache[ws.title])} rows)")
+            except Exception as e:
+                print(f"  ⚠ Could not read {ws.title}: {e}")
+                existing_data_cache[ws.title] = []
+        
+        print(f"✓ Pre-loaded {len(worksheet_cache)} worksheets\n")
+        
+        # ===== OPTIMIZATION: Prepare all updates, then batch write =====
+        updates_to_apply = []  # List of (worksheet, data, title) tuples
+        
         for source_name, source_data in all_data.items():
             # Extract the appropriate data based on country_code
             if country_code == 'EU':
@@ -599,82 +625,61 @@ def save_all_data_to_google_sheets_with_merge(all_data, month_names, country_cod
 
             worksheet_title = f'{source_name} Monthly Production'
 
-            try:
-                worksheet = spreadsheet.worksheet(worksheet_title)
-                print(f"  Loading existing worksheet: {worksheet_title}")
-
-                # Get existing data
-                existing_values = worksheet.get_all_values()
-                time.sleep(5)  # Delay after read
-                
-                print(f"    Found {len(existing_values)} rows in existing sheet")
-
-                if len(existing_values) >= 2:
-                    # Parse existing headers and data
-                    headers = existing_values[0]
-                    existing_df = pd.DataFrame(existing_values[1:], columns=headers)
-                    print(f"    Existing headers: {headers}")
-
-                    # Remove 'Total' row if it exists for processing
-                    existing_df = existing_df[existing_df['Month'] != 'Total'].copy()
-                else:
-                    # Create new structure
-                    existing_df = pd.DataFrame({'Month': month_names})
-                    headers = ['Month']
-                    print(f"    No existing data, creating new structure")
-
-            except gspread.WorksheetNotFound:
+            # Use cached data (NO API CALL!)
+            if worksheet_title in existing_data_cache:
+                existing_values = existing_data_cache[worksheet_title]
+                worksheet = worksheet_cache[worksheet_title]
+                print(f"  Processing: {worksheet_title} (using cached data)")
+            else:
+                # Need to create new worksheet - do it now but don't write yet
                 print(f"  Creating new worksheet: {worksheet_title}")
                 worksheet = spreadsheet.add_worksheet(title=worksheet_title, rows=100, cols=20)
+                time.sleep(2)  # Delay after worksheet creation
+                worksheet_cache[worksheet_title] = worksheet
+                existing_values = []
+
+            # Parse existing data
+            if len(existing_values) >= 2:
+                headers = existing_values[0]
+                existing_df = pd.DataFrame(existing_values[1:], columns=headers)
+                existing_df = existing_df[existing_df['Month'] != 'Total'].copy()
+            else:
                 existing_df = pd.DataFrame({'Month': month_names})
                 headers = ['Month']
 
-            # Smart merge: Update existing years in-place, add new years in chronological order
+            # Smart merge logic (same as before)
             existing_years = set()
             for col in headers:
                 if col != 'Month' and col.isdigit():
                     existing_years.add(int(col))
 
             processing_years = set(year_data.keys())
-            new_years = processing_years - existing_years  # Years not in spreadsheet yet
-            updating_years = processing_years & existing_years  # Years that exist and are being updated
+            new_years = processing_years - existing_years
+            updating_years = processing_years & existing_years
 
-            print(f"    Existing years in sheet: {sorted(existing_years, reverse=True) if existing_years else 'None'}")
-            print(f"    Processing years: {sorted(processing_years, reverse=True)}")
-            print(
-                f"    Years being updated in-place: {sorted(updating_years, reverse=True) if updating_years else 'None'}")
-            print(f"    New years to add: {sorted(new_years, reverse=True) if new_years else 'None'}")
+            print(f"    Existing years: {sorted(existing_years, reverse=True) if existing_years else 'None'}")
+            print(f"    Processing: {sorted(processing_years, reverse=True)}")
+            print(f"    Updating: {sorted(updating_years, reverse=True) if updating_years else 'None'}")
+            print(f"    New: {sorted(new_years, reverse=True) if new_years else 'None'}")
 
-            # Create final year list: preserve existing order, add new years at appropriate positions
+            # Create final year list
             if existing_years:
-                # Start with existing years in their current order (from headers)
                 existing_year_order = [int(col) for col in headers if col != 'Month' and col.isdigit()]
                 final_year_list = existing_year_order.copy()
 
-                # Add new years in chronological order
                 for new_year in sorted(new_years, reverse=True):
-                    print(f"      Inserting year {new_year} into {final_year_list}")
-                    # Insert new year in the right chronological position
                     inserted = False
                     for i, existing_year in enumerate(final_year_list):
                         if new_year > existing_year:
-                            # Insert before this existing year (new_year is more recent)
-                            print(f"        {new_year} > {existing_year}, inserting at position {i}")
                             final_year_list.insert(i, new_year)
                             inserted = True
                             break
                     if not inserted:
-                        # New year is older than all existing years, add at the end
-                        print(f"        {new_year} is oldest, adding at end")
                         final_year_list.append(new_year)
-                    print(f"      Result: {final_year_list}")
             else:
-                # No existing data, just use processing years
                 final_year_list = sorted(processing_years, reverse=True)
 
             final_headers = ['Month'] + [str(year) for year in final_year_list]
-
-            print(f"    Final column order: {[col for col in final_headers if col != 'Month']}")
 
             # Build the final data structure
             final_rows = [final_headers]
@@ -683,15 +688,13 @@ def save_all_data_to_google_sheets_with_merge(all_data, month_names, country_cod
                 month_num = month_idx + 1
                 row = [month_name]
 
-                for year_str in final_headers[1:]:  # Skip 'Month'
+                for year_str in final_headers[1:]:
                     year = int(year_str)
 
                     if year in processing_years:
-                        # Update with new data (whether it's an existing year or new year)
                         value = year_data[year].get(month_num, 0)
                         row.append(f"{value:.2f}")
                     else:
-                        # Preserve existing data for years NOT being processed
                         existing_value = "0.00"
                         if not existing_df.empty:
                             month_rows = existing_df[existing_df['Month'] == month_name]
@@ -703,16 +706,14 @@ def save_all_data_to_google_sheets_with_merge(all_data, month_names, country_cod
 
                 final_rows.append(row)
 
-            # Add total row with same logic
+            # Add total row
             total_row = ['Total']
             for year_str in final_headers[1:]:
                 year = int(year_str)
                 if year in processing_years:
-                    # Calculate total from new data
                     total = sum(year_data[year].values())
                     total_row.append(f"{total:.2f}")
                 else:
-                    # Preserve existing total
                     try:
                         if not existing_df.empty and year_str in existing_df.columns:
                             year_values = pd.to_numeric(existing_df[year_str], errors='coerce').fillna(0)
@@ -726,35 +727,51 @@ def save_all_data_to_google_sheets_with_merge(all_data, month_names, country_cod
 
             final_rows.append(total_row)
 
-            # Clear and update the worksheet WITH DELAYS between operations
+            # Store update for batch processing
+            updates_to_apply.append((worksheet, final_rows, worksheet_title, new_years, updating_years))
+
+        # ===== OPTIMIZATION: Apply all updates with controlled delays =====
+        print(f"\n📝 Applying {len(updates_to_apply)} worksheet updates...")
+        
+        for idx, (worksheet, final_rows, worksheet_title, new_years, updating_years) in enumerate(updates_to_apply, 1):
+            print(f"\n  [{idx}/{len(updates_to_apply)}] Updating: {worksheet_title}")
+            
+            # Clear and update
             worksheet.clear()
-            time.sleep(5)  # Delay after clear
+            time.sleep(2)  # 2 seconds after clear
             
             worksheet.update(final_rows)
-            time.sleep(5)  # Delay after update
-
-            # Format the sheet
-            worksheet.format('A1:Z1', {'textFormat': {'bold': True}})
-            time.sleep(5)  # Delay after first format
+            time.sleep(2)  # 2 seconds after update
             
-            worksheet.format('A:A', {'textFormat': {'bold': True}})
-            time.sleep(5)  # Delay after second format
+            # Format (optional - can skip to save write operations)
+            try:
+                worksheet.format('A1:Z1', {'textFormat': {'bold': True}})
+                time.sleep(1)
+                worksheet.format('A:A', {'textFormat': {'bold': True}})
+                time.sleep(1)
+            except Exception as e:
+                print(f"    Warning: Formatting failed: {e}")
 
-            # Report what was updated
+            # Report
             new_years_str = ', '.join([str(year) for year in sorted(new_years, reverse=True)]) if new_years else 'None'
-            updated_years_str = ', '.join(
-                [str(year) for year in sorted(updating_years, reverse=True)]) if updating_years else 'None'
-            print(f"  ✓ Updated {source_name}: Added years [{new_years_str}], Updated years [{updated_years_str}]")
-            
-            # Add delay to prevent rate limiting (each worksheet already has 2 sec internal delays)
-            time.sleep(5)
+            updated_years_str = ', '.join([str(year) for year in sorted(updating_years, reverse=True)]) if updating_years else 'None'
+            print(f"    ✓ Added: [{new_years_str}], Updated: [{updated_years_str}]")
 
         print(f"\n✓ All data saved to Google Sheets: '{country_code} Electricity Production Data'")
         print(f"URL: {spreadsheet.url}")
+        
+        # ===== SUMMARY OF API CALLS =====
+        print(f"\n📊 API Call Summary:")
+        print(f"  Reads: ~{len(worksheet_cache) + 1} (1 worksheet list + {len(worksheet_cache)} data reads)")
+        print(f"  Writes: ~{len(updates_to_apply) * 2} (clear + update per worksheet)")
+        print(f"  Format calls: ~{len(updates_to_apply) * 2} (2 format calls per worksheet)")
+        
         return spreadsheet.url
 
     except Exception as e:
         print(f"✗ Error saving to Google Sheets: {e}")
+        import traceback
+        traceback.print_exc()
         return None
 
 
