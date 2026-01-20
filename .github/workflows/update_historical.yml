@@ -38,7 +38,7 @@ jobs:
           GOOGLE_CREDENTIALS_JSON: ${{ secrets.GOOGLE_CREDENTIALS_JSON }}
         run: |
           echo "Running daily historical data collection..."
-          python scripts/eu_energy_data_collection.py --years 2015 2016
+          python scripts/eu_energy_data_collection.py --years 2017 2018
       
       - name: Run Historical Data Plotting
         env:
