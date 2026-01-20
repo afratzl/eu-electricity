@@ -386,6 +386,7 @@ def get_or_create_country_sheet(gc, drive_service, country_code='EU'):
 def load_data_from_google_sheets(country_code='EU'):
     """
     Load all energy data from Google Sheets using environment variables
+    OPTIMIZED: Adds delays between reads to avoid rate limiting
     
     Args:
         country_code: Country code ('EU' for aggregate, 'DE' for Germany, etc.)
@@ -400,46 +401,52 @@ def load_data_from_google_sheets(country_code='EU'):
         scope = ['https://www.googleapis.com/auth/spreadsheets', 'https://www.googleapis.com/auth/drive']
         credentials = Credentials.from_service_account_info(creds_dict, scopes=scope)
         gc = gspread.authorize(credentials)
-
+        
         # Initialize drive service for sheet organization
         drive_service = initialize_drive_service()
         
         # Get or create country sheet
         spreadsheet = get_or_create_country_sheet(gc, drive_service, country_code=country_code)
         print(f"✓ Connected to Google Sheets ({country_code}): {spreadsheet.url}")
-
+        
+        # ===== OPTIMIZATION: Get worksheets list once =====
         worksheets = spreadsheet.worksheets()
+        time.sleep(2)  # Delay after getting worksheet list
         print(f"✓ Found {len(worksheets)} worksheets")
-
+        
         all_data = {}
-
+        worksheet_count = 0
+        
         for worksheet in worksheets:
             sheet_name = worksheet.title
-
             if 'Monthly Production' not in sheet_name:
                 continue
-
+            
+            worksheet_count += 1
             source_name = sheet_name.replace(' Monthly Production', '')
-            print(f"  Loading {source_name} data...")
-
+            print(f"  [{worksheet_count}] Loading {source_name} data...")
+            
+            # ===== OPTIMIZATION: Add delay BEFORE each read =====
+            # This ensures we don't exceed 60 reads/minute (2 sec = 30 reads/min max)
+            time.sleep(2)
+            
             values = worksheet.get_all_values()
-
+            
             if len(values) < 2:
                 print(f"    ⚠ No data found in {sheet_name}")
                 continue
-
+            
             df = pd.DataFrame(values[1:], columns=values[0])
             df = df[df['Month'] != 'Total']
-
+            
             year_columns = [col for col in df.columns if col != 'Month' and col.isdigit()]
             for col in year_columns:
                 df[col] = pd.to_numeric(df[col], errors='coerce').fillna(0)
-
+            
             year_data = {}
             for year_str in year_columns:
                 year = int(year_str)
                 year_data[year] = {}
-
                 for idx, row in df.iterrows():
                     month_name = row['Month']
                     try:
@@ -447,16 +454,19 @@ def load_data_from_google_sheets(country_code='EU'):
                         year_data[year][month_num] = float(row[year_str])
                     except (ValueError, KeyError):
                         continue
-
+            
             all_data[source_name] = {'year_data': year_data}
-
             print(f"    ✓ Loaded {len(year_columns)} years of data for {source_name}")
-
+        
         print(f"\n✓ Successfully loaded data for {len(all_data)} energy sources")
+        print(f"📊 API Reads: ~{worksheet_count + 1} (1 worksheet list + {worksheet_count} data reads)")
+        
         return all_data
-
+        
     except Exception as e:
         print(f"✗ Error loading from Google Sheets: {e}")
+        import traceback
+        traceback.print_exc()
         return None
 
 
@@ -2278,6 +2288,7 @@ def update_summary_table_historical_data(all_data, country_code='EU'):
         # Get the Summary Table Data worksheet
         try:
             worksheet = spreadsheet.worksheet('Summary Table Data')
+            time.sleep(1)
             print("✓ Found 'Summary Table Data' worksheet")
             
             # Check if worksheet has enough columns (need 22: A-V)
@@ -2303,7 +2314,9 @@ def update_summary_table_historical_data(all_data, country_code='EU'):
                 f'YTD{current_year}_Change_{two_years_ago}_%', f'{previous_year}_Change_{two_years_ago}_%'
             ]
             worksheet.update('A1:V1', [headers])
+            time.sleep(2)
             worksheet.format('A1:V1', {'textFormat': {'bold': True}})
+            time.sleep(2)
             print("  ✓ Header row updated")
                 
         except gspread.WorksheetNotFound:
@@ -2616,6 +2629,7 @@ def update_summary_table_historical_data(all_data, country_code='EU'):
                 })
             
             worksheet.batch_update(batch_updates)
+            time.sleep(2)
             print(f"✓ Updated {len(updates)} sources with YTD {current_year} and {previous_year} data (columns F-I, M-N)")
             
             # Update timestamp in last column (batch update)
@@ -2627,6 +2641,7 @@ def update_summary_table_historical_data(all_data, country_code='EU'):
                     'values': [[timestamp]]
                 })
             worksheet.batch_update(timestamp_updates)
+            time.sleep(2)
             print(f"✓ Updated timestamps")
             
             # ===================================================================
@@ -2637,6 +2652,7 @@ def update_summary_table_historical_data(all_data, country_code='EU'):
             
             # Read back Yesterday and LastWeek columns (B-E)
             summary_data = worksheet.get('A2:E13')  # Source, Yesterday_GWh, Yesterday_%, LastWeek_GWh, LastWeek_%
+            time.sleep(2)
             
             # Prepare updates for change from previous year columns
             change_updates = []
@@ -2769,6 +2785,7 @@ def update_summary_table_historical_data(all_data, country_code='EU'):
             # Write all change from previous year values in a single batch
             if change_updates:
                 worksheet.batch_update(change_updates)
+                time.sleep(2)
                 print(f"✓ Updated {len(change_updates)} sources with changes from {previous_year} (columns O-R)")
             
             # ===================================================================
@@ -2928,6 +2945,7 @@ def update_summary_table_historical_data(all_data, country_code='EU'):
             # Write all change from 2 years ago values in a single batch
             if change_2ya_updates:
                 worksheet.batch_update(change_2ya_updates)
+                time.sleep(2)
                 print(f"✓ Updated {len(change_2ya_updates)} sources with changes from {two_years_ago} (columns S-V)")
             
             print(f"   Worksheet: {spreadsheet.url}")
