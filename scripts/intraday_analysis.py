@@ -14,6 +14,19 @@ Key improvements:
 - Debug output for threshold violations
 - Google Sheets integration for summary table
 """
+import os
+import sys
+
+# Force tzdata to be available
+try:
+    import tzdata
+    print(f"✓ tzdata installed: {tzdata.__file__}")
+except ImportError:
+    print("✗ tzdata not found!")
+    sys.exit(1)
+
+# Set timezone path explicitly
+os.environ['PYTHONTZPATH'] = os.path.dirname(tzdata.__file__) + '/zoneinfo'
 
 from entsoe import EntsoePandasClient
 import entsoe.entsoe
