@@ -28,16 +28,13 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install --force-reinstall tzdata
-          pip install entsoe-py pandas matplotlib numpy gspread google-auth google-api-python-client pytz scipy
+          pip install tzdata
+          pip install entsoe-py==0.6.9
+          pip install pandas matplotlib numpy gspread google-auth google-api-python-client pytz scipy
       
       - name: Create plots directory
         run: mkdir -p plots
-        
-      - name: Set timezone data
-        run: |
-         export PYTHONTZPATH=/opt/hostedtoolcache/Python/3.12.12/x64/lib/python3.12/site-packages/tzdata/zoneinfo
-         
+      
       - name: Run Intraday Analysis
         env:
           ENTSOE_API_KEY: ${{ secrets.ENTSOE_API_KEY }}
