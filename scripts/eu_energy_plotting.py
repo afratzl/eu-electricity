@@ -1772,33 +1772,20 @@ def create_all_charts(all_data, country_code='EU'):
         for source_name in all_sources:
             color = ENTSOE_COLORS.get(source_name, 'black')
             
-            if source_name not in annual_totals:
-                # Missing source - plot zero line
-                if 'Total Generation' in annual_totals:
-                    years_list = [year for year in sorted(annual_totals['Total Generation'].keys()) if year >= baseline_year]
-                    ax1.plot(years_list, [0]*len(years_list), marker='o', color=color,
-                             linewidth=6, markersize=13, label=source_name, alpha=0.3)
+            # Check if we can calculate YoY for this source
+            # Need: source exists, baseline year exists, baseline is non-zero
+            if (source_name not in annual_totals or 
+                baseline_year not in annual_totals[source_name] or
+                annual_totals[source_name][baseline_year] <= 0):
+                # Can't calculate YoY - add to legend only (grayed out, no line)
+                ax1.plot([], [], marker='o', color=color, linewidth=6, 
+                         markersize=13, label=source_name, alpha=0.3)
                 continue
             
-            # Check if we have baseline data (full year 2015)
-            if baseline_year not in annual_totals[source_name]:
-                # No baseline - plot zero line
-                years_list = [year for year in sorted(annual_totals[source_name].keys()) if year >= baseline_year]
-                if years_list:
-                    ax1.plot(years_list, [0]*len(years_list), marker='o', color=color,
-                             linewidth=6, markersize=13, label=source_name, alpha=0.3)
-                continue
-            
+            # Baseline is valid - proceed with calculations
             baseline_full_year = annual_totals[source_name][baseline_year]
-            if baseline_full_year <= 0:
-                # Zero baseline - plot zero line
-                years_list = [year for year in sorted(annual_totals[source_name].keys()) if year >= baseline_year]
-                if years_list:
-                    ax1.plot(years_list, [0]*len(years_list), marker='o', color=color,
-                             linewidth=6, markersize=13, label=source_name, alpha=0.3)
-                continue
-            
             years_list = sorted(annual_totals[source_name].keys())
+            years_to_plot = []
             yoy_pct_changes = []
             
             for year in years_list:
@@ -1808,64 +1795,78 @@ def create_all_charts(all_data, country_code='EU'):
                         if source_name in current_year_ytd and source_name in baseline_year_prorated:
                             current_value = current_year_ytd[source_name]
                             baseline_value = baseline_year_prorated[source_name]
+                            
+                            # Only calculate if prorated baseline is also non-zero
                             if baseline_value > 0:
                                 pct_change = ((current_value - baseline_value) / baseline_value) * 100
+                                years_to_plot.append(year)
                                 yoy_pct_changes.append(pct_change)
                                 all_yoy_pct_values.append(pct_change)
                     else:
                         # Historical years: Compare full year to full year baseline
                         current_value = annual_totals[source_name][year]
                         pct_change = ((current_value - baseline_full_year) / baseline_full_year) * 100
+                        years_to_plot.append(year)
                         yoy_pct_changes.append(pct_change)
                         all_yoy_pct_values.append(pct_change)
-
-            years_to_plot = [year for year in years_list if year >= baseline_year]
             
-            # Only plot if we have matching data points
-            if len(years_to_plot) > 0 and len(yoy_pct_changes) == len(years_to_plot):
+            # Plot the line (only if we have data points)
+            if years_to_plot and yoy_pct_changes:
                 ax1.plot(years_to_plot, yoy_pct_changes, marker='o', color=color,
                          linewidth=6, markersize=13, label=source_name)
-
-        if True:  # Always true since we force all sources
-            if all_yoy_pct_values:
-                y_min = min(all_yoy_pct_values)
-                y_max = max(all_yoy_pct_values)
-                # 20% margin: if min is negative, make it 20% more negative; if positive, use 0
-                y_min_limit = y_min * 1.2 if y_min < 0 else 0
-                y_max_limit = y_max * 1.2
             else:
-                y_min_limit = -50
-                y_max_limit = 100
+                # Edge case: baseline exists but no valid years to plot
+                ax1.plot([], [], marker='o', color=color, linewidth=6, 
+                         markersize=13, label=source_name, alpha=0.3)
+        
+        # Set Y-axis limits based on actual plotted values
+        if all_yoy_pct_values:
+            y_min = min(all_yoy_pct_values)
+            y_max = max(all_yoy_pct_values)
+            y_min_limit = y_min * 1.2 if y_min < 0 else 0
+            y_max_limit = y_max * 1.2
+        else:
+            y_min_limit = -50
+            y_max_limit = 100
+        
+        # Add labels and formatting
+        add_flag_and_labels(fig1, country_code,
+                          'Electricity Generation',
+                          'Change from 2015 · Relative')
+        
+        ax1.set_xlabel('Year', fontsize=24, fontweight='bold', labelpad=10)
+        ax1.set_ylabel('Change from 2015 (%)', fontsize=24, fontweight='bold', labelpad=10)
+        ax1.set_ylim(y_min_limit, y_max_limit)
+        ax1.axhline(y=0, color='black', linestyle='--', linewidth=1, alpha=0.5)
+        ax1.tick_params(axis='both', labelsize=22, length=8, pad=8)
+        ax1.grid(True, linestyle='--', alpha=0.7)
+        
+        # Reorder legend for 4-column layout
+        # Now guaranteed to have exactly 10 handles (all sources always added to legend)
+        from matplotlib.patches import Rectangle
+        empty = Rectangle((0,0), 0, 0, fill=False, edgecolor='none', visible=False)
+        handles, labels = ax1.get_legend_handles_labels()
+        
+        # Hardcoded reordering - safe because we always have 10 sources
+        reordered_handles = [
+            handles[1], handles[2], handles[0],     # Wind, Solar, Hydro
+            handles[3], handles[4], empty,          # Biomass, Geothermal, (empty)
+            handles[5], handles[6], handles[7],     # Gas, Coal, Nuclear
+            handles[9], handles[8], empty,          # Oil, Waste, (empty)
+        ]
+        reordered_labels = [
+            labels[1], labels[2], labels[0],
+            labels[3], labels[4], '',
+            labels[5], labels[6], labels[7],
+            labels[9], labels[8], '',
+        ]
 
-            add_flag_and_labels(fig1, country_code,
-                              'Electricity Generation',
-                              'Change from 2015 · Relative')
-            
-            ax1.set_xlabel('Year', fontsize=24, fontweight='bold', labelpad=10)
-            ax1.set_ylabel('Change from 2015 (%)', fontsize=24, fontweight='bold', labelpad=10)
-            ax1.set_ylim(y_min_limit, y_max_limit)
-            ax1.axhline(y=0, color='black', linestyle='--', linewidth=1, alpha=0.5)
-            ax1.tick_params(axis='both', labelsize=22, length=8, pad=8)
-            ax1.grid(True, linestyle='--', alpha=0.7)
-            
-            # Reorder legend for 4-column layout: 3, 2+empty, 3, 2+empty
-            
-            from matplotlib.patches import Rectangle
-            empty = Rectangle((0,0), 0, 0, fill=False, edgecolor='none', visible=False)
-            handles, labels = ax1.get_legend_handles_labels()
-            
-            reordered_handles = [
-                handles[1], handles[2], handles[0],
-                handles[3], handles[4], empty,
-                handles[5], handles[6], handles[7],
-                handles[9], handles[8], empty,
-            ]
-            reordered_labels = [
-                labels[1], labels[2], labels[0],
-                labels[3], labels[4], '',
-                labels[5], labels[6], labels[7],
-                labels[9], labels[8], '',
-            ]
+ax1.legend(reordered_handles, reordered_labels,
+           loc='upper left', bbox_to_anchor=(0.01, 0.99), 
+           ncol=3, fontsize=20, frameon=True, fancybox=True, 
+           shadow=True, columnspacing=1.5, handlelength=2)
+
+plt.tight_layout()
             
             ax1.legend(reordered_handles, reordered_labels, loc='upper left', bbox_to_anchor=(0.19, 0.165),
                        bbox_transform=fig1.transFigure, ncol=4,
