@@ -11,6 +11,8 @@ import gspread
 from google.oauth2.service_account import Credentials
 from datetime import datetime
 
+import time
+
 # Use drive_links.json as single source of truth for spreadsheet IDs
 DRIVE_LINKS_FILE = 'plots/drive_links.json'
 
@@ -112,6 +114,7 @@ def generate_summary_json():
             worksheet_name = 'Summary Table Data'
             try:
                 worksheet = spreadsheet.worksheet(worksheet_name)
+                time.sleep(10)
                 print(f"✓ Found '{worksheet_name}' worksheet")
             except gspread.WorksheetNotFound:
                 print(f"✗ '{worksheet_name}' worksheet not found in {spreadsheet.title}!")
