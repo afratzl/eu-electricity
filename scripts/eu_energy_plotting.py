@@ -429,7 +429,7 @@ def load_data_from_google_sheets(country_code='EU'):
             
             # ===== OPTIMIZATION: Add delay BEFORE each read =====
             # This ensures we don't exceed 60 reads/minute (2 sec = 30 reads/min max)
-            time.sleep(2)
+            time.sleep(10)
             
             values = worksheet.get_all_values()
             
