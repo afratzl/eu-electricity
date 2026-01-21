@@ -1860,30 +1860,23 @@ def create_all_charts(all_data, country_code='EU'):
             labels[5], labels[6], labels[7],
             labels[9], labels[8], '',
         ]
-
-ax1.legend(reordered_handles, reordered_labels,
-           loc='upper left', bbox_to_anchor=(0.01, 0.99), 
-           ncol=3, fontsize=20, frameon=True, fancybox=True, 
-           shadow=True, columnspacing=1.5, handlelength=2)
-
-plt.tight_layout()
             
-            ax1.legend(reordered_handles, reordered_labels, loc='upper left', bbox_to_anchor=(0.19, 0.165),
-                       bbox_transform=fig1.transFigure, ncol=4,
-                       fontsize=18, frameon=False)
+        ax1.legend(reordered_handles, reordered_labels, loc='upper left', bbox_to_anchor=(0.19, 0.165),
+                   bbox_transform=fig1.transFigure, ncol=4,
+                   fontsize=18, frameon=False)
 
-            percentage_filename = f'plots/{country_code.lower()}_annual_yoy_all_sources_vs_2015_percentage.png'
-            plt.savefig(percentage_filename, dpi=150)
-            print(f"  ✓ Saved: {percentage_filename}")
-            
-            if drive_service:
-                result = upload_plot_to_drive(drive_service, percentage_filename, plot_type='Trends', country=country_code)
-                if result:
-                    if 'yoy_change_vs_2015_all_sources' not in plot_links['Trends']:
-                        plot_links['Trends']['yoy_change_vs_2015_all_sources'] = {}
-                    plot_links['Trends']['yoy_change_vs_2015_all_sources']['percentage'] = result
-            
-            plt.close()
+        percentage_filename = f'plots/{country_code.lower()}_annual_yoy_all_sources_vs_2015_percentage.png'
+        plt.savefig(percentage_filename, dpi=150)
+        print(f"  ✓ Saved: {percentage_filename}")
+        
+        if drive_service:
+            result = upload_plot_to_drive(drive_service, percentage_filename, plot_type='Trends', country=country_code)
+            if result:
+                if 'yoy_change_vs_2015_all_sources' not in plot_links['Trends']:
+                    plot_links['Trends']['yoy_change_vs_2015_all_sources'] = {}
+                plot_links['Trends']['yoy_change_vs_2015_all_sources']['percentage'] = result
+        
+        plt.close()
 
         # PLOT 2: ABSOLUTE CHANGE (TWh)
         fig2, ax2 = plt.subplots(figsize=(12, 12))
