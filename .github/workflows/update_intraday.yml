@@ -33,7 +33,11 @@ jobs:
       
       - name: Create plots directory
         run: mkdir -p plots
-      
+        
+      - name: Set timezone data
+        run: |
+         export PYTHONTZPATH=/opt/hostedtoolcache/Python/3.12.12/x64/lib/python3.12/site-packages/tzdata/zoneinfo
+         
       - name: Run Intraday Analysis
         env:
           ENTSOE_API_KEY: ${{ secrets.ENTSOE_API_KEY }}
