@@ -173,16 +173,21 @@ def generate_summary_json():
                 else:
                     category = 'non-renewable'
                 
-                # Parse values (handle empty strings)
+                # Parse values (handle empty strings, NaN, and None)
                 def safe_float(val):
+                    """Convert to float, return 0.0 for invalid/empty/NaN values"""
                     try:
-                        return float(val) if val else 0.0
-                    except ValueError:
+                        if val is None or val == '' or str(val).lower() in ['nan', 'none', 'null']:
+                            return 0.0
+                        return float(val)
+                    except (ValueError, TypeError):
                         return 0.0
                 
                 def safe_string(val):
-                    """Return string value or empty string"""
-                    return str(val) if val else ""
+                    """Return string value or dash for empty/invalid/NaN values"""
+                    if val is None or val == '' or str(val).lower() in ['nan', 'none', 'null']:
+                        return '—'
+                    return str(val)
                 
                 yesterday_gwh = safe_float(row[1])
                 yesterday_pct = safe_float(row[2])
