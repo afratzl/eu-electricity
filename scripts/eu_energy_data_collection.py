@@ -548,6 +548,10 @@ def save_all_data_to_google_sheets_with_merge(all_data, month_names, country_cod
     Uses environment variables for credentials
     
     OPTIMIZED VERSION: Minimizes API calls with automatic rate limit recovery
+    ALL FIXES APPLIED:
+    - Issue 3: Increased read delays to 3s (from 2s)
+    - Issue 4: Skip formatting to save write quota
+    - Issue 5: Check worksheet exists before creating
     
     Args:
         all_data: Dictionary with all collected data
@@ -587,7 +591,7 @@ def save_all_data_to_google_sheets_with_merge(all_data, month_names, country_cod
         print(f"SAVING DATA FOR: {country_code}")
         print(f"{'='*80}")
 
-        # ===== OPTIMIZATION: Read all worksheets ONCE with retry on rate limit =====
+        # ===== FIX 3: Increased delays to avoid read rate limit =====
         print("\n📖 Pre-loading all existing worksheets...")
         
         max_retries = 2
@@ -597,12 +601,12 @@ def save_all_data_to_google_sheets_with_merge(all_data, month_names, country_cod
         for attempt in range(max_retries):
             try:
                 all_worksheets_list = spreadsheet.worksheets()
-                time.sleep(2)  # Delay after getting worksheet list
+                time.sleep(3)  # FIX 3: Increased from 2s to 3s
             except Exception as e:
                 print(f"  ⚠ Error getting worksheet list: {e}")
                 if attempt < max_retries - 1:
-                    print(f"  ⏳ Waiting 90 seconds...")
-                    time.sleep(90)
+                    print(f"  ⏳ Waiting 120 seconds...")  # FIX 3: Increased from 90s to 120s
+                    time.sleep(120)
                     continue
                 else:
                     raise
@@ -615,13 +619,13 @@ def save_all_data_to_google_sheets_with_merge(all_data, month_names, country_cod
                 worksheet_cache[ws.title] = ws
                 try:
                     existing_data_cache[ws.title] = ws.get_all_values()
-                    time.sleep(2)  # 2 seconds between reads = 30 reads/min max
+                    time.sleep(3)  # FIX 3: Increased from 2s to 3s (20 reads/min max = safe)
                     print(f"  ✓ [{idx}/{len(all_worksheets_list)}] Cached: {ws.title} ({len(existing_data_cache[ws.title])} rows)")
                 except Exception as e:
                     if '429' in str(e):  # Rate limit hit
                         print(f"  ⚠ Rate limit hit at worksheet {idx}/{len(all_worksheets_list)}")
-                        print(f"  ⏳ Waiting 90 seconds for rate limit to reset...")
-                        time.sleep(90)
+                        print(f"  ⏳ Waiting 120 seconds for rate limit to reset...")  # FIX 3: Increased from 90s
+                        time.sleep(120)
                         failed = True
                         break  # Exit the worksheet loop, retry from start
                     else:
@@ -631,7 +635,7 @@ def save_all_data_to_google_sheets_with_merge(all_data, month_names, country_cod
             
             if not failed:
                 # Successfully loaded all worksheets
-                print(f"✓ Pre-loaded {len(worksheet_cache)} worksheets\n")
+                print(f"✓ Pre-loaded {len(worksheet_cache)} worksheets successfully\n")
                 break
             elif attempt < max_retries - 1:
                 print(f"  🔄 Retrying pre-load (attempt {attempt + 2}/{max_retries})...")
@@ -656,18 +660,40 @@ def save_all_data_to_google_sheets_with_merge(all_data, month_names, country_cod
 
             worksheet_title = f'{source_name} Monthly Production'
 
-            # Use cached data (NO API CALL!)
+            # ===== FIX 5: Check if worksheet exists before creating =====
             if worksheet_title in existing_data_cache:
                 existing_values = existing_data_cache[worksheet_title]
                 worksheet = worksheet_cache[worksheet_title]
                 print(f"  Processing: {worksheet_title} (using cached data)")
             else:
-                # Need to create new worksheet - do it now but don't write yet
-                print(f"  Creating new worksheet: {worksheet_title}")
-                worksheet = spreadsheet.add_worksheet(title=worksheet_title, rows=100, cols=20)
-                time.sleep(2)  # Delay after worksheet creation
+                # Not in cache - try to get it first (might exist but failed during pre-load)
+                print(f"  Worksheet not in cache: {worksheet_title}")
+                
+                try:
+                    # Try to get existing worksheet first
+                    worksheet = spreadsheet.worksheet(worksheet_title)
+                    time.sleep(2)
+                    print(f"  ✓ Found existing worksheet: {worksheet_title}")
+                    
+                    # Read its data now
+                    try:
+                        existing_values = worksheet.get_all_values()
+                        time.sleep(3)  # FIX 3: Use 3s delay
+                        print(f"  ✓ Read {len(existing_values)} rows")
+                    except Exception as e:
+                        print(f"  ⚠ Could not read data: {e}")
+                        existing_values = []
+                        
+                except gspread.WorksheetNotFound:
+                    # Truly doesn't exist - create it
+                    print(f"  Creating new worksheet: {worksheet_title}")
+                    worksheet = spreadsheet.add_worksheet(title=worksheet_title, rows=100, cols=20)
+                    time.sleep(3)  # FIX 3: Use 3s delay after creation
+                    existing_values = []
+                
+                # Add to cache for this run
                 worksheet_cache[worksheet_title] = worksheet
-                existing_values = []
+                existing_data_cache[worksheet_title] = existing_values
 
             # Parse existing data
             if len(existing_values) >= 2:
@@ -769,19 +795,23 @@ def save_all_data_to_google_sheets_with_merge(all_data, month_names, country_cod
             
             # Clear and update
             worksheet.clear()
-            time.sleep(2)  # 2 seconds after clear
+            time.sleep(3)  # FIX 3: Increased from 2s to 3s
             
             worksheet.update(final_rows)
-            time.sleep(2)  # 2 seconds after update
+            time.sleep(3)  # FIX 3: Increased from 2s to 3s
             
-            # Format (optional - can skip to save write operations)
-            try:
-                worksheet.format('A1:Z1', {'textFormat': {'bold': True}})
-                time.sleep(1)
-                worksheet.format('A:A', {'textFormat': {'bold': True}})
-                time.sleep(1)
-            except Exception as e:
-                print(f"    Warning: Formatting failed: {e}")
+            # ===== FIX 4: Skip formatting to save write quota =====
+            # Formatting uses 2 additional write operations per worksheet
+            # Skipping saves ~24 writes per country (allows faster processing)
+            # Data is intact, just headers won't be bold
+            # 
+            # try:
+            #     worksheet.format('A1:Z1', {'textFormat': {'bold': True}})
+            #     time.sleep(1)
+            #     worksheet.format('A:A', {'textFormat': {'bold': True}})
+            #     time.sleep(1)
+            # except Exception as e:
+            #     print(f"    Warning: Formatting failed: {e}")
 
             # Report
             new_years_str = ', '.join([str(year) for year in sorted(new_years, reverse=True)]) if new_years else 'None'
@@ -795,7 +825,7 @@ def save_all_data_to_google_sheets_with_merge(all_data, month_names, country_cod
         print(f"\n📊 API Call Summary:")
         print(f"  Reads: ~{len(worksheet_cache) + 1} (1 worksheet list + {len(worksheet_cache)} data reads)")
         print(f"  Writes: ~{len(updates_to_apply) * 2} (clear + update per worksheet)")
-        print(f"  Format calls: ~{len(updates_to_apply) * 2} (2 format calls per worksheet)")
+        print(f"  Format calls: 0 (skipped to save write quota)")
         
         return spreadsheet.url
 
