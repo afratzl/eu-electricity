@@ -1,26 +1,22 @@
 {
   "EU": {
-<<<<<<< Updated upstream
-    "last_updated": "2026-02-10 09:11:30 UTC",
-=======
-    "last_updated": "2026-02-10 09:28:36 UTC",
->>>>>>> Stashed changes
+    "last_updated": "2026-02-10 07:14:13 UTC",
     "sources": [
       {
         "source": "All Renewables",
         "category": "aggregate-renewable",
         "yesterday": {
-          "gwh": 3061.7,
+          "gwh": 3062.6,
           "twh": 3.06,
-          "percentage": 37.44,
+          "percentage": 37.49,
           "change_from_2015": "+30%",
           "change_from_2024": "-1.4%",
           "change_from_2023": "-15%"
         },
         "last_week": {
-          "gwh": 24713.8,
+          "gwh": 24713.3,
           "twh": 24.71,
-          "percentage": 42.46,
+          "percentage": 42.47,
           "change_from_2015": "+50%",
           "change_from_2024": "+14%",
           "change_from_2023": "-2.1%"
@@ -46,17 +42,17 @@
         "source": "Wind",
         "category": "renewable",
         "yesterday": {
-          "gwh": 1164.4,
-          "twh": 1.16,
-          "percentage": 14.23,
+          "gwh": 1165.5,
+          "twh": 1.17,
+          "percentage": 14.27,
           "change_from_2015": "+43%",
-          "change_from_2024": "-4.2%",
+          "change_from_2024": "-4.1%",
           "change_from_2023": "-36%"
         },
         "last_week": {
           "gwh": 11962.5,
           "twh": 11.96,
-          "percentage": 20.55,
+          "percentage": 20.56,
           "change_from_2015": "+110%",
           "change_from_2024": "+41%",
           "change_from_2023": "-5.6%"
@@ -82,9 +78,9 @@
         "source": "Hydro",
         "category": "renewable",
         "yesterday": {
-          "gwh": 1322.3,
+          "gwh": 1322.4,
           "twh": 1.32,
-          "percentage": 16.17,
+          "percentage": 16.19,
           "change_from_2015": "+14%",
           "change_from_2024": "+15%",
           "change_from_2023": "+9.8%"
@@ -154,19 +150,19 @@
         "source": "Biomass",
         "category": "renewable",
         "yesterday": {
-          "gwh": 242.5,
+          "gwh": 242.2,
           "twh": 0.24,
-          "percentage": 2.96,
+          "percentage": 2.97,
           "change_from_2015": "+19%",
-          "change_from_2024": "+3.5%",
+          "change_from_2024": "+3.4%",
           "change_from_2023": "+16%"
         },
         "last_week": {
-          "gwh": 1714.9,
+          "gwh": 1714.4,
           "twh": 1.71,
           "percentage": 2.95,
           "change_from_2015": "+20%",
-          "change_from_2024": "+4.6%",
+          "change_from_2024": "+4.5%",
           "change_from_2023": "+17%"
         },
         "ytd_2025": {
@@ -194,7 +190,7 @@
           "twh": 0.01,
           "percentage": 0.18,
           "change_from_2015": "-12%",
-          "change_from_2024": "+1748%",
+          "change_from_2024": "+1749%",
           "change_from_2023": "-7.7%"
         },
         "last_week": {
@@ -202,8 +198,8 @@
           "twh": 0.1,
           "percentage": 0.18,
           "change_from_2015": "-10%",
-          "change_from_2024": "+1783%",
-          "change_from_2023": "-6.0%"
+          "change_from_2024": "+1784%",
+          "change_from_2023": "-5.9%"
         },
         "ytd_2025": {
           "gwh": 596.6,
@@ -226,17 +222,17 @@
         "source": "All Non-Renewables",
         "category": "aggregate-non-renewable",
         "yesterday": {
-          "gwh": 5117.9,
-          "twh": 5.12,
-          "percentage": 62.56,
-          "change_from_2015": "-9.3%",
-          "change_from_2024": "+6.2%",
+          "gwh": 5106.3,
+          "twh": 5.11,
+          "percentage": 62.51,
+          "change_from_2015": "-9.5%",
+          "change_from_2024": "+6.0%",
           "change_from_2023": "+28%"
         },
         "last_week": {
-          "gwh": 33494.8,
-          "twh": 33.49,
-          "percentage": 57.54,
+          "gwh": 33481.4,
+          "twh": 33.48,
+          "percentage": 57.53,
           "change_from_2015": "-15%",
           "change_from_2024": "-0.7%",
           "change_from_2023": "+20%"
@@ -262,17 +258,17 @@
         "source": "Nuclear",
         "category": "non-renewable",
         "yesterday": {
-          "gwh": 1959.7,
+          "gwh": 1960.8,
           "twh": 1.96,
-          "percentage": 23.96,
+          "percentage": 24.01,
           "change_from_2015": "-18%",
-          "change_from_2024": "+0.6%",
-          "change_from_2023": "+5.5%"
+          "change_from_2024": "+0.7%",
+          "change_from_2023": "+5.6%"
         },
         "last_week": {
-          "gwh": 13833.2,
+          "gwh": 13833.3,
           "twh": 13.83,
-          "percentage": 23.76,
+          "percentage": 23.77,
           "change_from_2015": "-17%",
           "change_from_2024": "+1.5%",
           "change_from_2023": "+6.4%"
@@ -298,17 +294,17 @@
         "source": "Gas",
         "category": "non-renewable",
         "yesterday": {
-          "gwh": 1804.6,
+          "gwh": 1804.4,
           "twh": 1.8,
-          "percentage": 22.07,
+          "percentage": 22.09,
           "change_from_2015": "+115%",
           "change_from_2024": "+23%",
           "change_from_2023": "+77%"
         },
         "last_week": {
-          "gwh": 10671.5,
+          "gwh": 10670.7,
           "twh": 10.67,
-          "percentage": 18.33,
+          "percentage": 18.34,
           "change_from_2015": "+82%",
           "change_from_2024": "+3.6%",
           "change_from_2023": "+50%"
@@ -334,9 +330,9 @@
         "source": "Coal",
         "category": "non-renewable",
         "yesterday": {
-          "gwh": 1072.8,
+          "gwh": 1073.1,
           "twh": 1.07,
-          "percentage": 13.11,
+          "percentage": 13.14,
           "change_from_2015": "-40%",
           "change_from_2024": "+1.0%",
           "change_from_2023": "+32%"
@@ -344,7 +340,7 @@
         "last_week": {
           "gwh": 7133.0,
           "twh": 7.13,
-          "percentage": 12.25,
+          "percentage": 12.26,
           "change_from_2015": "-43%",
           "change_from_2024": "-4.1%",
           "change_from_2023": "+25%"
@@ -370,20 +366,20 @@
         "source": "Waste",
         "category": "non-renewable",
         "yesterday": {
-          "gwh": 241.1,
-          "twh": 0.24,
-          "percentage": 2.94,
-          "change_from_2015": "-58%",
-          "change_from_2024": "-20%",
-          "change_from_2023": "-12%"
+          "gwh": 232.6,
+          "twh": 0.23,
+          "percentage": 2.85,
+          "change_from_2015": "-59%",
+          "change_from_2024": "-23%",
+          "change_from_2023": "-15%"
         },
         "last_week": {
-          "gwh": 1575.2,
-          "twh": 1.58,
-          "percentage": 2.71,
-          "change_from_2015": "-60%",
-          "change_from_2024": "-25%",
-          "change_from_2023": "-17%"
+          "gwh": 1562.5,
+          "twh": 1.56,
+          "percentage": 2.68,
+          "change_from_2015": "-61%",
+          "change_from_2024": "-26%",
+          "change_from_2023": "-18%"
         },
         "ytd_2025": {
           "gwh": 10414.9,
@@ -406,12 +402,12 @@
         "source": "Oil",
         "category": "non-renewable",
         "yesterday": {
-          "gwh": 39.3,
+          "gwh": 39.6,
           "twh": 0.04,
-          "percentage": 0.48,
+          "percentage": 0.49,
           "change_from_2015": "-35%",
-          "change_from_2024": "+18%",
-          "change_from_2023": "-0.8%"
+          "change_from_2024": "+19%",
+          "change_from_2023": "+0.1%"
         },
         "last_week": {
           "gwh": 281.9,
@@ -441,11 +437,7 @@
     ]
   },
   "DE": {
-<<<<<<< Updated upstream
-    "last_updated": "2026-02-10 09:11:41 UTC",
-=======
-    "last_updated": "2026-02-10 09:28:48 UTC",
->>>>>>> Stashed changes
+    "last_updated": "2026-02-10 07:14:24 UTC",
     "sources": [
       {
         "source": "All Renewables",
@@ -467,12 +459,12 @@
           "change_from_2023": "-15%"
         },
         "ytd_2025": {
-          "gwh": 30578.9,
-          "twh": 30.58,
-          "percentage": 50.85,
+          "gwh": 30070.3,
+          "twh": 30.07,
+          "percentage": 51.19,
           "change_from_2015": "+45%",
-          "change_from_2024": "+0.6%",
-          "change_from_2023": "-13%"
+          "change_from_2024": "+1.1%",
+          "change_from_2023": "-12%"
         },
         "year_2024": {
           "gwh": 280060.4,
@@ -503,12 +495,12 @@
           "change_from_2023": "-13%"
         },
         "ytd_2025": {
-          "gwh": 21018.6,
-          "twh": 21.02,
-          "percentage": 34.95,
-          "change_from_2015": "+81%",
-          "change_from_2024": "+9.9%",
-          "change_from_2023": "-14%"
+          "gwh": 20767.9,
+          "twh": 20.77,
+          "percentage": 35.35,
+          "change_from_2015": "+82%",
+          "change_from_2024": "+11%",
+          "change_from_2023": "-13%"
         },
         "year_2024": {
           "gwh": 132668.7,
@@ -539,11 +531,11 @@
           "change_from_2023": "-34%"
         },
         "ytd_2025": {
-          "gwh": 3069.7,
-          "twh": 3.07,
-          "percentage": 5.1,
+          "gwh": 2985.6,
+          "twh": 2.99,
+          "percentage": 5.08,
           "change_from_2015": "-15%",
-          "change_from_2024": "-26%",
+          "change_from_2024": "-27%",
           "change_from_2023": "-28%"
         },
         "year_2024": {
@@ -575,12 +567,12 @@
           "change_from_2023": "-18%"
         },
         "ytd_2025": {
-          "gwh": 2223.8,
-          "twh": 2.22,
-          "percentage": 3.7,
-          "change_from_2015": "+112%",
-          "change_from_2024": "-18%",
-          "change_from_2023": "+0.8%"
+          "gwh": 2157.3,
+          "twh": 2.16,
+          "percentage": 3.67,
+          "change_from_2015": "+116%",
+          "change_from_2024": "-17%",
+          "change_from_2023": "+1.4%"
         },
         "year_2024": {
           "gwh": 73868.4,
@@ -611,10 +603,10 @@
           "change_from_2023": "-0.5%"
         },
         "ytd_2025": {
-          "gwh": 4171.4,
-          "twh": 4.17,
-          "percentage": 6.94,
-          "change_from_2015": "-9.4%",
+          "gwh": 4066.5,
+          "twh": 4.07,
+          "percentage": 6.92,
+          "change_from_2015": "-9.5%",
           "change_from_2024": "-2.6%",
           "change_from_2023": "-1.2%"
         },
@@ -647,12 +639,12 @@
           "change_from_2023": "-25%"
         },
         "ytd_2025": {
-          "gwh": 21.7,
+          "gwh": 21.2,
           "twh": 0.02,
           "percentage": 0.04,
           "change_from_2015": "+40%",
           "change_from_2024": "-30%",
-          "change_from_2023": "-19%"
+          "change_from_2023": "-18%"
         },
         "year_2024": {
           "gwh": 215.1,
@@ -683,12 +675,12 @@
           "change_from_2023": "+47%"
         },
         "ytd_2025": {
-          "gwh": 29554.3,
-          "twh": 29.55,
-          "percentage": 49.15,
+          "gwh": 28677.2,
+          "twh": 28.68,
+          "percentage": 48.81,
           "change_from_2015": "-24%",
-          "change_from_2024": "+10%",
-          "change_from_2023": "+20%"
+          "change_from_2024": "+9.9%",
+          "change_from_2023": "+19%"
         },
         "year_2024": {
           "gwh": 170245.5,
@@ -755,12 +747,12 @@
           "change_from_2023": "+73%"
         },
         "ytd_2025": {
-          "gwh": 13369.3,
-          "twh": 13.37,
-          "percentage": 22.23,
-          "change_from_2015": "+574%",
+          "gwh": 12954.2,
+          "twh": 12.95,
+          "percentage": 22.05,
+          "change_from_2015": "+573%",
           "change_from_2024": "+20%",
-          "change_from_2023": "+40%"
+          "change_from_2023": "+39%"
         },
         "year_2024": {
           "gwh": 64695.7,
@@ -791,12 +783,12 @@
           "change_from_2023": "+34%"
         },
         "ytd_2025": {
-          "gwh": 14895.8,
-          "twh": 14.9,
-          "percentage": 24.77,
-          "change_from_2015": "-40%",
-          "change_from_2024": "+2.8%",
-          "change_from_2023": "+7.7%"
+          "gwh": 14462.9,
+          "twh": 14.46,
+          "percentage": 24.62,
+          "change_from_2015": "-41%",
+          "change_from_2024": "+2.7%",
+          "change_from_2023": "+6.9%"
         },
         "year_2024": {
           "gwh": 95323.7,
@@ -827,11 +819,11 @@
           "change_from_2023": "+8.5%"
         },
         "ytd_2025": {
-          "gwh": 1016.2,
-          "twh": 1.02,
+          "gwh": 991.3,
+          "twh": 0.99,
           "percentage": 1.69,
           "change_from_2015": "+7.9%",
-          "change_from_2024": "+24%",
+          "change_from_2024": "+25%",
           "change_from_2023": "+12%"
         },
         "year_2024": {
@@ -863,11 +855,11 @@
           "change_from_2023": "+3.0%"
         },
         "ytd_2025": {
-          "gwh": 273.0,
+          "gwh": 268.9,
           "twh": 0.27,
-          "percentage": 0.45,
-          "change_from_2015": "+46%",
-          "change_from_2024": "-31%",
+          "percentage": 0.46,
+          "change_from_2015": "+48%",
+          "change_from_2024": "-30%",
           "change_from_2023": "-28%"
         },
         "year_2024": {
@@ -882,11 +874,7 @@
     ]
   },
   "ES": {
-<<<<<<< Updated upstream
-    "last_updated": "2026-02-10 09:11:52 UTC",
-=======
-    "last_updated": "2026-02-10 09:28:59 UTC",
->>>>>>> Stashed changes
+    "last_updated": "2026-02-10 07:14:35 UTC",
     "sources": [
       {
         "source": "All Renewables",
@@ -908,11 +896,11 @@
           "change_from_2023": "+17%"
         },
         "ytd_2025": {
-          "gwh": 19838.2,
-          "twh": 19.84,
-          "percentage": 61.52,
-          "change_from_2015": "+47%",
-          "change_from_2024": "+6.0%",
+          "gwh": 19262.4,
+          "twh": 19.26,
+          "percentage": 61.29,
+          "change_from_2015": "+48%",
+          "change_from_2024": "+5.4%",
           "change_from_2023": "+11%"
         },
         "year_2024": {
@@ -932,11 +920,7 @@
           "twh": 0.27,
           "percentage": 33.47,
           "change_from_2015": "+26%",
-<<<<<<< Updated upstream
           "change_from_2024": "+109%",
-=======
-          "change_from_2024": "+110%",
->>>>>>> Stashed changes
           "change_from_2023": "+17%"
         },
         "last_week": {
@@ -948,12 +932,12 @@
           "change_from_2023": "+14%"
         },
         "ytd_2025": {
-          "gwh": 10149.5,
-          "twh": 10.15,
-          "percentage": 31.48,
+          "gwh": 9864.5,
+          "twh": 9.86,
+          "percentage": 31.39,
           "change_from_2015": "+43%",
-          "change_from_2024": "+16%",
-          "change_from_2023": "+27%"
+          "change_from_2024": "+15%",
+          "change_from_2023": "+28%"
         },
         "year_2024": {
           "gwh": 55575.6,
@@ -984,12 +968,12 @@
           "change_from_2023": "+57%"
         },
         "ytd_2025": {
-          "gwh": 6545.5,
-          "twh": 6.55,
-          "percentage": 20.3,
+          "gwh": 6318.9,
+          "twh": 6.32,
+          "percentage": 20.11,
           "change_from_2015": "+34%",
-          "change_from_2024": "+8.2%",
-          "change_from_2023": "-1.4%"
+          "change_from_2024": "+7.6%",
+          "change_from_2023": "-2.5%"
         },
         "year_2024": {
           "gwh": 48714.3,
@@ -1020,12 +1004,12 @@
           "change_from_2023": "-40%"
         },
         "ytd_2025": {
-          "gwh": 2706.6,
-          "twh": 2.71,
-          "percentage": 8.39,
-          "change_from_2015": "+200%",
-          "change_from_2024": "-21%",
-          "change_from_2023": "-4.5%"
+          "gwh": 2650.3,
+          "twh": 2.65,
+          "percentage": 8.43,
+          "change_from_2015": "+201%",
+          "change_from_2024": "-20%",
+          "change_from_2023": "-3.4%"
         },
         "year_2024": {
           "gwh": 52524.2,
@@ -1053,18 +1037,14 @@
           "percentage": 0.93,
           "change_from_2015": "-31%",
           "change_from_2024": "-29%",
-<<<<<<< Updated upstream
           "change_from_2023": "-1.7%"
-=======
-          "change_from_2023": "-1.6%"
->>>>>>> Stashed changes
         },
         "ytd_2025": {
-          "gwh": 376.5,
-          "twh": 0.38,
-          "percentage": 1.17,
+          "gwh": 369.9,
+          "twh": 0.37,
+          "percentage": 1.18,
           "change_from_2015": "-21%",
-          "change_from_2024": "-12%",
+          "change_from_2024": "-11%",
           "change_from_2023": "+12%"
         },
         "year_2024": {
@@ -1121,11 +1101,7 @@
           "percentage": 29.83,
           "change_from_2015": "-40%",
           "change_from_2024": "-24%",
-<<<<<<< Updated upstream
           "change_from_2023": "-8.4%"
-=======
-          "change_from_2023": "-8.5%"
->>>>>>> Stashed changes
         },
         "last_week": {
           "gwh": 1801.4,
@@ -1136,12 +1112,12 @@
           "change_from_2023": "-2.4%"
         },
         "ytd_2025": {
-          "gwh": 12407.6,
-          "twh": 12.41,
-          "percentage": 38.48,
+          "gwh": 12164.6,
+          "twh": 12.16,
+          "percentage": 38.71,
           "change_from_2015": "-33%",
-          "change_from_2024": "-3.5%",
-          "change_from_2023": "-0.1%"
+          "change_from_2024": "-3.0%",
+          "change_from_2023": "+0.1%"
         },
         "year_2024": {
           "gwh": 107308.3,
@@ -1172,12 +1148,12 @@
           "change_from_2023": "+3.4%"
         },
         "ytd_2025": {
-          "gwh": 6686.1,
-          "twh": 6.69,
-          "percentage": 20.73,
-          "change_from_2015": "-3.2%",
-          "change_from_2024": "-3.3%",
-          "change_from_2023": "-0.3%"
+          "gwh": 6547.5,
+          "twh": 6.55,
+          "percentage": 20.83,
+          "change_from_2015": "-2.8%",
+          "change_from_2024": "-2.9%",
+          "change_from_2023": "-0.1%"
         },
         "year_2024": {
           "gwh": 51911.8,
@@ -1208,12 +1184,12 @@
           "change_from_2023": "-0.8%"
         },
         "ytd_2025": {
-          "gwh": 5515.0,
-          "twh": 5.51,
-          "percentage": 17.1,
-          "change_from_2015": "+9.7%",
-          "change_from_2024": "+3.2%",
-          "change_from_2023": "+8.8%"
+          "gwh": 5415.4,
+          "twh": 5.42,
+          "percentage": 17.23,
+          "change_from_2015": "+10%",
+          "change_from_2024": "+3.9%",
+          "change_from_2023": "+8.9%"
         },
         "year_2024": {
           "gwh": 52132.8,
@@ -1232,16 +1208,16 @@
           "twh": 0.0,
           "percentage": 0.0,
           "change_from_2015": "-100%",
-          "change_from_2024": "\u2014",
-          "change_from_2023": "\u2014"
+          "change_from_2024": "-100%",
+          "change_from_2023": "-100%"
         },
         "last_week": {
           "gwh": 0.0,
           "twh": 0.0,
           "percentage": 0.0,
           "change_from_2015": "-100%",
-          "change_from_2024": "\u2014",
-          "change_from_2023": "\u2014"
+          "change_from_2024": "-100%",
+          "change_from_2023": "-100%"
         },
         "ytd_2025": {
           "gwh": 20.2,
@@ -1268,11 +1244,7 @@
           "twh": 0.0,
           "percentage": 0.53,
           "change_from_2015": "-38%",
-<<<<<<< Updated upstream
           "change_from_2024": "-4.9%",
-=======
-          "change_from_2024": "-4.3%",
->>>>>>> Stashed changes
           "change_from_2023": "-25%"
         },
         "last_week": {
@@ -1284,11 +1256,11 @@
           "change_from_2023": "-50%"
         },
         "ytd_2025": {
-          "gwh": 160.9,
+          "gwh": 156.7,
           "twh": 0.16,
           "percentage": 0.5,
           "change_from_2015": "-45%",
-          "change_from_2024": "-14%",
+          "change_from_2024": "-15%",
           "change_from_2023": "-32%"
         },
         "year_2024": {
@@ -1308,32 +1280,23 @@
           "twh": 0.0,
           "percentage": 0.07,
           "change_from_2015": "-92%",
-<<<<<<< Updated upstream
           "change_from_2024": "+21%",
           "change_from_2023": "-46%"
-=======
-          "change_from_2024": "+26%",
-          "change_from_2023": "-44%"
->>>>>>> Stashed changes
         },
         "last_week": {
           "gwh": 3.6,
           "twh": 0.0,
           "percentage": 0.06,
           "change_from_2015": "-93%",
-<<<<<<< Updated upstream
           "change_from_2024": "+7.3%",
-=======
-          "change_from_2024": "+7.7%",
->>>>>>> Stashed changes
           "change_from_2023": "-52%"
         },
         "ytd_2025": {
-          "gwh": 24.4,
+          "gwh": 23.9,
           "twh": 0.02,
           "percentage": 0.08,
           "change_from_2015": "-92%",
-          "change_from_2024": "+40%",
+          "change_from_2024": "+41%",
           "change_from_2023": "-57%"
         },
         "year_2024": {
@@ -1348,8 +1311,7 @@
     ]
   },
   "FR": {
-<<<<<<< Updated upstream
-    "last_updated": "2026-02-10 09:12:03 UTC",
+    "last_updated": "2026-02-10 07:14:46 UTC",
     "sources": [
       {
         "source": "All Renewables",
@@ -1786,14 +1748,7 @@
     ]
   },
   "AT": {
-    "last_updated": "2026-02-10 09:12:15 UTC",
-=======
-    "last_updated": "Data not available",
-    "sources": []
-  },
-  "AT": {
-    "last_updated": "2026-02-10 09:29:11 UTC",
->>>>>>> Stashed changes
+    "last_updated": "2026-02-10 07:15:08 UTC",
     "sources": [
       {
         "source": "All Renewables",
@@ -1912,7 +1867,7 @@
           "percentage": 1.89,
           "change_from_2015": "+183%",
           "change_from_2024": "-68%",
-          "change_from_2023": "-50%"
+          "change_from_2023": "-51%"
         },
         "last_week": {
           "gwh": 21.5,
@@ -1947,7 +1902,7 @@
           "twh": 0.01,
           "percentage": 3.48,
           "change_from_2015": "-18%",
-          "change_from_2024": "+1.0%",
+          "change_from_2024": "+0.8%",
           "change_from_2023": "+34%"
         },
         "last_week": {
@@ -1983,16 +1938,16 @@
           "twh": 0.0,
           "percentage": 0.0,
           "change_from_2015": "-3.2%",
-          "change_from_2024": "-3.2%",
-          "change_from_2023": "+0.2%"
+          "change_from_2024": "\u2014",
+          "change_from_2023": "\u2014"
         },
         "last_week": {
           "gwh": 0.0,
           "twh": 0.0,
           "percentage": 0.0,
           "change_from_2015": "-2.7%",
-          "change_from_2024": "-2.7%",
-          "change_from_2023": "+0.8%"
+          "change_from_2024": "\u2014",
+          "change_from_2023": "\u2014"
         },
         "ytd_2025": {
           "gwh": 0.1,
@@ -2163,16 +2118,16 @@
           "twh": 0.0,
           "percentage": 1.67,
           "change_from_2015": "-63%",
-          "change_from_2024": "+0.0%",
-          "change_from_2023": "+0.0%"
+          "change_from_2024": "-1.0%",
+          "change_from_2023": "-1.0%"
         },
         "last_week": {
           "gwh": 20.6,
           "twh": 0.02,
           "percentage": 1.95,
           "change_from_2015": "-63%",
-          "change_from_2024": "+0.6%",
-          "change_from_2023": "+0.6%"
+          "change_from_2024": "+0.5%",
+          "change_from_2023": "+0.5%"
         },
         "ytd_2025": {
           "gwh": 117.7,
@@ -2230,30 +2185,26 @@
     ]
   },
   "BE": {
-<<<<<<< Updated upstream
-    "last_updated": "2026-02-10 09:12:26 UTC",
-=======
-    "last_updated": "2026-02-10 09:29:23 UTC",
->>>>>>> Stashed changes
+    "last_updated": "2026-02-10 07:15:19 UTC",
     "sources": [
       {
         "source": "All Renewables",
         "category": "aggregate-renewable",
         "yesterday": {
-          "gwh": 43.6,
+          "gwh": 43.1,
           "twh": 0.04,
-          "percentage": 21.83,
-          "change_from_2015": "+26%",
-          "change_from_2024": "-25%",
-          "change_from_2023": "-39%"
+          "percentage": 22.7,
+          "change_from_2015": "+24%",
+          "change_from_2024": "-26%",
+          "change_from_2023": "-40%"
         },
         "last_week": {
-          "gwh": 468.1,
+          "gwh": 467.5,
           "twh": 0.47,
-          "percentage": 33.6,
+          "percentage": 33.91,
           "change_from_2015": "+93%",
           "change_from_2024": "+15%",
-          "change_from_2023": "-6.5%"
+          "change_from_2023": "-6.6%"
         },
         "ytd_2025": {
           "gwh": 2562.0,
@@ -2278,7 +2229,7 @@
         "yesterday": {
           "gwh": 27.2,
           "twh": 0.03,
-          "percentage": 13.65,
+          "percentage": 14.36,
           "change_from_2015": "+94%",
           "change_from_2024": "-19%",
           "change_from_2023": "-50%"
@@ -2286,7 +2237,7 @@
         "last_week": {
           "gwh": 324.4,
           "twh": 0.32,
-          "percentage": 23.29,
+          "percentage": 23.52,
           "change_from_2015": "+229%",
           "change_from_2024": "+38%",
           "change_from_2023": "-14%"
@@ -2314,7 +2265,7 @@
         "yesterday": {
           "gwh": 5.2,
           "twh": 0.01,
-          "percentage": 2.61,
+          "percentage": 2.74,
           "change_from_2015": "-37%",
           "change_from_2024": "-10%",
           "change_from_2023": "-26%"
@@ -2322,7 +2273,7 @@
         "last_week": {
           "gwh": 29.5,
           "twh": 0.03,
-          "percentage": 2.12,
+          "percentage": 2.14,
           "change_from_2015": "-49%",
           "change_from_2024": "-27%",
           "change_from_2023": "-40%"
@@ -2350,15 +2301,15 @@
         "yesterday": {
           "gwh": 9.8,
           "twh": 0.01,
-          "percentage": 4.89,
+          "percentage": 5.14,
           "change_from_2015": "+109%",
-          "change_from_2024": "-42%",
-          "change_from_2023": "+16%"
+          "change_from_2024": "-41%",
+          "change_from_2023": "+17%"
         },
         "last_week": {
           "gwh": 99.5,
           "twh": 0.1,
-          "percentage": 7.14,
+          "percentage": 7.21,
           "change_from_2015": "+204%",
           "change_from_2024": "-15%",
           "change_from_2023": "+69%"
@@ -2384,20 +2335,20 @@
         "source": "Biomass",
         "category": "renewable",
         "yesterday": {
-          "gwh": 1.4,
+          "gwh": 0.8,
           "twh": 0.0,
-          "percentage": 0.69,
-          "change_from_2015": "-82%",
-          "change_from_2024": "-25%",
-          "change_from_2023": "-28%"
+          "percentage": 0.45,
+          "change_from_2015": "-89%",
+          "change_from_2024": "-57%",
+          "change_from_2023": "-58%"
         },
         "last_week": {
-          "gwh": 14.7,
+          "gwh": 14.2,
           "twh": 0.01,
-          "percentage": 1.06,
-          "change_from_2015": "-72%",
-          "change_from_2024": "+14%",
-          "change_from_2023": "+10%"
+          "percentage": 1.03,
+          "change_from_2015": "-73%",
+          "change_from_2024": "+10%",
+          "change_from_2023": "+6.6%"
         },
         "ytd_2025": {
           "gwh": 91.7,
@@ -2456,20 +2407,20 @@
         "source": "All Non-Renewables",
         "category": "aggregate-non-renewable",
         "yesterday": {
-          "gwh": 156.1,
-          "twh": 0.16,
-          "percentage": 78.17,
-          "change_from_2015": "-17%",
-          "change_from_2024": "-8.9%",
-          "change_from_2023": "+5.1%"
+          "gwh": 146.6,
+          "twh": 0.15,
+          "percentage": 77.3,
+          "change_from_2015": "-22%",
+          "change_from_2024": "-14%",
+          "change_from_2023": "-1.3%"
         },
         "last_week": {
-          "gwh": 924.8,
-          "twh": 0.92,
-          "percentage": 66.4,
-          "change_from_2015": "-30%",
-          "change_from_2024": "-23%",
-          "change_from_2023": "-11%"
+          "gwh": 911.4,
+          "twh": 0.91,
+          "percentage": 66.09,
+          "change_from_2015": "-31%",
+          "change_from_2024": "-24%",
+          "change_from_2023": "-12%"
         },
         "ytd_2025": {
           "gwh": 6135.3,
@@ -2492,17 +2443,17 @@
         "source": "Nuclear",
         "category": "non-renewable",
         "yesterday": {
-          "gwh": 49.9,
+          "gwh": 50.0,
           "twh": 0.05,
-          "percentage": 24.99,
+          "percentage": 26.34,
           "change_from_2015": "-43%",
-          "change_from_2024": "-44%",
+          "change_from_2024": "-43%",
           "change_from_2023": "-46%"
         },
         "last_week": {
-          "gwh": 348.6,
+          "gwh": 348.7,
           "twh": 0.35,
-          "percentage": 25.03,
+          "percentage": 25.28,
           "change_from_2015": "-43%",
           "change_from_2024": "-44%",
           "change_from_2023": "-46%"
@@ -2528,20 +2479,20 @@
         "source": "Gas",
         "category": "non-renewable",
         "yesterday": {
-          "gwh": 83.7,
+          "gwh": 83.1,
           "twh": 0.08,
-          "percentage": 41.92,
-          "change_from_2015": "+19%",
-          "change_from_2024": "+46%",
-          "change_from_2023": "+176%"
+          "percentage": 43.81,
+          "change_from_2015": "+18%",
+          "change_from_2024": "+45%",
+          "change_from_2023": "+174%"
         },
         "last_week": {
-          "gwh": 325.8,
+          "gwh": 325.0,
           "twh": 0.33,
-          "percentage": 23.39,
+          "percentage": 23.57,
           "change_from_2015": "-34%",
           "change_from_2024": "-19%",
-          "change_from_2023": "+54%"
+          "change_from_2023": "+53%"
         },
         "ytd_2025": {
           "gwh": 2700.7,
@@ -2600,20 +2551,20 @@
         "source": "Waste",
         "category": "non-renewable",
         "yesterday": {
-          "gwh": 22.5,
-          "twh": 0.02,
-          "percentage": 11.26,
-          "change_from_2015": "-1.6%",
-          "change_from_2024": "-10%",
-          "change_from_2023": "-12%"
+          "gwh": 13.6,
+          "twh": 0.01,
+          "percentage": 7.16,
+          "change_from_2015": "-41%",
+          "change_from_2024": "-46%",
+          "change_from_2023": "-47%"
         },
         "last_week": {
-          "gwh": 250.4,
-          "twh": 0.25,
-          "percentage": 17.98,
-          "change_from_2015": "+57%",
-          "change_from_2024": "+43%",
-          "change_from_2023": "+40%"
+          "gwh": 237.8,
+          "twh": 0.24,
+          "percentage": 17.24,
+          "change_from_2015": "+49%",
+          "change_from_2024": "+36%",
+          "change_from_2023": "+33%"
         },
         "ytd_2025": {
           "gwh": 1363.4,
@@ -2640,16 +2591,16 @@
           "twh": 0.0,
           "percentage": 0.0,
           "change_from_2015": "-95%",
-          "change_from_2024": "-94%",
-          "change_from_2023": "-81%"
+          "change_from_2024": "\u2014",
+          "change_from_2023": "\u2014"
         },
         "last_week": {
           "gwh": 0.0,
           "twh": 0.0,
           "percentage": 0.0,
           "change_from_2015": "-95%",
-          "change_from_2024": "-95%",
-          "change_from_2023": "-83%"
+          "change_from_2024": "\u2014",
+          "change_from_2023": "\u2014"
         },
         "ytd_2025": {
           "gwh": 0.3,
@@ -2671,22 +2622,18 @@
     ]
   },
   "BG": {
-<<<<<<< Updated upstream
-    "last_updated": "2026-02-10 09:12:37 UTC",
-=======
-    "last_updated": "2026-02-10 09:29:34 UTC",
->>>>>>> Stashed changes
+    "last_updated": "2026-02-10 07:15:30 UTC",
     "sources": [
       {
         "source": "All Renewables",
         "category": "aggregate-renewable",
         "yesterday": {
-          "gwh": 25.6,
-          "twh": 0.03,
-          "percentage": 22.22,
-          "change_from_2015": "-18%",
-          "change_from_2024": "-0.9%",
-          "change_from_2023": "+20%"
+          "gwh": 0.0,
+          "twh": 0.0,
+          "percentage": 0.0,
+          "change_from_2015": "+nan%",
+          "change_from_2024": "\u2014",
+          "change_from_2023": "\u2014"
         },
         "last_week": {
           "gwh": 206.9,
@@ -2719,8 +2666,8 @@
         "yesterday": {
           "gwh": 3.9,
           "twh": 0.0,
-          "percentage": 3.39,
-          "change_from_2015": "-37%",
+          "percentage": 3.38,
+          "change_from_2015": "-38%",
           "change_from_2024": "-25%",
           "change_from_2023": "-23%"
         },
@@ -2753,12 +2700,12 @@
         "source": "Hydro",
         "category": "renewable",
         "yesterday": {
-          "gwh": 17.6,
+          "gwh": 17.7,
           "twh": 0.02,
-          "percentage": 15.32,
+          "percentage": 15.44,
           "change_from_2015": "-19%",
-          "change_from_2024": "+127%",
-          "change_from_2023": "+149%"
+          "change_from_2024": "+128%",
+          "change_from_2023": "+150%"
         },
         "last_week": {
           "gwh": 117.9,
@@ -2791,7 +2738,7 @@
         "yesterday": {
           "gwh": 4.0,
           "twh": 0.0,
-          "percentage": 3.47,
+          "percentage": 3.5,
           "change_from_2015": "+47%",
           "change_from_2024": "-68%",
           "change_from_2023": "-54%"
@@ -2802,7 +2749,7 @@
           "percentage": 7.07,
           "change_from_2015": "+200%",
           "change_from_2024": "-34%",
-          "change_from_2023": "-5.5%"
+          "change_from_2023": "-5.6%"
         },
         "ytd_2025": {
           "gwh": 355.1,
@@ -2825,12 +2772,12 @@
         "source": "Biomass",
         "category": "renewable",
         "yesterday": {
-          "gwh": 0.0,
+          "gwh": 0.1,
           "twh": 0.0,
-          "percentage": 0.04,
-          "change_from_2015": "-90%",
-          "change_from_2024": "-90%",
-          "change_from_2023": "-91%"
+          "percentage": 0.06,
+          "change_from_2015": "-85%",
+          "change_from_2024": "-79%",
+          "change_from_2023": "-80%"
         },
         "last_week": {
           "gwh": 1.9,
@@ -2897,12 +2844,12 @@
         "source": "All Non-Renewables",
         "category": "aggregate-non-renewable",
         "yesterday": {
-          "gwh": 89.6,
-          "twh": 0.09,
-          "percentage": 77.78,
-          "change_from_2015": "-27%",
-          "change_from_2024": "-18%",
-          "change_from_2023": "+1.8%"
+          "gwh": 0.0,
+          "twh": 0.0,
+          "percentage": 0.0,
+          "change_from_2015": "+nan%",
+          "change_from_2024": "\u2014",
+          "change_from_2023": "\u2014"
         },
         "last_week": {
           "gwh": 600.9,
@@ -2933,12 +2880,12 @@
         "source": "Nuclear",
         "category": "non-renewable",
         "yesterday": {
-          "gwh": 45.7,
+          "gwh": 45.6,
           "twh": 0.05,
-          "percentage": 39.66,
-          "change_from_2015": "-7.2%",
-          "change_from_2024": "-3.7%",
-          "change_from_2023": "-10%"
+          "percentage": 39.81,
+          "change_from_2015": "-7.3%",
+          "change_from_2024": "-3.9%",
+          "change_from_2023": "-11%"
         },
         "last_week": {
           "gwh": 316.6,
@@ -2971,7 +2918,7 @@
         "yesterday": {
           "gwh": 7.6,
           "twh": 0.01,
-          "percentage": 6.6,
+          "percentage": 6.65,
           "change_from_2015": "\u2014",
           "change_from_2024": "+6.7%",
           "change_from_2023": "-8.8%"
@@ -2981,8 +2928,8 @@
           "twh": 0.05,
           "percentage": 6.63,
           "change_from_2015": "\u2014",
-          "change_from_2024": "+7.4%",
-          "change_from_2023": "-8.2%"
+          "change_from_2024": "+7.5%",
+          "change_from_2023": "-8.1%"
         },
         "ytd_2025": {
           "gwh": 305.0,
@@ -3005,12 +2952,12 @@
         "source": "Coal",
         "category": "non-renewable",
         "yesterday": {
-          "gwh": 36.2,
+          "gwh": 35.6,
           "twh": 0.04,
-          "percentage": 31.45,
-          "change_from_2015": "-50%",
-          "change_from_2024": "-34%",
-          "change_from_2023": "+27%"
+          "percentage": 31.09,
+          "change_from_2015": "-51%",
+          "change_from_2024": "-35%",
+          "change_from_2023": "+24%"
         },
         "last_week": {
           "gwh": 230.2,
@@ -3045,16 +2992,16 @@
           "twh": 0.0,
           "percentage": 0.07,
           "change_from_2015": "\u2014",
-          "change_from_2024": "+23%",
-          "change_from_2023": "+13%"
+          "change_from_2024": "+56%",
+          "change_from_2023": "+44%"
         },
         "last_week": {
           "gwh": 0.5,
           "twh": 0.0,
           "percentage": 0.06,
           "change_from_2015": "\u2014",
-          "change_from_2024": "+14%",
-          "change_from_2023": "+4.8%"
+          "change_from_2024": "+11%",
+          "change_from_2023": "+2.5%"
         },
         "ytd_2025": {
           "gwh": 2.5,
@@ -3112,11 +3059,7 @@
     ]
   },
   "HR": {
-<<<<<<< Updated upstream
-    "last_updated": "2026-02-10 09:12:48 UTC",
-=======
-    "last_updated": "2026-02-10 09:29:45 UTC",
->>>>>>> Stashed changes
+    "last_updated": "2026-02-10 07:15:42 UTC",
     "sources": [
       {
         "source": "All Renewables",
@@ -3126,8 +3069,8 @@
           "twh": 0.04,
           "percentage": 74.0,
           "change_from_2015": "\u2014",
-          "change_from_2024": "+44%",
-          "change_from_2023": "+28%"
+          "change_from_2024": "+43%",
+          "change_from_2023": "+27%"
         },
         "last_week": {
           "gwh": 287.8,
@@ -3199,7 +3142,7 @@
           "percentage": 64.1,
           "change_from_2015": "\u2014",
           "change_from_2024": "+110%",
-          "change_from_2023": "+63%"
+          "change_from_2023": "+62%"
         },
         "last_week": {
           "gwh": 212.5,
@@ -3234,15 +3177,15 @@
           "twh": 0.0,
           "percentage": 1.55,
           "change_from_2015": "\u2014",
-          "change_from_2024": "+3.8%",
-          "change_from_2023": "+202%"
+          "change_from_2024": "+0.4%",
+          "change_from_2023": "+192%"
         },
         "last_week": {
           "gwh": 5.5,
           "twh": 0.01,
           "percentage": 1.41,
           "change_from_2015": "\u2014",
-          "change_from_2024": "-1.1%",
+          "change_from_2024": "-1.4%",
           "change_from_2023": "+187%"
         },
         "ytd_2025": {
@@ -3270,16 +3213,16 @@
           "twh": 0.0,
           "percentage": 3.29,
           "change_from_2015": "\u2014",
-          "change_from_2024": "+1.7%",
-          "change_from_2023": "-0.9%"
+          "change_from_2024": "+4.3%",
+          "change_from_2023": "+1.6%"
         },
         "last_week": {
           "gwh": 12.8,
           "twh": 0.01,
           "percentage": 3.28,
           "change_from_2015": "\u2014",
-          "change_from_2024": "+6.0%",
-          "change_from_2023": "+3.3%"
+          "change_from_2024": "+5.9%",
+          "change_from_2023": "+3.2%"
         },
         "ytd_2025": {
           "gwh": 72.8,
@@ -3415,7 +3358,7 @@
           "percentage": 18.89,
           "change_from_2015": "\u2014",
           "change_from_2024": "-11%",
-          "change_from_2023": "+0.5%"
+          "change_from_2023": "+0.6%"
         },
         "last_week": {
           "gwh": 74.6,
@@ -3423,7 +3366,7 @@
           "percentage": 19.12,
           "change_from_2015": "\u2014",
           "change_from_2024": "-6.5%",
-          "change_from_2023": "+6.1%"
+          "change_from_2023": "+6.2%"
         },
         "ytd_2025": {
           "gwh": 480.0,
@@ -3486,8 +3429,8 @@
           "twh": 0.0,
           "percentage": 0.18,
           "change_from_2015": "\u2014",
-          "change_from_2024": "-53%",
-          "change_from_2023": "-55%"
+          "change_from_2024": "-50%",
+          "change_from_2023": "-53%"
         },
         "last_week": {
           "gwh": 0.7,
@@ -3495,7 +3438,7 @@
           "percentage": 0.18,
           "change_from_2015": "\u2014",
           "change_from_2024": "-50%",
-          "change_from_2023": "-52%"
+          "change_from_2023": "-53%"
         },
         "ytd_2025": {
           "gwh": 4.3,
@@ -3553,11 +3496,7 @@
     ]
   },
   "CY": {
-<<<<<<< Updated upstream
-    "last_updated": "2026-02-10 09:12:59 UTC",
-=======
-    "last_updated": "2026-02-10 09:29:56 UTC",
->>>>>>> Stashed changes
+    "last_updated": "2026-02-10 07:15:53 UTC",
     "sources": [
       {
         "source": "All Renewables",
@@ -3567,7 +3506,7 @@
           "twh": 0.0,
           "percentage": 21.28,
           "change_from_2015": "\u2014",
-          "change_from_2024": "+4203%",
+          "change_from_2024": "+4176%",
           "change_from_2023": "\u2014"
         },
         "last_week": {
@@ -3575,7 +3514,7 @@
           "twh": 0.01,
           "percentage": 17.39,
           "change_from_2015": "\u2014",
-          "change_from_2024": "+2068%",
+          "change_from_2024": "+2067%",
           "change_from_2023": "\u2014"
         },
         "ytd_2025": {
@@ -3603,7 +3542,7 @@
           "twh": 0.0,
           "percentage": 4.15,
           "change_from_2015": "\u2014",
-          "change_from_2024": "+21193%",
+          "change_from_2024": "+20900%",
           "change_from_2023": "\u2014"
         },
         "last_week": {
@@ -3611,7 +3550,7 @@
           "twh": 0.0,
           "percentage": 4.84,
           "change_from_2015": "\u2014",
-          "change_from_2024": "+15213%",
+          "change_from_2024": "+15400%",
           "change_from_2023": "\u2014"
         },
         "ytd_2025": {
@@ -3675,7 +3614,7 @@
           "twh": 0.0,
           "percentage": 16.11,
           "change_from_2015": "\u2014",
-          "change_from_2024": "+3476%",
+          "change_from_2024": "+3532%",
           "change_from_2023": "\u2014"
         },
         "last_week": {
@@ -3683,7 +3622,7 @@
           "twh": 0.01,
           "percentage": 11.55,
           "change_from_2015": "\u2014",
-          "change_from_2024": "+1480%",
+          "change_from_2024": "+1478%",
           "change_from_2023": "\u2014"
         },
         "ytd_2025": {
@@ -3711,7 +3650,7 @@
           "twh": 0.0,
           "percentage": 1.01,
           "change_from_2015": "\u2014",
-          "change_from_2024": "+4529%",
+          "change_from_2024": "+3011%",
           "change_from_2023": "\u2014"
         },
         "last_week": {
@@ -3719,7 +3658,7 @@
           "twh": 0.0,
           "percentage": 1.0,
           "change_from_2015": "\u2014",
-          "change_from_2024": "+2718%",
+          "change_from_2024": "+2567%",
           "change_from_2023": "\u2014"
         },
         "ytd_2025": {
@@ -3783,7 +3722,7 @@
           "twh": 0.01,
           "percentage": 78.72,
           "change_from_2015": "\u2014",
-          "change_from_2024": "+3267%",
+          "change_from_2024": "+3254%",
           "change_from_2023": "\u2014"
         },
         "last_week": {
@@ -3791,7 +3730,7 @@
           "twh": 0.05,
           "percentage": 82.61,
           "change_from_2015": "\u2014",
-          "change_from_2024": "+2078%",
+          "change_from_2024": "+2079%",
           "change_from_2023": "\u2014"
         },
         "ytd_2025": {
@@ -3963,7 +3902,7 @@
           "twh": 0.01,
           "percentage": 78.72,
           "change_from_2015": "\u2014",
-          "change_from_2024": "+3267%",
+          "change_from_2024": "+3254%",
           "change_from_2023": "\u2014"
         },
         "last_week": {
@@ -3971,7 +3910,7 @@
           "twh": 0.05,
           "percentage": 82.61,
           "change_from_2015": "\u2014",
-          "change_from_2024": "+2078%",
+          "change_from_2024": "+2079%",
           "change_from_2023": "\u2014"
         },
         "ytd_2025": {
@@ -3994,11 +3933,7 @@
     ]
   },
   "CZ": {
-<<<<<<< Updated upstream
-    "last_updated": "2026-02-10 09:13:11 UTC",
-=======
-    "last_updated": "2026-02-10 09:30:07 UTC",
->>>>>>> Stashed changes
+    "last_updated": "2026-02-10 07:16:04 UTC",
     "sources": [
       {
         "source": "All Renewables",
@@ -4008,7 +3943,7 @@
           "twh": 0.02,
           "percentage": 7.94,
           "change_from_2015": "-40%",
-          "change_from_2024": "-47%",
+          "change_from_2024": "-48%",
           "change_from_2023": "-46%"
         },
         "last_week": {
@@ -4044,15 +3979,15 @@
           "twh": 0.0,
           "percentage": 0.17,
           "change_from_2015": "-78%",
-          "change_from_2024": "-68%",
-          "change_from_2023": "-85%"
+          "change_from_2024": "-69%",
+          "change_from_2023": "-86%"
         },
         "last_week": {
           "gwh": 5.5,
           "twh": 0.01,
           "percentage": 0.33,
           "change_from_2015": "-57%",
-          "change_from_2024": "-38%",
+          "change_from_2024": "-39%",
           "change_from_2023": "-72%"
         },
         "ytd_2025": {
@@ -4081,7 +4016,7 @@
           "percentage": 3.62,
           "change_from_2015": "-42%",
           "change_from_2024": "-30%",
-          "change_from_2023": "-43%"
+          "change_from_2023": "-42%"
         },
         "last_week": {
           "gwh": 73.0,
@@ -4117,7 +4052,7 @@
           "percentage": 0.87,
           "change_from_2015": "-46%",
           "change_from_2024": "-76%",
-          "change_from_2023": "-55%"
+          "change_from_2023": "-54%"
         },
         "last_week": {
           "gwh": 13.9,
@@ -4152,7 +4087,7 @@
           "twh": 0.01,
           "percentage": 3.29,
           "change_from_2015": "+62%",
-          "change_from_2024": "+3.2%",
+          "change_from_2024": "+3.3%",
           "change_from_2023": "+29%"
         },
         "last_week": {
@@ -4225,7 +4160,7 @@
           "percentage": 92.06,
           "change_from_2015": "-1.2%",
           "change_from_2024": "+11%",
-          "change_from_2023": "+37%"
+          "change_from_2023": "+36%"
         },
         "last_week": {
           "gwh": 1529.7,
@@ -4305,7 +4240,7 @@
           "percentage": 10.72,
           "change_from_2015": "+106%",
           "change_from_2024": "+63%",
-          "change_from_2023": "+187%"
+          "change_from_2023": "+186%"
         },
         "ytd_2025": {
           "gwh": 1060.0,
@@ -4404,16 +4339,16 @@
           "twh": 0.0,
           "percentage": 0.01,
           "change_from_2015": "-88%",
-          "change_from_2024": "-83%",
-          "change_from_2023": "-81%"
+          "change_from_2024": "\u2014",
+          "change_from_2023": "\u2014"
         },
         "last_week": {
           "gwh": 0.2,
           "twh": 0.0,
           "percentage": 0.01,
           "change_from_2015": "-78%",
-          "change_from_2024": "-69%",
-          "change_from_2023": "-65%"
+          "change_from_2024": "-73%",
+          "change_from_2023": "-70%"
         },
         "ytd_2025": {
           "gwh": 1.5,
@@ -4435,11 +4370,7 @@
     ]
   },
   "DK": {
-<<<<<<< Updated upstream
-    "last_updated": "2026-02-10 09:13:22 UTC",
-=======
-    "last_updated": "2026-02-10 09:30:19 UTC",
->>>>>>> Stashed changes
+    "last_updated": "2026-02-10 07:16:15 UTC",
     "sources": [
       {
         "source": "All Renewables",
@@ -4461,12 +4392,12 @@
           "change_from_2023": "-3.4%"
         },
         "ytd_2025": {
-          "gwh": 3203.2,
-          "twh": 3.2,
-          "percentage": 76.58,
-          "change_from_2015": "+57%",
-          "change_from_2024": "-7.3%",
-          "change_from_2023": "-20%"
+          "gwh": 3171.1,
+          "twh": 3.17,
+          "percentage": 76.93,
+          "change_from_2015": "+59%",
+          "change_from_2024": "-6.2%",
+          "change_from_2023": "-19%"
         },
         "year_2024": {
           "gwh": 27198.4,
@@ -4497,12 +4428,12 @@
           "change_from_2023": "-5.2%"
         },
         "ytd_2025": {
-          "gwh": 2444.8,
-          "twh": 2.44,
-          "percentage": 58.45,
-          "change_from_2015": "+24%",
-          "change_from_2024": "-8.2%",
-          "change_from_2023": "-26%"
+          "gwh": 2431.8,
+          "twh": 2.43,
+          "percentage": 59.0,
+          "change_from_2015": "+26%",
+          "change_from_2024": "-6.8%",
+          "change_from_2023": "-24%"
         },
         "year_2024": {
           "gwh": 19235.1,
@@ -4569,12 +4500,12 @@
           "change_from_2023": "-9.0%"
         },
         "ytd_2025": {
-          "gwh": 76.1,
-          "twh": 0.08,
-          "percentage": 1.82,
-          "change_from_2015": "+423%",
-          "change_from_2024": "-35%",
-          "change_from_2023": "-14%"
+          "gwh": 74.8,
+          "twh": 0.07,
+          "percentage": 1.81,
+          "change_from_2015": "+436%",
+          "change_from_2024": "-32%",
+          "change_from_2023": "-13%"
         },
         "year_2024": {
           "gwh": 4332.5,
@@ -4605,12 +4536,12 @@
           "change_from_2023": "+5.9%"
         },
         "ytd_2025": {
-          "gwh": 682.2,
-          "twh": 0.68,
-          "percentage": 16.31,
-          "change_from_2015": "+1106%",
-          "change_from_2024": "+0.7%",
-          "change_from_2023": "+9.6%"
+          "gwh": 664.5,
+          "twh": 0.66,
+          "percentage": 16.12,
+          "change_from_2015": "+1104%",
+          "change_from_2024": "+0.5%",
+          "change_from_2023": "+9.7%"
         },
         "year_2024": {
           "gwh": 3630.7,
@@ -4677,12 +4608,12 @@
           "change_from_2023": "-3.2%"
         },
         "ytd_2025": {
-          "gwh": 979.5,
-          "twh": 0.98,
-          "percentage": 23.42,
+          "gwh": 950.8,
+          "twh": 0.95,
+          "percentage": 23.07,
           "change_from_2015": "-60%",
-          "change_from_2024": "+4.7%",
-          "change_from_2023": "-17%"
+          "change_from_2024": "+4.6%",
+          "change_from_2023": "-18%"
         },
         "year_2024": {
           "gwh": 5505.2,
@@ -4749,11 +4680,11 @@
           "change_from_2023": "+9.3%"
         },
         "ytd_2025": {
-          "gwh": 332.7,
-          "twh": 0.33,
-          "percentage": 7.96,
+          "gwh": 323.4,
+          "twh": 0.32,
+          "percentage": 7.85,
           "change_from_2015": "-56%",
-          "change_from_2024": "+4.9%",
+          "change_from_2024": "+4.7%",
           "change_from_2023": "-11%"
         },
         "year_2024": {
@@ -4785,9 +4716,9 @@
           "change_from_2023": "-8.2%"
         },
         "ytd_2025": {
-          "gwh": 492.7,
-          "twh": 0.49,
-          "percentage": 11.78,
+          "gwh": 477.9,
+          "twh": 0.48,
+          "percentage": 11.59,
           "change_from_2015": "-67%",
           "change_from_2024": "+9.6%",
           "change_from_2023": "-24%"
@@ -4821,12 +4752,12 @@
           "change_from_2023": "+15%"
         },
         "ytd_2025": {
-          "gwh": 112.6,
+          "gwh": 109.3,
           "twh": 0.11,
-          "percentage": 2.69,
+          "percentage": 2.65,
           "change_from_2015": "-38%",
           "change_from_2024": "-10%",
-          "change_from_2023": "+16%"
+          "change_from_2023": "+15%"
         },
         "year_2024": {
           "gwh": 1011.6,
@@ -4857,11 +4788,11 @@
           "change_from_2023": "-45%"
         },
         "ytd_2025": {
-          "gwh": 41.4,
+          "gwh": 40.3,
           "twh": 0.04,
-          "percentage": 0.99,
+          "percentage": 0.98,
           "change_from_2015": "+56%",
-          "change_from_2024": "-4.2%",
+          "change_from_2024": "-4.6%",
           "change_from_2023": "-42%"
         },
         "year_2024": {
@@ -4876,11 +4807,7 @@
     ]
   },
   "EE": {
-<<<<<<< Updated upstream
-    "last_updated": "2026-02-10 09:13:34 UTC",
-=======
-    "last_updated": "2026-02-10 09:30:31 UTC",
->>>>>>> Stashed changes
+    "last_updated": "2026-02-10 07:16:27 UTC",
     "sources": [
       {
         "source": "All Renewables",
@@ -4902,12 +4829,12 @@
           "change_from_2023": "+16%"
         },
         "ytd_2025": {
-          "gwh": 228.2,
-          "twh": 0.23,
-          "percentage": 34.16,
+          "gwh": 223.7,
+          "twh": 0.22,
+          "percentage": 34.46,
           "change_from_2015": "+31%",
           "change_from_2024": "-23%",
-          "change_from_2023": "-4.3%"
+          "change_from_2023": "-4.0%"
         },
         "year_2024": {
           "gwh": 2774.0,
@@ -4938,11 +4865,11 @@
           "change_from_2023": "+16%"
         },
         "ytd_2025": {
-          "gwh": 135.1,
-          "twh": 0.14,
-          "percentage": 20.22,
-          "change_from_2015": "+34%",
-          "change_from_2024": "-34%",
+          "gwh": 132.8,
+          "twh": 0.13,
+          "percentage": 20.46,
+          "change_from_2015": "+35%",
+          "change_from_2024": "-35%",
           "change_from_2023": "-12%"
         },
         "year_2024": {
@@ -4979,7 +4906,7 @@
           "percentage": 0.09,
           "change_from_2015": "-85%",
           "change_from_2024": "-48%",
-          "change_from_2023": "-12%"
+          "change_from_2023": "-10%"
         },
         "year_2024": {
           "gwh": 6.8,
@@ -5010,12 +4937,12 @@
           "change_from_2023": "-25%"
         },
         "ytd_2025": {
-          "gwh": 10.5,
+          "gwh": 10.3,
           "twh": 0.01,
-          "percentage": 1.57,
-          "change_from_2015": "+8996%",
-          "change_from_2024": "-36%",
-          "change_from_2023": "-13%"
+          "percentage": 1.59,
+          "change_from_2015": "+9091%",
+          "change_from_2024": "-33%",
+          "change_from_2023": "-8.6%"
         },
         "year_2024": {
           "gwh": 1074.9,
@@ -5046,12 +4973,12 @@
           "change_from_2023": "+34%"
         },
         "ytd_2025": {
-          "gwh": 81.5,
+          "gwh": 79.3,
           "twh": 0.08,
-          "percentage": 12.19,
+          "percentage": 12.21,
           "change_from_2015": "+29%",
           "change_from_2024": "+11%",
-          "change_from_2023": "+14%"
+          "change_from_2023": "+13%"
         },
         "year_2024": {
           "gwh": 429.1,
@@ -5118,12 +5045,12 @@
           "change_from_2023": "+87%"
         },
         "ytd_2025": {
-          "gwh": 439.8,
-          "twh": 0.44,
-          "percentage": 65.84,
+          "gwh": 425.4,
+          "twh": 0.43,
+          "percentage": 65.54,
           "change_from_2015": "-61%",
           "change_from_2024": "+31%",
-          "change_from_2023": "+2.7%"
+          "change_from_2023": "+1.2%"
         },
         "year_2024": {
           "gwh": 2011.7,
@@ -5190,12 +5117,12 @@
           "change_from_2023": "+37%"
         },
         "ytd_2025": {
-          "gwh": 59.5,
+          "gwh": 57.9,
           "twh": 0.06,
-          "percentage": 8.9,
+          "percentage": 8.91,
           "change_from_2015": "+107%",
           "change_from_2024": "+22%",
-          "change_from_2023": "+62%"
+          "change_from_2023": "+61%"
         },
         "year_2024": {
           "gwh": 504.8,
@@ -5226,9 +5153,9 @@
           "change_from_2023": "+35%"
         },
         "ytd_2025": {
-          "gwh": 53.5,
+          "gwh": 52.0,
           "twh": 0.05,
-          "percentage": 8.0,
+          "percentage": 8.01,
           "change_from_2015": "+93%",
           "change_from_2024": "+23%",
           "change_from_2023": "+71%"
@@ -5262,11 +5189,11 @@
           "change_from_2023": "+6.6%"
         },
         "ytd_2025": {
-          "gwh": 16.1,
+          "gwh": 15.7,
           "twh": 0.02,
-          "percentage": 2.4,
+          "percentage": 2.41,
           "change_from_2015": "-18%",
-          "change_from_2024": "+12%",
+          "change_from_2024": "+13%",
           "change_from_2023": "+23%"
         },
         "year_2024": {
@@ -5298,12 +5225,12 @@
           "change_from_2023": "+80%"
         },
         "ytd_2025": {
-          "gwh": 365.0,
-          "twh": 0.36,
-          "percentage": 54.63,
-          "change_from_2015": "-66%",
+          "gwh": 352.6,
+          "twh": 0.35,
+          "percentage": 54.32,
+          "change_from_2015": "-67%",
           "change_from_2024": "+34%",
-          "change_from_2023": "-3.7%"
+          "change_from_2023": "-5.3%"
         },
         "year_2024": {
           "gwh": 1414.2,
@@ -5317,11 +5244,7 @@
     ]
   },
   "FI": {
-<<<<<<< Updated upstream
-    "last_updated": "2026-02-10 09:13:45 UTC",
-=======
-    "last_updated": "2026-02-10 09:30:42 UTC",
->>>>>>> Stashed changes
+    "last_updated": "2026-02-10 07:16:40 UTC",
     "sources": [
       {
         "source": "All Renewables",
@@ -5343,12 +5266,12 @@
           "change_from_2023": "-4.1%"
         },
         "ytd_2025": {
-          "gwh": 5151.1,
-          "twh": 5.15,
-          "percentage": 46.81,
-          "change_from_2015": "+96%",
-          "change_from_2024": "-9.3%",
-          "change_from_2023": "+1.5%"
+          "gwh": 5048.1,
+          "twh": 5.05,
+          "percentage": 46.99,
+          "change_from_2015": "+97%",
+          "change_from_2024": "-8.9%",
+          "change_from_2023": "+1.9%"
         },
         "year_2024": {
           "gwh": 43552.6,
@@ -5379,12 +5302,12 @@
           "change_from_2023": "-55%"
         },
         "ytd_2025": {
-          "gwh": 1931.5,
-          "twh": 1.93,
-          "percentage": 17.55,
-          "change_from_2015": "+811%",
-          "change_from_2024": "-32%",
-          "change_from_2023": "-29%"
+          "gwh": 1921.9,
+          "twh": 1.92,
+          "percentage": 17.89,
+          "change_from_2015": "+833%",
+          "change_from_2024": "-31%",
+          "change_from_2023": "-28%"
         },
         "year_2024": {
           "gwh": 21555.4,
@@ -5415,12 +5338,12 @@
           "change_from_2023": "+12%"
         },
         "ytd_2025": {
-          "gwh": 1689.4,
-          "twh": 1.69,
-          "percentage": 15.35,
+          "gwh": 1642.3,
+          "twh": 1.64,
+          "percentage": 15.29,
           "change_from_2015": "+16%",
-          "change_from_2024": "+12%",
-          "change_from_2023": "+5.3%"
+          "change_from_2024": "+11%",
+          "change_from_2023": "+4.8%"
         },
         "year_2024": {
           "gwh": 11987.8,
@@ -5451,12 +5374,12 @@
           "change_from_2023": "+35%"
         },
         "ytd_2025": {
-          "gwh": 18.5,
+          "gwh": 17.6,
           "twh": 0.02,
-          "percentage": 0.17,
+          "percentage": 0.16,
           "change_from_2015": "\u2014",
-          "change_from_2024": "+19%",
-          "change_from_2023": "+42%"
+          "change_from_2024": "+20%",
+          "change_from_2023": "+43%"
         },
         "year_2024": {
           "gwh": 1303.0,
@@ -5487,12 +5410,12 @@
           "change_from_2023": "+163%"
         },
         "ytd_2025": {
-          "gwh": 1453.8,
-          "twh": 1.45,
-          "percentage": 13.21,
-          "change_from_2015": "+57%",
+          "gwh": 1410.5,
+          "twh": 1.41,
+          "percentage": 13.13,
+          "change_from_2015": "+56%",
           "change_from_2024": "+16%",
-          "change_from_2023": "+101%"
+          "change_from_2023": "+100%"
         },
         "year_2024": {
           "gwh": 8473.2,
@@ -5559,12 +5482,12 @@
           "change_from_2023": "+21%"
         },
         "ytd_2025": {
-          "gwh": 5852.5,
-          "twh": 5.85,
-          "percentage": 53.19,
-          "change_from_2015": "+5.0%",
-          "change_from_2024": "+18%",
-          "change_from_2023": "+3.9%"
+          "gwh": 5694.9,
+          "twh": 5.69,
+          "percentage": 53.01,
+          "change_from_2015": "+4.5%",
+          "change_from_2024": "+17%",
+          "change_from_2023": "+3.5%"
         },
         "year_2024": {
           "gwh": 35822.4,
@@ -5595,12 +5518,12 @@
           "change_from_2023": "-0.7%"
         },
         "ytd_2025": {
-          "gwh": 4061.7,
-          "twh": 4.06,
-          "percentage": 36.91,
-          "change_from_2015": "+58%",
+          "gwh": 3960.1,
+          "twh": 3.96,
+          "percentage": 36.86,
+          "change_from_2015": "+57%",
           "change_from_2024": "+0.7%",
-          "change_from_2023": "-4.7%"
+          "change_from_2023": "-4.8%"
         },
         "year_2024": {
           "gwh": 31266.5,
@@ -5631,12 +5554,12 @@
           "change_from_2023": "+239%"
         },
         "ytd_2025": {
-          "gwh": 691.2,
-          "twh": 0.69,
-          "percentage": 6.28,
-          "change_from_2015": "-24%",
-          "change_from_2024": "+288%",
-          "change_from_2023": "+112%"
+          "gwh": 666.9,
+          "twh": 0.67,
+          "percentage": 6.21,
+          "change_from_2015": "-25%",
+          "change_from_2024": "+283%",
+          "change_from_2023": "+109%"
         },
         "year_2024": {
           "gwh": 868.1,
@@ -5667,12 +5590,12 @@
           "change_from_2023": "+22%"
         },
         "ytd_2025": {
-          "gwh": 623.6,
-          "twh": 0.62,
-          "percentage": 5.67,
-          "change_from_2015": "-65%",
-          "change_from_2024": "+49%",
-          "change_from_2023": "-28%"
+          "gwh": 603.8,
+          "twh": 0.6,
+          "percentage": 5.62,
+          "change_from_2015": "-66%",
+          "change_from_2024": "+48%",
+          "change_from_2023": "-29%"
         },
         "year_2024": {
           "gwh": 1514.3,
@@ -5703,12 +5626,12 @@
           "change_from_2023": "+237%"
         },
         "ytd_2025": {
-          "gwh": 414.2,
-          "twh": 0.41,
+          "gwh": 404.0,
+          "twh": 0.4,
           "percentage": 3.76,
-          "change_from_2015": "+28%",
+          "change_from_2015": "+27%",
           "change_from_2024": "+7.4%",
-          "change_from_2023": "+141%"
+          "change_from_2023": "+140%"
         },
         "year_2024": {
           "gwh": 2400.7,
@@ -5742,8 +5665,8 @@
           "gwh": 0.9,
           "twh": 0.0,
           "percentage": 0.01,
-          "change_from_2015": "-62%",
-          "change_from_2024": "-1.3%",
+          "change_from_2015": "-63%",
+          "change_from_2024": "-2.6%",
           "change_from_2023": "-19%"
         },
         "year_2024": {
@@ -5758,11 +5681,7 @@
     ]
   },
   "GR": {
-<<<<<<< Updated upstream
-    "last_updated": "2026-02-10 09:13:56 UTC",
-=======
-    "last_updated": "2026-02-10 09:30:54 UTC",
->>>>>>> Stashed changes
+    "last_updated": "2026-02-10 07:16:51 UTC",
     "sources": [
       {
         "source": "All Renewables",
@@ -5784,11 +5703,11 @@
           "change_from_2023": "+56%"
         },
         "ytd_2025": {
-          "gwh": 3731.4,
-          "twh": 3.73,
-          "percentage": 51.72,
-          "change_from_2015": "+172%",
-          "change_from_2024": "+55%",
+          "gwh": 3652.8,
+          "twh": 3.65,
+          "percentage": 51.87,
+          "change_from_2015": "+176%",
+          "change_from_2024": "+56%",
           "change_from_2023": "+29%"
         },
         "year_2024": {
@@ -5820,12 +5739,12 @@
           "change_from_2023": "+30%"
         },
         "ytd_2025": {
-          "gwh": 1938.5,
-          "twh": 1.94,
-          "percentage": 26.87,
-          "change_from_2015": "+332%",
-          "change_from_2024": "+72%",
-          "change_from_2023": "+15%"
+          "gwh": 1917.2,
+          "twh": 1.92,
+          "percentage": 27.23,
+          "change_from_2015": "+338%",
+          "change_from_2024": "+74%",
+          "change_from_2023": "+16%"
         },
         "year_2024": {
           "gwh": 10501.4,
@@ -5856,12 +5775,12 @@
           "change_from_2023": "+226%"
         },
         "ytd_2025": {
-          "gwh": 1021.6,
-          "twh": 1.02,
-          "percentage": 14.16,
-          "change_from_2015": "+54%",
-          "change_from_2024": "+199%",
-          "change_from_2023": "+123%"
+          "gwh": 985.9,
+          "twh": 0.99,
+          "percentage": 14.0,
+          "change_from_2015": "+56%",
+          "change_from_2024": "+196%",
+          "change_from_2023": "+119%"
         },
         "year_2024": {
           "gwh": 3426.1,
@@ -5892,12 +5811,12 @@
           "change_from_2023": "+21%"
         },
         "ytd_2025": {
-          "gwh": 771.3,
-          "twh": 0.77,
-          "percentage": 10.69,
+          "gwh": 749.7,
+          "twh": 0.75,
+          "percentage": 10.65,
           "change_from_2015": "+196%",
           "change_from_2024": "-18%",
-          "change_from_2023": "+2.1%"
+          "change_from_2023": "+2.3%"
         },
         "year_2024": {
           "gwh": 11486.2,
@@ -6000,12 +5919,12 @@
           "change_from_2023": "+46%"
         },
         "ytd_2025": {
-          "gwh": 3483.7,
-          "twh": 3.48,
-          "percentage": 48.28,
-          "change_from_2015": "+6.4%",
-          "change_from_2024": "-8.8%",
-          "change_from_2023": "+46%"
+          "gwh": 3389.0,
+          "twh": 3.39,
+          "percentage": 48.13,
+          "change_from_2015": "+5.5%",
+          "change_from_2024": "-8.9%",
+          "change_from_2023": "+45%"
         },
         "year_2024": {
           "gwh": 25623.6,
@@ -6072,12 +5991,12 @@
           "change_from_2023": "+71%"
         },
         "ytd_2025": {
-          "gwh": 3031.8,
-          "twh": 3.03,
-          "percentage": 42.02,
-          "change_from_2015": "+203%",
-          "change_from_2024": "-3.8%",
-          "change_from_2023": "+62%"
+          "gwh": 2945.5,
+          "twh": 2.95,
+          "percentage": 41.83,
+          "change_from_2015": "+200%",
+          "change_from_2024": "-3.9%",
+          "change_from_2023": "+61%"
         },
         "year_2024": {
           "gwh": 22891.2,
@@ -6108,11 +6027,11 @@
           "change_from_2023": "-34%"
         },
         "ytd_2025": {
-          "gwh": 451.9,
-          "twh": 0.45,
-          "percentage": 6.26,
+          "gwh": 443.5,
+          "twh": 0.44,
+          "percentage": 6.3,
           "change_from_2015": "-80%",
-          "change_from_2024": "-33%",
+          "change_from_2024": "-32%",
           "change_from_2023": "-13%"
         },
         "year_2024": {
@@ -6199,22 +6118,18 @@
     ]
   },
   "HU": {
-<<<<<<< Updated upstream
-    "last_updated": "2026-02-10 09:14:08 UTC",
-=======
-    "last_updated": "2026-02-10 09:31:05 UTC",
->>>>>>> Stashed changes
+    "last_updated": "2026-02-10 07:17:03 UTC",
     "sources": [
       {
         "source": "All Renewables",
         "category": "aggregate-renewable",
         "yesterday": {
-          "gwh": 10.4,
+          "gwh": 10.3,
           "twh": 0.01,
-          "percentage": 10.94,
-          "change_from_2015": "+102%",
+          "percentage": 10.88,
+          "change_from_2015": "+101%",
           "change_from_2024": "-50%",
-          "change_from_2023": "-33%"
+          "change_from_2023": "-34%"
         },
         "last_week": {
           "gwh": 89.4,
@@ -6225,11 +6140,11 @@
           "change_from_2023": "-18%"
         },
         "ytd_2025": {
-          "gwh": 454.8,
-          "twh": 0.45,
-          "percentage": 11.36,
+          "gwh": 444.1,
+          "twh": 0.44,
+          "percentage": 11.37,
           "change_from_2015": "+105%",
-          "change_from_2024": "-27%",
+          "change_from_2024": "-26%",
           "change_from_2023": "-19%"
         },
         "year_2024": {
@@ -6247,10 +6162,10 @@
         "yesterday": {
           "gwh": 0.4,
           "twh": 0.0,
-          "percentage": 0.43,
-          "change_from_2015": "-82%",
-          "change_from_2024": "-68%",
-          "change_from_2023": "-84%"
+          "percentage": 0.37,
+          "change_from_2015": "-84%",
+          "change_from_2024": "-73%",
+          "change_from_2023": "-86%"
         },
         "last_week": {
           "gwh": 9.3,
@@ -6261,12 +6176,12 @@
           "change_from_2023": "-47%"
         },
         "ytd_2025": {
-          "gwh": 49.5,
+          "gwh": 48.9,
           "twh": 0.05,
-          "percentage": 1.24,
+          "percentage": 1.25,
           "change_from_2015": "-53%",
           "change_from_2024": "-32%",
-          "change_from_2023": "-53%"
+          "change_from_2023": "-52%"
         },
         "year_2024": {
           "gwh": 559.6,
@@ -6297,12 +6212,12 @@
           "change_from_2023": "+202%"
         },
         "ytd_2025": {
-          "gwh": 22.9,
+          "gwh": 22.1,
           "twh": 0.02,
           "percentage": 0.57,
-          "change_from_2015": "-6.0%",
-          "change_from_2024": "-14%",
-          "change_from_2023": "+184%"
+          "change_from_2015": "-6.5%",
+          "change_from_2024": "-15%",
+          "change_from_2023": "+183%"
         },
         "year_2024": {
           "gwh": 216.9,
@@ -6333,12 +6248,12 @@
           "change_from_2023": "-36%"
         },
         "ytd_2025": {
-          "gwh": 203.7,
+          "gwh": 198.6,
           "twh": 0.2,
           "percentage": 5.09,
           "change_from_2015": "\u2014",
-          "change_from_2024": "-39%",
-          "change_from_2023": "-39%"
+          "change_from_2024": "-38%",
+          "change_from_2023": "-38%"
         },
         "year_2024": {
           "gwh": 6811.5,
@@ -6355,7 +6270,7 @@
         "yesterday": {
           "gwh": 3.9,
           "twh": 0.0,
-          "percentage": 4.07,
+          "percentage": 4.08,
           "change_from_2015": "+92%",
           "change_from_2024": "-18%",
           "change_from_2023": "+46%"
@@ -6369,11 +6284,11 @@
           "change_from_2023": "+66%"
         },
         "ytd_2025": {
-          "gwh": 163.5,
+          "gwh": 159.7,
           "twh": 0.16,
           "percentage": 4.09,
           "change_from_2015": "+96%",
-          "change_from_2024": "-4.6%",
+          "change_from_2024": "-4.2%",
           "change_from_2023": "+46%"
         },
         "year_2024": {
@@ -6409,8 +6324,8 @@
           "twh": 0.0,
           "percentage": 0.01,
           "change_from_2015": "\u2014",
-          "change_from_2024": "-29%",
-          "change_from_2023": "-30%"
+          "change_from_2024": "-27%",
+          "change_from_2023": "-28%"
         },
         "year_2024": {
           "gwh": 4.5,
@@ -6427,7 +6342,7 @@
         "yesterday": {
           "gwh": 84.5,
           "twh": 0.08,
-          "percentage": 89.06,
+          "percentage": 89.12,
           "change_from_2015": "+4.5%",
           "change_from_2024": "+5.0%",
           "change_from_2023": "+27%"
@@ -6441,9 +6356,9 @@
           "change_from_2023": "+28%"
         },
         "ytd_2025": {
-          "gwh": 3547.4,
-          "twh": 3.55,
-          "percentage": 88.64,
+          "gwh": 3461.1,
+          "twh": 3.46,
+          "percentage": 88.63,
           "change_from_2015": "+6.9%",
           "change_from_2024": "+4.3%",
           "change_from_2023": "+14%"
@@ -6463,7 +6378,7 @@
         "yesterday": {
           "gwh": 40.8,
           "twh": 0.04,
-          "percentage": 43.04,
+          "percentage": 43.07,
           "change_from_2015": "-12%",
           "change_from_2024": "+1.3%",
           "change_from_2023": "+6.8%"
@@ -6477,12 +6392,12 @@
           "change_from_2023": "+7.5%"
         },
         "ytd_2025": {
-          "gwh": 1643.6,
-          "twh": 1.64,
-          "percentage": 41.07,
+          "gwh": 1602.8,
+          "twh": 1.6,
+          "percentage": 41.04,
           "change_from_2015": "-14%",
-          "change_from_2024": "-11%",
-          "change_from_2023": "-8.6%"
+          "change_from_2024": "-12%",
+          "change_from_2023": "-9.0%"
         },
         "year_2024": {
           "gwh": 15210.0,
@@ -6499,7 +6414,7 @@
         "yesterday": {
           "gwh": 38.6,
           "twh": 0.04,
-          "percentage": 40.71,
+          "percentage": 40.74,
           "change_from_2015": "+181%",
           "change_from_2024": "+18%",
           "change_from_2023": "+104%"
@@ -6513,12 +6428,12 @@
           "change_from_2023": "+103%"
         },
         "ytd_2025": {
-          "gwh": 1641.6,
-          "twh": 1.64,
-          "percentage": 41.02,
+          "gwh": 1601.2,
+          "twh": 1.6,
+          "percentage": 41.0,
           "change_from_2015": "+189%",
           "change_from_2024": "+30%",
-          "change_from_2023": "+75%"
+          "change_from_2023": "+74%"
         },
         "year_2024": {
           "gwh": 7427.4,
@@ -6549,12 +6464,12 @@
           "change_from_2023": "-49%"
         },
         "ytd_2025": {
-          "gwh": 200.4,
+          "gwh": 196.7,
           "twh": 0.2,
-          "percentage": 5.01,
+          "percentage": 5.04,
           "change_from_2015": "-73%",
-          "change_from_2024": "-6.2%",
-          "change_from_2023": "-32%"
+          "change_from_2024": "-5.3%",
+          "change_from_2023": "-31%"
         },
         "year_2024": {
           "gwh": 1534.9,
@@ -6585,11 +6500,11 @@
           "change_from_2023": "-25%"
         },
         "ytd_2025": {
-          "gwh": 60.9,
+          "gwh": 59.5,
           "twh": 0.06,
           "percentage": 1.52,
           "change_from_2015": "-45%",
-          "change_from_2024": "-8.4%",
+          "change_from_2024": "-8.3%",
           "change_from_2023": "-23%"
         },
         "year_2024": {
@@ -6625,8 +6540,8 @@
           "twh": 0.0,
           "percentage": 0.02,
           "change_from_2015": "-36%",
-          "change_from_2024": "-26%",
-          "change_from_2023": "+210%"
+          "change_from_2024": "-25%",
+          "change_from_2023": "+218%"
         },
         "year_2024": {
           "gwh": 6.1,
@@ -6640,11 +6555,7 @@
     ]
   },
   "IE": {
-<<<<<<< Updated upstream
-    "last_updated": "2026-02-10 09:14:20 UTC",
-=======
-    "last_updated": "2026-02-10 09:31:16 UTC",
->>>>>>> Stashed changes
+    "last_updated": "2026-02-10 07:17:14 UTC",
     "sources": [
       {
         "source": "All Renewables",
@@ -6669,9 +6580,9 @@
           "gwh": 1553.8,
           "twh": 1.55,
           "percentage": 53.73,
-          "change_from_2015": "+29%",
-          "change_from_2024": "-13%",
-          "change_from_2023": "-13%"
+          "change_from_2015": "+32%",
+          "change_from_2024": "-9.8%",
+          "change_from_2023": "-11%"
         },
         "year_2024": {
           "gwh": 12858.6,
@@ -6705,9 +6616,9 @@
           "gwh": 1367.0,
           "twh": 1.37,
           "percentage": 47.27,
-          "change_from_2015": "+42%",
-          "change_from_2024": "-13%",
-          "change_from_2023": "-11%"
+          "change_from_2015": "+44%",
+          "change_from_2024": "-10%",
+          "change_from_2023": "-9.0%"
         },
         "year_2024": {
           "gwh": 11449.2,
@@ -6741,9 +6652,9 @@
           "gwh": 186.8,
           "twh": 0.19,
           "percentage": 6.46,
-          "change_from_2015": "-22%",
-          "change_from_2024": "-7.1%",
-          "change_from_2023": "-25%"
+          "change_from_2015": "-20%",
+          "change_from_2024": "-4.8%",
+          "change_from_2023": "-23%"
         },
         "year_2024": {
           "gwh": 1409.4,
@@ -6885,9 +6796,9 @@
           "gwh": 1338.0,
           "twh": 1.34,
           "percentage": 46.27,
-          "change_from_2015": "-24%",
-          "change_from_2024": "-14%",
-          "change_from_2023": "-11%"
+          "change_from_2015": "-22%",
+          "change_from_2024": "-12%",
+          "change_from_2023": "-9.6%"
         },
         "year_2024": {
           "gwh": 11170.1,
@@ -6957,9 +6868,9 @@
           "gwh": 1045.4,
           "twh": 1.05,
           "percentage": 36.15,
-          "change_from_2015": "+25%",
-          "change_from_2024": "-5.3%",
-          "change_from_2023": "-3.1%"
+          "change_from_2015": "+29%",
+          "change_from_2024": "-3.6%",
+          "change_from_2023": "-1.1%"
         },
         "year_2024": {
           "gwh": 8774.5,
@@ -6995,7 +6906,7 @@
           "percentage": 2.19,
           "change_from_2015": "-93%",
           "change_from_2024": "-72%",
-          "change_from_2023": "-72%"
+          "change_from_2023": "-71%"
         },
         "year_2024": {
           "gwh": 1153.2,
@@ -7029,9 +6940,9 @@
           "gwh": 4.1,
           "twh": 0.0,
           "percentage": 0.14,
-          "change_from_2015": "+220%",
-          "change_from_2024": "-57%",
-          "change_from_2023": "+232%"
+          "change_from_2015": "+236%",
+          "change_from_2024": "-56%",
+          "change_from_2023": "+238%"
         },
         "year_2024": {
           "gwh": 41.9,
@@ -7065,9 +6976,9 @@
           "gwh": 225.3,
           "twh": 0.23,
           "percentage": 7.79,
-          "change_from_2015": "+472%",
-          "change_from_2024": "+7.2%",
-          "change_from_2023": "+8.8%"
+          "change_from_2015": "+502%",
+          "change_from_2024": "+9.0%",
+          "change_from_2023": "+11%"
         },
         "year_2024": {
           "gwh": 1200.6,
@@ -7081,21 +6992,17 @@
     ]
   },
   "IT": {
-<<<<<<< Updated upstream
-    "last_updated": "2026-02-10 09:14:31 UTC",
-=======
-    "last_updated": "2026-02-10 09:31:28 UTC",
->>>>>>> Stashed changes
+    "last_updated": "2026-02-10 07:17:25 UTC",
     "sources": [
       {
         "source": "All Renewables",
         "category": "aggregate-renewable",
         "yesterday": {
-          "gwh": 182.2,
+          "gwh": 182.0,
           "twh": 0.18,
-          "percentage": 25.56,
-          "change_from_2015": "-19%",
-          "change_from_2024": "-4.7%",
+          "percentage": 25.54,
+          "change_from_2015": "-20%",
+          "change_from_2024": "-4.8%",
           "change_from_2023": "-28%"
         },
         "last_week": {
@@ -7107,16 +7014,16 @@
           "change_from_2023": "+3.5%"
         },
         "ytd_2025": {
-          "gwh": 9169.9,
-          "twh": 9.17,
-          "percentage": 32.22,
-          "change_from_2015": "+5.5%",
-          "change_from_2024": "+7.4%",
-          "change_from_2023": "-11%"
+          "gwh": 8989.0,
+          "twh": 8.99,
+          "percentage": 32.41,
+          "change_from_2015": "+6.2%",
+          "change_from_2024": "+7.6%",
+          "change_from_2023": "-10%"
         },
         "year_2024": {
-          "gwh": 97727.0,
-          "twh": 97.73,
+          "gwh": 97743.1,
+          "twh": 97.74,
           "percentage": 43.47,
           "change_from_2015": "+14%",
           "change_from_2024": "\u2014",
@@ -7127,12 +7034,12 @@
         "source": "Wind",
         "category": "renewable",
         "yesterday": {
-          "gwh": 34.9,
-          "twh": 0.03,
-          "percentage": 4.89,
-          "change_from_2015": "-36%",
-          "change_from_2024": "-24%",
-          "change_from_2023": "-56%"
+          "gwh": 35.3,
+          "twh": 0.04,
+          "percentage": 4.96,
+          "change_from_2015": "-35%",
+          "change_from_2024": "-23%",
+          "change_from_2023": "-55%"
         },
         "last_week": {
           "gwh": 811.5,
@@ -7143,12 +7050,12 @@
           "change_from_2023": "+48%"
         },
         "ytd_2025": {
-          "gwh": 3998.0,
-          "twh": 4.0,
-          "percentage": 14.05,
-          "change_from_2015": "+72%",
+          "gwh": 3964.3,
+          "twh": 3.96,
+          "percentage": 14.29,
+          "change_from_2015": "+75%",
           "change_from_2024": "+33%",
-          "change_from_2023": "+12%"
+          "change_from_2023": "+13%"
         },
         "year_2024": {
           "gwh": 21242.6,
@@ -7163,12 +7070,12 @@
         "source": "Hydro",
         "category": "renewable",
         "yesterday": {
-          "gwh": 76.0,
+          "gwh": 75.3,
           "twh": 0.08,
-          "percentage": 10.66,
-          "change_from_2015": "-35%",
-          "change_from_2024": "+4.5%",
-          "change_from_2023": "-22%"
+          "percentage": 10.57,
+          "change_from_2015": "-36%",
+          "change_from_2024": "+3.6%",
+          "change_from_2023": "-23%"
         },
         "last_week": {
           "gwh": 474.5,
@@ -7179,11 +7086,11 @@
           "change_from_2023": "-30%"
         },
         "ytd_2025": {
-          "gwh": 2509.8,
-          "twh": 2.51,
-          "percentage": 8.82,
+          "gwh": 2433.9,
+          "twh": 2.43,
+          "percentage": 8.78,
           "change_from_2015": "-43%",
-          "change_from_2024": "-20%",
+          "change_from_2024": "-21%",
           "change_from_2023": "-39%"
         },
         "year_2024": {
@@ -7199,12 +7106,12 @@
         "source": "Solar",
         "category": "renewable",
         "yesterday": {
-          "gwh": 49.1,
+          "gwh": 49.0,
           "twh": 0.05,
-          "percentage": 6.89,
-          "change_from_2015": "+57%",
-          "change_from_2024": "-9.7%",
-          "change_from_2023": "+6.2%"
+          "percentage": 6.88,
+          "change_from_2015": "+56%",
+          "change_from_2024": "-9.8%",
+          "change_from_2023": "+6.1%"
         },
         "last_week": {
           "gwh": 383.3,
@@ -7215,15 +7122,15 @@
           "change_from_2023": "+18%"
         },
         "ytd_2025": {
-          "gwh": 1800.1,
-          "twh": 1.8,
-          "percentage": 6.32,
+          "gwh": 1750.9,
+          "twh": 1.75,
+          "percentage": 6.31,
           "change_from_2015": "+69%",
-          "change_from_2024": "+8.6%",
-          "change_from_2023": "+21%"
+          "change_from_2024": "+9.3%",
+          "change_from_2023": "+22%"
         },
         "year_2024": {
-          "gwh": 33967.3,
+          "gwh": 33968.7,
           "twh": 33.97,
           "percentage": 15.11,
           "change_from_2015": "+85%",
@@ -7235,12 +7142,12 @@
         "source": "Biomass",
         "category": "renewable",
         "yesterday": {
-          "gwh": 8.3,
+          "gwh": 8.4,
           "twh": 0.01,
-          "percentage": 1.17,
-          "change_from_2015": "+18%",
-          "change_from_2024": "-43%",
-          "change_from_2023": "-44%"
+          "percentage": 1.18,
+          "change_from_2015": "+19%",
+          "change_from_2024": "-42%",
+          "change_from_2023": "-43%"
         },
         "last_week": {
           "gwh": 55.1,
@@ -7251,15 +7158,15 @@
           "change_from_2023": "-47%"
         },
         "ytd_2025": {
-          "gwh": 287.8,
-          "twh": 0.29,
+          "gwh": 279.5,
+          "twh": 0.28,
           "percentage": 1.01,
-          "change_from_2015": "+2.7%",
+          "change_from_2015": "+2.3%",
           "change_from_2024": "-48%",
           "change_from_2023": "-41%"
         },
         "year_2024": {
-          "gwh": 6022.1,
+          "gwh": 6022.2,
           "twh": 6.02,
           "percentage": 2.68,
           "change_from_2015": "+145%",
@@ -7275,7 +7182,7 @@
           "twh": 0.01,
           "percentage": 1.95,
           "change_from_2015": "-13%",
-          "change_from_2024": "+259502%",
+          "change_from_2024": "+259679%",
           "change_from_2023": "-6.6%"
         },
         "last_week": {
@@ -7287,17 +7194,17 @@
           "change_from_2023": "-5.1%"
         },
         "ytd_2025": {
-          "gwh": 574.4,
-          "twh": 0.57,
+          "gwh": 560.4,
+          "twh": 0.56,
           "percentage": 2.02,
           "change_from_2015": "-11%",
-          "change_from_2024": "+946%",
+          "change_from_2024": "+920%",
           "change_from_2023": "-5.5%"
         },
         "year_2024": {
-          "gwh": 1304.6,
-          "twh": 1.3,
-          "percentage": 0.58,
+          "gwh": 1319.2,
+          "twh": 1.32,
+          "percentage": 0.59,
           "change_from_2015": "-77%",
           "change_from_2024": "\u2014",
           "change_from_2023": "-73%"
@@ -7309,7 +7216,7 @@
         "yesterday": {
           "gwh": 530.7,
           "twh": 0.53,
-          "percentage": 74.44,
+          "percentage": 74.46,
           "change_from_2015": "+15%",
           "change_from_2024": "+20%",
           "change_from_2023": "+54%"
@@ -7323,15 +7230,15 @@
           "change_from_2023": "+28%"
         },
         "ytd_2025": {
-          "gwh": 19294.3,
-          "twh": 19.29,
-          "percentage": 67.78,
-          "change_from_2015": "+6.4%",
+          "gwh": 18744.7,
+          "twh": 18.74,
+          "percentage": 67.59,
+          "change_from_2015": "+6.0%",
           "change_from_2024": "+14%",
-          "change_from_2023": "+31%"
+          "change_from_2023": "+30%"
         },
         "year_2024": {
-          "gwh": 127083.4,
+          "gwh": 127083.5,
           "twh": 127.08,
           "percentage": 56.53,
           "change_from_2015": "-8.6%",
@@ -7379,12 +7286,12 @@
         "source": "Gas",
         "category": "non-renewable",
         "yesterday": {
-          "gwh": 475.9,
+          "gwh": 475.1,
           "twh": 0.48,
-          "percentage": 66.75,
+          "percentage": 66.65,
           "change_from_2015": "+203%",
-          "change_from_2024": "+24%",
-          "change_from_2023": "+76%"
+          "change_from_2024": "+23%",
+          "change_from_2023": "+75%"
         },
         "last_week": {
           "gwh": 2701.9,
@@ -7395,15 +7302,15 @@
           "change_from_2023": "+43%"
         },
         "ytd_2025": {
-          "gwh": 16999.5,
-          "twh": 17.0,
-          "percentage": 59.72,
-          "change_from_2015": "+191%",
+          "gwh": 16509.9,
+          "twh": 16.51,
+          "percentage": 59.53,
+          "change_from_2015": "+190%",
           "change_from_2024": "+17%",
-          "change_from_2023": "+44%"
+          "change_from_2023": "+43%"
         },
         "year_2024": {
-          "gwh": 105750.9,
+          "gwh": 105751.0,
           "twh": 105.75,
           "percentage": 47.04,
           "change_from_2015": "+96%",
@@ -7415,12 +7322,12 @@
         "source": "Coal",
         "category": "non-renewable",
         "yesterday": {
-          "gwh": 8.6,
+          "gwh": 8.9,
           "twh": 0.01,
-          "percentage": 1.21,
-          "change_from_2015": "-72%",
-          "change_from_2024": "-14%",
-          "change_from_2023": "-47%"
+          "percentage": 1.25,
+          "change_from_2015": "-71%",
+          "change_from_2024": "-11%",
+          "change_from_2023": "-45%"
         },
         "last_week": {
           "gwh": 55.3,
@@ -7431,8 +7338,8 @@
           "change_from_2023": "-51%"
         },
         "ytd_2025": {
-          "gwh": 216.9,
-          "twh": 0.22,
+          "gwh": 210.8,
+          "twh": 0.21,
           "percentage": 0.76,
           "change_from_2015": "-81%",
           "change_from_2024": "-41%",
@@ -7451,11 +7358,11 @@
         "source": "Waste",
         "category": "non-renewable",
         "yesterday": {
-          "gwh": 46.0,
+          "gwh": 46.2,
           "twh": 0.05,
-          "percentage": 6.45,
+          "percentage": 6.48,
           "change_from_2015": "-83%",
-          "change_from_2024": "+4.4%",
+          "change_from_2024": "+4.9%",
           "change_from_2023": "-18%"
         },
         "last_week": {
@@ -7467,11 +7374,11 @@
           "change_from_2023": "-16%"
         },
         "ytd_2025": {
-          "gwh": 1797.3,
-          "twh": 1.8,
+          "gwh": 1751.3,
+          "twh": 1.75,
           "percentage": 6.31,
           "change_from_2015": "-84%",
-          "change_from_2024": "-2.0%",
+          "change_from_2024": "-2.2%",
           "change_from_2023": "-25%"
         },
         "year_2024": {
@@ -7487,12 +7394,12 @@
         "source": "Oil",
         "category": "non-renewable",
         "yesterday": {
-          "gwh": 0.2,
+          "gwh": 0.5,
           "twh": 0.0,
-          "percentage": 0.03,
-          "change_from_2015": "-97%",
-          "change_from_2024": "-40%",
-          "change_from_2023": "-71%"
+          "percentage": 0.07,
+          "change_from_2015": "-93%",
+          "change_from_2024": "+44%",
+          "change_from_2023": "-29%"
         },
         "last_week": {
           "gwh": 1.6,
@@ -7503,7 +7410,7 @@
           "change_from_2023": "-69%"
         },
         "ytd_2025": {
-          "gwh": 11.6,
+          "gwh": 11.4,
           "twh": 0.01,
           "percentage": 0.04,
           "change_from_2015": "-95%",
@@ -7522,11 +7429,7 @@
     ]
   },
   "LV": {
-<<<<<<< Updated upstream
-    "last_updated": "2026-02-10 09:14:42 UTC",
-=======
-    "last_updated": "2026-02-10 09:31:39 UTC",
->>>>>>> Stashed changes
+    "last_updated": "2026-02-10 07:17:37 UTC",
     "sources": [
       {
         "source": "All Renewables",
@@ -7548,9 +7451,9 @@
           "change_from_2023": "-60%"
         },
         "ytd_2025": {
-          "gwh": 261.3,
-          "twh": 0.26,
-          "percentage": 26.29,
+          "gwh": 254.9,
+          "twh": 0.25,
+          "percentage": 26.38,
           "change_from_2015": "-26%",
           "change_from_2024": "-50%",
           "change_from_2023": "-55%"
@@ -7584,12 +7487,12 @@
           "change_from_2023": "-33%"
         },
         "ytd_2025": {
-          "gwh": 24.2,
+          "gwh": 24.0,
           "twh": 0.02,
-          "percentage": 2.44,
-          "change_from_2015": "+55%",
+          "percentage": 2.49,
+          "change_from_2015": "+57%",
           "change_from_2024": "-32%",
-          "change_from_2023": "-47%"
+          "change_from_2023": "-46%"
         },
         "year_2024": {
           "gwh": 200.4,
@@ -7620,9 +7523,9 @@
           "change_from_2023": "-65%"
         },
         "ytd_2025": {
-          "gwh": 199.7,
-          "twh": 0.2,
-          "percentage": 20.1,
+          "gwh": 194.9,
+          "twh": 0.19,
+          "percentage": 20.17,
           "change_from_2015": "-19%",
           "change_from_2024": "-53%",
           "change_from_2023": "-58%"
@@ -7656,12 +7559,12 @@
           "change_from_2023": "+119%"
         },
         "ytd_2025": {
-          "gwh": 7.1,
+          "gwh": 6.6,
           "twh": 0.01,
-          "percentage": 0.71,
+          "percentage": 0.68,
           "change_from_2015": "\u2014",
-          "change_from_2024": "-27%",
-          "change_from_2023": "+170%"
+          "change_from_2024": "-28%",
+          "change_from_2023": "+165%"
         },
         "year_2024": {
           "gwh": 678.1,
@@ -7692,7 +7595,7 @@
           "change_from_2023": "-45%"
         },
         "ytd_2025": {
-          "gwh": 30.3,
+          "gwh": 29.5,
           "twh": 0.03,
           "percentage": 3.05,
           "change_from_2015": "-67%",
@@ -7764,12 +7667,12 @@
           "change_from_2023": "+92%"
         },
         "ytd_2025": {
-          "gwh": 732.5,
-          "twh": 0.73,
-          "percentage": 73.71,
-          "change_from_2015": "+227%",
-          "change_from_2024": "+106%",
-          "change_from_2023": "+42%"
+          "gwh": 711.3,
+          "twh": 0.71,
+          "percentage": 73.62,
+          "change_from_2015": "+226%",
+          "change_from_2024": "+109%",
+          "change_from_2023": "+40%"
         },
         "year_2024": {
           "gwh": 1578.5,
@@ -7836,12 +7739,12 @@
           "change_from_2023": "+88%"
         },
         "ytd_2025": {
-          "gwh": 717.5,
-          "twh": 0.72,
-          "percentage": 72.2,
-          "change_from_2015": "+453%",
-          "change_from_2024": "+102%",
-          "change_from_2023": "+39%"
+          "gwh": 696.8,
+          "twh": 0.7,
+          "percentage": 72.11,
+          "change_from_2015": "+450%",
+          "change_from_2024": "+105%",
+          "change_from_2023": "+38%"
         },
         "year_2024": {
           "gwh": 1572.6,
@@ -7908,11 +7811,11 @@
           "change_from_2023": "\u2014"
         },
         "ytd_2025": {
-          "gwh": 15.0,
+          "gwh": 14.6,
           "twh": 0.01,
           "percentage": 1.51,
           "change_from_2015": "-84%",
-          "change_from_2024": "+149500%",
+          "change_from_2024": "+145400%",
           "change_from_2023": "\u2014"
         },
         "year_2024": {
@@ -7963,11 +7866,7 @@
     ]
   },
   "LT": {
-<<<<<<< Updated upstream
-    "last_updated": "2026-02-10 09:14:53 UTC",
-=======
-    "last_updated": "2026-02-10 09:31:50 UTC",
->>>>>>> Stashed changes
+    "last_updated": "2026-02-10 07:17:48 UTC",
     "sources": [
       {
         "source": "All Renewables",
@@ -7989,11 +7888,11 @@
           "change_from_2023": "+41%"
         },
         "ytd_2025": {
-          "gwh": 898.8,
-          "twh": 0.9,
-          "percentage": 67.23,
-          "change_from_2015": "+160%",
-          "change_from_2024": "+21%",
+          "gwh": 874.3,
+          "twh": 0.87,
+          "percentage": 67.27,
+          "change_from_2015": "+159%",
+          "change_from_2024": "+20%",
           "change_from_2023": "+27%"
         },
         "year_2024": {
@@ -8025,11 +7924,11 @@
           "change_from_2023": "+59%"
         },
         "ytd_2025": {
-          "gwh": 684.4,
-          "twh": 0.68,
-          "percentage": 51.19,
-          "change_from_2015": "+687%",
-          "change_from_2024": "+36%",
+          "gwh": 668.8,
+          "twh": 0.67,
+          "percentage": 51.45,
+          "change_from_2015": "+688%",
+          "change_from_2024": "+34%",
           "change_from_2023": "+43%"
         },
         "year_2024": {
@@ -8061,12 +7960,12 @@
           "change_from_2023": "+3.5%"
         },
         "ytd_2025": {
-          "gwh": 167.7,
-          "twh": 0.17,
-          "percentage": 12.54,
-          "change_from_2015": "-27%",
-          "change_from_2024": "-7.8%",
-          "change_from_2023": "-10%"
+          "gwh": 161.1,
+          "twh": 0.16,
+          "percentage": 12.4,
+          "change_from_2015": "-28%",
+          "change_from_2024": "-9.5%",
+          "change_from_2023": "-11%"
         },
         "year_2024": {
           "gwh": 1403.1,
@@ -8097,12 +7996,12 @@
           "change_from_2023": "+239%"
         },
         "ytd_2025": {
-          "gwh": 26.7,
-          "twh": 0.03,
-          "percentage": 2.0,
-          "change_from_2015": "+3278%",
-          "change_from_2024": "-20%",
-          "change_from_2023": "+196%"
+          "gwh": 24.9,
+          "twh": 0.02,
+          "percentage": 1.92,
+          "change_from_2015": "+3226%",
+          "change_from_2024": "-22%",
+          "change_from_2023": "+186%"
         },
         "year_2024": {
           "gwh": 1643.2,
@@ -8133,11 +8032,11 @@
           "change_from_2023": "-39%"
         },
         "ytd_2025": {
-          "gwh": 20.0,
+          "gwh": 19.5,
           "twh": 0.02,
           "percentage": 1.5,
           "change_from_2015": "-32%",
-          "change_from_2024": "-4.8%",
+          "change_from_2024": "-4.9%",
           "change_from_2023": "-39%"
         },
         "year_2024": {
@@ -8205,12 +8104,12 @@
           "change_from_2023": "+175%"
         },
         "ytd_2025": {
-          "gwh": 438.0,
-          "twh": 0.44,
-          "percentage": 32.77,
-          "change_from_2015": "+127%",
-          "change_from_2024": "-0.1%",
-          "change_from_2023": "+69%"
+          "gwh": 425.5,
+          "twh": 0.43,
+          "percentage": 32.73,
+          "change_from_2015": "+126%",
+          "change_from_2024": "-0.2%",
+          "change_from_2023": "+67%"
         },
         "year_2024": {
           "gwh": 2612.0,
@@ -8277,12 +8176,12 @@
           "change_from_2023": "+242%"
         },
         "ytd_2025": {
-          "gwh": 276.4,
-          "twh": 0.28,
-          "percentage": 20.67,
-          "change_from_2015": "+79%",
-          "change_from_2024": "-1.6%",
-          "change_from_2023": "+59%"
+          "gwh": 267.5,
+          "twh": 0.27,
+          "percentage": 20.58,
+          "change_from_2015": "+78%",
+          "change_from_2024": "-2.0%",
+          "change_from_2023": "+56%"
         },
         "year_2024": {
           "gwh": 1436.5,
@@ -8349,12 +8248,12 @@
           "change_from_2023": "+92%"
         },
         "ytd_2025": {
-          "gwh": 158.2,
-          "twh": 0.16,
-          "percentage": 11.84,
-          "change_from_2015": "+495%",
-          "change_from_2024": "+0.3%",
-          "change_from_2023": "+86%"
+          "gwh": 154.8,
+          "twh": 0.15,
+          "percentage": 11.91,
+          "change_from_2015": "+497%",
+          "change_from_2024": "+1.0%",
+          "change_from_2023": "+87%"
         },
         "year_2024": {
           "gwh": 1164.3,
@@ -8404,11 +8303,7 @@
     ]
   },
   "LU": {
-<<<<<<< Updated upstream
-    "last_updated": "2026-02-10 09:15:05 UTC",
-=======
-    "last_updated": "2026-02-10 09:32:02 UTC",
->>>>>>> Stashed changes
+    "last_updated": "2026-02-10 07:17:59 UTC",
     "sources": [
       {
         "source": "All Renewables",
@@ -8430,10 +8325,10 @@
           "change_from_2023": "-17%"
         },
         "ytd_2025": {
-          "gwh": 98.1,
+          "gwh": 95.3,
           "twh": 0.1,
-          "percentage": 83.85,
-          "change_from_2015": "+143%",
+          "percentage": 83.86,
+          "change_from_2015": "+142%",
           "change_from_2024": "-19%",
           "change_from_2023": "-18%"
         },
@@ -8466,9 +8361,9 @@
           "change_from_2023": "-32%"
         },
         "ytd_2025": {
-          "gwh": 59.1,
+          "gwh": 58.0,
           "twh": 0.06,
-          "percentage": 50.55,
+          "percentage": 51.01,
           "change_from_2015": "+311%",
           "change_from_2024": "-7.8%",
           "change_from_2023": "-21%"
@@ -8502,11 +8397,11 @@
           "change_from_2023": "-11%"
         },
         "ytd_2025": {
-          "gwh": 12.1,
+          "gwh": 11.7,
           "twh": 0.01,
-          "percentage": 10.35,
-          "change_from_2015": "-33%",
-          "change_from_2024": "-16%",
+          "percentage": 10.28,
+          "change_from_2015": "-34%",
+          "change_from_2024": "-17%",
           "change_from_2023": "-17%"
         },
         "year_2024": {
@@ -8538,11 +8433,11 @@
           "change_from_2023": "-0.3%"
         },
         "ytd_2025": {
-          "gwh": 7.3,
+          "gwh": 7.1,
           "twh": 0.01,
-          "percentage": 6.22,
-          "change_from_2015": "+400%",
-          "change_from_2024": "-34%",
+          "percentage": 6.23,
+          "change_from_2015": "+411%",
+          "change_from_2024": "-33%",
           "change_from_2023": "-24%"
         },
         "year_2024": {
@@ -8574,12 +8469,12 @@
           "change_from_2023": "+33%"
         },
         "ytd_2025": {
-          "gwh": 19.6,
+          "gwh": 18.6,
           "twh": 0.02,
-          "percentage": 16.72,
-          "change_from_2015": "+199%",
-          "change_from_2024": "-37%",
-          "change_from_2023": "-5.8%"
+          "percentage": 16.35,
+          "change_from_2015": "+191%",
+          "change_from_2024": "-39%",
+          "change_from_2023": "-8.5%"
         },
         "year_2024": {
           "gwh": 230.7,
@@ -8646,12 +8541,12 @@
           "change_from_2023": "-14%"
         },
         "ytd_2025": {
-          "gwh": 18.9,
+          "gwh": 18.3,
           "twh": 0.02,
-          "percentage": 16.15,
+          "percentage": 16.14,
           "change_from_2015": "-65%",
           "change_from_2024": "-20%",
-          "change_from_2023": "-7.5%"
+          "change_from_2023": "-7.7%"
         },
         "year_2024": {
           "gwh": 155.0,
@@ -8718,12 +8613,12 @@
           "change_from_2023": "-19%"
         },
         "ytd_2025": {
-          "gwh": 8.8,
+          "gwh": 8.6,
           "twh": 0.01,
-          "percentage": 7.57,
+          "percentage": 7.53,
           "change_from_2015": "-80%",
           "change_from_2024": "-19%",
-          "change_from_2023": "-29%"
+          "change_from_2023": "-30%"
         },
         "year_2024": {
           "gwh": 61.0,
@@ -8790,12 +8685,12 @@
           "change_from_2023": "-9.8%"
         },
         "ytd_2025": {
-          "gwh": 10.1,
+          "gwh": 9.8,
           "twh": 0.01,
-          "percentage": 8.59,
-          "change_from_2015": "-6.2%",
+          "percentage": 8.62,
+          "change_from_2015": "-6.6%",
           "change_from_2024": "-21%",
-          "change_from_2023": "+26%"
+          "change_from_2023": "+28%"
         },
         "year_2024": {
           "gwh": 94.0,
@@ -8845,11 +8740,7 @@
     ]
   },
   "MT": {
-<<<<<<< Updated upstream
-    "last_updated": "2026-02-10 09:15:16 UTC",
-=======
-    "last_updated": "2026-02-10 09:32:13 UTC",
->>>>>>> Stashed changes
+    "last_updated": "2026-02-10 07:18:11 UTC",
     "sources": [
       {
         "source": "All Renewables",
@@ -9286,11 +9177,7 @@
     ]
   },
   "NL": {
-<<<<<<< Updated upstream
-    "last_updated": "2026-02-10 09:15:27 UTC",
-=======
-    "last_updated": "2026-02-10 09:32:25 UTC",
->>>>>>> Stashed changes
+    "last_updated": "2026-02-10 07:18:23 UTC",
     "sources": [
       {
         "source": "All Renewables",
@@ -9312,12 +9199,12 @@
           "change_from_2023": "-1.9%"
         },
         "ytd_2025": {
-          "gwh": 3449.3,
-          "twh": 3.45,
-          "percentage": 24.17,
-          "change_from_2015": "+1894%",
-          "change_from_2024": "+25%",
-          "change_from_2023": "-1.1%"
+          "gwh": 3375.8,
+          "twh": 3.38,
+          "percentage": 24.52,
+          "change_from_2015": "+1889%",
+          "change_from_2024": "+26%",
+          "change_from_2023": "-0.6%"
         },
         "year_2024": {
           "gwh": 24257.9,
@@ -9348,10 +9235,10 @@
           "change_from_2023": "-12%"
         },
         "ytd_2025": {
-          "gwh": 3066.9,
-          "twh": 3.07,
-          "percentage": 21.49,
-          "change_from_2015": "+1677%",
+          "gwh": 2999.8,
+          "twh": 3.0,
+          "percentage": 21.79,
+          "change_from_2015": "+1672%",
           "change_from_2024": "+13%",
           "change_from_2023": "-11%"
         },
@@ -9420,12 +9307,12 @@
           "change_from_2023": "-70%"
         },
         "ytd_2025": {
-          "gwh": 4.8,
+          "gwh": 4.6,
           "twh": 0.0,
           "percentage": 0.03,
-          "change_from_2015": "+48300%",
+          "change_from_2015": "+45900%",
           "change_from_2024": "-73%",
-          "change_from_2023": "-70%"
+          "change_from_2023": "-71%"
         },
         "year_2024": {
           "gwh": 503.3,
@@ -9456,12 +9343,12 @@
           "change_from_2023": "+2432%"
         },
         "ytd_2025": {
-          "gwh": 377.5,
-          "twh": 0.38,
-          "percentage": 2.64,
-          "change_from_2015": "+83793%",
-          "change_from_2024": "+2799%",
-          "change_from_2023": "+2243%"
+          "gwh": 371.4,
+          "twh": 0.37,
+          "percentage": 2.7,
+          "change_from_2015": "+82424%",
+          "change_from_2024": "+2807%",
+          "change_from_2023": "+2261%"
         },
         "year_2024": {
           "gwh": 966.6,
@@ -9528,12 +9415,12 @@
           "change_from_2023": "-4.3%"
         },
         "ytd_2025": {
-          "gwh": 10824.5,
-          "twh": 10.82,
-          "percentage": 75.83,
-          "change_from_2015": "-11%",
-          "change_from_2024": "-13%",
-          "change_from_2023": "-0.0%"
+          "gwh": 10393.1,
+          "twh": 10.39,
+          "percentage": 75.48,
+          "change_from_2015": "-13%",
+          "change_from_2024": "-14%",
+          "change_from_2023": "-1.8%"
         },
         "year_2024": {
           "gwh": 98727.3,
@@ -9564,10 +9451,10 @@
           "change_from_2023": "+0.7%"
         },
         "ytd_2025": {
-          "gwh": 469.5,
-          "twh": 0.47,
-          "percentage": 3.29,
-          "change_from_2015": "-2.5%",
+          "gwh": 457.8,
+          "twh": 0.46,
+          "percentage": 3.32,
+          "change_from_2015": "-2.6%",
           "change_from_2024": "-2.0%",
           "change_from_2023": "-1.9%"
         },
@@ -9600,12 +9487,12 @@
           "change_from_2023": "+51%"
         },
         "ytd_2025": {
-          "gwh": 5416.8,
-          "twh": 5.42,
-          "percentage": 37.95,
-          "change_from_2015": "+50%",
-          "change_from_2024": "+17%",
-          "change_from_2023": "+37%"
+          "gwh": 5233.6,
+          "twh": 5.23,
+          "percentage": 38.01,
+          "change_from_2015": "+49%",
+          "change_from_2024": "+16%",
+          "change_from_2023": "+35%"
         },
         "year_2024": {
           "gwh": 32024.2,
@@ -9636,12 +9523,12 @@
           "change_from_2023": "+103%"
         },
         "ytd_2025": {
-          "gwh": 2332.5,
-          "twh": 2.33,
-          "percentage": 16.34,
-          "change_from_2015": "+58%",
+          "gwh": 2253.4,
+          "twh": 2.25,
+          "percentage": 16.37,
+          "change_from_2015": "+57%",
           "change_from_2024": "-18%",
-          "change_from_2023": "+47%"
+          "change_from_2023": "+46%"
         },
         "year_2024": {
           "gwh": 12464.5,
@@ -9672,12 +9559,12 @@
           "change_from_2023": "-79%"
         },
         "ytd_2025": {
-          "gwh": 2605.7,
-          "twh": 2.61,
-          "percentage": 18.26,
-          "change_from_2015": "-61%",
-          "change_from_2024": "-43%",
-          "change_from_2023": "-46%"
+          "gwh": 2448.4,
+          "twh": 2.45,
+          "percentage": 17.78,
+          "change_from_2015": "-62%",
+          "change_from_2024": "-45%",
+          "change_from_2023": "-48%"
         },
         "year_2024": {
           "gwh": 50431.1,
@@ -9727,11 +9614,7 @@
     ]
   },
   "PL": {
-<<<<<<< Updated upstream
-    "last_updated": "2026-02-10 09:15:39 UTC",
-=======
-    "last_updated": "2026-02-10 09:32:36 UTC",
->>>>>>> Stashed changes
+    "last_updated": "2026-02-10 07:18:35 UTC",
     "sources": [
       {
         "source": "All Renewables",
@@ -9753,9 +9636,9 @@
           "change_from_2023": "-30%"
         },
         "ytd_2025": {
-          "gwh": 4393.7,
-          "twh": 4.39,
-          "percentage": 20.78,
+          "gwh": 4306.5,
+          "twh": 4.31,
+          "percentage": 20.9,
           "change_from_2015": "+127%",
           "change_from_2024": "-16%",
           "change_from_2023": "-18%"
@@ -9789,9 +9672,9 @@
           "change_from_2023": "-41%"
         },
         "ytd_2025": {
-          "gwh": 2812.0,
-          "twh": 2.81,
-          "percentage": 13.3,
+          "gwh": 2766.9,
+          "twh": 2.77,
+          "percentage": 13.43,
           "change_from_2015": "+89%",
           "change_from_2024": "-22%",
           "change_from_2023": "-30%"
@@ -9825,11 +9708,11 @@
           "change_from_2023": "-28%"
         },
         "ytd_2025": {
-          "gwh": 398.4,
-          "twh": 0.4,
-          "percentage": 1.88,
-          "change_from_2015": "+19%",
-          "change_from_2024": "-4.7%",
+          "gwh": 389.2,
+          "twh": 0.39,
+          "percentage": 1.89,
+          "change_from_2015": "+18%",
+          "change_from_2024": "-4.6%",
           "change_from_2023": "-26%"
         },
         "year_2024": {
@@ -9861,11 +9744,11 @@
           "change_from_2023": "-1.8%"
         },
         "ytd_2025": {
-          "gwh": 753.1,
-          "twh": 0.75,
-          "percentage": 3.56,
+          "gwh": 730.5,
+          "twh": 0.73,
+          "percentage": 3.54,
           "change_from_2015": "\u2014",
-          "change_from_2024": "-1.6%",
+          "change_from_2024": "-0.2%",
           "change_from_2023": "+40%"
         },
         "year_2024": {
@@ -9897,12 +9780,12 @@
           "change_from_2023": "+78%"
         },
         "ytd_2025": {
-          "gwh": 361.2,
-          "twh": 0.36,
+          "gwh": 352.6,
+          "twh": 0.35,
           "percentage": 1.71,
-          "change_from_2015": "+213%",
-          "change_from_2024": "+5.0%",
-          "change_from_2023": "+50%"
+          "change_from_2015": "+219%",
+          "change_from_2024": "+5.2%",
+          "change_from_2023": "+49%"
         },
         "year_2024": {
           "gwh": 2867.4,
@@ -9969,12 +9852,12 @@
           "change_from_2023": "+39%"
         },
         "ytd_2025": {
-          "gwh": 16751.9,
-          "twh": 16.75,
-          "percentage": 79.22,
-          "change_from_2015": "+7.4%",
-          "change_from_2024": "+6.8%",
-          "change_from_2023": "+21%"
+          "gwh": 16302.3,
+          "twh": 16.3,
+          "percentage": 79.1,
+          "change_from_2015": "+7.2%",
+          "change_from_2024": "+6.7%",
+          "change_from_2023": "+20%"
         },
         "year_2024": {
           "gwh": 111976.1,
@@ -10041,12 +9924,12 @@
           "change_from_2023": "+101%"
         },
         "ytd_2025": {
-          "gwh": 3553.4,
-          "twh": 3.55,
+          "gwh": 3461.7,
+          "twh": 3.46,
           "percentage": 16.8,
-          "change_from_2015": "+486%",
+          "change_from_2015": "+487%",
           "change_from_2024": "+28%",
-          "change_from_2023": "+73%"
+          "change_from_2023": "+72%"
         },
         "year_2024": {
           "gwh": 22485.2,
@@ -10077,12 +9960,12 @@
           "change_from_2023": "+24%"
         },
         "ytd_2025": {
-          "gwh": 12295.1,
-          "twh": 12.3,
-          "percentage": 58.14,
+          "gwh": 11959.0,
+          "twh": 11.96,
+          "percentage": 58.03,
           "change_from_2015": "-18%",
-          "change_from_2024": "+2.1%",
-          "change_from_2023": "+7.1%"
+          "change_from_2024": "+2.0%",
+          "change_from_2023": "+6.6%"
         },
         "year_2024": {
           "gwh": 82810.9,
@@ -10113,9 +9996,9 @@
           "change_from_2023": "\u2014"
         },
         "ytd_2025": {
-          "gwh": 679.5,
-          "twh": 0.68,
-          "percentage": 3.21,
+          "gwh": 663.1,
+          "twh": 0.66,
+          "percentage": 3.22,
           "change_from_2015": "\u2014",
           "change_from_2024": "+3.0%",
           "change_from_2023": "\u2014"
@@ -10149,11 +10032,11 @@
           "change_from_2023": "-39%"
         },
         "ytd_2025": {
-          "gwh": 223.9,
+          "gwh": 218.6,
           "twh": 0.22,
           "percentage": 1.06,
           "change_from_2015": "\u2014",
-          "change_from_2024": "+9.9%",
+          "change_from_2024": "+10%",
           "change_from_2023": "-41%"
         },
         "year_2024": {
@@ -10168,11 +10051,7 @@
     ]
   },
   "PT": {
-<<<<<<< Updated upstream
-    "last_updated": "2026-02-10 09:15:50 UTC",
-=======
-    "last_updated": "2026-02-10 09:32:48 UTC",
->>>>>>> Stashed changes
+    "last_updated": "2026-02-10 07:18:46 UTC",
     "sources": [
       {
         "source": "All Renewables",
@@ -10183,7 +10062,7 @@
           "percentage": 80.47,
           "change_from_2015": "+48%",
           "change_from_2024": "+20%",
-          "change_from_2023": "+9.3%"
+          "change_from_2023": "+9.2%"
         },
         "last_week": {
           "gwh": 1184.1,
@@ -10194,12 +10073,12 @@
           "change_from_2023": "+7.5%"
         },
         "ytd_2025": {
-          "gwh": 6624.3,
-          "twh": 6.62,
-          "percentage": 85.22,
-          "change_from_2015": "+77%",
+          "gwh": 6451.0,
+          "twh": 6.45,
+          "percentage": 85.34,
+          "change_from_2015": "+78%",
           "change_from_2024": "+11%",
-          "change_from_2023": "+7.6%"
+          "change_from_2023": "+7.5%"
         },
         "year_2024": {
           "gwh": 46257.4,
@@ -10230,11 +10109,11 @@
           "change_from_2023": "+48%"
         },
         "ytd_2025": {
-          "gwh": 2620.0,
-          "twh": 2.62,
-          "percentage": 33.7,
+          "gwh": 2540.4,
+          "twh": 2.54,
+          "percentage": 33.61,
           "change_from_2015": "+65%",
-          "change_from_2024": "+23%",
+          "change_from_2024": "+22%",
           "change_from_2023": "+50%"
         },
         "year_2024": {
@@ -10266,12 +10145,12 @@
           "change_from_2023": "-9.2%"
         },
         "ytd_2025": {
-          "gwh": 3423.1,
-          "twh": 3.42,
-          "percentage": 44.04,
-          "change_from_2015": "+92%",
-          "change_from_2024": "+10.0%",
-          "change_from_2023": "-9.2%"
+          "gwh": 3339.3,
+          "twh": 3.34,
+          "percentage": 44.18,
+          "change_from_2015": "+93%",
+          "change_from_2024": "+11%",
+          "change_from_2023": "-9.4%"
         },
         "year_2024": {
           "gwh": 23844.9,
@@ -10291,7 +10170,7 @@
           "percentage": 1.46,
           "change_from_2015": "+87%",
           "change_from_2024": "-74%",
-          "change_from_2023": "-66%"
+          "change_from_2023": "-65%"
         },
         "last_week": {
           "gwh": 42.4,
@@ -10302,12 +10181,12 @@
           "change_from_2023": "-33%"
         },
         "ytd_2025": {
-          "gwh": 288.7,
+          "gwh": 285.5,
           "twh": 0.29,
-          "percentage": 3.71,
-          "change_from_2015": "+372%",
-          "change_from_2024": "-27%",
-          "change_from_2023": "-0.7%"
+          "percentage": 3.78,
+          "change_from_2015": "+380%",
+          "change_from_2024": "-26%",
+          "change_from_2023": "+1.4%"
         },
         "year_2024": {
           "gwh": 6131.8,
@@ -10326,7 +10205,7 @@
           "twh": 0.01,
           "percentage": 3.32,
           "change_from_2015": "-1.1%",
-          "change_from_2024": "-6.5%",
+          "change_from_2024": "-6.7%",
           "change_from_2023": "-24%"
         },
         "last_week": {
@@ -10338,11 +10217,11 @@
           "change_from_2023": "-29%"
         },
         "ytd_2025": {
-          "gwh": 292.4,
+          "gwh": 285.7,
           "twh": 0.29,
-          "percentage": 3.76,
-          "change_from_2015": "-0.8%",
-          "change_from_2024": "-9.7%",
+          "percentage": 3.78,
+          "change_from_2015": "-0.7%",
+          "change_from_2024": "-9.6%",
           "change_from_2023": "-16%"
         },
         "year_2024": {
@@ -10410,12 +10289,12 @@
           "change_from_2023": "+175%"
         },
         "ytd_2025": {
-          "gwh": 1149.2,
-          "twh": 1.15,
-          "percentage": 14.78,
-          "change_from_2015": "-53%",
-          "change_from_2024": "+25%",
-          "change_from_2023": "+33%"
+          "gwh": 1108.0,
+          "twh": 1.11,
+          "percentage": 14.66,
+          "change_from_2015": "-54%",
+          "change_from_2024": "+23%",
+          "change_from_2023": "+30%"
         },
         "year_2024": {
           "gwh": 7967.9,
@@ -10482,12 +10361,12 @@
           "change_from_2023": "+185%"
         },
         "ytd_2025": {
-          "gwh": 1123.7,
-          "twh": 1.12,
-          "percentage": 14.46,
-          "change_from_2015": "+23%",
-          "change_from_2024": "+26%",
-          "change_from_2023": "+34%"
+          "gwh": 1082.9,
+          "twh": 1.08,
+          "percentage": 14.33,
+          "change_from_2015": "+21%",
+          "change_from_2024": "+24%",
+          "change_from_2023": "+32%"
         },
         "year_2024": {
           "gwh": 7738.1,
@@ -10542,8 +10421,8 @@
           "twh": 0.0,
           "percentage": 0.31,
           "change_from_2015": "-42%",
-          "change_from_2024": "-1.8%",
-          "change_from_2023": "-4.1%"
+          "change_from_2024": "-7.7%",
+          "change_from_2023": "-9.8%"
         },
         "last_week": {
           "gwh": 4.0,
@@ -10554,12 +10433,12 @@
           "change_from_2023": "-22%"
         },
         "ytd_2025": {
-          "gwh": 25.5,
+          "gwh": 25.1,
           "twh": 0.03,
           "percentage": 0.33,
-          "change_from_2015": "-43%",
-          "change_from_2024": "-10%",
-          "change_from_2023": "-13%"
+          "change_from_2015": "-42%",
+          "change_from_2024": "-9.1%",
+          "change_from_2023": "-12%"
         },
         "year_2024": {
           "gwh": 229.8,
@@ -10609,11 +10488,7 @@
     ]
   },
   "RO": {
-<<<<<<< Updated upstream
-    "last_updated": "2026-02-10 09:16:01 UTC",
-=======
-    "last_updated": "2026-02-10 09:32:59 UTC",
->>>>>>> Stashed changes
+    "last_updated": "2026-02-10 07:18:57 UTC",
     "sources": [
       {
         "source": "All Renewables",
@@ -10635,9 +10510,9 @@
           "change_from_2023": "-6.4%"
         },
         "ytd_2025": {
-          "gwh": 2649.1,
-          "twh": 2.65,
-          "percentage": 42.82,
+          "gwh": 2573.4,
+          "twh": 2.57,
+          "percentage": 42.72,
           "change_from_2015": "-15%",
           "change_from_2024": "+31%",
           "change_from_2023": "-19%"
@@ -10671,10 +10546,10 @@
           "change_from_2023": "-6.8%"
         },
         "ytd_2025": {
-          "gwh": 887.2,
-          "twh": 0.89,
-          "percentage": 14.34,
-          "change_from_2015": "+5.1%",
+          "gwh": 864.6,
+          "twh": 0.86,
+          "percentage": 14.35,
+          "change_from_2015": "+5.6%",
           "change_from_2024": "+31%",
           "change_from_2023": "-17%"
         },
@@ -10707,9 +10582,9 @@
           "change_from_2023": "-7.7%"
         },
         "ytd_2025": {
-          "gwh": 1584.3,
-          "twh": 1.58,
-          "percentage": 25.61,
+          "gwh": 1535.3,
+          "twh": 1.54,
+          "percentage": 25.49,
           "change_from_2015": "-27%",
           "change_from_2024": "+37%",
           "change_from_2023": "-22%"
@@ -10743,12 +10618,12 @@
           "change_from_2023": "+4.3%"
         },
         "ytd_2025": {
-          "gwh": 121.9,
+          "gwh": 119.5,
           "twh": 0.12,
-          "percentage": 1.97,
-          "change_from_2015": "+110%",
-          "change_from_2024": "-11%",
-          "change_from_2023": "+11%"
+          "percentage": 1.98,
+          "change_from_2015": "+114%",
+          "change_from_2024": "-9.5%",
+          "change_from_2023": "+13%"
         },
         "year_2024": {
           "gwh": 2719.1,
@@ -10779,12 +10654,12 @@
           "change_from_2023": "+21%"
         },
         "ytd_2025": {
-          "gwh": 55.8,
-          "twh": 0.06,
+          "gwh": 54.0,
+          "twh": 0.05,
           "percentage": 0.9,
-          "change_from_2015": "-7.2%",
-          "change_from_2024": "+9.9%",
-          "change_from_2023": "-0.0%"
+          "change_from_2015": "-7.5%",
+          "change_from_2024": "+9.7%",
+          "change_from_2023": "-0.7%"
         },
         "year_2024": {
           "gwh": 434.4,
@@ -10839,24 +10714,24 @@
           "twh": 0.08,
           "percentage": 53.05,
           "change_from_2015": "-23%",
-          "change_from_2024": "-6.7%",
-          "change_from_2023": "-6.4%"
+          "change_from_2024": "-6.8%",
+          "change_from_2023": "-6.5%"
         },
         "last_week": {
           "gwh": 596.7,
           "twh": 0.6,
           "percentage": 53.1,
           "change_from_2015": "-23%",
-          "change_from_2024": "-6.4%",
+          "change_from_2024": "-6.3%",
           "change_from_2023": "-6.0%"
         },
         "ytd_2025": {
-          "gwh": 3537.8,
-          "twh": 3.54,
-          "percentage": 57.18,
+          "gwh": 3450.1,
+          "twh": 3.45,
+          "percentage": 57.28,
           "change_from_2015": "-18%",
           "change_from_2024": "-2.2%",
-          "change_from_2023": "-9.4%"
+          "change_from_2023": "-9.5%"
         },
         "year_2024": {
           "gwh": 26415.8,
@@ -10887,11 +10762,11 @@
           "change_from_2023": "-11%"
         },
         "ytd_2025": {
-          "gwh": 1178.0,
-          "twh": 1.18,
-          "percentage": 19.04,
-          "change_from_2015": "-4.4%",
-          "change_from_2024": "-5.0%",
+          "gwh": 1148.7,
+          "twh": 1.15,
+          "percentage": 19.07,
+          "change_from_2015": "-4.2%",
+          "change_from_2024": "-5.1%",
           "change_from_2023": "-13%"
         },
         "year_2024": {
@@ -10911,7 +10786,7 @@
           "twh": 0.04,
           "percentage": 24.37,
           "change_from_2015": "+59%",
-          "change_from_2024": "+12%",
+          "change_from_2024": "+11%",
           "change_from_2023": "+3.0%"
         },
         "last_week": {
@@ -10923,12 +10798,12 @@
           "change_from_2023": "-0.1%"
         },
         "ytd_2025": {
-          "gwh": 1635.1,
-          "twh": 1.64,
-          "percentage": 26.43,
+          "gwh": 1595.4,
+          "twh": 1.6,
+          "percentage": 26.49,
           "change_from_2015": "+63%",
-          "change_from_2024": "+7.6%",
-          "change_from_2023": "-3.1%"
+          "change_from_2024": "+7.4%",
+          "change_from_2023": "-3.2%"
         },
         "year_2024": {
           "gwh": 9565.4,
@@ -10959,11 +10834,11 @@
           "change_from_2023": "-9.0%"
         },
         "ytd_2025": {
-          "gwh": 677.9,
-          "twh": 0.68,
-          "percentage": 10.96,
+          "gwh": 660.6,
+          "twh": 0.66,
+          "percentage": 10.97,
           "change_from_2015": "-68%",
-          "change_from_2024": "-21%",
+          "change_from_2024": "-20%",
           "change_from_2023": "-21%"
         },
         "year_2024": {
@@ -11050,11 +10925,7 @@
     ]
   },
   "SK": {
-<<<<<<< Updated upstream
-    "last_updated": "2026-02-10 09:16:12 UTC",
-=======
-    "last_updated": "2026-02-10 09:33:11 UTC",
->>>>>>> Stashed changes
+    "last_updated": "2026-02-10 07:19:09 UTC",
     "sources": [
       {
         "source": "All Renewables",
@@ -11064,7 +10935,7 @@
           "twh": 0.02,
           "percentage": 16.34,
           "change_from_2015": "-5.0%",
-          "change_from_2024": "+7.3%",
+          "change_from_2024": "+7.0%",
           "change_from_2023": "-45%"
         },
         "last_week": {
@@ -11072,15 +10943,15 @@
           "twh": 0.09,
           "percentage": 14.41,
           "change_from_2015": "-18%",
-          "change_from_2024": "-8.1%",
+          "change_from_2024": "-8.2%",
           "change_from_2023": "-53%"
         },
         "ytd_2025": {
-          "gwh": 612.0,
-          "twh": 0.61,
-          "percentage": 16.38,
+          "gwh": 594.6,
+          "twh": 0.59,
+          "percentage": 16.33,
           "change_from_2015": "-14%",
-          "change_from_2024": "-1.7%",
+          "change_from_2024": "-2.3%",
           "change_from_2023": "-45%"
         },
         "year_2024": {
@@ -11100,24 +10971,24 @@
           "twh": 0.0,
           "percentage": 0.02,
           "change_from_2015": "\u2014",
-          "change_from_2024": "\u2014",
-          "change_from_2023": "\u2014"
+          "change_from_2024": "+34%",
+          "change_from_2023": "-15%"
         },
         "last_week": {
           "gwh": 0.1,
           "twh": 0.0,
           "percentage": 0.01,
           "change_from_2015": "\u2014",
-          "change_from_2024": "+25%",
-          "change_from_2023": "-20%"
+          "change_from_2024": "-22%",
+          "change_from_2023": "-50%"
         },
         "ytd_2025": {
           "gwh": 0.6,
           "twh": 0.0,
           "percentage": 0.02,
           "change_from_2015": "\u2014",
-          "change_from_2024": "+25%",
-          "change_from_2023": "-17%"
+          "change_from_2024": "+24%",
+          "change_from_2023": "-18%"
         },
         "year_2024": {
           "gwh": 4.2,
@@ -11136,7 +11007,7 @@
           "twh": 0.01,
           "percentage": 13.24,
           "change_from_2015": "-3.6%",
-          "change_from_2024": "+27%",
+          "change_from_2024": "+28%",
           "change_from_2023": "-46%"
         },
         "last_week": {
@@ -11144,15 +11015,15 @@
           "twh": 0.07,
           "percentage": 11.24,
           "change_from_2015": "-20%",
-          "change_from_2024": "+5.4%",
+          "change_from_2024": "+5.5%",
           "change_from_2023": "-55%"
         },
         "ytd_2025": {
-          "gwh": 448.2,
-          "twh": 0.45,
-          "percentage": 11.99,
-          "change_from_2015": "-26%",
-          "change_from_2024": "-1.8%",
+          "gwh": 435.0,
+          "twh": 0.43,
+          "percentage": 11.95,
+          "change_from_2015": "-27%",
+          "change_from_2024": "-2.6%",
           "change_from_2023": "-52%"
         },
         "year_2024": {
@@ -11172,23 +11043,23 @@
           "twh": 0.0,
           "percentage": 0.29,
           "change_from_2015": "-74%",
-          "change_from_2024": "-77%",
-          "change_from_2023": "-66%"
+          "change_from_2024": "-79%",
+          "change_from_2023": "-69%"
         },
         "last_week": {
           "gwh": 1.7,
           "twh": 0.0,
           "percentage": 0.26,
           "change_from_2015": "-78%",
-          "change_from_2024": "-81%",
-          "change_from_2023": "-72%"
+          "change_from_2024": "-82%",
+          "change_from_2023": "-73%"
         },
         "ytd_2025": {
-          "gwh": 13.8,
+          "gwh": 13.5,
           "twh": 0.01,
           "percentage": 0.37,
-          "change_from_2015": "-37%",
-          "change_from_2024": "-50%",
+          "change_from_2015": "-35%",
+          "change_from_2024": "-49%",
           "change_from_2023": "-56%"
         },
         "year_2024": {
@@ -11208,8 +11079,8 @@
           "twh": 0.0,
           "percentage": 2.79,
           "change_from_2015": "+103%",
-          "change_from_2024": "+30%",
-          "change_from_2023": "-0.8%"
+          "change_from_2024": "+32%",
+          "change_from_2023": "+0.1%"
         },
         "last_week": {
           "gwh": 18.6,
@@ -11217,15 +11088,15 @@
           "percentage": 2.9,
           "change_from_2015": "+105%",
           "change_from_2024": "+33%",
-          "change_from_2023": "+1.4%"
+          "change_from_2023": "+1.3%"
         },
         "ytd_2025": {
-          "gwh": 98.0,
+          "gwh": 95.4,
           "twh": 0.1,
           "percentage": 2.62,
           "change_from_2015": "+102%",
-          "change_from_2024": "+13%",
-          "change_from_2023": "-3.9%"
+          "change_from_2024": "+12%",
+          "change_from_2023": "-4.0%"
         },
         "year_2024": {
           "gwh": 876.3,
@@ -11280,7 +11151,7 @@
           "twh": 0.08,
           "percentage": 83.66,
           "change_from_2015": "+15%",
-          "change_from_2024": "+6.2%",
+          "change_from_2024": "+6.3%",
           "change_from_2023": "+10%"
         },
         "last_week": {
@@ -11292,12 +11163,12 @@
           "change_from_2023": "+9.9%"
         },
         "ytd_2025": {
-          "gwh": 3124.8,
-          "twh": 3.12,
-          "percentage": 83.62,
+          "gwh": 3046.1,
+          "twh": 3.05,
+          "percentage": 83.67,
           "change_from_2015": "+13%",
-          "change_from_2024": "+3.3%",
-          "change_from_2023": "+5.0%"
+          "change_from_2024": "+3.2%",
+          "change_from_2023": "+4.8%"
         },
         "year_2024": {
           "gwh": 23419.2,
@@ -11317,7 +11188,7 @@
           "percentage": 63.02,
           "change_from_2015": "+31%",
           "change_from_2024": "+0.4%",
-          "change_from_2023": "+1.3%"
+          "change_from_2023": "+1.4%"
         },
         "last_week": {
           "gwh": 414.8,
@@ -11328,12 +11199,12 @@
           "change_from_2023": "+1.4%"
         },
         "ytd_2025": {
-          "gwh": 2378.1,
-          "twh": 2.38,
-          "percentage": 63.64,
+          "gwh": 2318.9,
+          "twh": 2.32,
+          "percentage": 63.69,
           "change_from_2015": "+27%",
-          "change_from_2024": "-1.7%",
-          "change_from_2023": "-0.8%"
+          "change_from_2024": "-1.8%",
+          "change_from_2023": "-0.9%"
         },
         "year_2024": {
           "gwh": 19282.9,
@@ -11364,12 +11235,12 @@
           "change_from_2023": "+133%"
         },
         "ytd_2025": {
-          "gwh": 533.2,
-          "twh": 0.53,
-          "percentage": 14.27,
-          "change_from_2015": "+312%",
-          "change_from_2024": "+30%",
-          "change_from_2023": "+89%"
+          "gwh": 519.0,
+          "twh": 0.52,
+          "percentage": 14.26,
+          "change_from_2015": "+310%",
+          "change_from_2024": "+29%",
+          "change_from_2023": "+88%"
         },
         "year_2024": {
           "gwh": 2841.7,
@@ -11388,21 +11259,21 @@
           "twh": 0.0,
           "percentage": 0.3,
           "change_from_2015": "-97%",
-          "change_from_2024": "-37%",
-          "change_from_2023": "-87%"
+          "change_from_2024": "-41%",
+          "change_from_2023": "-88%"
         },
         "last_week": {
           "gwh": 2.2,
           "twh": 0.0,
           "percentage": 0.34,
           "change_from_2015": "-96%",
-          "change_from_2024": "-34%",
-          "change_from_2023": "-86%"
+          "change_from_2024": "-35%",
+          "change_from_2023": "-87%"
         },
         "ytd_2025": {
-          "gwh": 16.5,
+          "gwh": 16.2,
           "twh": 0.02,
-          "percentage": 0.44,
+          "percentage": 0.45,
           "change_from_2015": "-94%",
           "change_from_2024": "-12%",
           "change_from_2023": "-82%"
@@ -11424,20 +11295,20 @@
           "twh": 0.0,
           "percentage": 3.63,
           "change_from_2015": "-68%",
-          "change_from_2024": "-4.9%",
-          "change_from_2023": "+2.3%"
+          "change_from_2024": "-4.5%",
+          "change_from_2023": "+2.8%"
         },
         "last_week": {
           "gwh": 22.8,
           "twh": 0.02,
           "percentage": 3.56,
           "change_from_2015": "-70%",
-          "change_from_2024": "-8.9%",
+          "change_from_2024": "-9.0%",
           "change_from_2023": "-2.0%"
         },
         "ytd_2025": {
-          "gwh": 127.8,
-          "twh": 0.13,
+          "gwh": 124.3,
+          "twh": 0.12,
           "percentage": 3.42,
           "change_from_2015": "-70%",
           "change_from_2024": "-7.5%",
@@ -11472,9 +11343,9 @@
           "change_from_2023": "+31%"
         },
         "ytd_2025": {
-          "gwh": 69.2,
+          "gwh": 67.6,
           "twh": 0.07,
-          "percentage": 1.85,
+          "percentage": 1.86,
           "change_from_2015": "+48%",
           "change_from_2024": "+86%",
           "change_from_2023": "+36%"
@@ -11491,11 +11362,7 @@
     ]
   },
   "SI": {
-<<<<<<< Updated upstream
-    "last_updated": "2026-02-10 09:16:23 UTC",
-=======
-    "last_updated": "2026-02-10 09:33:22 UTC",
->>>>>>> Stashed changes
+    "last_updated": "2026-02-10 07:19:21 UTC",
     "sources": [
       {
         "source": "All Renewables",
@@ -11506,7 +11373,7 @@
           "percentage": 32.93,
           "change_from_2015": "+52%",
           "change_from_2024": "+38%",
-          "change_from_2023": "+1.9%"
+          "change_from_2023": "+1.7%"
         },
         "last_week": {
           "gwh": 97.7,
@@ -11517,11 +11384,11 @@
           "change_from_2023": "-2.6%"
         },
         "ytd_2025": {
-          "gwh": 404.3,
-          "twh": 0.4,
-          "percentage": 25.04,
-          "change_from_2015": "-7.1%",
-          "change_from_2024": "-14%",
+          "gwh": 389.5,
+          "twh": 0.39,
+          "percentage": 24.81,
+          "change_from_2015": "-8.4%",
+          "change_from_2024": "-15%",
           "change_from_2023": "-34%"
         },
         "year_2024": {
@@ -11541,24 +11408,24 @@
           "twh": 0.0,
           "percentage": 0.1,
           "change_from_2015": "+57%",
-          "change_from_2024": "\u2014",
-          "change_from_2023": "\u2014"
+          "change_from_2024": "+29%",
+          "change_from_2023": "+341%"
         },
         "last_week": {
           "gwh": 0.1,
           "twh": 0.0,
           "percentage": 0.02,
           "change_from_2015": "-65%",
-          "change_from_2024": "-57%",
-          "change_from_2023": "+48%"
+          "change_from_2024": "-71%",
+          "change_from_2023": "-1.2%"
         },
         "ytd_2025": {
-          "gwh": 1.0,
+          "gwh": 0.9,
           "twh": 0.0,
           "percentage": 0.06,
-          "change_from_2015": "+106%",
+          "change_from_2015": "+112%",
           "change_from_2024": "-9.4%",
-          "change_from_2023": "+27%"
+          "change_from_2023": "+25%"
         },
         "year_2024": {
           "gwh": 7.5,
@@ -11589,12 +11456,12 @@
           "change_from_2023": "-9.2%"
         },
         "ytd_2025": {
-          "gwh": 336.1,
-          "twh": 0.34,
-          "percentage": 20.82,
-          "change_from_2015": "-19%",
-          "change_from_2024": "-23%",
-          "change_from_2023": "-42%"
+          "gwh": 323.6,
+          "twh": 0.32,
+          "percentage": 20.61,
+          "change_from_2015": "-21%",
+          "change_from_2024": "-24%",
+          "change_from_2023": "-43%"
         },
         "year_2024": {
           "gwh": 4177.1,
@@ -11613,24 +11480,24 @@
           "twh": 0.0,
           "percentage": 2.55,
           "change_from_2015": "+174%",
-          "change_from_2024": "+45%",
-          "change_from_2023": "+15%"
+          "change_from_2024": "+49%",
+          "change_from_2023": "+18%"
         },
         "last_week": {
           "gwh": 9.1,
           "twh": 0.01,
           "percentage": 3.05,
           "change_from_2015": "+217%",
-          "change_from_2024": "+72%",
+          "change_from_2024": "+73%",
           "change_from_2023": "+36%"
         },
         "ytd_2025": {
-          "gwh": 40.6,
+          "gwh": 39.0,
           "twh": 0.04,
-          "percentage": 2.52,
-          "change_from_2015": "+309%",
-          "change_from_2024": "+95%",
-          "change_from_2023": "+81%"
+          "percentage": 2.48,
+          "change_from_2015": "+310%",
+          "change_from_2024": "+94%",
+          "change_from_2023": "+82%"
         },
         "year_2024": {
           "gwh": 783.0,
@@ -11649,8 +11516,8 @@
           "twh": 0.0,
           "percentage": 1.6,
           "change_from_2015": "+287%",
-          "change_from_2024": "+262%",
-          "change_from_2023": "+222%"
+          "change_from_2024": "+267%",
+          "change_from_2023": "+227%"
         },
         "last_week": {
           "gwh": 4.9,
@@ -11658,15 +11525,15 @@
           "percentage": 1.64,
           "change_from_2015": "+282%",
           "change_from_2024": "+262%",
-          "change_from_2023": "+222%"
+          "change_from_2023": "+223%"
         },
         "ytd_2025": {
-          "gwh": 26.6,
+          "gwh": 26.0,
           "twh": 0.03,
-          "percentage": 1.65,
-          "change_from_2015": "+269%",
+          "percentage": 1.66,
+          "change_from_2015": "+270%",
           "change_from_2024": "+237%",
-          "change_from_2023": "+257%"
+          "change_from_2023": "+258%"
         },
         "year_2024": {
           "gwh": 120.6,
@@ -11733,11 +11600,11 @@
           "change_from_2023": "-2.0%"
         },
         "ytd_2025": {
-          "gwh": 1210.4,
-          "twh": 1.21,
-          "percentage": 74.96,
+          "gwh": 1180.8,
+          "twh": 1.18,
+          "percentage": 75.19,
           "change_from_2015": "+1.4%",
-          "change_from_2024": "+2.4%",
+          "change_from_2024": "+2.5%",
           "change_from_2023": "+2.2%"
         },
         "year_2024": {
@@ -11757,8 +11624,8 @@
           "twh": 0.02,
           "percentage": 38.09,
           "change_from_2015": "+1.7%",
-          "change_from_2024": "+0.3%",
-          "change_from_2023": "+0.8%"
+          "change_from_2024": "+0.1%",
+          "change_from_2023": "+0.6%"
         },
         "last_week": {
           "gwh": 118.3,
@@ -11769,10 +11636,10 @@
           "change_from_2023": "+0.8%"
         },
         "ytd_2025": {
-          "gwh": 677.7,
-          "twh": 0.68,
-          "percentage": 41.97,
-          "change_from_2015": "-0.9%",
+          "gwh": 660.8,
+          "twh": 0.66,
+          "percentage": 42.08,
+          "change_from_2015": "-1.0%",
           "change_from_2024": "-1.9%",
           "change_from_2023": "-1.4%"
         },
@@ -11793,8 +11660,8 @@
           "twh": 0.0,
           "percentage": 9.35,
           "change_from_2015": "+264%",
-          "change_from_2024": "+94%",
-          "change_from_2023": "+171%"
+          "change_from_2024": "+96%",
+          "change_from_2023": "+173%"
         },
         "last_week": {
           "gwh": 29.3,
@@ -11805,12 +11672,12 @@
           "change_from_2023": "+176%"
         },
         "ytd_2025": {
-          "gwh": 186.0,
-          "twh": 0.19,
-          "percentage": 11.52,
-          "change_from_2015": "+328%",
-          "change_from_2024": "+73%",
-          "change_from_2023": "+244%"
+          "gwh": 181.9,
+          "twh": 0.18,
+          "percentage": 11.58,
+          "change_from_2015": "+330%",
+          "change_from_2024": "+72%",
+          "change_from_2023": "+246%"
         },
         "year_2024": {
           "gwh": 965.8,
@@ -11841,11 +11708,11 @@
           "change_from_2023": "-29%"
         },
         "ytd_2025": {
-          "gwh": 346.6,
-          "twh": 0.35,
-          "percentage": 21.46,
+          "gwh": 337.9,
+          "twh": 0.34,
+          "percentage": 21.52,
           "change_from_2015": "-24%",
-          "change_from_2024": "-8.8%",
+          "change_from_2024": "-8.5%",
           "change_from_2023": "-20%"
         },
         "year_2024": {
@@ -11865,16 +11732,16 @@
           "twh": 0.0,
           "percentage": 0.01,
           "change_from_2015": "-99%",
-          "change_from_2024": "\u2014",
-          "change_from_2023": "\u2014"
+          "change_from_2024": "-61%",
+          "change_from_2023": "-98%"
         },
         "last_week": {
           "gwh": 0.0,
           "twh": 0.0,
           "percentage": 0.01,
           "change_from_2015": "-99%",
-          "change_from_2024": "\u2014",
-          "change_from_2023": "\u2014"
+          "change_from_2024": "-62%",
+          "change_from_2023": "-98%"
         },
         "ytd_2025": {
           "gwh": 0.1,
@@ -11901,24 +11768,24 @@
           "twh": 0.0,
           "percentage": 0.0,
           "change_from_2015": "\u2014",
-          "change_from_2024": "\u2014",
-          "change_from_2023": "\u2014"
+          "change_from_2024": "-100%",
+          "change_from_2023": "-100%"
         },
         "last_week": {
           "gwh": 0.0,
           "twh": 0.0,
           "percentage": 0.0,
           "change_from_2015": "\u2014",
-          "change_from_2024": "\u2014",
-          "change_from_2023": "\u2014"
+          "change_from_2024": "-100%",
+          "change_from_2023": "-100%"
         },
         "ytd_2025": {
           "gwh": 0.1,
           "twh": 0.0,
           "percentage": 0.0,
           "change_from_2015": "\u2014",
-          "change_from_2024": "+197%",
-          "change_from_2023": "+190%"
+          "change_from_2024": "+202%",
+          "change_from_2023": "+222%"
         },
         "year_2024": {
           "gwh": 0.5,
@@ -11932,11 +11799,7 @@
     ]
   },
   "SE": {
-<<<<<<< Updated upstream
-    "last_updated": "2026-02-10 09:16:33 UTC",
-=======
-    "last_updated": "2026-02-10 09:33:33 UTC",
->>>>>>> Stashed changes
+    "last_updated": "2026-02-10 07:19:31 UTC",
     "sources": [
       {
         "source": "All Renewables",
@@ -11958,12 +11821,12 @@
           "change_from_2023": "+12%"
         },
         "ytd_2025": {
-          "gwh": 14991.5,
-          "twh": 14.99,
-          "percentage": 65.22,
-          "change_from_2015": "+60%",
-          "change_from_2024": "-0.8%",
-          "change_from_2023": "+1.0%"
+          "gwh": 14677.6,
+          "twh": 14.68,
+          "percentage": 65.35,
+          "change_from_2015": "+61%",
+          "change_from_2024": "-0.6%",
+          "change_from_2023": "+1.3%"
         },
         "year_2024": {
           "gwh": 109513.9,
@@ -11994,11 +11857,11 @@
           "change_from_2023": "\u2014"
         },
         "ytd_2025": {
-          "gwh": 4384.7,
-          "twh": 4.38,
-          "percentage": 19.08,
+          "gwh": 4349.3,
+          "twh": 4.35,
+          "percentage": 19.37,
           "change_from_2015": "\u2014",
-          "change_from_2024": "-25%",
+          "change_from_2024": "-24%",
           "change_from_2023": "\u2014"
         },
         "year_2024": {
@@ -12030,9 +11893,9 @@
           "change_from_2023": "\u2014"
         },
         "ytd_2025": {
-          "gwh": 10591.4,
-          "twh": 10.59,
-          "percentage": 46.08,
+          "gwh": 10313.7,
+          "twh": 10.31,
+          "percentage": 45.92,
           "change_from_2015": "\u2014",
           "change_from_2024": "+15%",
           "change_from_2023": "\u2014"
@@ -12054,11 +11917,7 @@
           "twh": 0.0,
           "percentage": 0.14,
           "change_from_2015": "\u2014",
-<<<<<<< Updated upstream
           "change_from_2024": "-52%",
-=======
-          "change_from_2024": "-49%",
->>>>>>> Stashed changes
           "change_from_2023": "\u2014"
         },
         "last_week": {
@@ -12070,11 +11929,11 @@
           "change_from_2023": "\u2014"
         },
         "ytd_2025": {
-          "gwh": 15.4,
-          "twh": 0.02,
+          "gwh": 14.7,
+          "twh": 0.01,
           "percentage": 0.07,
           "change_from_2015": "\u2014",
-          "change_from_2024": "-44%",
+          "change_from_2024": "-43%",
           "change_from_2023": "\u2014"
         },
         "year_2024": {
@@ -12178,12 +12037,12 @@
           "change_from_2023": "+12%"
         },
         "ytd_2025": {
-          "gwh": 7994.7,
-          "twh": 7.99,
-          "percentage": 34.78,
+          "gwh": 7780.9,
+          "twh": 7.78,
+          "percentage": 34.65,
           "change_from_2015": "+0.3%",
           "change_from_2024": "+17%",
-          "change_from_2023": "+10%"
+          "change_from_2023": "+9.9%"
         },
         "year_2024": {
           "gwh": 50362.5,
@@ -12214,12 +12073,12 @@
           "change_from_2023": "+6.2%"
         },
         "ytd_2025": {
-          "gwh": 6655.7,
-          "twh": 6.66,
-          "percentage": 28.96,
-          "change_from_2015": "+1.0%",
+          "gwh": 6486.5,
+          "twh": 6.49,
+          "percentage": 28.88,
+          "change_from_2015": "+1.2%",
           "change_from_2024": "+12%",
-          "change_from_2023": "+7.1%"
+          "change_from_2023": "+7.2%"
         },
         "year_2024": {
           "gwh": 44586.2,
@@ -12238,34 +12097,24 @@
           "twh": 0.0,
           "percentage": 0.01,
           "change_from_2015": "\u2014",
-<<<<<<< Updated upstream
           "change_from_2024": "+143%",
           "change_from_2023": "+273%"
-=======
-          "change_from_2024": "\u2014",
-          "change_from_2023": "\u2014"
->>>>>>> Stashed changes
         },
         "last_week": {
           "gwh": 0.2,
           "twh": 0.0,
           "percentage": 0.01,
           "change_from_2015": "\u2014",
-<<<<<<< Updated upstream
           "change_from_2024": "+106%",
           "change_from_2023": "+217%"
-=======
-          "change_from_2024": "+86%",
-          "change_from_2023": "+186%"
->>>>>>> Stashed changes
         },
         "ytd_2025": {
           "gwh": 1.0,
           "twh": 0.0,
           "percentage": 0.0,
           "change_from_2015": "\u2014",
-          "change_from_2024": "+35%",
-          "change_from_2023": "+62%"
+          "change_from_2024": "+34%",
+          "change_from_2023": "+60%"
         },
         "year_2024": {
           "gwh": 15.7,
@@ -12332,12 +12181,12 @@
           "change_from_2023": "+49%"
         },
         "ytd_2025": {
-          "gwh": 1338.0,
-          "twh": 1.34,
-          "percentage": 5.82,
-          "change_from_2015": "-3.3%",
-          "change_from_2024": "+48%",
-          "change_from_2023": "+28%"
+          "gwh": 1293.5,
+          "twh": 1.29,
+          "percentage": 5.76,
+          "change_from_2015": "-4.0%",
+          "change_from_2024": "+47%",
+          "change_from_2023": "+26%"
         },
         "year_2024": {
           "gwh": 5760.6,
