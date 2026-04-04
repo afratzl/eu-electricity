@@ -912,9 +912,7 @@ def main():
         print(f"Years to process: {list(years_to_analyze)[0]}-{list(years_to_analyze)[-1]} ({len(list(years_to_analyze))} years)")
     else:  # daily
         print(f"Years to process: {current_year} only")
-    
-    print(f"Estimated API calls: ~{len(countries_to_query) * len(list(years_to_analyze))}")
-    
+       
     # Define month names in order (January to December)
     month_names = [calendar.month_abbr[i] for i in range(1, 13)]
     
@@ -951,7 +949,8 @@ def main():
     print(f"\n📋 Countries to query: {countries_to_query}")
     print(f"📋 Countries to save:  {countries_to_save}")
     print(f"📋 EU aggregate:       {'Yes' if include_eu_aggregate else 'No'}")
-    
+    print(f"Estimated API calls: ~{len(countries_to_query) * len(list(years_to_analyze))}")
+  
     saved_urls = {}  # ADD THIS HERE
     
     all_data = process_all_countries_and_years(client, years_to_analyze)
