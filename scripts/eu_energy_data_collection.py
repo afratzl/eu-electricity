@@ -953,8 +953,8 @@ def main():
   
     saved_urls = {}  # ADD THIS HERE
     
-    all_data = process_all_countries_and_years(client, years_to_analyze)
-    
+    all_data = process_all_countries_and_years(client, years_to_analyze, countries_to_query, eu_countries)
+
     # Print basic statistics
     print("\n" + "=" * 80)
     print("DATA COLLECTION SUMMARY")
