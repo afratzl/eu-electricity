@@ -925,27 +925,7 @@ def main():
     print("\n" + "=" * 80)
     print("STARTING DATA COLLECTION")
     print("=" * 80)
-    
-    all_data = process_all_countries_and_years(client, years_to_analyze)
-    
-    # Print basic statistics
-    print("\n" + "=" * 80)
-    print("DATA COLLECTION SUMMARY")
-    print("=" * 80)
-    
-    for source_name in energy_sources.keys():
-        year_data = all_data[source_name]['year_data']
-    
-        print(f"\n{source_name.upper()}:")
-        for year in sorted(year_data.keys()):
-            total_production = sum(year_data[year].values())
-            print(f"  {year}: {total_production:.0f} GWh ({total_production / 1000:.1f} TWh)")
-    
-    # Save to Google Sheets with merge capability
-    print("\n" + "=" * 80)
-    print("SAVING TO GOOGLE SHEETS (WITH MERGE)")
-    print("=" * 80)
-    
+
     # Define countries to save (EU aggregate + individual countries)
     all_known_countries = eu_countries + non_eu_countries
 
@@ -975,6 +955,28 @@ def main():
     print(f"📋 Countries to save:  {countries_to_save}")
     print(f"📋 EU aggregate:       {'Yes' if include_eu_aggregate else 'No'}")
     
+    saved_urls = {}  # ADD THIS HERE
+    
+    all_data = process_all_countries_and_years(client, years_to_analyze)
+    
+    # Print basic statistics
+    print("\n" + "=" * 80)
+    print("DATA COLLECTION SUMMARY")
+    print("=" * 80)
+    
+    for source_name in energy_sources.keys():
+        year_data = all_data[source_name]['year_data']
+    
+        print(f"\n{source_name.upper()}:")
+        for year in sorted(year_data.keys()):
+            total_production = sum(year_data[year].values())
+            print(f"  {year}: {total_production:.0f} GWh ({total_production / 1000:.1f} TWh)")
+    
+    # Save to Google Sheets with merge capability
+    print("\n" + "=" * 80)
+    print("SAVING TO GOOGLE SHEETS (WITH MERGE)")
+    print("=" * 80)
+
     for country in countries_to_save:
         print(f"\n📊 Saving {country} data...")
         sheet_url = save_all_data_to_google_sheets_with_merge(all_data, month_names, country_code=country)
