@@ -10,6 +10,8 @@ import sys
 import argparse
 import time
 
+
+non_eu_countries = ['NO', 'CH', 'GB', 'MD']
 # EU country codes (most countries in the EU)
 eu_countries = [
     'AT', 'BE', 'BG', 'HR', 'CY', 'CZ', 'DK', 'EE', 'FI', 'FR',
@@ -850,6 +852,8 @@ def main():
                        help='Update type: daily (current year only) or full (all years 2015-present)')
     parser.add_argument('--years', nargs=2, type=int, metavar=('START', 'END'),
                        help='Year range to process (e.g., --years 2020 2023). Overrides --update-type.')
+    parser.add_argument('--countries', nargs='+', metavar='COUNTRY',
+                   help='Countries to process (e.g. DE FR NO) or EU for aggregate. Leave empty for all.')
     args = parser.parse_args()
     
     # Verify environment variables are set
@@ -943,10 +947,33 @@ def main():
     print("=" * 80)
     
     # Define countries to save (EU aggregate + individual countries)
-    countries_to_save = ['EU','AT', 'BE', 'BG', 'HR', 'CY', 'CZ', 'DK', 'EE', 'FI', 'FR',
-    'DE', 'GR', 'HU', 'IE', 'IT', 'LV', 'LT', 'LU', 'MT', 'NL',
-    'PL', 'PT', 'RO', 'SK', 'SI', 'ES', 'SE']
-    saved_urls = {}
+    all_known_countries = eu_countries + non_eu_countries
+
+    if args.countries is None:
+        countries_to_query = eu_countries + non_eu_countries
+        countries_to_save = ['EU'] + eu_countries + non_eu_countries
+        include_eu_aggregate = True
+    else:
+        requested = [c.upper() for c in args.countries]
+        include_eu_aggregate = 'EU' in requested
+        individual_countries = [c for c in requested if c != 'EU']
+    
+        invalid = [c for c in individual_countries if c not in all_known_countries]
+        if invalid:
+            print(f"⚠️  Unknown country codes: {invalid}")
+            sys.exit(1)
+    
+        if include_eu_aggregate:
+            non_eu_requested = [c for c in individual_countries if c in non_eu_countries]
+            countries_to_query = eu_countries + non_eu_requested
+            countries_to_save = ['EU'] + individual_countries
+        else:
+            countries_to_query = individual_countries
+            countries_to_save = individual_countries
+    
+    print(f"\n📋 Countries to query: {countries_to_query}")
+    print(f"📋 Countries to save:  {countries_to_save}")
+    print(f"📋 EU aggregate:       {'Yes' if include_eu_aggregate else 'No'}")
     
     for country in countries_to_save:
         print(f"\n📊 Saving {country} data...")
