@@ -489,7 +489,7 @@ def process_all_countries_and_years(client, years_to_analyze, countries_to_query
         }
 
     # Process each country-year combination
-    total_calls = len(eu_countries) * len(years_to_analyze)
+    total_calls = len(countries_to_query) * len(years_to_analyze)
     call_count = 0
 
     for country in countries_to_query:
@@ -519,21 +519,23 @@ def process_all_countries_and_years(client, years_to_analyze, countries_to_query
                     for month in range(1, 13):
                         all_results[source_name]['country_monthly_data'][country][year][month] = source_data['monthly'][month]
 
-                    # Add to EU totals (monthly aggregation)
-                    for month in range(1, 13):
-                        all_results[source_name]['year_data'][year][month] += source_data['monthly'][month]
+                    # Add to EU totals only for EU member states
+                    if country in eu_countries_list:
+                        for month in range(1, 13):
+                            all_results[source_name]['year_data'][year][month] += source_data['monthly'][month]
             else:
                 # Handle missing data
                 for source_name in energy_sources.keys():
                     all_results[source_name]['country_data'][year][country] = 0
-                    
-                    # NEW: Store zero monthly data for missing countries
                     if country not in all_results[source_name]['country_monthly_data']:
                         all_results[source_name]['country_monthly_data'][country] = {}
                     if year not in all_results[source_name]['country_monthly_data'][country]:
                         all_results[source_name]['country_monthly_data'][country][year] = {}
                     for month in range(1, 13):
                         all_results[source_name]['country_monthly_data'][country][year][month] = 0
+                    # Only add zeros to EU aggregate if EU member
+                    if country in eu_countries_list:
+                        pass  # zeros already initialized in all_results
 
     return all_results
 
