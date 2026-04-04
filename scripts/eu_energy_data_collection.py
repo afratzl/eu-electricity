@@ -913,7 +913,7 @@ def main():
     else:  # daily
         print(f"Years to process: {current_year} only")
     
-    print(f"Estimated API calls: ~{len(eu_countries) * len(list(years_to_analyze))}")
+    print(f"Estimated API calls: ~{len(countries_to_query) * len(list(years_to_analyze))}")
     
     # Define month names in order (January to December)
     month_names = [calendar.month_abbr[i] for i in range(1, 13)]
