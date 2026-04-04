@@ -475,14 +475,9 @@ def get_all_energy_data_for_country_year(client, country, year):
         return None
 
 
-def process_all_countries_and_years(client, years_to_analyze):
-    """
-    Process all countries and years with optimized API calls
-    Returns structured data: {energy_source: {year: {monthly_data}, country_data: {year: {country: total}}}}
-    """
-    print(f"\nProcessing {len(eu_countries)} countries for {len(years_to_analyze)} years...")
-    print(
-        f"Total API calls needed: {len(eu_countries) * len(years_to_analyze)} (instead of {len(eu_countries) * len(years_to_analyze) * len(energy_sources)})")
+def process_all_countries_and_years(client, years_to_analyze, countries_to_query, eu_countries_list):
+    print(f"\nProcessing {len(countries_to_query)} countries for {len(years_to_analyze)} years...")
+    print(f"Total API calls needed: {len(countries_to_query) * len(years_to_analyze)} ...")
 
     # Initialize result structure
     all_results = {}
@@ -497,7 +492,7 @@ def process_all_countries_and_years(client, years_to_analyze):
     total_calls = len(eu_countries) * len(years_to_analyze)
     call_count = 0
 
-    for country in eu_countries:
+    for country in countries_to_query:
         print(f"\nProcessing {country}...")
 
         for year in years_to_analyze:
