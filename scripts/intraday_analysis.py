@@ -114,6 +114,7 @@ except ImportError:
 # Create plots directory
 os.makedirs('plots', exist_ok=True)
 
+NON_EU_COUNTRIES = ['NO', 'CH', 'GB', 'MD']
 # EU country codes
 EU_COUNTRIES = [
     'AT', 'BE', 'BG', 'HR', 'CY', 'CZ', 'DK', 'EE', 'FI', 'FR',
@@ -382,9 +383,16 @@ def collect_all_data(api_key):
                 SOURCE_KEYWORDS[source], 'generation', mark_extrapolated=mark_extrap
             )
             
+            _, non_eu_df, non_eu_countries = aggregate_eu_data(
+                NON_EU_COUNTRIES, start_date, end_date, client,
+                SOURCE_KEYWORDS[source], 'generation', mark_extrapolated=mark_extrap
+            )
+            if not non_eu_df.empty:
+                country_df = pd.concat([country_df, non_eu_df], axis=1)
+            
             if not country_df.empty:
                 data_matrix['atomic_sources'][source][period_name] = country_df
-                print(f"    {period_name}: ✓ {len(countries)} countries, {len(country_df)} timestamps")
+                print(f"    {period_name}: ✓ {len(countries) + len(non_eu_countries)} countries, {len(country_df)} timestamps")
             else:
                 print(f"    {period_name}: ✗ No data")
     
@@ -420,9 +428,16 @@ def collect_all_data(api_key):
             all_gen_keywords, 'generation', mark_extrapolated=mark_extrap
         )
         
+        _, non_eu_df, non_eu_countries = aggregate_eu_data(
+            NON_EU_COUNTRIES, start_date, end_date, client,
+            all_gen_keywords, 'generation', mark_extrapolated=mark_extrap
+        )
+        if not non_eu_df.empty:
+            country_df = pd.concat([country_df, non_eu_df], axis=1)
+        
         if not country_df.empty:
             data_matrix['total_generation'][period_name] = country_df
-            print(f"  {period_name}: ✓ {len(countries)} countries, {len(country_df)} timestamps")
+            print(f"  {period_name}: ✓ {len(countries) + len(non_eu_countries)} countries, {len(country_df)} timestamps")
         else:
             print(f"  {period_name}: ✗ No data")
     
@@ -3331,7 +3346,7 @@ def main():
         # Countries to process
         countries_to_process = ['EU','AT', 'BE', 'BG', 'HR', 'CY', 'CZ', 'DK', 'EE', 'FI', 'FR',
           'DE', 'GR', 'HU', 'IE', 'IT', 'LV', 'LT', 'LU', 'MT', 'NL',
-          'PL', 'PT', 'RO', 'SK', 'SI', 'ES', 'SE']
+          'PL', 'PT', 'RO', 'SK', 'SI', 'ES', 'SE','NO', 'CH', 'GB', 'MD']
         total_plots_generated = {}  # Track plots per country
         
         print(f"\n" + "=" * 80)
