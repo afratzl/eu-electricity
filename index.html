@@ -1053,7 +1053,14 @@
             margin-right: 8px;
             flex-shrink: 0;
         }
+        .custom-select-option.disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
 
+        .custom-select-option.disabled:hover {
+            background: white;
+        }
         @media (max-width: 768px) {
             .custom-select-dropdown {
                 max-height: 250px;
