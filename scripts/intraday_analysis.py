@@ -616,7 +616,35 @@ def apply_corrections_for_period(data_matrix, target_period, reference_period):
             
             # Group by time to get hourly averages across the week
             weekly_hourly_avgs[source] = ref_data_with_time.groupby('time').mean(numeric_only=True)
-    
+          
+    # Compute weekly hourly average gap for aggregates
+    weekly_hourly_gaps = {}
+    for agg_source in AGGREGATE_SOURCES:
+        components = AGGREGATE_DEFINITIONS[agg_source]
+        
+        if agg_source not in data_matrix['aggregates'] or reference_period not in data_matrix['aggregates'][agg_source]:
+            weekly_hourly_gaps[agg_source] = {}
+            continue
+        
+        ref_agg = data_matrix['aggregates'][agg_source][reference_period]
+        
+        ref_atomic_sum = None
+        for component in components:
+            if component in data_matrix['atomic_sources'] and reference_period in data_matrix['atomic_sources'][component]:
+                component_eu = data_matrix['atomic_sources'][component][reference_period].sum(axis=1)
+                ref_atomic_sum = component_eu if ref_atomic_sum is None else ref_atomic_sum + component_eu
+        
+        if ref_atomic_sum is None:
+            weekly_hourly_gaps[agg_source] = {}
+            continue
+        
+        gap_series = ref_agg - ref_atomic_sum
+        gap_series = gap_series.clip(lower=0)
+        
+        gap_df = gap_series.to_frame(name='gap')
+        gap_df['time'] = gap_df.index.strftime('%H:%M')
+        weekly_hourly_gaps[agg_source] = gap_df.groupby('time')['gap'].mean()
+      
     # Get target period data
     target_atomic = {src: data_matrix['atomic_sources'][src].get(target_period) 
                      for src in ATOMIC_SOURCES if src in data_matrix['atomic_sources']}
@@ -738,60 +766,35 @@ def apply_corrections_for_period(data_matrix, target_period, reference_period):
     else:
         print("  ✓ No corrections needed")
     
-    # Build aggregates using HYBRID APPROACH
-    # TODAY: Safe summation (avoid 90-minute race condition)
-    # YESTERDAY+: Delta correction (preserve untracked sources)
+    # Build aggregates: corrected atomic sum + weekly average gap
+    # Consistent for both today and yesterday - avoids atomic sum > aggregate issue
     for agg_source in AGGREGATE_SOURCES:
         components = AGGREGATE_DEFINITIONS[agg_source]
-        measured_aggregate = data_matrix['aggregates'].get(agg_source, {}).get(target_period)
+        print(f"  Using atomic sum + weekly gap for {agg_source} ({target_period})")
         
-        if target_period == 'today':
-            # SAFE SUMMATION for today (high race condition risk)
-            print(f"  Using safe summation for {agg_source} (today)")
+        for timestamp in full_timestamp_range:
+            time_str = timestamp.strftime('%H:%M')
             
-            for timestamp in full_timestamp_range:
-                # Sum actual components
-                actual_agg_value = 0
-                for component in components:
-                    if timestamp in actual_sources[component]:
-                        actual_agg_value += sum(actual_sources[component][timestamp].values())
-                actual_sources[agg_source][timestamp] = {'EU': actual_agg_value}
-                
-                # Sum projected components
-                projected_agg_value = 0
-                for component in components:
-                    if timestamp in corrected_sources[component]:
-                        projected_agg_value += sum(corrected_sources[component][timestamp].values())
-                corrected_sources[agg_source][timestamp] = {'EU': projected_agg_value}
-        
-        else:
-            # DELTA CORRECTION for yesterday+ (stable data, preserve untracked sources)
-            print(f"  Using delta correction for {agg_source} ({target_period})")
+            # Actual: sum actual atomic components
+            actual_agg_value = 0
+            for component in components:
+                if timestamp in actual_sources[component]:
+                    actual_agg_value += sum(actual_sources[component][timestamp].values())
+            actual_sources[agg_source][timestamp] = {'EU': actual_agg_value}
             
-            for timestamp in full_timestamp_range:
-                # Actual: use measured aggregate directly
-                if measured_aggregate is not None and timestamp in measured_aggregate.index:
-                    actual_agg_value = measured_aggregate[timestamp]
-                else:
-                    actual_agg_value = 0
-                actual_sources[agg_source][timestamp] = {'EU': actual_agg_value}
-                
-                # Projected: start with measured, add component corrections
-                corrected_agg_value = actual_agg_value
-                
-                for component in components:
-                    projected_component = 0
-                    if timestamp in corrected_sources[component]:
-                        projected_component = sum(corrected_sources[component][timestamp].values())
-                    
-                    actual_component = 0
-                    if timestamp in actual_sources[component]:
-                        actual_component = sum(actual_sources[component][timestamp].values())
-                    
-                    correction = projected_component - actual_component
-                    corrected_agg_value += correction
-                
-                corrected_sources[agg_source][timestamp] = {'EU': corrected_agg_value}
+            # Projected: sum corrected atomic components + weekly average gap
+            projected_agg_value = 0
+            for component in components:
+                if timestamp in corrected_sources[component]:
+                    projected_agg_value += sum(corrected_sources[component][timestamp].values())
+            
+            # Add weekly average gap (untracked sources e.g. "Other renewable")
+            if agg_source in weekly_hourly_gaps and time_str in weekly_hourly_gaps[agg_source].index:
+                gap = weekly_hourly_gaps[agg_source][time_str]
+                if not pd.isna(gap):
+                    projected_agg_value += gap
+            
+            corrected_sources[agg_source][timestamp] = {'EU': projected_agg_value}
     
     # Build corrected and actual total generation
     corrected_total_gen = {}
