@@ -234,7 +234,11 @@ def extract_source_from_generation_data(generation_data, source_keywords):
     """
     relevant_columns = []
     for keyword in source_keywords:
-        matching_cols = [col for col in generation_data.columns if keyword in col]
+        matching_cols = [
+            col for col in generation_data.columns
+            if keyword in col
+            and not (isinstance(col, tuple) and 'Actual Consumption' in col)
+        ]
         relevant_columns.extend(matching_cols)
     relevant_columns = list(set(relevant_columns))
 
