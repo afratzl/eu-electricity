@@ -364,12 +364,19 @@ def get_all_energy_data_for_country_year(client, country, year):
         for source_name, source_keywords in energy_sources.items():
             # Find relevant columns
             if source_keywords == 'ALL':
-                relevant_columns = generation_data.columns.tolist()
-                energy_series = generation_data.sum(axis=1)
+                relevant_columns = [
+                    col for col in generation_data.columns
+                    if not (isinstance(col, tuple) and 'Actual Consumption' in col)
+                ]
+                energy_series = generation_data[relevant_columns].sum(axis=1)
             else:
                 relevant_columns = []
                 for keyword in source_keywords:
-                    matching_cols = [col for col in generation_data.columns if keyword in col]
+                    matching_cols = [
+                        col for col in generation_data.columns
+                        if keyword in col
+                        and not (isinstance(col, tuple) and 'Actual Consumption' in col)
+                    ]
                     relevant_columns.extend(matching_cols)
                 relevant_columns = list(set(relevant_columns))
 
