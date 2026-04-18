@@ -265,8 +265,8 @@ def interpolate_country_data(country_series, country_name, mark_extrapolated=Fal
     start_time = country_series.index.min().floor('15T')
     end_time = country_series.index.max().ceil('15T')
     complete_index = pd.date_range(start_time, end_time, freq='15T')
-
-    last_actual_time = country_series.index.max() if mark_extrapolated else None
+  
+    last_actual_time = country_series.dropna().index.max() if mark_extrapolated else None
 
     if most_common_interval >= 45:  # Hourly
         interpolated = country_series.reindex(complete_index)
