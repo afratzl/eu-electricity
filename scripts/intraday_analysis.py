@@ -280,15 +280,13 @@ def interpolate_country_data(country_series, country_name, mark_extrapolated=Fal
                 interpolated = interpolated.interpolate(method='linear', limit_area='inside')
             else:
                 raise
-        
-        interpolated = interpolated.fillna(method='ffill').fillna(method='bfill')
 
         if mark_extrapolated:
             mask = complete_index > last_actual_time
             interpolated.loc[mask] = np.nan
     else:  # Already 15-min
         interpolated = country_series.reindex(complete_index)
-        interpolated = interpolated.interpolate(method='linear').fillna(method='ffill').fillna(method='bfill')
+        interpolated = interpolated.interpolate(method='linear', limit_area='inside')
 
         if mark_extrapolated:
             mask = complete_index > last_actual_time
