@@ -1,0 +1,59 @@
+name: Current Year Monthly Analysis
+
+on:
+  workflow_dispatch:
+    inputs:
+      country:
+        description: 'Country code (e.g. DE) or leave empty for all countries'
+        required: false
+        default: ''
+
+jobs:
+  current-year-analysis:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          pip install entsoe-py pandas matplotlib numpy gspread \
+                      google-auth google-auth-oauthlib google-auth-httplib2 \
+                      google-api-python-client
+
+      - name: Download existing drive_links.json
+        env:
+          GOOGLE_CREDENTIALS_JSON: ${{ secrets.GOOGLE_CREDENTIALS_JSON }}
+        run: |
+          mkdir -p plots
+          # Pull existing drive_links.json from repo if present
+          if [ -f plots/drive_links.json ]; then
+            echo "drive_links.json already present"
+          else
+            echo "{}" > plots/drive_links.json
+          fi
+
+      - name: Run current year analysis
+        env:
+          GOOGLE_CREDENTIALS_JSON: ${{ secrets.GOOGLE_CREDENTIALS_JSON }}
+          ENTSOE_API_KEY: ${{ secrets.ENTSOE_API_KEY }}
+        run: |
+          if [ -n "${{ github.event.inputs.country }}" ]; then
+            python scripts/current_year_analysis.py --country ${{ github.event.inputs.country }}
+          else
+            python scripts/current_year_analysis.py
+          fi
+
+      - name: Commit updated drive_links.json
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git add plots/drive_links.json plots/last_update_current_year.html || true
+          git diff --staged --quiet || git commit -m "Update current year plots [skip ci]"
+          git push || true
