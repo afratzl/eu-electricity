@@ -5,7 +5,7 @@
 SOURCE_KEYWORDS = {
     'solar':      ['Solar'],
     'wind':       ['Wind Onshore', 'Wind Offshore'],
-    'hydro':      ['Hydro Water Reservoir', 'Hydro Run-of-river and pondage', 'Hydro Pumped Storage'],
+    'hydro':      ['Hydro Water Reservoir', 'Hydro Run-of-river and poundage', 'Hydro Pumped Storage'],
     'biomass':    ['Biomass'],
     'geothermal': ['Geothermal'],
     'gas':        ['Fossil Gas', 'Fossil Coal-derived gas'],
