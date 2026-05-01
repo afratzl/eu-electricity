@@ -380,8 +380,7 @@ def generate_current_year_plots(all_data, country_code='EU'):
     os.makedirs('plots', exist_ok=True)
 
     subtitle_months = calendar.month_abbr[last_complete]
-    subtitle = f'{current_year} Jan\u2013{subtitle_months} · {{mode}}'
-
+    subtitle = f'{current_year} · {{mode}}'
     def make_fig(mode, arrays, ylabel):
         fig, ax = plt.subplots(figsize=(12, 12))
         make_banner(fig)
