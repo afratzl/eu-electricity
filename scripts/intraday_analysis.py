@@ -9,7 +9,7 @@ Architecture:
 
 Key improvements:
 - Weekly hourly averages for projection (not daily)
-- Component-level aggregate correction
+- Component-level aggregate correctionSi=so
 - Proper Total Generation correction using all sources
 - Debug output for threshold violations
 - Google Sheets integration for summary table
@@ -136,45 +136,7 @@ AGGREGATE_DEFINITIONS = {
 }
 
 # Energy source keyword mapping
-SOURCE_KEYWORDS = {
-    'solar': ['Solar'],
-    'wind': ['Wind Onshore', 'Wind Offshore'],
-    'hydro': ['Hydro', 'Hydro Water Reservoir', 'Hydro Run-of-river', 'Hydro Pumped Storage',
-              'Water Reservoir', 'Run-of-river', 'Poundage', 'Hydro Run-of-river and poundage'],
-    'biomass': ['Biomass', 'Biogas', 'Biofuel'],
-    'geothermal': ['Geothermal'],
-    'gas': ['Fossil Gas', 'Natural Gas', 'Gas', 'Fossil Coal-derived gas'],
-    'coal': ['Fossil Hard coal', 'Fossil Brown coal', 'Fossil Brown coal/Lignite', 
-             'Hard Coal', 'Brown Coal', 'Coal', 'Lignite', 'Fossil Peat', 'Peat'],
-    'nuclear': ['Nuclear'],
-    'oil': ['Fossil Oil', 'Oil', 'Petroleum'],
-    'waste': ['Waste', 'Other non-renewable', 'Other'],
-    'all-renewables': ['Solar', 'Wind Onshore', 'Wind Offshore',
-                       'Hydro', 'Hydro Water Reservoir', 'Hydro Run-of-river', 'Hydro Pumped Storage',
-                       'Water Reservoir', 'Run-of-river', 'Poundage', 'Hydro Run-of-river and poundage',
-                       'Geothermal', 'Biomass', 'Biogas', 'Biofuel', 'Other renewable'],
-    'all-non-renewables': ['Fossil Gas', 'Natural Gas', 'Gas', 'Fossil Coal-derived gas',
-                           'Fossil Hard coal', 'Fossil Brown coal', 'Fossil Brown coal/Lignite',
-                           'Hard Coal', 'Brown Coal', 'Coal', 'Lignite', 'Fossil Peat', 'Peat',
-                           'Nuclear', 'Fossil Oil', 'Oil', 'Petroleum',
-                           'Waste', 'Other non-renewable', 'Other']
-}
-
-# Display names
-DISPLAY_NAMES = {
-    'solar': 'Solar',
-    'wind': 'Wind',
-    'hydro': 'Hydro',
-    'biomass': 'Biomass',
-    'geothermal': 'Geothermal',
-    'gas': 'Gas',
-    'coal': 'Coal',
-    'nuclear': 'Nuclear',
-    'oil': 'Oil',
-    'waste': 'Waste',
-    'all-renewables': 'All Renewables',
-    'all-non-renewables': 'All Non-Renewables'
-}
+from config import SOURCE_KEYWORDS, DISPLAY_NAMES
 
 
 def format_change_percentage(value):
