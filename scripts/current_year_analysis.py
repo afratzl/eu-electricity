@@ -380,15 +380,14 @@ def generate_current_year_plots(all_data, country_code='EU'):
     os.makedirs('plots', exist_ok=True)
 
     subtitle_months = calendar.month_abbr[last_complete]
-    subtitle = f'{current_year} · {{mode}}'
+    subtitle = f'{current_year} Jan\u2013{subtitle_months} · {{mode}}'
+
     def make_fig(mode, arrays, ylabel):
         fig, ax = plt.subplots(figsize=(12, 12))
         make_banner(fig)
         plt.subplots_adjust(left=0.15, right=0.94, top=0.83, bottom=0.25)
 
         max_val = 0
-        # Force all 12 month categories to appear on x-axis
-        ax.plot(month_names, [0] * 12, alpha=0)
         for source_name in ALL_SOURCES:
             color = ENTSOE_COLORS.get(source_name, 'black')
             y = arrays[source_name]
@@ -430,7 +429,84 @@ def generate_current_year_plots(all_data, country_code='EU'):
     plt.close(fig_abs)
     print(f"  ✓ Saved: {abs_file}")
 
+    # --- Write monthly stats JSON (EU only, used by Bluesky) ---
+    if country_code == 'EU':
+        save_monthly_stats(
+            country_code, current_year, last_complete,
+            pct_arrays,
+            all_data.get('All Renewables', {}).get('year_data', {}),
+            all_data.get('All Non-Renewables', {}).get('year_data', {}),
+            total_year_data
+        )
+
     return pct_file, abs_file
+
+
+def save_monthly_stats(country_code, year, last_complete,
+                       pct_arrays, ren_data, non_ren_data, total_data):
+    """
+    Write plots/current_year_monthly_stats.json with per-month percentages
+    for the current year. Only writes EU data (used by Bluesky bot).
+
+    Structure:
+    {
+      "EU": {
+        "year": 2026,
+        "last_completed_month": 4,
+        "month_name": "April",
+        "months": {
+          "4": { "Wind": 18.2, "Solar": 12.1, ...,
+                 "All Renewables": 47.3, "All Non-Renewables": 48.7 }
+        }
+      }
+    }
+    """
+    stats_file = 'plots/current_year_monthly_stats.json'
+
+    # Load existing file so we don't overwrite other countries
+    stats = {}
+    if os.path.exists(stats_file):
+        try:
+            with open(stats_file, 'r') as f:
+                stats = json.load(f)
+        except Exception:
+            pass
+
+    months_data = {}
+    for m in range(1, last_complete + 1):
+        month_stats = {}
+        # Individual sources
+        for source_name in ALL_SOURCES:
+            val = pct_arrays.get(source_name)
+            if val is not None and not np.isnan(val[m - 1]):
+                month_stats[source_name] = round(float(val[m - 1]), 2)
+            else:
+                month_stats[source_name] = None
+
+        # Aggregates
+        total = total_data.get(year, {}).get(m, 0)
+        if total > 0:
+            ren = ren_data.get(year, {}).get(m, 0)
+            non_ren = non_ren_data.get(year, {}).get(m, 0)
+            month_stats['All Renewables']     = round(ren / total * 100, 2)
+            month_stats['All Non-Renewables'] = round(non_ren / total * 100, 2)
+        else:
+            month_stats['All Renewables']     = None
+            month_stats['All Non-Renewables'] = None
+
+        months_data[str(m)] = month_stats
+
+    stats[country_code] = {
+        'year':                 year,
+        'last_completed_month': last_complete,
+        'month_name':           calendar.month_name[last_complete],
+        'months':               months_data,
+    }
+
+    os.makedirs('plots', exist_ok=True)
+    with open(stats_file, 'w') as f:
+        json.dump(stats, f, indent=2)
+    print(f"  ✓ Monthly stats saved to {stats_file}")
 
 
 # ============================================================
