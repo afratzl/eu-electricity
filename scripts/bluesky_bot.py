@@ -161,7 +161,7 @@ Hydro:  {hydro_pct}       Gas:         {gas_pct}
 Solar:    {solar_pct}       Coal:         {coal_pct}
 
 afratzl.github.io/eu-electricity
-#Energy #EU #Renewables #Electricity"""
+#EU #Renewables #Electricity #EnergySky #ClimateSky"""
     else:
         # Fallback if JSON data not available
         post_text = f"""EU Electricity Generation - {date_str}
@@ -191,7 +191,7 @@ afratzl.github.io/eu-electricity
         )
     
     # Find hashtag positions
-    hashtags = ['#Energy', '#EU', '#Renewables', '#Electricity']
+    hashtags = ['#EU', '#Renewables', '#Electricity', '#EnergySky', '#ClimateSky']
     for tag in hashtags:
         tag_start = post_text.find(tag)
         if tag_start != -1:
