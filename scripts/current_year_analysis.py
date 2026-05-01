@@ -379,13 +379,15 @@ def generate_current_year_plots(all_data, country_code='EU'):
 
     os.makedirs('plots', exist_ok=True)
 
-    subtitle_months = calendar.month_abbr[last_complete]
-    subtitle = f'{current_year} Jan\u2013{subtitle_months} · {{mode}}'
+    subtitle = f'{current_year} · {{mode}}'
 
     def make_fig(mode, arrays, ylabel):
         fig, ax = plt.subplots(figsize=(12, 12))
         make_banner(fig)
         plt.subplots_adjust(left=0.15, right=0.94, top=0.83, bottom=0.25)
+
+        # Force all 12 month categories on x-axis even when future months are NaN
+        ax.plot(month_names, [0] * 12, alpha=0)
 
         max_val = 0
         for source_name in ALL_SOURCES:
