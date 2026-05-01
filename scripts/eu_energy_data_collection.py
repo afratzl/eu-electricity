@@ -20,30 +20,25 @@ eu_countries = [
 ]
 
 # Define energy source categories to analyze
+# Define energy source categories to analyze
+# Keywords match exact ENTSO-E column names (verified against transparency platform)
+from config import SOURCE_KEYWORDS as _SK
+
 energy_sources = {
-    'Solar': ['Solar'],
+    'Solar':        _SK['solar'],
     'Wind Onshore': ['Wind Onshore'],
     'Wind Offshore': ['Wind Offshore'],
-    'Wind': ['Wind Onshore', 'Wind Offshore'],
-    'Hydro': [
-        'Hydro', 'Hydro Water Reservoir', 'Hydro Run-of-river', 'Hydro Pumped Storage',
-        'Water Reservoir', 'Run-of-river', 'Poundage', 'Hydro Run-of-river and poundage'
-    ],
-    'Biomass': ['Biomass', 'Biogas', 'Biofuel'],
-    'Geothermal': ['Geothermal'],
-    'Gas': ['Fossil Gas', 'Natural Gas', 'Gas', 'Fossil Coal-derived gas'],
-    'Coal': ['Fossil Hard coal', 'Fossil Brown coal', 'Fossil Brown coal/Lignite', 'Hard Coal', 'Brown Coal', 'Coal',
-             'Lignite', 'Fossil Peat', 'Peat'],
-    'Nuclear': ['Nuclear'],
-    'Oil': ['Fossil Oil', 'Oil', 'Petroleum'],
-    'Waste': ['Waste', 'Other non-renewable', 'Other'],
-    'All Renewables': [
-        'Solar', 'Wind Onshore', 'Wind Offshore',
-        'Hydro', 'Hydro Water Reservoir', 'Hydro Run-of-river', 'Hydro Pumped Storage',
-        'Water Reservoir', 'Run-of-river', 'Poundage', 'Hydro Run-of-river and poundage',
-        'Geothermal', 'Biomass', 'Biogas', 'Biofuel', 'Other renewable'
-    ],
-    'Total Generation': 'ALL'  # Special case for total generation
+    'Wind':         _SK['wind'],
+    'Hydro':        _SK['hydro'],
+    'Biomass':      _SK['biomass'],
+    'Geothermal':   _SK['geothermal'],
+    'Gas':          _SK['gas'],
+    'Coal':         _SK['coal'],
+    'Nuclear':      _SK['nuclear'],
+    'Oil':          _SK['oil'],
+    'Waste':        _SK['waste'],
+    'All Renewables': _SK['all-renewables'],
+    'Total Generation': 'ALL'  # Special case: sum all ENTSO-E columns
 }
 
 
