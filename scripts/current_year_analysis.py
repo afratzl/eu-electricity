@@ -388,6 +388,8 @@ def generate_current_year_plots(all_data, country_code='EU'):
         plt.subplots_adjust(left=0.15, right=0.94, top=0.83, bottom=0.25)
 
         max_val = 0
+        # Force all 12 month categories to appear on x-axis
+        ax.plot(month_names, [np.nan] * 12, alpha=0)
         for source_name in ALL_SOURCES:
             color = ENTSOE_COLORS.get(source_name, 'black')
             y = arrays[source_name]
