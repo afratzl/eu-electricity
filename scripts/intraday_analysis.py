@@ -1673,7 +1673,12 @@ def calculate_period_totals(period_data, period_name):
             'gwh': agg_gwh,
             'percentage': percentage
         }
-    
+    # After calculating all sources, fix denominator to be consistent
+    if 'all-renewables' in totals and 'all-non-renewables' in totals:
+        true_total = totals['all-renewables']['gwh'] + totals['all-non-renewables']['gwh']
+        if true_total > 0:
+            for source in totals:
+                totals[source]['percentage'] = totals[source]['gwh'] / true_total * 100
     return totals
 
 
