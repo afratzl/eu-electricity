@@ -1366,7 +1366,7 @@ def plot_analysis(stats_data, source_type, output_file_base, country_code='EU'):
     timestamp = datetime.now().strftime('%Y-%m-%d %H:%M UTC')
     
     # Watermark (left) - aligned with plot left edge
-    fig1.text(0.15, 0.035, "afratzl.github.io/eu-electricity",
+    fig1.text(0.15, 0.035, "eu-electricity.eu",
               ha='left', va='top',
               fontsize=12, color='#666',
               style='italic')
@@ -1568,7 +1568,7 @@ def plot_analysis(stats_data, source_type, output_file_base, country_code='EU'):
     
     # Add watermark (bottom-left) and timestamp (bottom-right)
     # Watermark (left) - aligned with plot left edge
-    fig2.text(0.15, 0.035, "afratzl.github.io/eu-electricity",
+    fig2.text(0.15, 0.035, "eu-electricity.eu",
               ha='left', va='top',
               fontsize=12, color='#666',
               style='italic')
@@ -2612,7 +2612,7 @@ def generate_yesterday_plots(corrected_data, country_code='EU'):
     # Watermark and timestamp
     from datetime import datetime
     timestamp = datetime.now().strftime('%Y-%m-%d %H:%M UTC')
-    fig1.text(0.15, 0.035, "afratzl.github.io/eu-electricity",
+    fig1.text(0.15, 0.035, "eu-electricity.eu",
               ha='left', va='top', fontsize=12, color='#666', style='italic')
     fig1.text(0.94, 0.04, f"Generated: {timestamp}",
               ha='right', va='top', fontsize=12, color='#666', style='italic')
@@ -2759,7 +2759,7 @@ def generate_yesterday_plots(corrected_data, country_code='EU'):
               fontsize=16, fontweight='normal', ha='center', va='top', color='#333')
     
     # Watermark and timestamp
-    fig2.text(0.15, 0.035, "afratzl.github.io/eu-electricity",
+    fig2.text(0.15, 0.035, "eu-electricity.eu",
               ha='left', va='top', fontsize=12, color='#666', style='italic')
     fig2.text(0.94, 0.04, f"Generated: {timestamp}",
               ha='right', va='top', fontsize=12, color='#666', style='italic')
@@ -3149,7 +3149,7 @@ def generate_yesterday_aggregates_plots(corrected_data, country_code='EU'):
     
     # Watermark and timestamp
     timestamp = datetime.now().strftime('%Y-%m-%d %H:%M UTC')
-    fig1.text(0.15, 0.035, "afratzl.github.io/eu-electricity",
+    fig1.text(0.15, 0.035, "eu-electricity.eu",
               ha='left', va='top', fontsize=12, color='#666', style='italic')
     fig1.text(0.94, 0.04, f"Generated: {timestamp}",
               ha='right', va='top', fontsize=12, color='#666', style='italic')
@@ -3232,7 +3232,7 @@ def generate_yesterday_aggregates_plots(corrected_data, country_code='EU'):
               fontsize=16, fontweight='normal', ha='center', va='top', color='#333')
     
     # Watermark and timestamp
-    fig2.text(0.15, 0.035, "afratzl.github.io/eu-electricity",
+    fig2.text(0.15, 0.035, "eu-electricity.eu",
               ha='left', va='top', fontsize=12, color='#666', style='italic')
     fig2.text(0.94, 0.04, f"Generated: {timestamp}",
               ha='right', va='top', fontsize=12, color='#666', style='italic')
