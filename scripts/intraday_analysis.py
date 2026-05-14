@@ -681,17 +681,16 @@ def apply_corrections_for_period(data_matrix, target_period, reference_period):
                             week_avg = weekly_hourly_avgs[source].loc[time_str, country]
                             
                             if not pd.isna(week_avg) and week_avg > 0:
-                                threshold = 0.01 * week_avg
                                 
-                                # Check if below threshold
-                                if pd.isna(actual_val) or actual_val < threshold:
+                                # Only replace if value is truly missing (NaN)
+                                if pd.isna(actual_val):
                                     correction_log.append({
                                         'time': time_str,
                                         'source': source,
                                         'country': country,
-                                        'actual': actual_val if not pd.isna(actual_val) else 0,
+                                        'actual': 0,
                                         'expected': week_avg,
-                                        'threshold': threshold
+                                        'threshold': 0
                                     })
                                     corrected_val = week_avg
                     
@@ -723,8 +722,7 @@ def apply_corrections_for_period(data_matrix, target_period, reference_period):
         print(f"\n  Detected {len(correction_log)} corrections (missing data + threshold violations):")
         for log in correction_log[:20]:  # Print first 20
             print(f"    {log['time']} | {log['country']}-{log['source']}: "
-                  f"{log['actual']:.1f} MW < 10% of {log['expected']:.1f} MW "
-                  f"(threshold: {log['threshold']:.1f} MW) → Using {log['expected']:.1f} MW")
+                  f"missing data → Using weekly avg {log['expected']:.1f} MW")
         if len(correction_log) > 20:
             print(f"    ... and {len(correction_log) - 20} more corrections")
     else:
