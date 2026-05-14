@@ -160,7 +160,7 @@ Wind:   {wind_pct}      Nuclear:  {nuclear_pct}
 Hydro:  {hydro_pct}     Gas:         {gas_pct}
 Solar:    {solar_pct}     Coal:         {coal_pct}
 
-afratzl.github.io/eu-electricity
+eu-electricity.eu
 #EU #Renewables #Electricity #EnergySky #ClimateSky"""
     else:
         # Fallback if JSON data not available
@@ -169,7 +169,7 @@ afratzl.github.io/eu-electricity
 Yesterday's electricity generation breakdown across all EU member states.
 
 Data: ENTSO-E
-afratzl.github.io/eu-electricity
+eu-electricity.eu
 
 #Energy #EU #Renewables #Electricity"""
     
@@ -177,7 +177,7 @@ afratzl.github.io/eu-electricity
     facets = []
     
     # Find the website link position
-    link_text = "afratzl.github.io/eu-electricity"
+    link_text = "eu-electricity.eu"
     link_start = post_text.find(link_text)
     if link_start != -1:
         facets.append(
