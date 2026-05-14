@@ -2204,7 +2204,7 @@ def update_summary_table_worksheet(corrected_data, country_code='EU'):
         import traceback
         traceback.print_exc()
 
-def get_or_create_drive_folder(service, folder_name, parent_id=None, share_with_email=None):
+def get_or_create_drive_folder(service, folder_name, parent_id=None):
     """
     Get or create a folder in Google Drive
     Optionally shares with specified email
@@ -2240,31 +2240,6 @@ def get_or_create_drive_folder(service, folder_name, parent_id=None, share_with_
         print(f"  Created Drive folder: {folder_name}")
         folder_already_existed = False
     
-    # Share with email if provided (do this regardless of whether folder existed)
-    if share_with_email:
-        try:
-            # Check if already shared with this email
-            permissions = service.permissions().list(fileId=folder_id, fields='permissions(emailAddress)').execute()
-            existing_emails = [p.get('emailAddress') for p in permissions.get('permissions', [])]
-            
-            if share_with_email not in existing_emails:
-                permission = {
-                    'type': 'user',
-                    'role': 'writer',  # Or 'reader' if you only want view access
-                    'emailAddress': share_with_email
-                }
-                service.permissions().create(
-                    fileId=folder_id,
-                    body=permission,
-                    sendNotificationEmail=False  # Don't spam with emails
-                ).execute()
-                print(f"  ✓ Shared folder '{folder_name}' with {share_with_email}")
-            else:
-                if folder_already_existed:
-                    print(f"  ✓ Folder '{folder_name}' already shared with {share_with_email}")
-        except Exception as e:
-            print(f"  ⚠ Could not share folder '{folder_name}': {e}")
-    
     return folder_id
 
 
@@ -2294,8 +2269,8 @@ def upload_plot_to_drive(file_path, country='EU'):
         
         # Create folder structure: EU-Electricity-Plots/[Country]/Intraday/
         # Get or create root folder (share with owner if email provided)
-        owner_email = os.getenv('OWNER_EMAIL')  # Optional: your Gmail address
-        root_folder_id = get_or_create_drive_folder(service, 'EU-Electricity-Plots', share_with_email=owner_email)
+        root_folder_id = get_or_create_drive_folder(service, 'EU-Electricity-Plots')
+
         
         # Get or create country folder
         country_folder_id = get_or_create_drive_folder(service, country, root_folder_id)
