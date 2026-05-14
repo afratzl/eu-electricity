@@ -1,15 +1,12 @@
 name: Update Intraday Data
-
 on:
   schedule:
     # Hourly updates for intraday analysis (at minute 5)
     - cron: '5 4-23 * * *'
   
   workflow_dispatch:  # Allow manual triggers
-
 permissions:
   contents: write
-
 jobs:
   update-intraday:
     runs-on: ubuntu-latest
@@ -38,7 +35,6 @@ jobs:
         env:
           ENTSOE_API_KEY: ${{ secrets.ENTSOE_API_KEY }}
           GOOGLE_CREDENTIALS_JSON: ${{ secrets.GOOGLE_CREDENTIALS_JSON }}
-          OWNER_EMAIL: ${{ secrets.OWNER_EMAIL }}  # Optional: your Gmail for folder access
         run: |
           echo "Running hourly intraday analysis..."
           python scripts/intraday_analysis.py || echo "Failed to generate intraday plots"
@@ -71,7 +67,7 @@ jobs:
           cp /tmp/plots_backup/* plots/ 2>/dev/null || true
           
           # Add and commit
-          git add plots/*.html plots/*.json
+          git add -f plots/*.html plots/*.json
           
           # Only commit if there are changes
           if ! git diff --staged --quiet; then
