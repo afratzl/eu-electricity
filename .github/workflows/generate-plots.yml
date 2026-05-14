@@ -1,16 +1,23 @@
 name: Generate Historical Plots
 on:
   workflow_dispatch:  # Manual trigger
+    inputs:
+      country:
+        description: 'Country code (e.g. DE) or leave empty for all countries'
+        required: false
+        default: ''
+permissions:
+  contents: write
 jobs:
   generate-plots:
     runs-on: ubuntu-latest
     
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
       
     - name: Set up Python
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v5
       with:
         python-version: '3.12'
         
@@ -22,7 +29,11 @@ jobs:
       env:
         GOOGLE_CREDENTIALS_JSON: ${{ secrets.GOOGLE_CREDENTIALS_JSON }}
       run: |
-        python scripts/eu_energy_plotting.py
+        if [ -n "${{ github.event.inputs.country }}" ]; then
+          python scripts/eu_energy_plotting.py --country ${{ github.event.inputs.country }}
+        else
+          python scripts/eu_energy_plotting.py
+        fi
     
     - name: Generate Summary Table JSON
       env:
@@ -35,14 +46,7 @@ jobs:
       run: |
         git config --local user.email "github-actions[bot]@users.noreply.github.com"
         git config --local user.name "github-actions[bot]"
-        git add plots/*.html plots/*.json
-        git commit -m "Generate historical plots and summary JSON" || echo "No changes to commit"
-        
-        # Pull with automatic conflict resolution (keep our version)
-        git pull --rebase -X ours origin main || {
-          echo "⚠️  Rebase conflict detected, auto-resolving..."
-          git add .
-          git rebase --continue
-        }
-        
-        git push
+        git add -f plots/*.html plots/*.json
+        git diff --staged --quiet || git commit -m "Generate historical plots and summary JSON [skip ci]"
+        git pull --rebase origin main || true
+        git push || true
