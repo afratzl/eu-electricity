@@ -528,4 +528,228 @@ def get_annual_values(gc, source, year):
                 ren_data  = load_monthly_data_for_country(gc, country_code, 'all-renewables')
                 ren_total = sum(ren_data.get(year, {}).values()) if ren_data.get(year) else None
                 source_total = max(0, total_total - ren_total) if (total_total and ren_total is not None) else None
-      
+            else:
+                source_data  = load_monthly_data_for_country(gc, country_code, source)
+                source_total = sum(source_data.get(year, {}).values()) if source_data.get(year) else None
+
+            values[country_code] = compute_percentage(source_total, total_total)
+        except Exception as e:
+            print(f"  ⚠ {country_code}: {e}")
+            values[country_code] = None
+
+    return values
+
+
+# ============================================================
+# GOOGLE DRIVE UPLOAD
+# ============================================================
+
+def initialize_drive_service():
+    if not GDRIVE_AVAILABLE:
+        return None
+    try:
+        creds_dict = json.loads(os.getenv('GOOGLE_CREDENTIALS_JSON', '{}'))
+        credentials = ServiceAccountCredentials.from_service_account_info(
+            creds_dict, scopes=['https://www.googleapis.com/auth/drive.file']
+        )
+        return build('drive', 'v3', credentials=credentials)
+    except Exception as e:
+        print(f"  ⚠ Failed to initialize Drive service: {e}")
+        return None
+
+
+def get_or_create_folder(service, folder_name, parent_id=None):
+    query = f"name='{folder_name}' and mimeType='application/vnd.google-apps.folder' and trashed=false"
+    if parent_id:
+        query += f" and '{parent_id}' in parents"
+    results = service.files().list(q=query, spaces='drive', fields='files(id)').execute()
+    folders = results.get('files', [])
+    if folders:
+        return folders[0]['id']
+    meta = {'name': folder_name, 'mimeType': 'application/vnd.google-apps.folder'}
+    if parent_id:
+        meta['parents'] = [parent_id]
+    return service.files().create(body=meta, fields='id').execute().get('id')
+
+
+def upload_map_to_drive(service, file_path, period, year=None):
+    """
+    Upload map to EU-Electricity-Plots/Maps/{period}/[{year}/]{filename}
+    Returns dict with file_id, view_url, direct_url or None.
+    """
+    if not GDRIVE_AVAILABLE or service is None:
+        return None
+    try:
+        root_id   = get_or_create_folder(service, 'EU-Electricity-Plots')
+        maps_id   = get_or_create_folder(service, 'Maps', root_id)
+        period_id = get_or_create_folder(service, period, maps_id)
+        folder_id = get_or_create_folder(service, str(year), period_id) if year else period_id
+
+        filename = os.path.basename(file_path)
+        query = f"name='{filename}' and '{folder_id}' in parents and trashed=false"
+        existing = service.files().list(q=query, spaces='drive', fields='files(id)').execute().get('files', [])
+
+        media = MediaFileUpload(file_path, mimetype='image/png')
+        if existing:
+            file_id = existing[0]['id']
+            service.files().update(fileId=file_id, media_body=media).execute()
+        else:
+            meta = {'name': filename, 'parents': [folder_id]}
+            file_id = service.files().create(body=meta, media_body=media, fields='id').execute().get('id')
+
+        # Set public read
+        try:
+            perms = service.permissions().list(fileId=file_id, fields='permissions(id,type)').execute()
+            anyone = next((p for p in perms.get('permissions', []) if p.get('type') == 'anyone'), None)
+            if anyone:
+                service.permissions().update(fileId=file_id, permissionId=anyone['id'],
+                                              body={'role': 'reader'}).execute()
+            else:
+                service.permissions().create(fileId=file_id,
+                                              body={'type': 'anyone', 'role': 'reader'}).execute()
+        except Exception as e:
+            print(f"  ⚠ Could not set permissions: {e}")
+
+        return {
+            'file_id':    file_id,
+            'view_url':   f'https://drive.google.com/file/d/{file_id}/view',
+            'direct_url': f'https://drive.google.com/thumbnail?id={file_id}&sz=w2000',
+            'updated':    datetime.now().isoformat()
+        }
+    except Exception as e:
+        print(f"  ⚠ Drive upload failed for {os.path.basename(file_path)}: {e}")
+        return None
+
+
+def save_map_links(period, source, result, year=None):
+    """Save map drive links to plots/drive_links.json under Maps section."""
+    drive_links_file = 'plots/drive_links.json'
+    links = {}
+    if os.path.exists(drive_links_file):
+        try:
+            with open(drive_links_file, 'r') as f:
+                links = json.load(f)
+        except Exception:
+            pass
+
+    if 'Maps' not in links:
+        links['Maps'] = {}
+    if period not in links['Maps']:
+        links['Maps'][period] = {}
+
+    if year is not None:
+        if str(year) not in links['Maps'][period]:
+            links['Maps'][period][str(year)] = {}
+        links['Maps'][period][str(year)][source] = result
+    else:
+        links['Maps'][period][source] = result
+
+    os.makedirs('plots', exist_ok=True)
+    with open(drive_links_file, 'w') as f:
+        json.dump(links, f, indent=2)
+    print(f"  ✓ drive_links.json updated: Maps/{period}/{source}")
+
+
+# ============================================================
+# MAIN
+# ============================================================
+
+def main():
+    parser = argparse.ArgumentParser(description='Generate EU electricity generation maps')
+    parser.add_argument('--source', default=None,
+                        choices=list(ENTSOE_COLORS.keys()),
+                        help='Single source (default: all sources)')
+    parser.add_argument('--period', default='yesterday',
+                        choices=['yesterday', 'last_month', 'annual'],
+                        help='Time period (default: yesterday)')
+    parser.add_argument('--scale', default='fixed',
+                        choices=['fixed', 'dynamic'],
+                        help='Color scale (default: fixed)')
+    parser.add_argument('--shapefile', default='data/natural_earth/ne_110m_admin_0_countries.shp',
+                        help='Path to Natural Earth shapefile')
+    args = parser.parse_args()
+
+    if not os.environ.get('GOOGLE_CREDENTIALS_JSON'):
+        print("⚠ GOOGLE_CREDENTIALS_JSON not set")
+        return
+
+    # Load geodata once
+    geodata = load_world_geodata(args.shapefile)
+
+    # Initialize Google Sheets
+    creds_dict = json.loads(os.environ.get('GOOGLE_CREDENTIALS_JSON'))
+    scope = ['https://www.googleapis.com/auth/spreadsheets',
+             'https://www.googleapis.com/auth/drive']
+    credentials = Credentials.from_service_account_info(creds_dict, scopes=scope)
+    gc = gspread.authorize(credentials)
+
+    # Initialize Drive
+    drive_service = initialize_drive_service()
+
+    # Determine sources to process
+    sources = [args.source] if args.source else list(ENTSOE_COLORS.keys())
+
+    # Date info
+    today          = datetime.now()
+    yesterday      = today - timedelta(days=1)
+    last_month_num = today.month - 1 if today.month > 1 else 12
+    last_month_year = today.year if today.month > 1 else today.year - 1
+
+    os.makedirs('plots', exist_ok=True)
+
+    print("=" * 60)
+    print(f"GENERATING MAPS: {args.period.upper()} | scale={args.scale}")
+    print(f"Sources: {', '.join(sources)}")
+    print("=" * 60)
+
+    for source in sources:
+        print(f"\n--- {DISPLAY_NAMES.get(source, source)} ---")
+
+        if args.period == 'annual':
+            for year in range(2015, today.year + 1):
+                print(f"  Year {year}...")
+                values   = get_annual_values(gc, source, year)
+                date_str = str(year)
+                fig      = generate_map(geodata, values, source, date_str, scale=args.scale)
+                plot_file = f'plots/map_{source}_{year}.png'
+                fig.savefig(plot_file, dpi=150, facecolor='white')
+                plt.close(fig)
+                print(f"  ✓ Saved: {plot_file}")
+                if drive_service:
+                    result = upload_map_to_drive(drive_service, plot_file, 'Annual', year=year)
+                    if result:
+                        save_map_links('Annual', source, result, year=year)
+
+        elif args.period == 'yesterday':
+            date_str = yesterday.strftime('%d %B %Y')
+            values   = get_values_for_period(gc, source, yesterday.year, yesterday.month)
+            fig      = generate_map(geodata, values, source, date_str, scale=args.scale)
+            plot_file = f'plots/map_{source}_yesterday.png'
+            fig.savefig(plot_file, dpi=150, facecolor='white')
+            plt.close(fig)
+            print(f"  ✓ Saved: {plot_file}")
+            if drive_service:
+                result = upload_map_to_drive(drive_service, plot_file, 'Yesterday')
+                if result:
+                    save_map_links('Yesterday', source, result)
+
+        else:  # last_month
+            date_str = datetime(last_month_year, last_month_num, 1).strftime('%B %Y')
+            values   = get_values_for_period(gc, source, last_month_year, last_month_num)
+            fig      = generate_map(geodata, values, source, date_str, scale=args.scale)
+            plot_file = f'plots/map_{source}_last_month.png'
+            fig.savefig(plot_file, dpi=150, facecolor='white')
+            plt.close(fig)
+            print(f"  ✓ Saved: {plot_file}")
+            if drive_service:
+                result = upload_map_to_drive(drive_service, plot_file, 'LastMonth')
+                if result:
+                    save_map_links('LastMonth', source, result)
+
+    print("\n" + "=" * 60)
+    print("DONE")
+    print("=" * 60)
+
+
+if __name__ == '__main__':
+    main()
