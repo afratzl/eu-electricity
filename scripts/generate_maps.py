@@ -87,18 +87,19 @@ DISPLAY_NAMES = {
 
 # Worksheet name mapping (Google Sheets)
 WORKSHEET_NAMES = {
-    'solar':              'Solar Monthly Production',
-    'wind':               'Wind Monthly Production',
-    'hydro':              'Hydro Monthly Production',
-    'biomass':            'Biomass Monthly Production',
-    'geothermal':         'Geothermal Monthly Production',
-    'gas':                'Gas Monthly Production',
-    'coal':               'Coal Monthly Production',
-    'nuclear':            'Nuclear Monthly Production',
-    'oil':                'Oil Monthly Production',
-    'waste':              'Waste Monthly Production',
-    'all-renewables':     'All Renewables Monthly Production',
-    'total':              'Total Generation Monthly Production',
+    'solar':          'Solar Monthly Production',
+    'wind':           'Wind Monthly Production',
+    'hydro':          'Hydro Monthly Production',
+    'biomass':        'Biomass Monthly Production',
+    'geothermal':     'Geothermal Monthly Production',
+    'gas':            'Gas Monthly Production',
+    'coal':           'Coal Monthly Production',
+    'nuclear':        'Nuclear Monthly Production',
+    'oil':            'Oil Monthly Production',
+    'waste':          'Waste Monthly Production',
+    'all-renewables': 'All Renewables Monthly Production',
+    'total':          'Total Generation Monthly Production',
+    # all-non-renewables is derived: Total - All Renewables
 }
 
 FIXED_SCALE_MAX = {
@@ -127,6 +128,7 @@ LABEL_OFFSETS = {
     'SE': (-130000, -300000),
     'DE': (80000, 0),
     'HR': (80000, 0),
+    'CH': (80000, 0),
 }
 
 CONTEXT_LABEL_OFFSETS = {
@@ -138,7 +140,7 @@ CONTEXT_LABEL_OFFSETS = {
 # Malta position (too small for 110m shapefile)
 MT_X, MT_Y = 4721805, 1408134
 
-# Context countries: shown with light fill, solid white border, labeled
+# Context countries: labeled but not in dashboard
 CONTEXT_COUNTRIES = [
     'Russia', 'Belarus', 'Turkey', 'Ukraine', 'Serbia', 'Albania',
     'Bosnia and Herz.', 'North Macedonia', 'Montenegro', 'Kosovo'
@@ -172,7 +174,7 @@ def load_world_geodata(shapefile_path):
     - Assign correct ISO2 codes
     - Fix Crimea to Ukraine
     - Reproject to EPSG:3035
-    - Build label coordinate transformer
+    - Clip to European bounding box
     """
     print("📂 Loading shapefile...")
     world = gpd.read_file(shapefile_path)
@@ -189,7 +191,7 @@ def load_world_geodata(shapefile_path):
     world.loc[ukraine_idx, 'geometry'] = unary_union([ukraine_geom, crimea_geom])
     print("  ✓ Crimea reassigned to Ukraine")
 
-    # Reproject
+    # Reproject to EPSG:3035
     world_proj = world.to_crs('EPSG:3035')
 
     # Clip all geometries to European bounding box
@@ -198,14 +200,6 @@ def load_world_geodata(shapefile_path):
 
     # Transformer for label coordinates WGS84 -> EPSG:3035
     transformer = pyproj.Transformer.from_crs('EPSG:4326', 'EPSG:3035', always_xy=True)
-
-    # Build Europe background (excludes Iceland and context countries)
-    europe_proj = world_proj[
-        (world_proj['CONTINENT'] == 'Europe') | (world_proj['iso2'].isin(ENTSOE_COUNTRIES))
-    ]
-    europe_proj = europe_proj[~europe_proj['NAME'].isin(['Iceland'] + CONTEXT_COUNTRIES)].copy()
-    europe_proj['geometry'] = europe_proj['geometry'].intersection(EUROPE_CLIP_BOX)
-    europe_proj = europe_proj[~europe_proj['geometry'].is_empty]
 
     # Iceland relocated above UK
     iceland_row = world_proj[world_proj['NAME'] == 'Iceland']
@@ -231,13 +225,12 @@ def load_world_geodata(shapefile_path):
     print(f"  ✓ Map bounds computed, {len(our_countries)} ENTSO-E countries loaded")
 
     return {
-        'world': world,
-        'world_proj': world_proj,
-        'world_proj_clipped': world_proj_clipped,
-        'europe_proj': europe_proj,
-        'iceland_shifted': iceland_shifted,
-        'transformer': transformer,
-        'bounds': (minx - pad_x, miny - pad_y, maxx + pad_x, maxy + pad_y),
+        'world':               world,
+        'world_proj':          world_proj,
+        'world_proj_clipped':  world_proj_clipped,
+        'iceland_shifted':     iceland_shifted,
+        'transformer':         transformer,
+        'bounds':              (minx - pad_x, miny - pad_y, maxx + pad_x, maxy + pad_y),
     }
 
 
@@ -265,9 +258,15 @@ def generate_map(geodata, values_by_country, source, date_str, scale='fixed'):
     """
     Generate a single map for one source and one date.
 
+    Hatching rule (consistent):
+    - Any country WITHOUT data (None) -> white + gray hatch
+    - Any country WITH data (including 0.0) -> colored by value
+
+    This applies to: context countries, ENTSO-E NaN countries, Iceland.
+
     Args:
         geodata: dict from load_world_geodata
-        values_by_country: dict {country_iso2: percentage_value}
+        values_by_country: dict {country_iso2: percentage or None}
         source: e.g. 'solar'
         date_str: e.g. '14 May 2026'
         scale: 'fixed' or 'dynamic'
@@ -276,7 +275,6 @@ def generate_map(geodata, values_by_country, source, date_str, scale='fixed'):
         matplotlib Figure
     """
     world_proj_clipped = geodata['world_proj_clipped']
-    europe_proj        = geodata['europe_proj']
     iceland_shifted    = geodata['iceland_shifted']
     minx, miny, maxx, maxy = geodata['bounds']
 
@@ -291,6 +289,11 @@ def generate_map(geodata, values_by_country, source, date_str, scale='fixed'):
 
     norm = Normalize(vmin=0, vmax=vmax)
 
+    def plot_hatched(gdf, ax, zorder):
+        """White base + gray diagonal stripes = no data"""
+        gdf.plot(ax=ax, color='white', edgecolor='#bbbbbb', linewidth=0.6, zorder=zorder)
+        gdf.plot(ax=ax, color='none', edgecolor='#999999', linewidth=0.6, hatch='//', zorder=zorder)
+
     fig, ax = plt.subplots(figsize=(12, 12))
     fig.patches.append(Rectangle(
         (0, 0.86), 1.0, 0.14,
@@ -300,38 +303,45 @@ def generate_map(geodata, values_by_country, source, date_str, scale='fixed'):
     plt.subplots_adjust(left=0.01, right=0.89, top=0.84, bottom=0.01)
     ax.set_facecolor('#cce6ff')
 
-    # Context countries: light fill, solid white border
-    context_gdf = world_proj_clipped[world_proj_clipped['NAME'].isin(CONTEXT_COUNTRIES)]
-    context_gdf = context_gdf[~context_gdf['geometry'].is_empty].copy()
-    context_gdf.plot(ax=ax, color='#f0f0f0', edgecolor='white', linewidth=0.5, zorder=1)
+    # Draw ALL non-ENTSO-E European countries as hatched (no data)
+    # This includes context countries (RU, BY, TR, UA, Balkans) and
+    # tiny countries (Liechtenstein, San Marino, Monaco etc.)
+    all_non_entsoe = world_proj_clipped[
+        ~world_proj_clipped['iso2'].isin(ENTSOE_COUNTRIES) &
+        (world_proj_clipped['CONTINENT'] == 'Europe') |
+        world_proj_clipped['NAME'].isin(CONTEXT_COUNTRIES)
+    ]
+    all_non_entsoe = all_non_entsoe[~all_non_entsoe['NAME'].isin(['Iceland'])].copy()
+    all_non_entsoe = all_non_entsoe[~all_non_entsoe['geometry'].is_empty]
+    plot_hatched(all_non_entsoe, ax, zorder=1)
 
-    # Gray background for non-ENTSO-E European countries
-    europe_proj.plot(ax=ax, color='#e0e0e0', edgecolor='white', linewidth=0.5, zorder=2)
-
-    # ENTSO-E countries colored by value
+    # ENTSO-E countries: colored if data, hatched if None
     for cc in ENTSOE_COUNTRIES:
         country_geom = world_proj_clipped[world_proj_clipped['iso2'] == cc]
         country_geom = country_geom[~country_geom['geometry'].is_empty]
         if country_geom.empty:
             continue
         val = values_by_country.get(cc)
-        color = cmap(norm(val)) if val is not None else '#cccccc'
-        country_geom.plot(ax=ax, color=color, edgecolor='white', linewidth=0.8, zorder=3)
+        if val is None:
+            plot_hatched(country_geom, ax, zorder=2)
+        else:
+            country_geom.plot(ax=ax, color=cmap(norm(val)),
+                              edgecolor='#bbbbbb', linewidth=0.6, zorder=2)
 
-    # Iceland (relocated)
+    # Iceland (relocated): hatched -- no data
     if iceland_shifted is not None:
         iceland_gdf = gpd.GeoDataFrame(geometry=[iceland_shifted], crs=world_proj_clipped.crs)
-        iceland_gdf.plot(ax=ax, color='#e0e0e0', edgecolor='white', linewidth=0.8, zorder=4)
+        plot_hatched(iceland_gdf, ax, zorder=3)
         b = iceland_shifted.bounds
         pad = 50000
         ax.add_patch(Rectangle(
             (b[0]-pad, b[1]-pad), b[2]-b[0]+2*pad, b[3]-b[1]+2*pad,
             linewidth=2.0, edgecolor='#555555', facecolor='none',
-            linestyle=(0, (6, 3)), zorder=5
+            linestyle=(0, (6, 3)), zorder=4
         ))
         ax.text((b[0]+b[2])/2, (b[1]+b[3])/2 - 50000, 'IS',
                 fontsize=14, fontweight='bold',
-                ha='center', va='center', color='black', zorder=6,
+                ha='center', va='center', color='black', zorder=5,
                 path_effects=[pe.withStroke(linewidth=2.5, foreground='white')])
 
     # ENTSO-E country labels
@@ -345,13 +355,13 @@ def generate_map(geodata, values_by_country, source, date_str, scale='fixed'):
         if minx <= lx <= maxx and miny <= ly <= maxy:
             ax.text(lx, ly, DISPLAY_LABEL.get(cc, cc),
                     fontsize=14, fontweight='bold',
-                    ha='center', va='center', color='black', zorder=7,
+                    ha='center', va='center', color='black', zorder=6,
                     path_effects=[pe.withStroke(linewidth=2.5, foreground='white')])
 
     # Malta label (no polygon in 110m dataset)
     ax.text(MT_X + 80000, MT_Y + 60000, 'MT',
             fontsize=14, fontweight='bold',
-            ha='center', va='center', color='black', zorder=7,
+            ha='center', va='center', color='black', zorder=6,
             path_effects=[pe.withStroke(linewidth=2.5, foreground='white')])
 
     # Context country labels
@@ -365,7 +375,7 @@ def generate_map(geodata, values_by_country, source, date_str, scale='fixed'):
         if minx <= lx <= maxx and miny <= ly <= maxy:
             ax.text(lx, ly, label,
                     fontsize=size, fontweight=weight,
-                    ha='center', va='center', color=color, zorder=7,
+                    ha='center', va='center', color=color, zorder=6,
                     path_effects=[pe.withStroke(linewidth=2.0, foreground='white')])
 
     ax.set_xlim(minx, maxx)
@@ -421,6 +431,7 @@ def load_monthly_data_for_country(gc, country_code, source):
     """
     Load monthly GWh data for a specific country and source from Google Sheets.
     Returns dict: {year: {month: gwh}}
+    Note: all-non-renewables is not stored directly -- use compute_non_renewables().
     """
     spreadsheet = get_spreadsheet(gc, country_code)
     ws_name = WORKSHEET_NAMES.get(source)
@@ -452,29 +463,47 @@ def load_monthly_data_for_country(gc, country_code, source):
         return {}
 
 
-def get_yesterday_percentages(gc, source):
+def compute_percentage(source_val, total_val):
     """
-    Get yesterday's percentage for each ENTSO-E country for a given source.
-    Reads from Summary Table Data worksheet for EU, then individual countries.
-    Returns dict {country_iso2: percentage}
+    Compute percentage with correct None vs 0 logic:
+    - None if total is missing/zero -> hatch (can't compute)
+    - 0.0 if source is missing but total available -> white (assume zero generation)
+    - percentage otherwise
     """
-    yesterday = datetime.now() - timedelta(days=1)
-    month = yesterday.month
+    if total_val is None or total_val == 0:
+        return None
+    if source_val is None:
+        return 0.0
+    return round(source_val / total_val * 100, 2)
 
+
+def get_values_for_period(gc, source, year, month):
+    """
+    Get percentage for each ENTSO-E country for a specific year/month.
+    Handles all-non-renewables by computing Total - All Renewables.
+    Returns dict {country_iso2: percentage or None}
+    """
     values = {}
+    is_non_renewables = (source == 'all-non-renewables')
+
     for country_code in ENTSOE_COUNTRIES:
         try:
-            source_data = load_monthly_data_for_country(gc, country_code, source)
             total_data = load_monthly_data_for_country(gc, country_code, 'total')
+            total_val  = total_data.get(year, {}).get(month, None)
 
-            current_year = datetime.now().year
-            source_val = source_data.get(current_year, {}).get(month, None)
-            total_val = total_data.get(current_year, {}).get(month, None)
-
-            if source_val is not None and total_val and total_val > 0:
-                values[country_code] = round(source_val / total_val * 100, 2)
+            if is_non_renewables:
+                ren_data  = load_monthly_data_for_country(gc, country_code, 'all-renewables')
+                ren_val   = ren_data.get(year, {}).get(month, None)
+                # Non-renewables = Total - Renewables
+                if total_val and total_val > 0 and ren_val is not None:
+                    source_val = max(0, total_val - ren_val)
+                else:
+                    source_val = None
             else:
-                values[country_code] = None
+                source_data = load_monthly_data_for_country(gc, country_code, source)
+                source_val  = source_data.get(year, {}).get(month, None)
+
+            values[country_code] = compute_percentage(source_val, total_val)
         except Exception as e:
             print(f"  ⚠ {country_code}: {e}")
             values[country_code] = None
@@ -482,53 +511,28 @@ def get_yesterday_percentages(gc, source):
     return values
 
 
-def get_last_month_percentages(gc, source):
-    """
-    Get last completed month's percentage for each country.
-    Returns dict {country_iso2: percentage}
-    """
-    today = datetime.now()
-    last_month = today.month - 1 if today.month > 1 else 12
-    year = today.year if today.month > 1 else today.year - 1
-
-    values = {}
-    for country_code in ENTSOE_COUNTRIES:
-        try:
-            source_data = load_monthly_data_for_country(gc, country_code, source)
-            total_data = load_monthly_data_for_country(gc, country_code, 'total')
-
-            source_val = source_data.get(year, {}).get(last_month, None)
-            total_val = total_data.get(year, {}).get(last_month, None)
-
-            if source_val is not None and total_val and total_val > 0:
-                values[country_code] = round(source_val / total_val * 100, 2)
-            else:
-                values[country_code] = None
-        except Exception as e:
-            print(f"  ⚠ {country_code}: {e}")
-            values[country_code] = None
-
-    return values
-
-
-def get_annual_percentages(gc, source, year):
+def get_annual_values(gc, source, year):
     """
     Get full-year percentage for each country for a given year.
-    Returns dict {country_iso2: percentage}
+    Returns dict {country_iso2: percentage or None}
     """
     values = {}
+    is_non_renewables = (source == 'all-non-renewables')
+
     for country_code in ENTSOE_COUNTRIES:
         try:
-            source_data = load_monthly_data_for_country(gc, country_code, source)
-            total_data = load_monthly_data_for_country(gc, country_code, 'total')
+            total_data  = load_monthly_data_for_country(gc, country_code, 'total')
+            total_total = sum(total_data.get(year, {}).values()) if total_data.get(year) else None
 
-            source_total = sum(source_data.get(year, {}).values())
-            total_total = sum(total_data.get(year, {}).values())
-
-            if total_total > 0:
-                values[country_code] = round(source_total / total_total * 100, 2)
+            if is_non_renewables:
+                ren_data  = load_monthly_data_for_country(gc, country_code, 'all-renewables')
+                ren_total = sum(ren_data.get(year, {}).values()) if ren_data.get(year) else None
+                source_total = max(0, total_total - ren_total) if (total_total and ren_total is not None) else None
             else:
-                values[country_code] = None
+                source_data  = load_monthly_data_for_country(gc, country_code, source)
+                source_total = sum(source_data.get(year, {}).values()) if source_data.get(year) else None
+
+            values[country_code] = compute_percentage(source_total, total_total)
         except Exception as e:
             print(f"  ⚠ {country_code}: {e}")
             values[country_code] = None
@@ -570,20 +574,16 @@ def get_or_create_folder(service, folder_name, parent_id=None):
 
 def upload_map_to_drive(service, file_path, period, year=None):
     """
-    Upload map to EU-Electricity-Plots/Maps/{period}/[{year}/]{source}.png
+    Upload map to EU-Electricity-Plots/Maps/{period}/[{year}/]{filename}
     Returns dict with file_id, view_url, direct_url or None.
     """
     if not GDRIVE_AVAILABLE or service is None:
         return None
     try:
-        root_id  = get_or_create_folder(service, 'EU-Electricity-Plots')
-        maps_id  = get_or_create_folder(service, 'Maps', root_id)
+        root_id   = get_or_create_folder(service, 'EU-Electricity-Plots')
+        maps_id   = get_or_create_folder(service, 'Maps', root_id)
         period_id = get_or_create_folder(service, period, maps_id)
-
-        if year is not None:
-            folder_id = get_or_create_folder(service, str(year), period_id)
-        else:
-            folder_id = period_id
+        folder_id = get_or_create_folder(service, str(year), period_id) if year else period_id
 
         filename = os.path.basename(file_path)
         query = f"name='{filename}' and '{folder_id}' in parents and trashed=false"
@@ -689,21 +689,11 @@ def main():
     # Determine sources to process
     sources = [args.source] if args.source else list(ENTSOE_COLORS.keys())
 
-    # Determine date label and years for annual
-    today = datetime.now()
-    yesterday = today - timedelta(days=1)
+    # Date info
+    today          = datetime.now()
+    yesterday      = today - timedelta(days=1)
     last_month_num = today.month - 1 if today.month > 1 else 12
     last_month_year = today.year if today.month > 1 else today.year - 1
-
-    if args.period == 'yesterday':
-        date_str = yesterday.strftime('%d %B %Y')
-        period_folder = 'Yesterday'
-    elif args.period == 'last_month':
-        date_str = datetime(last_month_year, last_month_num, 1).strftime('%B %Y')
-        period_folder = 'LastMonth'
-    else:  # annual
-        # Process all years from 2015 to current
-        years_to_process = list(range(2015, today.year + 1))
 
     os.makedirs('plots', exist_ok=True)
 
@@ -716,40 +706,45 @@ def main():
         print(f"\n--- {DISPLAY_NAMES.get(source, source)} ---")
 
         if args.period == 'annual':
-            for year in years_to_process:
+            for year in range(2015, today.year + 1):
                 print(f"  Year {year}...")
-                values = get_annual_percentages(gc, source, year)
+                values   = get_annual_values(gc, source, year)
                 date_str = str(year)
-
-                fig = generate_map(geodata, values, source, date_str, scale=args.scale)
-
+                fig      = generate_map(geodata, values, source, date_str, scale=args.scale)
                 plot_file = f'plots/map_{source}_{year}.png'
                 fig.savefig(plot_file, dpi=150, facecolor='white')
                 plt.close(fig)
                 print(f"  ✓ Saved: {plot_file}")
-
                 if drive_service:
                     result = upload_map_to_drive(drive_service, plot_file, 'Annual', year=year)
                     if result:
                         save_map_links('Annual', source, result, year=year)
 
-        else:
-            if args.period == 'yesterday':
-                values = get_yesterday_percentages(gc, source)
-            else:
-                values = get_last_month_percentages(gc, source)
-
-            fig = generate_map(geodata, values, source, date_str, scale=args.scale)
-
-            plot_file = f'plots/map_{source}_{args.period}.png'
+        elif args.period == 'yesterday':
+            date_str = yesterday.strftime('%d %B %Y')
+            values   = get_values_for_period(gc, source, yesterday.year, yesterday.month)
+            fig      = generate_map(geodata, values, source, date_str, scale=args.scale)
+            plot_file = f'plots/map_{source}_yesterday.png'
             fig.savefig(plot_file, dpi=150, facecolor='white')
             plt.close(fig)
             print(f"  ✓ Saved: {plot_file}")
-
             if drive_service:
-                result = upload_map_to_drive(drive_service, plot_file, period_folder)
+                result = upload_map_to_drive(drive_service, plot_file, 'Yesterday')
                 if result:
-                    save_map_links(period_folder, source, result)
+                    save_map_links('Yesterday', source, result)
+
+        else:  # last_month
+            date_str = datetime(last_month_year, last_month_num, 1).strftime('%B %Y')
+            values   = get_values_for_period(gc, source, last_month_year, last_month_num)
+            fig      = generate_map(geodata, values, source, date_str, scale=args.scale)
+            plot_file = f'plots/map_{source}_last_month.png'
+            fig.savefig(plot_file, dpi=150, facecolor='white')
+            plt.close(fig)
+            print(f"  ✓ Saved: {plot_file}")
+            if drive_service:
+                result = upload_map_to_drive(drive_service, plot_file, 'LastMonth')
+                if result:
+                    save_map_links('LastMonth', source, result)
 
     print("\n" + "=" * 60)
     print("DONE")
