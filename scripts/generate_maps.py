@@ -127,7 +127,6 @@ LABEL_OFFSETS = {
     'SE': (-130000, -300000),
     'DE': (80000, 0),
     'HR': (80000, 0),
-    'CH': (80000, 0),
 }
 
 CONTEXT_LABEL_OFFSETS = {
