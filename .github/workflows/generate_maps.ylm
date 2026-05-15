@@ -1,0 +1,71 @@
+name: Generate Maps
+
+on:
+  workflow_dispatch:
+    inputs:
+      period:
+        description: 'Time period'
+        required: false
+        default: 'yesterday'
+        type: choice
+        options:
+          - yesterday
+          - last_month
+          - annual
+      source:
+        description: 'Energy source (leave empty for all)'
+        required: false
+        default: ''
+      scale:
+        description: 'Color scale'
+        required: false
+        default: 'fixed'
+        type: choice
+        options:
+          - fixed
+          - dynamic
+
+permissions:
+  contents: write
+
+jobs:
+  generate-maps:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: |
+          pip install geopandas matplotlib numpy pyproj shapely \
+                      gspread google-auth google-auth-oauthlib \
+                      google-auth-httplib2 google-api-python-client \
+                      pandas pyproj
+
+      - name: Create plots directory
+        run: mkdir -p plots
+
+      - name: Generate maps
+        env:
+          GOOGLE_CREDENTIALS_JSON: ${{ secrets.GOOGLE_CREDENTIALS_JSON }}
+        run: |
+          ARGS="--period ${{ github.event.inputs.period }} --scale ${{ github.event.inputs.scale }}"
+          if [ -n "${{ github.event.inputs.source }}" ]; then
+            ARGS="$ARGS --source ${{ github.event.inputs.source }}"
+          fi
+          python scripts/generate_maps.py $ARGS
+
+      - name: Commit updated drive_links.json
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git add -f plots/drive_links.json || true
+          git diff --staged --quiet || git commit -m "Update map drive links [skip ci]"
+          git pull --rebase origin main || true
+          git push || true
