@@ -20,44 +20,7 @@ except ImportError:
     GDRIVE_AVAILABLE = False
     print("⚠ Google Drive API not available - plots will not be uploaded to Drive")
 
-from config import ENTSOE_COUNTRIES, ENTSOE_COLORS, DISPLAY_NAMES
-
-# Country display names
-COUNTRY_DISPLAY_NAMES = {
-    'EU': 'European Union',
-    'DE': 'Germany',
-    'FR': 'France',
-    'ES': 'Spain',
-    'IT': 'Italy',
-    'PL': 'Poland',
-    'NL': 'Netherlands',
-    'BE': 'Belgium',
-    'SE': 'Sweden',
-    'AT': 'Austria',
-    'CZ': 'Czechia',
-    'RO': 'Romania',
-    'PT': 'Portugal',
-    'GR': 'Greece',
-    'DK': 'Denmark',
-    'FI': 'Finland',
-    'SK': 'Slovakia',
-    'IE': 'Ireland',
-    'HR': 'Croatia',
-    'BG': 'Bulgaria',
-    'LT': 'Lithuania',
-    'SI': 'Slovenia',
-    'HU': 'Hungary',
-    'LV': 'Latvia',
-    'EE': 'Estonia',
-    'LU': 'Luxembourg',
-    'CY': 'Cyprus',
-    'MT': 'Malta',
-    'GB': 'United Kingdom',
-    'NO': 'Norway',
-    'CH': 'Switzerland',
-    'MD': 'Moldova'
-}
-
+from config import ENTSOE_COUNTRIES, ENTSOE_COLORS, DISPLAY_NAMES, COUNTRY_DISPLAY_NAMES
 
 # === GOOGLE DRIVE FUNCTIONS (ADDED FROM AFTER VERSION) ===
 
