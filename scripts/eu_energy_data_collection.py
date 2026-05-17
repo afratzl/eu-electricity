@@ -10,19 +10,10 @@ import sys
 import argparse
 import time
 
-
-non_eu_countries = ['NO', 'CH', 'GB', 'MD']
-# EU country codes (most countries in the EU)
-eu_countries = [
-    'AT', 'BE', 'BG', 'HR', 'CY', 'CZ', 'DK', 'EE', 'FI', 'FR',
-    'DE', 'GR', 'HU', 'IE', 'IT', 'LV', 'LT', 'LU', 'MT', 'NL',
-    'PL', 'PT', 'RO', 'SK', 'SI', 'ES', 'SE'
-]
-
 # Define energy source categories to analyze
 # Define energy source categories to analyze
 # Keywords match exact ENTSO-E column names (verified against transparency platform)
-from config import SOURCE_KEYWORDS as _SK
+from config import EU_COUNTRIES as eu_countries, NON_EU_COUNTRIES as non_eu_countries, SOURCE_KEYWORDS as _SK
 
 energy_sources = {
     'Solar':        _SK['solar'],
