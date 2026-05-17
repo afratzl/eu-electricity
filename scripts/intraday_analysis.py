@@ -1030,42 +1030,6 @@ def plot_analysis(stats_data, source_type, output_file_base, country_code='EU'):
         print("No data for plotting")
         return None, None
     
-    # Country display names
-    COUNTRY_DISPLAY_NAMES = {
-        'EU': 'European Union',
-        'DE': 'Germany',
-        'MD': 'Moldova',
-        'FR': 'France',
-        'ES': 'Spain',
-        'IT': 'Italy',
-        'PL': 'Poland',
-        'NL': 'Netherlands',
-        'BE': 'Belgium',
-        'AT': 'Austria',
-        'SE': 'Sweden',
-        'DK': 'Denmark',
-        'FI': 'Finland',
-        'NO': 'Norway',
-        'CH': 'Switzerland',
-        'GB': 'United Kingdom',
-        'PT': 'Portugal',
-        'GR': 'Greece',
-        'CZ': 'Czechia',
-        'RO': 'Romania',
-        'HU': 'Hungary',
-        'BG': 'Bulgaria',
-        'SK': 'Slovakia',
-        'SI': 'Slovenia',
-        'HR': 'Croatia',
-        'LT': 'Lithuania',
-        'LV': 'Latvia',
-        'EE': 'Estonia',
-        'IE': 'Ireland',
-        'LU': 'Luxembourg',
-        'MT': 'Malta',
-        'CY': 'Cyprus'
-    }
-    
     # Calculate dynamic years for legend labels
     from datetime import datetime
     current_year = datetime.now().year
@@ -2374,43 +2338,7 @@ def generate_yesterday_plots(corrected_data, country_code='EU'):
         'solar', 'wind', 'hydro', 'biomass', 'geothermal',
         'gas', 'coal', 'nuclear', 'oil', 'waste'
     ]
-    
-    # Country display names
-    COUNTRY_DISPLAY_NAMES = {
-        'EU': 'European Union',
-        'DE': 'Germany',
-        'ES': 'Spain',
-        'FR': 'France',
-        'IT': 'Italy',
-        'MD': 'Moldova',
-        'PL': 'Poland',
-        'NL': 'Netherlands',
-        'BE': 'Belgium',
-        'AT': 'Austria',
-        'SE': 'Sweden',
-        'DK': 'Denmark',
-        'FI': 'Finland',
-        'NO': 'Norway',
-        'CH': 'Switzerland',
-        'GB': 'United Kingdom',
-        'PT': 'Portugal',
-        'GR': 'Greece',
-        'CZ': 'Czechia',
-        'RO': 'Romania',
-        'HU': 'Hungary',
-        'BG': 'Bulgaria',
-        'SK': 'Slovakia',
-        'SI': 'Slovenia',
-        'HR': 'Croatia',
-        'LT': 'Lithuania',
-        'LV': 'Latvia',
-        'EE': 'Estonia',
-        'IE': 'Ireland',
-        'LU': 'Luxembourg',
-        'MT': 'Malta',
-        'CY': 'Cyprus'
-    }
-    
+
     country_name = COUNTRY_DISPLAY_NAMES.get(country_code, country_code)
     
     def load_flag(fig, country_code):
@@ -2918,42 +2846,6 @@ def generate_yesterday_aggregates_plots(corrected_data, country_code='EU'):
     
     # Aggregates are at top level of yesterday_projected
     aggregate_names = ['all-renewables', 'all-non-renewables']
-    
-    # Country display names
-    COUNTRY_DISPLAY_NAMES = {
-        'EU': 'European Union',
-        'DE': 'Germany',
-        'ES': 'Spain',
-        'FR': 'France',
-        'IT': 'Italy',
-        'MD': 'Moldova',
-        'PL': 'Poland',
-        'NL': 'Netherlands',
-        'BE': 'Belgium',
-        'AT': 'Austria',
-        'SE': 'Sweden',
-        'DK': 'Denmark',
-        'FI': 'Finland',
-        'NO': 'Norway',
-        'CH': 'Switzerland',
-        'GB': 'United Kingdom',
-        'PT': 'Portugal',
-        'GR': 'Greece',
-        'CZ': 'Czechia',
-        'RO': 'Romania',
-        'HU': 'Hungary',
-        'BG': 'Bulgaria',
-        'SK': 'Slovakia',
-        'SI': 'Slovenia',
-        'HR': 'Croatia',
-        'LT': 'Lithuania',
-        'LV': 'Latvia',
-        'EE': 'Estonia',
-        'IE': 'Ireland',
-        'LU': 'Luxembourg',
-        'MT': 'Malta',
-        'CY': 'Cyprus'
-    }
     
     country_name = COUNTRY_DISPLAY_NAMES.get(country_code, country_code)
     
