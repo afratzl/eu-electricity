@@ -126,6 +126,29 @@ SOURCE_KEYWORDS['all-non-renewables'] = (
 )
 
 # ============================================================
+# ENERGY SOURCES MAPPING
+# Maps display names to ENTSO-E API column keywords
+# 'Total Generation' is a special case: sum all columns
+# ============================================================
+
+ENERGY_SOURCES = {
+    'Solar':            SOURCE_KEYWORDS['solar'],
+    'Wind Onshore':     ['Wind Onshore'],
+    'Wind Offshore':    ['Wind Offshore'],
+    'Wind':             SOURCE_KEYWORDS['wind'],
+    'Hydro':            SOURCE_KEYWORDS['hydro'],
+    'Biomass':          SOURCE_KEYWORDS['biomass'],
+    'Geothermal':       SOURCE_KEYWORDS['geothermal'],
+    'Gas':              SOURCE_KEYWORDS['gas'],
+    'Coal':             SOURCE_KEYWORDS['coal'],
+    'Nuclear':          SOURCE_KEYWORDS['nuclear'],
+    'Oil':              SOURCE_KEYWORDS['oil'],
+    'Waste':            SOURCE_KEYWORDS['waste'],
+    'All Renewables':   SOURCE_KEYWORDS['all-renewables'],
+    'Total Generation': 'ALL',
+}
+
+# ============================================================
 # DISPLAY NAMES
 # ============================================================
 
