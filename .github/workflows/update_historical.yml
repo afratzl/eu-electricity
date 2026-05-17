@@ -61,7 +61,9 @@ jobs:
           
           CMD="python scripts/eu_energy_data_collection.py --years $YEAR_START $YEAR_END"
           if [ -n "$COUNTRY" ]; then
-            CMD="$CMD --countries $COUNTRY"
+            # Strip commas in case user enters "RS, BA, ME" instead of "RS BA ME"
+            COUNTRY_CLEAN=$(echo "$COUNTRY" | tr ',' ' ' | tr -s ' ')
+            CMD="$CMD --countries $COUNTRY_CLEAN"
           fi
           
           echo "Running: $CMD"
