@@ -105,8 +105,8 @@ AGGREGATE_DEFINITIONS = {
 }
 
 # Energy source keyword mapping
-from config import (EU_COUNTRIES, NON_EU_COUNTRIES, ENTSOE_COUNTRIES,
-                    SOURCE_KEYWORDS, DISPLAY_NAMES, ENTSOE_COLORS)
+from config import EU_COUNTRIES, NON_EU_COUNTRIES, ENTSOE_COUNTRIES, SOURCE_KEYWORDS, DISPLAY_NAMES, ENTSOE_COLORS, COUNTRY_DISPLAY_NAMES
+
 
 def format_change_percentage(value):
     """
