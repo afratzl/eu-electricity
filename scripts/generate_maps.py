@@ -107,7 +107,7 @@ FIXED_SCALE_MAX = {
     'wind':               70,
     'hydro':              80,
     'biomass':            30,
-    'geothermal':         30,
+    'geothermal':         5,
     'gas':                70,
     'coal':               60,
     'nuclear':            80,
@@ -123,12 +123,12 @@ DISPLAY_LABEL = {'GB': 'UK'}
 # Label position offsets in EPSG:3035 metres
 LABEL_OFFSETS = {
     'CY': (-180000, 0),
-    'AT': (80000, 0),
+    'AT': (50000, 0),
     'GB': (30000, -80000),
     'SE': (-130000, -300000),
-    'DE': (80000, 0),
+    'DE': (50000, 0),
     'HR': (80000, 0),
-    'CH': (80000, 0),
+    'CH': (50000, 0),
 }
 
 CONTEXT_LABEL_OFFSETS = {
@@ -138,19 +138,20 @@ CONTEXT_LABEL_OFFSETS = {
 }
 
 # Malta position (too small for 110m shapefile)
-MT_X, MT_Y = 4721805, 1408134
+MT_X, MT_Y = 4721805, 1408134 - 60000
 
 # Context countries: labeled but not in dashboard
 CONTEXT_COUNTRIES = [
     'Russia', 'Belarus', 'Turkey', 'Ukraine', 'Serbia', 'Albania',
-    'Bosnia and Herz.', 'North Macedonia', 'Montenegro', 'Kosovo'
+    'Bosnia and Herz.', 'North Macedonia', 'Montenegro', 'Kosovo',
+    'Georgia', 'Armenia', 'Azerbaijan'
 ]
 
 # label, fontweight, fontsize, color
 CONTEXT_LABELS = {
     'Russia':            ('RU', 'normal', 11, '#888888'),
     'Belarus':           ('BY', 'normal', 11, '#888888'),
-    'Turkey':            ('TR', 'normal', 11, '#888888'),
+    'Turkey':            ('TR', 'bold',   14, 'black'),
     'Ukraine':           ('UA', 'bold',   14, 'black'),
     'Serbia':            ('RS', 'bold',   14, 'black'),
     'Albania':           ('AL', 'bold',   14, 'black'),
@@ -158,10 +159,13 @@ CONTEXT_LABELS = {
     'North Macedonia':   ('MK', 'bold',   14, 'black'),
     'Montenegro':        ('ME', 'bold',   14, 'black'),
     'Kosovo':            ('XK', 'bold',   14, 'black'),
+    'Georgia':           ('GE', 'bold',   14, 'black'),
+    'Armenia':           ('AM', 'bold',   14, 'black'),
+    'Azerbaijan':        ('AZ', 'bold',   14, 'black'),
 }
 
 # Europe clip box in EPSG:3035 (removes overseas territories)
-EUROPE_CLIP_BOX = box(1200000, 900000, 7500000, 5900000)
+EUROPE_CLIP_BOX = box(1200000, 900000, 8000000, 5900000)
 
 
 # ============================================================
@@ -290,9 +294,9 @@ def generate_map(geodata, values_by_country, source, date_str, scale='fixed'):
     norm = Normalize(vmin=0, vmax=vmax)
 
     def plot_hatched(gdf, ax, zorder):
-        """White base + gray diagonal stripes = no data"""
+        """White base + light sparse diagonal stripes = no data"""
         gdf.plot(ax=ax, color='white', edgecolor='#bbbbbb', linewidth=0.6, zorder=zorder)
-        gdf.plot(ax=ax, color='none', edgecolor='#999999', linewidth=0.6, hatch='//', zorder=zorder)
+        gdf.plot(ax=ax, color='none', edgecolor='#cccccc', linewidth=0.6, hatch='/', zorder=zorder)
 
     fig, ax = plt.subplots(figsize=(12, 12))
     fig.patches.append(Rectangle(
@@ -300,7 +304,7 @@ def generate_map(geodata, values_by_country, source, date_str, scale='fixed'):
         transform=fig.transFigure,
         facecolor='#EBEBEB', edgecolor='none', zorder=0
     ))
-    plt.subplots_adjust(left=0.01, right=0.89, top=0.84, bottom=0.01)
+    plt.subplots_adjust(left=0.0, right=0.99, top=0.84, bottom=0.11)
     ax.set_facecolor('#cce6ff')
 
     # All non-ENTSO-E countries (except Iceland which is handled separately):
@@ -355,14 +359,14 @@ def generate_map(geodata, values_by_country, source, date_str, scale='fixed'):
         ox, oy = LABEL_OFFSETS.get(cc, (0, 0))
         lx += ox
         ly += oy
-        if minx <= lx <= maxx and miny <= ly <= maxy:
+        if minx <= lx <= maxx_extended + 50000 and miny <= ly <= maxy:
             ax.text(lx, ly, DISPLAY_LABEL.get(cc, cc),
                     fontsize=14, fontweight='bold',
                     ha='center', va='center', color='black', zorder=6,
                     path_effects=[pe.withStroke(linewidth=2.5, foreground='white')])
 
     # Malta label (no polygon in 110m dataset)
-    ax.text(MT_X + 80000, MT_Y + 60000, 'MT',
+    ax.text(MT_X + 80000, MT_Y + 60000, 'MT',  # MT_Y already adjusted (-60000)
             fontsize=14, fontweight='bold',
             ha='center', va='center', color='black', zorder=6,
             path_effects=[pe.withStroke(linewidth=2.5, foreground='white')])
@@ -375,13 +379,15 @@ def generate_map(geodata, values_by_country, source, date_str, scale='fixed'):
         ox, oy = CONTEXT_LABEL_OFFSETS.get(name, (0, 0))
         lx += ox
         ly += oy
-        if minx <= lx <= maxx and miny <= ly <= maxy:
+        if minx <= lx <= maxx_extended + 50000 and miny <= ly <= maxy:
             ax.text(lx, ly, label,
                     fontsize=size, fontweight=weight,
                     ha='center', va='center', color=color, zorder=6,
                     path_effects=[pe.withStroke(linewidth=2.0, foreground='white')])
 
-    ax.set_xlim(minx, maxx)
+    # Extend east to include Caucasus
+    maxx_extended = 7550000
+    ax.set_xlim(minx, maxx_extended + 50000)
     ax.set_ylim(miny, maxy)
     ax.set_aspect('equal')
     ax.axis('off')
@@ -393,19 +399,21 @@ def generate_map(geodata, values_by_country, source, date_str, scale='fixed'):
     fig.text(0.5, 0.91, f'{source_display} · Fraction of Total · {date_str}',
              fontsize=28, fontweight='normal', ha='center', va='top')
 
-    # Vertical colorbar
+    # Horizontal colorbar below map
     sm = plt.cm.ScalarMappable(cmap=cmap, norm=norm)
     sm.set_array([])
-    cbar_ax = fig.add_axes([0.875, 0.05, 0.03, 0.77])
-    cbar = fig.colorbar(sm, cax=cbar_ax, orientation='vertical')
-    cbar.set_label('Fraction of Total (%)', fontsize=22, labelpad=20)
-    cbar.ax.tick_params(labelsize=20)
+    cbar_ax = fig.add_axes([0.07, 0.075, 0.86, 0.025])
+    cbar = fig.colorbar(sm, cax=cbar_ax, orientation='horizontal')
+    cbar.ax.xaxis.set_ticks_position('bottom')
+    cbar.ax.xaxis.set_label_position('bottom')
+    cbar.set_label('Fraction of Total (%)', fontsize=18, labelpad=12)
+    cbar.ax.tick_params(labelsize=18)
 
     # Watermark
     timestamp = datetime.now().strftime('%Y-%m-%d %H:%M UTC')
-    fig.text(0.02, 0.012, "eu-electricity.eu",
+    fig.text(0.02, 0.028, "eu-electricity.eu",
              ha='left', va='top', fontsize=12, color='#666', style='italic')
-    fig.text(0.88, 0.012, f"Generated: {timestamp}",
+    fig.text(0.98, 0.028, f"Generated: {timestamp}",
              ha='right', va='top', fontsize=12, color='#666', style='italic')
 
     return fig
