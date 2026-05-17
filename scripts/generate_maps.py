@@ -250,6 +250,7 @@ def generate_map(geodata, values_by_country, source, date_str, scale='fixed'):
     world_proj_clipped = geodata['world_proj_clipped']
     iceland_shifted    = geodata['iceland_shifted']
     minx, miny, maxx, maxy = geodata['bounds']
+    maxx_extended = 7550000  # Extended east to include Caucasus
 
     source_color = ENTSOE_COLORS.get(source, '#888888')
     cmap = LinearSegmentedColormap.from_list(source, ['white', source_color])
@@ -354,8 +355,6 @@ def generate_map(geodata, values_by_country, source, date_str, scale='fixed'):
                     ha='center', va='center', color=color, zorder=6,
                     path_effects=[pe.withStroke(linewidth=2.0, foreground='white')])
 
-    # Extend east to include Caucasus
-    maxx_extended = 7550000
     ax.set_xlim(minx, maxx_extended + 50000)
     ax.set_ylim(miny, maxy)
     ax.set_aspect('equal')
