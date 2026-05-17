@@ -20,28 +20,7 @@ except ImportError:
     GDRIVE_AVAILABLE = False
     print("⚠ Google Drive API not available - plots will not be uploaded to Drive")
 
-# ENTSO-E COLOR PALETTE
-ENTSOE_COLORS = {
-    # Renewables
-    'Solar': '#FFD700',  # Gold
-    'Wind': '#228B22',  # Forest Green
-    'Wind Onshore': '#2E8B57',  # Sea Green
-    'Wind Offshore': '#008B8B',  # Dark Cyan
-    'Hydro': '#1E90FF',  # Dodger Blue
-    'Biomass': '#9ACD32',  # Yellow Green
-    'Geothermal': '#708090',  # Slate Gray
-
-    # Non-renewables
-    'Gas': '#FF1493',  # Deep Pink
-    'Coal': '#8B008B',  # Dark Magenta
-    'Nuclear': '#8B4513',  # Saddle Brown
-    'Oil': '#191970',  # Midnight Blue
-    'Waste': '#808000',  # Olive
-
-    # Totals
-    'All Renewables': '#00CED1',  # Dark Turquoise
-    'All Non-Renewables': '#000000'  # Black
-}
+from config import ENTSOE_COUNTRIES, ENTSOE_COLORS, DISPLAY_NAMES
 
 # Country display names
 COUNTRY_DISPLAY_NAMES = {
@@ -2966,10 +2945,8 @@ def main():
     args = parser.parse_args()
     
     # Define countries to process (should match data collection script)
-    countries_to_process = ['EU', 'AT', 'BE', 'BG', 'HR', 'CY', 'CZ', 'DK', 'EE', 'FI', 'FR',
-      'DE', 'GR', 'HU', 'IE', 'IT', 'LV', 'LT', 'LU', 'MT', 'NL',
-      'PL', 'PT', 'RO', 'SK', 'SI', 'ES', 'SE',
-      'NO', 'CH', 'GB', 'MD']
+    countries_to_process = ['EU'] + ENTSOE_COUNTRIES
+
     
     # If specific country requested, only process that one
     if args.country:
