@@ -93,3 +93,27 @@ DISPLAY_NAMES = {
     'all-renewables':     'All Renewables',
     'all-non-renewables': 'All Non-Renewables',
 }
+
+# ============================================================
+# COLORS
+# ============================================================
+
+ENTSOE_COLORS = {
+    # Renewables
+    'solar':              '#FFD700',  # Gold
+    'wind':               '#228B22',  # Forest Green
+    'wind-onshore':       '#2E8B57',  # Sea Green
+    'wind-offshore':      '#008B8B',  # Dark Cyan
+    'hydro':              '#1E90FF',  # Dodger Blue
+    'biomass':            '#9ACD32',  # Yellow Green
+    'geothermal':         '#708090',  # Slate Gray
+    # Non-renewables
+    'gas':                '#FF1493',  # Deep Pink
+    'coal':               '#8B008B',  # Dark Magenta
+    'nuclear':            '#8B4513',  # Saddle Brown
+    'oil':                '#191970',  # Midnight Blue
+    'waste':              '#808000',  # Olive
+    # Aggregates
+    'all-renewables':     '#00CED1',  # Dark Turquoise
+    'all-non-renewables': '#000000',  # Black
+}
