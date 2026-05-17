@@ -19,29 +19,6 @@ from entsoe import EntsoePandasClient
 import entsoe.entsoe
 import entsoe.parsers
 
-# Source colors from monthly/trends script (lowercase keys to match intraday)
-ENTSOE_COLORS = {
-    # Renewables
-    'solar': '#FFD700',  # Gold
-    'wind': '#228B22',  # Forest Green
-    'wind-onshore': '#2E8B57',  # Sea Green
-    'wind-offshore': '#008B8B',  # Dark Cyan
-    'hydro': '#1E90FF',  # Dodger Blue
-    'biomass': '#9ACD32',  # Yellow Green
-    'geothermal': '#708090',  # Slate Gray
-
-    # Non-renewables
-    'gas': '#FF1493',  # Deep Pink
-    'coal': '#8B008B',  # Dark Magenta
-    'nuclear': '#8B4513',  # Saddle Brown
-    'oil': '#191970',  # Midnight Blue
-    'waste': '#808000',  # Olive
-
-    # Totals
-    'all-renewables': '#00CED1',  # Dark Turquoise
-    'all-non-renewables': '#000000',  # Black
-}
-
 # CRITICAL: Set new API endpoint (ENTSO-E migration November 2024)
 # See: https://github.com/EnergieID/entsoe-py/issues/154
 entsoe.entsoe.URL = 'https://external-api.tp.entsoe.eu/api'
@@ -114,14 +91,6 @@ except ImportError:
 # Create plots directory
 os.makedirs('plots', exist_ok=True)
 
-NON_EU_COUNTRIES = ['NO', 'CH', 'GB', 'MD']
-# EU country codes
-EU_COUNTRIES = [
-    'AT', 'BE', 'BG', 'HR', 'CY', 'CZ', 'DK', 'EE', 'FI', 'FR',
-    'DE', 'GR', 'HU', 'IE', 'IT', 'LV', 'LT', 'LU', 'MT', 'NL',
-    'PL', 'PT', 'RO', 'SK', 'SI', 'ES', 'SE'
-]
-
 # Atomic sources (cannot be broken down further)
 ATOMIC_SOURCES = ['solar', 'wind', 'hydro', 'biomass', 'geothermal', 
                   'gas', 'coal', 'nuclear', 'oil', 'waste']
@@ -136,8 +105,8 @@ AGGREGATE_DEFINITIONS = {
 }
 
 # Energy source keyword mapping
-from config import SOURCE_KEYWORDS, DISPLAY_NAMES
-
+from config import (EU_COUNTRIES, NON_EU_COUNTRIES, ENTSOE_COUNTRIES,
+                    SOURCE_KEYWORDS, DISPLAY_NAMES, ENTSOE_COLORS)
 
 def format_change_percentage(value):
     """
@@ -3289,9 +3258,8 @@ def main():
         raw_data_matrix, periods, fetch_time = collect_all_data(api_key)
         
         # Countries to process
-        countries_to_process = ['EU','AT', 'BE', 'BG', 'HR', 'CY', 'CZ', 'DK', 'EE', 'FI', 'FR',
-          'DE', 'GR', 'HU', 'IE', 'IT', 'LV', 'LT', 'LU', 'MT', 'NL',
-          'PL', 'PT', 'RO', 'SK', 'SI', 'ES', 'SE','NO', 'CH', 'GB', 'MD']
+        countries_to_process = ['EU'] + ENTSOE_COUNTRIES
+
         total_plots_generated = {}  # Track plots per country
         
         print(f"\n" + "=" * 80)
