@@ -35,7 +35,7 @@ from shapely.ops import unary_union
 import pyproj
 import gspread
 from google.oauth2.service_account import Credentials
-from config import ENTSOE_COUNTRIES
+from config import ENTSOE_COUNTRIES, ENTSOE_COLORS, DISPLAY_NAMES
 
 try:
     from googleapiclient.discovery import build
@@ -52,35 +52,9 @@ except ImportError:
 
 # ENTSOE_COUNTRIES imported from config.py
 
-ENTSOE_COLORS = {
-    'solar':              '#FFD700',
-    'wind':               '#228B22',
-    'hydro':              '#1E90FF',
-    'biomass':            '#9ACD32',
-    'geothermal':         '#708090',
-    'gas':                '#FF1493',
-    'coal':               '#8B008B',
-    'nuclear':            '#8B4513',
-    'oil':                '#191970',
-    'waste':              '#808000',
-    'all-renewables':     '#00CED1',
-    'all-non-renewables': '#000000',
-}
+# ENTSOE_COLORS imported from config.py
 
-DISPLAY_NAMES = {
-    'solar':              'Solar',
-    'wind':               'Wind',
-    'hydro':              'Hydro',
-    'biomass':            'Biomass',
-    'geothermal':         'Geothermal',
-    'gas':                'Gas',
-    'coal':               'Coal',
-    'nuclear':            'Nuclear',
-    'oil':                'Oil',
-    'waste':              'Waste',
-    'all-renewables':     'All Renewables',
-    'all-non-renewables': 'All Non-Renewables',
-}
+# DISPLAY_NAMES imported from config.py
 
 # Worksheet name mapping (Google Sheets)
 # Note: all-non-renewables is derived as Total - All Renewables
