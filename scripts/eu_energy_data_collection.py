@@ -11,27 +11,9 @@ import argparse
 import time
 
 # Define energy source categories to analyze
-# Define energy source categories to analyze
 # Keywords match exact ENTSO-E column names (verified against transparency platform)
-from config import EU_COUNTRIES as eu_countries, NON_EU_COUNTRIES as non_eu_countries, SOURCE_KEYWORDS as _SK
-
-energy_sources = {
-    'Solar':        _SK['solar'],
-    'Wind Onshore': ['Wind Onshore'],
-    'Wind Offshore': ['Wind Offshore'],
-    'Wind':         _SK['wind'],
-    'Hydro':        _SK['hydro'],
-    'Biomass':      _SK['biomass'],
-    'Geothermal':   _SK['geothermal'],
-    'Gas':          _SK['gas'],
-    'Coal':         _SK['coal'],
-    'Nuclear':      _SK['nuclear'],
-    'Oil':          _SK['oil'],
-    'Waste':        _SK['waste'],
-    'All Renewables': _SK['all-renewables'],
-    'Total Generation': 'ALL'  # Special case: sum all ENTSO-E columns
-}
-
+from config import (EU_COUNTRIES as eu_countries, NON_EU_COUNTRIES as non_eu_countries,
+                    ENTSOE_COUNTRIES, SOURCE_KEYWORDS, ENERGY_SOURCES as energy_sources)
 
 def get_or_create_country_sheet(gc, drive_service, country_code='EU'):
     """
