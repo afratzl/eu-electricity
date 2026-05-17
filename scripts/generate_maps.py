@@ -607,7 +607,7 @@ def save_map_links(period, source, result, year=None):
 def main():
     parser = argparse.ArgumentParser(description='Generate EU electricity generation maps')
     parser.add_argument('--source', default=None,
-                        choices=list(ENTSOE_COLORS.keys()),
+                        choices=list(DISPLAY_NAMES.keys()),
                         help='Single source (default: all sources)')
     parser.add_argument('--period', default='yesterday',
                         choices=['yesterday', 'last_month', 'annual'],
@@ -637,7 +637,7 @@ def main():
     drive_service = initialize_drive_service()
 
     # Determine sources to process
-    sources = [args.source] if args.source else list(ENTSOE_COLORS.keys())
+    sources = [args.source] if args.source else list(DISPLAY_NAMES.keys())
 
     # Date info
     today           = datetime.now()
