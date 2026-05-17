@@ -37,32 +37,7 @@ except ImportError:
 # COLORS & DISPLAY CONFIG (copied from eu_energy_plotting.py)
 # ============================================================
 
-ENTSOE_COLORS = {
-    'Solar':      '#FFD700',
-    'Wind':       '#228B22',
-    'Hydro':      '#1E90FF',
-    'Biomass':    '#9ACD32',
-    'Geothermal': '#708090',
-    'Gas':        '#FF1493',
-    'Coal':       '#8B008B',
-    'Nuclear':    '#8B4513',
-    'Oil':        '#191970',
-    'Waste':      '#808000',
-    'All Renewables':     '#00CED1',
-    'All Non-Renewables': '#000000',
-}
-
-COUNTRY_DISPLAY_NAMES = {
-    'EU': 'European Union', 'DE': 'Germany', 'FR': 'France', 'ES': 'Spain',
-    'IT': 'Italy', 'PL': 'Poland', 'NL': 'Netherlands', 'BE': 'Belgium',
-    'SE': 'Sweden', 'AT': 'Austria', 'CZ': 'Czechia', 'RO': 'Romania',
-    'PT': 'Portugal', 'GR': 'Greece', 'DK': 'Denmark', 'FI': 'Finland',
-    'SK': 'Slovakia', 'IE': 'Ireland', 'HR': 'Croatia', 'BG': 'Bulgaria',
-    'LT': 'Lithuania', 'SI': 'Slovenia', 'HU': 'Hungary', 'LV': 'Latvia',
-    'EE': 'Estonia', 'LU': 'Luxembourg', 'CY': 'Cyprus', 'MT': 'Malta',
-    'GB': 'United Kingdom', 'NO': 'Norway', 'CH': 'Switzerland', 'MD': 'Moldova',
-}
-
+from config import ENTSOE_COLORS, COUNTRY_DISPLAY_NAMES
 ALL_SOURCES = ['Solar', 'Wind', 'Hydro', 'Biomass', 'Geothermal',
                'Nuclear', 'Gas', 'Coal', 'Oil', 'Waste']
 
