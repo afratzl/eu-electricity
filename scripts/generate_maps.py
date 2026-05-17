@@ -93,16 +93,20 @@ FIXED_SCALE_MAX = {
 LABEL_OFFSETS = {
     'CY': (-180000, 0),
     'AT': (50000, 0),
-    'GB': (30000, -80000),
     'SE': (-130000, -300000),
     'DE': (50000, 0),
     'HR': (80000, 0),
     'CH': (50000, 0),
+    'CZ': (-30000, -30000),
+    'ME': (-65000, 0),
+    'XK': (65000, 0),
 }
 
 CONTEXT_LABEL_OFFSETS = {
-    'Ukraine':       (0, -120000),
-    'United Kingdom': (30000, -80000),
+    'Ukraine':        (0, -120000),
+    'United Kingdom': (0, -150000),
+    'Armenia':        (-80000, 0),
+    'Azerbaijan':     (50000, 80000),
 }
 
 # Malta position (too small for 110m shapefile)
@@ -125,8 +129,9 @@ CONTEXT_LABELS = {
     'Ukraine':           ('UA', 'bold',   14, 'black'),
     'United Kingdom':    ('UK', 'bold',   14, 'black'),
     'Albania':           ('AL', 'bold',   14, 'black'),
+    'Armenia':           ('AM', 'bold',   14, 'black'),
+    'Azerbaijan':        ('AZ', 'bold',   14, 'black'),
     # RS, BA, ME, MK, XK, GE removed -- now in ENTSOE_COUNTRIES, labeled by ENTSO-E loop
-    # AM, AZ -- no data, not on visible map area
 }
 
 # Europe clip box in EPSG:3035 (removes overseas territories)
@@ -271,6 +276,7 @@ def generate_map(geodata, values_by_country, source, date_str, scale='fixed'):
         facecolor='#EBEBEB', edgecolor='none', zorder=0
     ))
     plt.subplots_adjust(left=0.0, right=0.99, top=0.84, bottom=0.11)
+    maxy_cropped = maxy + (maxy - miny) * 0.03 * 0.3  # crop top
     ax.set_facecolor('#cce6ff')
 
     # All non-ENTSO-E countries (except Iceland which is handled separately):
@@ -325,7 +331,7 @@ def generate_map(geodata, values_by_country, source, date_str, scale='fixed'):
         ox, oy = LABEL_OFFSETS.get(cc, (0, 0))
         lx += ox
         ly += oy
-        if minx <= lx <= maxx_extended + 50000 and miny <= ly <= maxy:
+        if minx <= lx <= maxx_extended + 50000 and miny <= ly <= maxy_cropped:
             ax.text(lx, ly, cc,
                     fontsize=14, fontweight='bold',
                     ha='center', va='center', color='black', zorder=6,
@@ -345,14 +351,14 @@ def generate_map(geodata, values_by_country, source, date_str, scale='fixed'):
         ox, oy = CONTEXT_LABEL_OFFSETS.get(name, (0, 0))
         lx += ox
         ly += oy
-        if minx <= lx <= maxx_extended + 50000 and miny <= ly <= maxy:
+        if minx <= lx <= maxx_extended + 50000 and miny <= ly <= maxy_cropped:
             ax.text(lx, ly, label,
                     fontsize=size, fontweight=weight,
                     ha='center', va='center', color=color, zorder=6,
                     path_effects=[pe.withStroke(linewidth=2.0, foreground='white')])
 
     ax.set_xlim(minx, maxx_extended + 50000)
-    ax.set_ylim(miny, maxy)
+    ax.set_ylim(miny, maxy_cropped)
     ax.set_aspect('equal')
     ax.axis('off')
 
