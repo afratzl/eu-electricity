@@ -4,7 +4,20 @@ on:
     # Daily updates for historical data (at 0:00 AM UTC)
     - cron: '0 0 * * *'
   
-  workflow_dispatch:  # Manual triggers still allowed
+  workflow_dispatch:
+    inputs:
+      years_start:
+        description: 'Start year (default: current year)'
+        required: false
+        default: ''
+      years_end:
+        description: 'End year (default: current year)'
+        required: false
+        default: ''
+      country:
+        description: 'Country code to process (default: all). E.g. DE, FR, EU, RS, BA, ME, MK, XK, GE'
+        required: false
+        default: ''
 
 permissions:
   contents: write
@@ -37,15 +50,36 @@ jobs:
           ENTSOE_API_KEY: ${{ secrets.ENTSOE_API_KEY }}
           GOOGLE_CREDENTIALS_JSON: ${{ secrets.GOOGLE_CREDENTIALS_JSON }}
         run: |
-          echo "Running daily historical data collection..."
-          python scripts/eu_energy_data_collection.py --years 2026 2026
+          # Build args: use inputs if provided, else default to current year
+          YEAR_START="${{ github.event.inputs.years_start }}"
+          YEAR_END="${{ github.event.inputs.years_end }}"
+          COUNTRY="${{ github.event.inputs.country }}"
+          
+          CURRENT_YEAR=$(date +%Y)
+          YEAR_START=${YEAR_START:-$CURRENT_YEAR}
+          YEAR_END=${YEAR_END:-$CURRENT_YEAR}
+          
+          CMD="python scripts/eu_energy_data_collection.py --years $YEAR_START $YEAR_END"
+          if [ -n "$COUNTRY" ]; then
+            CMD="$CMD --countries $COUNTRY"
+          fi
+          
+          echo "Running: $CMD"
+          eval $CMD
       
       - name: Run Historical Data Plotting
         env:
           GOOGLE_CREDENTIALS_JSON: ${{ secrets.GOOGLE_CREDENTIALS_JSON }}
         run: |
-          echo "Running daily historical data plotting..."
-          python scripts/eu_energy_plotting.py
+          COUNTRY="${{ github.event.inputs.country }}"
+          
+          CMD="python scripts/eu_energy_plotting.py"
+          if [ -n "$COUNTRY" ]; then
+            CMD="$CMD --country $COUNTRY"
+          fi
+          
+          echo "Running: $CMD"
+          eval $CMD
       
       - name: Generate Summary Table JSON
         env:
