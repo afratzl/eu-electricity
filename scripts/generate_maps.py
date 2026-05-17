@@ -35,6 +35,7 @@ from shapely.ops import unary_union
 import pyproj
 import gspread
 from google.oauth2.service_account import Credentials
+from config import ENTSOE_COUNTRIES
 
 try:
     from googleapiclient.discovery import build
@@ -49,11 +50,7 @@ except ImportError:
 # CONSTANTS
 # ============================================================
 
-ENTSOE_COUNTRIES = [
-    'AT','BE','BG','HR','CY','CZ','DK','EE','FI','FR',
-    'DE','GR','HU','IE','IT','LV','LT','LU','NL',
-    'PL','PT','RO','SK','SI','ES','SE','NO','CH','GB','MD'
-]
+# ENTSOE_COUNTRIES imported from config.py
 
 ENTSOE_COLORS = {
     'solar':              '#FFD700',
@@ -117,8 +114,6 @@ FIXED_SCALE_MAX = {
     'all-non-renewables': 100,
 }
 
-# Label display overrides
-DISPLAY_LABEL = {'GB': 'UK'}
 
 # Label position offsets in EPSG:3035 metres
 LABEL_OFFSETS = {
@@ -360,7 +355,7 @@ def generate_map(geodata, values_by_country, source, date_str, scale='fixed'):
         lx += ox
         ly += oy
         if minx <= lx <= maxx_extended + 50000 and miny <= ly <= maxy:
-            ax.text(lx, ly, DISPLAY_LABEL.get(cc, cc),
+            ax.text(lx, ly, cc,
                     fontsize=14, fontweight='bold',
                     ha='center', va='center', color='black', zorder=6,
                     path_effects=[pe.withStroke(linewidth=2.5, foreground='white')])
