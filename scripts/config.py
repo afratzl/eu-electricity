@@ -2,6 +2,51 @@
 # Single source of truth for all scripts
 # Generated: 2026-05-01
 
+# ============================================================
+# COUNTRY LISTS
+# ============================================================
+
+# EU member states in ENTSO-E (used for EU aggregate calculations)
+EU_COUNTRIES = [
+    'AT', 'BE', 'BG', 'HR', 'CY', 'CZ', 'DK', 'EE', 'FI', 'FR',
+    'DE', 'GR', 'HU', 'IE', 'IT', 'LV', 'LT', 'LU', 'MT', 'NL',
+    'PL', 'PT', 'RO', 'SK', 'SI', 'ES', 'SE',
+]
+
+# Non-EU countries actively in the dashboard (not included in EU aggregate)
+NON_EU_COUNTRIES = [
+    'NO', 'CH', 'MD',
+    'RS', 'BA', 'ME', 'MK', 'XK',  # Western Balkans
+    'GE',                            # Georgia
+]
+
+# All countries in the dashboard (EU + non-EU)
+ENTSOE_COUNTRIES = EU_COUNTRIES + NON_EU_COUNTRIES
+
+# Countries excluded from dashboard for now:
+# GB  -- United Kingdom (Brexit, separate grid data)
+# IS  -- Iceland (no ENTSO-E reporting)
+# AL  -- Albania (no data)
+# AM  -- Armenia (no data)
+# AZ  -- Azerbaijan (no data)
+# TR  -- Turkey (no data)
+# RU  -- Russia (suspended from ENTSO-E 2022)
+# BY  -- Belarus (suspended from ENTSO-E 2022)
+EXCLUDED_COUNTRIES = [
+    'GB',  # United Kingdom (not currently reporting, may change)
+    'IS',  # Iceland
+    'AL',  # Albania
+    'AM',  # Armenia
+    'AZ',  # Azerbaijan
+    'TR',  # Turkey
+    'RU',  # Russia (suspended)
+    'BY',  # Belarus (suspended)
+]
+
+# ============================================================
+# SOURCE KEYWORDS
+# ============================================================
+
 SOURCE_KEYWORDS = {
     'solar':      ['Solar'],
     'wind':       ['Wind Onshore', 'Wind Offshore'],
@@ -29,6 +74,10 @@ SOURCE_KEYWORDS['all-renewables'] = (
 SOURCE_KEYWORDS['all-non-renewables'] = (
     [kw for s in NON_RENEWABLES for kw in SOURCE_KEYWORDS[s]] + SMALL_NON_RENEWABLES
 )
+
+# ============================================================
+# DISPLAY NAMES
+# ============================================================
 
 DISPLAY_NAMES = {
     'solar':              'Solar',
