@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <title>EU Electricity Generation Maps</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <span class="nav-title">
+                <img src="flags/EU.svg" width="32" height="21" alt="EU flag" style="vertical-align: middle; margin-right: 10px;">
+                EU Electricity Generation
+            </span>
+            <div class="nav-links">
+                <a href="index.html">Home</a>
+                <a href="live.html">Intraday</a>
+                <a href="yesterday.html">Yesterday</a>
+                <a href="monthly.html">Monthly</a>
+                <a href="trends.html">Trends</a>
+                <a href="maps.html" class="active">Maps</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container" style="margin-bottom: 20px;">
+        <header class="page-header">
+            <h1>Electricity Generation Maps</h1>
+        </header>
+
+        <!-- COMPACT SELECTOR BOX -->
+        <div class="compact-selector-box">
+
+            <!-- Energy Source Selector -->
+            <div class="selector-item">
+                <label>Energy Source:</label>
+                <div class="custom-select-container" id="source-select-custom">
+                    <div class="custom-select-trigger">
+                        <span class="color-dot" style="background-color: #00CED1;"></span>
+                        <span class="label">All Renewables</span>
+                        <span class="arrow"></span>
+                    </div>
+                    <div class="custom-select-dropdown">
+                        <div class="custom-select-group">
+                            <div class="custom-select-group-label">Renewable Sources</div>
+                            <div class="custom-select-option selected" data-value="all-renewables" data-color="#00CED1">
+                                <span class="color-dot" style="background-color: #00CED1;"></span>
+                                <span>All Renewables</span>
+                            </div>
+                            <div class="custom-select-option" data-value="solar" data-color="#FFD700">
+                                <span class="color-dot" style="background-color: #FFD700;"></span>
+                                <span>Solar</span>
+                            </div>
+                            <div class="custom-select-option" data-value="wind" data-color="#228B22">
+                                <span class="color-dot" style="background-color: #228B22;"></span>
+                                <span>Wind</span>
+                            </div>
+                            <div class="custom-select-option" data-value="hydro" data-color="#1E90FF">
+                                <span class="color-dot" style="background-color: #1E90FF;"></span>
+                                <span>Hydro</span>
+                            </div>
+                            <div class="custom-select-option" data-value="biomass" data-color="#9ACD32">
+                                <span class="color-dot" style="background-color: #9ACD32;"></span>
+                                <span>Biomass</span>
+                            </div>
+                            <div class="custom-select-option" data-value="geothermal" data-color="#708090">
+                                <span class="color-dot" style="background-color: #708090;"></span>
+                                <span>Geothermal</span>
+                            </div>
+                        </div>
+                        <div class="custom-select-group">
+                            <div class="custom-select-group-label">Non-Renewable Sources</div>
+                            <div class="custom-select-option" data-value="all-non-renewables" data-color="#000000">
+                                <span class="color-dot" style="background-color: #000000;"></span>
+                                <span>All Non-Renewables</span>
+                            </div>
+                            <div class="custom-select-option" data-value="nuclear" data-color="#8B4513">
+                                <span class="color-dot" style="background-color: #8B4513;"></span>
+                                <span>Nuclear</span>
+                            </div>
+                            <div class="custom-select-option" data-value="gas" data-color="#FF1493">
+                                <span class="color-dot" style="background-color: #FF1493;"></span>
+                                <span>Gas</span>
+                            </div>
+                            <div class="custom-select-option" data-value="coal" data-color="#8B008B">
+                                <span class="color-dot" style="background-color: #8B008B;"></span>
+                                <span>Coal</span>
+                            </div>
+                            <div class="custom-select-option" data-value="oil" data-color="#191970">
+                                <span class="color-dot" style="background-color: #191970;"></span>
+                                <span>Oil</span>
+                            </div>
+                            <div class="custom-select-option" data-value="waste" data-color="#808000">
+                                <span class="color-dot" style="background-color: #808000;"></span>
+                                <span>Waste</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Time Period Selector -->
+            <div class="selector-item">
+                <label>Time Period:</label>
+                <div class="custom-select-container" id="period-select-custom">
+                    <div class="custom-select-trigger">
+                        <span class="label">Yesterday</span>
+                        <span class="arrow"></span>
+                    </div>
+                    <div class="custom-select-dropdown" id="period-dropdown">
+                        <!-- Recent -->
+                        <div class="custom-select-group">
+                            <div class="custom-select-group-label">Recent</div>
+                            <div class="custom-select-option selected" data-value="Yesterday" data-period="recent">
+                                <span>Yesterday</span>
+                            </div>
+                            <div class="custom-select-option" data-value="LastWeek" data-period="recent">
+                                <span>Last 7 Days</span>
+                            </div>
+                        </div>
+                        <!-- Monthly - populated by JS -->
+                        <div class="custom-select-group" id="monthly-group">
+                            <div class="custom-select-group-label">Monthly</div>
+                        </div>
+                        <!-- Annual - populated by JS -->
+                        <div class="custom-select-group" id="annual-group">
+                            <div class="custom-select-group-label">Annual</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Display Toggle -->
+            <div class="selector-item selector-item-toggle">
+                <label>Display:</label>
+                <div class="toggle-group-compact">
+                    <button id="toggle-percentage" class="toggle-btn-compact active" onclick="showPercentage()">
+                        Relative
+                    </button>
+                    <button id="toggle-absolute" class="toggle-btn-compact" onclick="showAbsolute()">
+                        Absolute
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- MAP DISPLAY -->
+        <div id="map-display" class="chart-container">
+            <div class="loading-message">Loading map...</div>
+        </div>
+
+        <div id="map-info-bar" class="chart-info-bar">
+            <span id="last-update" class="timestamp"></span>
+            <button id="download-btn" class="download-btn" onclick="downloadMap()" title="Download current map">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                    <polyline points="7 10 12 15 17 10"></polyline>
+                    <line x1="12" y1="15" x2="12" y2="3"></line>
+                </svg>
+                <span>Download Map</span>
+            </button>
+        </div>
+    </div>
+
+    <footer>
+        <p>Built with data from <a href="https://transparency.entsoe.eu/" target="_blank">ENTSO-E</a> | 
+           Source code on <a href="https://github.com/afratzl/eu-energy-analysis" target="_blank">GitHub</a> | 
+           Built by <a href="https://www.linkedin.com/in/alexfratzl/" target="_blank">Alex Fratzl</a> with Claude Sonnet</p>
+    </footer>
+
+    <script>
+        // ===== CUSTOM SELECT CLASS =====
+        class CustomSelect {
+            constructor(containerId) {
+                this.container = document.getElementById(containerId);
+                this.trigger = this.container.querySelector('.custom-select-trigger');
+                this.dropdown = this.container.querySelector('.custom-select-dropdown');
+                this.selectedValue = null;
+                this.init();
+            }
+
+            init() {
+                this.trigger.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    this.toggle();
+                });
+                document.addEventListener('click', () => this.close());
+            }
+
+            toggle() { this.isOpen() ? this.close() : this.open(); }
+            open() { this.trigger.classList.add('open'); this.dropdown.classList.add('open'); }
+            close() { this.trigger.classList.remove('open'); this.dropdown.classList.remove('open'); }
+            isOpen() { return this.dropdown.classList.contains('open'); }
+
+            select(value, text, color) {
+                const colorDot = this.trigger.querySelector('.color-dot');
+                if (colorDot && color) colorDot.style.backgroundColor = color;
+                this.trigger.querySelector('.label').textContent = text;
+                this.container.querySelectorAll('.custom-select-option').forEach(o => o.classList.remove('selected'));
+                const sel = this.container.querySelector(`[data-value="${value}"]`);
+                if (sel) sel.classList.add('selected');
+                this.selectedValue = value;
+                this.close();
+                updateMap();
+            }
+
+            getValue() { return this.selectedValue; }
+        }
+
+        let sourceSelect, periodSelect;
+        let driveLinks = null;
+        let currentMapUrl = null;
+
+        // Month names for labels
+        const MONTH_NAMES = ['January','February','March','April','May','June',
+                             'July','August','September','October','November','December'];
+
+        // Populate period dropdown with rolling 12 months + annual years
+        function populatePeriodDropdown() {
+            const now = new Date();
+            const currentYear = now.getFullYear();
+            const currentMonth = now.getMonth(); // 0-indexed, so this is last completed month index
+
+            // Monthly: last 12 completed months
+            const monthlyGroup = document.getElementById('monthly-group');
+            for (let i = 0; i < 12; i++) {
+                let month = currentMonth - i;
+                let year = currentYear;
+                if (month <= 0) { month += 12; year -= 1; }
+                const value = `monthly_${year}_${String(month).padStart(2,'0')}`;
+                const label = `${MONTH_NAMES[month-1]} ${year}`;
+                const opt = document.createElement('div');
+                opt.className = 'custom-select-option';
+                opt.dataset.value = value;
+                opt.dataset.period = 'monthly';
+                opt.innerHTML = `<span>${label}</span>`;
+                opt.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    periodSelect.select(value, label, null);
+                });
+                monthlyGroup.appendChild(opt);
+            }
+
+            // Annual: current year YTD + 2025 down to 2015
+            const annualGroup = document.getElementById('annual-group');
+            // Current year YTD
+            const ytdOpt = document.createElement('div');
+            ytdOpt.className = 'custom-select-option';
+            ytdOpt.dataset.value = `annual_${currentYear}`;
+            ytdOpt.dataset.period = 'annual';
+            ytdOpt.innerHTML = `<span>${currentYear} (YTD)</span>`;
+            ytdOpt.addEventListener('click', (e) => {
+                e.stopPropagation();
+                periodSelect.select(`annual_${currentYear}`, `${currentYear} (YTD)`, null);
+            });
+            annualGroup.appendChild(ytdOpt);
+
+            for (let y = currentYear - 1; y >= 2015; y--) {
+                const opt = document.createElement('div');
+                opt.className = 'custom-select-option';
+                opt.dataset.value = `annual_${y}`;
+                opt.dataset.period = 'annual';
+                opt.innerHTML = `<span>${y}</span>`;
+                opt.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    periodSelect.select(`annual_${y}`, String(y), null);
+                });
+                annualGroup.appendChild(opt);
+            }
+
+            // Add click handlers for static Recent options
+            document.querySelectorAll('#period-dropdown .custom-select-option[data-period="recent"]').forEach(opt => {
+                opt.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    periodSelect.select(opt.dataset.value, opt.querySelector('span').textContent, null);
+                });
+            });
+        }
+
+        async function loadDriveLinks() {
+            if (driveLinks) return driveLinks;
+            try {
+                const response = await fetch(`plots/drive_links.json?t=${Date.now()}`);
+                driveLinks = await response.json();
+                return driveLinks;
+            } catch (e) {
+                console.error('Failed to load drive_links.json:', e);
+                return null;
+            }
+        }
+
+        function getMapKey(periodValue) {
+            // Map period selector value to drive_links.json key structure
+            if (periodValue === 'Yesterday') return { period: 'Yesterday', key: null };
+            if (periodValue === 'LastWeek') return { period: 'LastWeek', key: null };
+            if (periodValue.startsWith('monthly_')) {
+                const parts = periodValue.split('_'); // monthly_2026_04
+                return { period: 'Monthly', key: `${parts[1]}-${parts[2]}` };
+            }
+            if (periodValue.startsWith('annual_')) {
+                const year = periodValue.split('_')[1];
+                return { period: 'Annual', key: year };
+            }
+            return null;
+        }
+
+        async function updateMap() {
+            const source = sourceSelect.getValue();
+            const period = periodSelect.getValue();
+            if (!source || !period) return;
+
+            const isAbsolute = document.getElementById('toggle-absolute').classList.contains('active');
+            const plotType = isAbsolute ? 'absolute' : 'percentage';
+
+            const display = document.getElementById('map-display');
+            display.innerHTML = '<div class="loading-message">Loading map...</div>';
+
+            const links = await loadDriveLinks();
+            const mapInfo = getMapKey(period);
+            if (!mapInfo) return;
+
+            let url = null;
+            try {
+                const section = links?.Maps?.[mapInfo.period];
+                if (mapInfo.key) {
+                    url = section?.[mapInfo.key]?.[source]?.[plotType]?.direct_url;
+                } else {
+                    url = section?.[source]?.[plotType]?.direct_url;
+                }
+            } catch(e) {}
+
+            if (url) {
+                // Cache bust via size variation
+                const now = new Date();
+                const hour = now.getHours();
+                const day = Math.floor((now - new Date(now.getFullYear(),0,0)) / 86400000);
+                const size = 2000 + (day % 2 === 1 ? 0 : 24) + hour;
+                url = url.replace(/sz=w[\d.]+/, `sz=w${size}`);
+            } else {
+                // Fallback to GitHub path
+                const periodSlug = period.toLowerCase().replace(/[^a-z0-9]+/g, '_');
+                url = `plots/map_${source}_${periodSlug}_${plotType}.png`;
+            }
+
+            currentMapUrl = url;
+
+            const img = document.createElement('img');
+            img.src = url;
+            img.alt = `${source} map`;
+            img.className = 'chart-img';
+            img.onerror = () => {
+                display.innerHTML = '<div class="error-message">Map not available for this selection.</div>';
+            };
+            display.innerHTML = '';
+            display.appendChild(img);
+        }
+
+        function showPercentage() {
+            document.getElementById('toggle-percentage').classList.add('active');
+            document.getElementById('toggle-absolute').classList.remove('active');
+            updateMap();
+        }
+
+        function showAbsolute() {
+            document.getElementById('toggle-absolute').classList.add('active');
+            document.getElementById('toggle-percentage').classList.remove('active');
+            updateMap();
+        }
+
+        function downloadMap() {
+            if (!currentMapUrl) return;
+            const source = sourceSelect.getValue();
+            const period = periodSelect.getValue();
+            const plotType = document.getElementById('toggle-absolute').classList.contains('active') ? 'absolute' : 'percentage';
+            const filename = `map_${source}_${period}_${plotType}.png`;
+            const link = document.createElement('a');
+            link.href = currentMapUrl;
+            link.download = filename;
+            link.target = '_blank';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        function loadTimestamp() {
+            fetch('plots/last_update.html')
+                .then(r => r.text())
+                .then(html => document.getElementById('last-update').innerHTML = html)
+                .catch(() => {});
+        }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            sourceSelect = new CustomSelect('source-select-custom');
+            periodSelect = new CustomSelect('period-select-custom');
+
+            populatePeriodDropdown();
+
+            // Set defaults
+            sourceSelect.selectedValue = 'all-renewables';
+            periodSelect.selectedValue = 'Yesterday';
+
+            updateMap();
+            loadTimestamp();
+            setInterval(loadTimestamp, 300000);
+        });
+    </script>
+
+    <style>
+        .custom-select-container { position: relative; width: 100%; }
+        .custom-select-trigger {
+            display: flex; align-items: center; padding: 8px 10px;
+            background: white; border: 2px solid #cbd5e0; border-radius: 4px;
+            cursor: pointer; user-select: none; height: 42px; box-sizing: border-box;
+        }
+        .custom-select-trigger:hover { border-color: #999; }
+        .custom-select-trigger.open { border-color: #003399; border-bottom-left-radius: 0; border-bottom-right-radius: 0; }
+        .custom-select-trigger .color-dot { width: 14px; height: 14px; border-radius: 50%; margin-right: 8px; flex-shrink: 0; }
+        .custom-select-trigger .label { flex: 1; color: #333; font-size: 1em; }
+        .custom-select-trigger .arrow { margin-left: 8px; border: solid #666; border-width: 0 2px 2px 0; padding: 3px; transform: rotate(45deg); transition: transform 0.2s; }
+        .custom-select-trigger.open .arrow { transform: rotate(-135deg); }
+        .custom-select-dropdown {
+            position: absolute; top: 100%; left: 0; right: 0; background: white;
+            border: 2px solid #003399; border-top: none; border-radius: 0 0 4px 4px;
+            max-height: 300px; overflow-y: auto; z-index: 1000; display: none;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .custom-select-dropdown.open { display: block; }
+        .custom-select-group { padding: 0; }
+        .custom-select-group-label { padding: 8px 12px; font-weight: bold; font-size: 11px; color: #666; background: #f5f5f5; text-transform: uppercase; letter-spacing: 0.5px; }
+        .custom-select-option { display: flex; align-items: center; padding: 8px 12px 8px 24px; cursor: pointer; transition: background 0.1s; background: white; }
+        .custom-select-option:hover { background: #e8f4ff; }
+        .custom-select-option.selected { background: #003399; color: white; }
+        .custom-select-option .color-dot { width: 14px; height: 14px; border-radius: 50%; margin-right: 8px; flex-shrink: 0; }
+
+        .compact-selector-box {
+            background: #f7fafc; border: 2px solid #cbd5e0; border-radius: 8px;
+            padding: 20px; margin-bottom: 24px;
+            display: grid; grid-template-columns: 1fr 1fr auto; gap: 20px; align-items: end;
+        }
+        .selector-item { display: flex; flex-direction: column; gap: 8px; }
+        .selector-item label { font-weight: 500; font-size: 0.95em; color: #4a5568; }
+        .selector-item-toggle { min-width: 200px; }
+        .toggle-group-compact { display: flex; background: white; border: 2px solid #cbd5e0; border-radius: 4px; overflow: hidden; height: 42px; box-sizing: border-box; }
+        .toggle-btn-compact { flex: 1; padding: 0 16px; border: none; background: white; color: #4a5568; cursor: pointer; font-size: 0.95em; font-weight: 600; transition: all 0.2s ease; display: flex; align-items: center; justify-content: center; }
+        .toggle-btn-compact.active { background: #003399; color: white; }
+        .toggle-btn-compact:hover:not(.active) { background: #f0f4f8; }
+
+        .chart-container { margin-bottom: 8px; }
+        .chart-img { width: 100%; height: auto; display: block; }
+        @media (min-width: 1024px) { .chart-img { width: 65%; margin: 0 auto; display: block; } }
+
+        .chart-info-bar { display: flex; justify-content: space-between; align-items: center; background: #f7fafc; border-top: 1px solid #e2e8f0; border-bottom: 1px solid #e2e8f0; padding: 6px 24px; margin-bottom: 8px; gap: 20px; }
+        .timestamp { color: #666; font-size: 14px; }
+        .download-btn { display: flex; align-items: center; gap: 6px; padding: 8px 16px; background: white; border: 1px solid #cbd5e0; border-radius: 4px; color: #4a5568; font-size: 14px; font-weight: 500; cursor: pointer; transition: all 0.2s ease; }
+        .download-btn:hover { background: #003399; color: white; border-color: #003399; }
+        .loading-message { text-align: center; padding: 60px; color: #4a5568; font-size: 1.1em; }
+        .error-message { text-align: center; padding: 60px; color: #e53e3e; font-size: 1em; }
+
+        @media (max-width: 768px) {
+            .compact-selector-box { grid-template-columns: 1fr; gap: 16px; padding: 16px; }
+            .selector-item-toggle { min-width: unset; }
+            .chart-info-bar { flex-direction: column; text-align: center; padding: 12px 16px; gap: 12px; }
+            .download-btn { width: 100%; justify-content: center; }
+        }
+        @media (min-width: 769px) and (max-width: 1024px) {
+            .compact-selector-box { grid-template-columns: 1fr 1fr; }
+            .selector-item-toggle { grid-column: 1 / -1; justify-self: center; }
+        }
+    </style>
+
+    <!-- GoatCounter Analytics -->
+    <script data-goatcounter="https://eu-electricity.goatcounter.com/count"
+            async src="//gc.zgo.at/count.js"></script>
+</body>
+</html>
