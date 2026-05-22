@@ -382,18 +382,20 @@
         }
 
         const SOURCE_COLORS = {
-            'Solar':          '#FFD700',
-            'Wind':           '#228B22',
-            'Hydro':          '#1E90FF',
-            'Biomass':        '#9ACD32',
-            'Geothermal':     '#708090',
-            'Gas':            '#FF1493',
-            'Coal':           '#8B008B',
-            'Nuclear':        '#8B4513',
-            'Oil':            '#191970',
-            'Waste':          '#808000',
-            'Renewables':     '#00CED1',
-            'Non-Renewables': '#444444',
+            'Solar':              '#FFD700',
+            'Wind':               '#228B22',
+            'Hydro':              '#1E90FF',
+            'Biomass':            '#9ACD32',
+            'Geothermal':         '#708090',
+            'Gas':                '#FF1493',
+            'Coal':               '#8B008B',
+            'Nuclear':            '#8B4513',
+            'Oil':                '#191970',
+            'Waste':              '#808000',
+            'Renewables':         '#00CED1',
+            'All Renewables':     '#00CED1',
+            'Non-Renewables':     '#444444',
+            'All Non-Renewables': '#444444',
         };
 
         // Display summary table
@@ -409,14 +411,29 @@
             function dataBar(value, max, color) {
                 if (!value || !max) return '';
                 const pct = Math.min(100, (parseFloat(value) / max) * 100);
-                return `background: linear-gradient(to right, ${color}22 ${pct}%, transparent ${pct}%)`;
+                return `background: linear-gradient(to right, ${color}40 ${pct}%, transparent ${pct}%)`;
             }
 
             function changeColor(val) {
                 if (!val || val === '—' || val === '') return '';
                 const num = parseFloat(val);
                 if (isNaN(num)) return '';
-                return num > 0 ? 'color:#1a7a3c;font-weight:600;' : num < 0 ? 'color:#c53030;font-weight:600;' : '';
+                if (num === 0) return '';
+                // Scale opacity 0-1 based on magnitude, cap at ±15%
+                const intensity = Math.min(Math.abs(num) / 15, 1);
+                if (num > 0) {
+                    // Green: interpolate from #888 (neutral) to #1a7a3c (full green)
+                    const r = Math.round(136 - intensity * (136 - 26));
+                    const g = Math.round(136 + intensity * (122 - 136));
+                    const b = Math.round(136 - intensity * (136 - 60));
+                    return `color:rgb(${r},${g},${b});font-weight:${intensity > 0.3 ? 600 : 400};`;
+                } else {
+                    // Red: interpolate from #888 (neutral) to #c53030 (full red)
+                    const r = Math.round(136 + intensity * (197 - 136));
+                    const g = Math.round(136 - intensity * (136 - 48));
+                    const b = Math.round(136 - intensity * (136 - 48));
+                    return `color:rgb(${r},${g},${b});font-weight:${intensity > 0.3 ? 600 : 400};`;
+                }
             }
 
             function colorDot(sourceName) {
