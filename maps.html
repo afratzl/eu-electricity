@@ -141,7 +141,7 @@
                     <button id="toggle-percentage" class="toggle-btn-compact active" onclick="showPercentage()">
                         Relative
                     </button>
-                    <button id="toggle-absolute" class="toggle-btn-compact" onclick="showAbsolute()">
+                    <button id="toggle-absolute" class="toggle-btn-compact" disabled style="opacity:0.4; cursor:not-allowed;" title="Coming soon">
                         Absolute
                     </button>
                 </div>
@@ -189,6 +189,18 @@
                     this.toggle();
                 });
                 document.addEventListener('click', () => this.close());
+
+                // Add click handlers to all non-disabled options
+                this.container.querySelectorAll('.custom-select-option:not(.disabled)').forEach(option => {
+                    option.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        const value = option.dataset.value;
+                        const color = option.dataset.color || null;
+                        const spans = option.querySelectorAll('span');
+                        const text = spans[spans.length - 1].textContent;
+                        this.select(value, text, color);
+                    });
+                });
             }
 
             toggle() { this.isOpen() ? this.close() : this.open(); }
@@ -471,6 +483,14 @@
         .download-btn:hover { background: #003399; color: white; border-color: #003399; }
         .loading-message { text-align: center; padding: 60px; color: #4a5568; font-size: 1.1em; }
         .error-message { text-align: center; padding: 60px; color: #e53e3e; font-size: 1em; }
+
+        /* Prevent nav from wrapping on mobile */
+        .nav-links { display: flex; flex-wrap: nowrap; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+        .nav-links a { white-space: nowrap; flex-shrink: 0; }
+        @media (max-width: 600px) {
+            .nav-links a { font-size: 0.78em; padding: 4px 6px; }
+            .nav-title { font-size: 0.9em; }
+        }
 
         @media (max-width: 768px) {
             .compact-selector-box { grid-template-columns: 1fr; gap: 16px; padding: 16px; }
