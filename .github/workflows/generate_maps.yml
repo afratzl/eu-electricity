@@ -1,17 +1,25 @@
 name: Generate Maps
-
 on:
   workflow_dispatch:
     inputs:
       period:
         description: 'Time period'
-        required: false
+        required: true
         default: 'yesterday'
         type: choice
         options:
           - yesterday
-          - last_month
+          - last_week
+          - monthly
           - annual
+      year:
+        description: 'Year (for monthly/annual periods, leave empty for current year)'
+        required: false
+        default: ''
+      month:
+        description: 'Month 1-12 (for monthly period, leave empty for last completed month)'
+        required: false
+        default: ''
       source:
         description: 'Energy source (leave empty for all)'
         required: false
@@ -31,7 +39,6 @@ permissions:
 jobs:
   generate-maps:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -46,7 +53,7 @@ jobs:
           pip install geopandas matplotlib numpy pyproj shapely \
                       gspread google-auth google-auth-oauthlib \
                       google-auth-httplib2 google-api-python-client \
-                      pandas pyproj
+                      pandas
 
       - name: Create plots directory
         run: mkdir -p plots
@@ -56,9 +63,18 @@ jobs:
           GOOGLE_CREDENTIALS_JSON: ${{ secrets.GOOGLE_CREDENTIALS_JSON }}
         run: |
           ARGS="--period ${{ github.event.inputs.period }} --scale ${{ github.event.inputs.scale }}"
+
           if [ -n "${{ github.event.inputs.source }}" ]; then
             ARGS="$ARGS --source ${{ github.event.inputs.source }}"
           fi
+          if [ -n "${{ github.event.inputs.year }}" ]; then
+            ARGS="$ARGS --year ${{ github.event.inputs.year }}"
+          fi
+          if [ -n "${{ github.event.inputs.month }}" ]; then
+            ARGS="$ARGS --month ${{ github.event.inputs.month }}"
+          fi
+
+          echo "Running: python scripts/generate_maps.py $ARGS"
           python scripts/generate_maps.py $ARGS
 
       - name: Commit updated drive_links.json
