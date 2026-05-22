@@ -40,7 +40,7 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install entsoe-py pandas==2.2.3 matplotlib numpy gspread google-auth pytz scipy google-api-python-client
+          pip install entsoe-py pandas==2.2.3 matplotlib numpy gspread google-auth pytz scipy google-api-python-client geopandas shapely pyproj
       
       - name: Create plots directory
         run: mkdir -p plots
@@ -50,7 +50,6 @@ jobs:
           ENTSOE_API_KEY: ${{ secrets.ENTSOE_API_KEY }}
           GOOGLE_CREDENTIALS_JSON: ${{ secrets.GOOGLE_CREDENTIALS_JSON }}
         run: |
-          # Build args: use inputs if provided, else default to current year
           YEAR_START="${{ github.event.inputs.years_start }}"
           YEAR_END="${{ github.event.inputs.years_end }}"
           COUNTRY="${{ github.event.inputs.country }}"
@@ -61,7 +60,6 @@ jobs:
           
           CMD="python scripts/eu_energy_data_collection.py --years $YEAR_START $YEAR_END"
           if [ -n "$COUNTRY" ]; then
-            # Strip commas in case user enters "RS, BA, ME" instead of "RS BA ME"
             COUNTRY_CLEAN=$(echo "$COUNTRY" | tr ',' ' ' | tr -s ' ')
             CMD="$CMD --countries $COUNTRY_CLEAN"
           fi
@@ -90,6 +88,27 @@ jobs:
           echo "Generating summary table JSON..."
           python scripts/generate_summary_table_json.py || echo "Failed to generate JSON"
       
+      - name: Generate Current Year and Current Month Maps
+        env:
+          GOOGLE_CREDENTIALS_JSON: ${{ secrets.GOOGLE_CREDENTIALS_JSON }}
+        run: |
+          CURRENT_YEAR=$(date +%Y)
+          CURRENT_MONTH=$(date +%-m)
+          # Last completed month
+          if [ "$CURRENT_MONTH" -eq 1 ]; then
+            LAST_MONTH=12
+            LAST_MONTH_YEAR=$((CURRENT_YEAR - 1))
+          else
+            LAST_MONTH=$((CURRENT_MONTH - 1))
+            LAST_MONTH_YEAR=$CURRENT_YEAR
+          fi
+          
+          echo "Generating annual map for $CURRENT_YEAR..."
+          python scripts/generate_maps.py --period annual --year $CURRENT_YEAR || echo "Failed annual map"
+          
+          echo "Generating monthly map for $LAST_MONTH_YEAR-$LAST_MONTH..."
+          python scripts/generate_maps.py --period monthly --year $LAST_MONTH_YEAR --month $LAST_MONTH || echo "Failed monthly map"
+      
       - name: Commit and push changes
         run: |
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
@@ -102,4 +121,4 @@ jobs:
           git add -f plots/*.html plots/*.json
           
           # Commit if there are changes
-          git diff --quiet && git diff --staged --quiet || (git commit -m "Update historical plots and summary JSON [daily]" && git push)
+          git diff --quiet && git diff --staged --quiet || (git commit -m "Update historical plots, summary JSON and maps [daily]" && git push)
