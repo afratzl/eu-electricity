@@ -332,9 +332,9 @@
             try {
                 const section = links?.Maps?.[mapInfo.period];
                 if (mapInfo.key) {
-                    url = section?.[mapInfo.key]?.[source]?.[plotType]?.direct_url;
+                    url = section?.[mapInfo.key]?.[source]?.percentage?.direct_url;
                 } else {
-                    url = section?.[source]?.[plotType]?.direct_url;
+                    url = section?.[source]?.percentage?.direct_url;
                 }
             } catch(e) {}
 
