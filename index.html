@@ -512,11 +512,52 @@
             }
         }
 
+
+        const SOURCE_COLORS = {
+            'Solar':              '#FFD700',
+            'Wind':               '#228B22',
+            'Hydro':              '#1E90FF',
+            'Biomass':            '#9ACD32',
+            'Geothermal':         '#708090',
+            'Gas':                '#FF1493',
+            'Coal':               '#8B008B',
+            'Nuclear':            '#8B4513',
+            'Oil':                '#191970',
+            'Waste':              '#808000',
+            'All Renewables':     '#00CED1',
+            'All Non-Renewables': '#444444',
+        };
+
         // Display summary table
         function displaySummaryTable(data) {
+
+            // Pre-compute max values per column for data bars
+            const cols = ['yesterday', 'last_week', 'ytd_2025', 'year_2024'];
+            const maxPct = {}, maxTwh = {};
+            cols.forEach(col => {
+                maxPct[col] = Math.max(...data.sources.map(s => parseFloat(s[col]?.percentage) || 0));
+                maxTwh[col] = Math.max(...data.sources.map(s => parseFloat(s[col]?.twh) || 0));
+            });
+
+            function dataBar(value, max, color) {
+                if (!value || !max) return '';
+                const pct = Math.min(100, (parseFloat(value) / max) * 100);
+                return `background: linear-gradient(to right, ${color}22 ${pct}%, transparent ${pct}%)`;
+            }
+
+            function changeColor(val) {
+                if (!val || val === '—' || val === '') return '';
+                const num = parseFloat(val);
+                if (isNaN(num)) return '';
+                return num > 0 ? 'color:#1a7a3c; font-weight:600;' : num < 0 ? 'color:#c53030; font-weight:600;' : '';
+            }
+
+            function colorDot(sourceName) {
+                const color = SOURCE_COLORS[sourceName] || '#888';
+                return `<span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${color};margin-right:8px;flex-shrink:0;"></span>`;
+            }
+
             let html = '<table class="summary-table-pro">';
-            
-            // Header
             html += `
                 <thead>
                     <tr>
@@ -530,58 +571,48 @@
                 <tbody>
             `;
             
-            // Data rows
             data.sources.forEach(source => {
                 const isAggregate = source.category.startsWith('aggregate');
                 const isRenewable = source.category.includes('renewable');
                 const rowClass = isAggregate ? 'row-aggregate-pro' : 'row-source-pro';
                 const categoryClass = isRenewable ? 'renewable' : 'non-renewable';
-                
+                const color = SOURCE_COLORS[source.source] || '#888';
+
+                const colData = {
+                    yesterday: source.yesterday,
+                    last_week: source.last_week,
+                    ytd_2025:  source.ytd_2025,
+                    year_2024: source.year_2024,
+                };
+
                 html += `<tr class="${rowClass} ${categoryClass}">`;
-                html += `<td class="source-name-cell-pro">${source.source}</td>`;
-                
-                // Yesterday
-                html += `<td>
-                    <span class="value-pct">${source.yesterday.percentage}%</span>
-                    <span class="value-abs" style="display:none">${source.yesterday.twh} TWh</span>
-                    <span class="value-change" style="display:none">${source.yesterday.change_from_2015}</span>
-                    <span class="value-change-2024" style="display:none">${source.yesterday.change_from_2024}</span>
-                    <span class="value-change-2023" style="display:none">${source.yesterday.change_from_2023}</span>
-                </td>`;
-                
-                // Last Week
-                html += `<td>
-                    <span class="value-pct">${source.last_week.percentage}%</span>
-                    <span class="value-abs" style="display:none">${source.last_week.twh} TWh</span>
-                    <span class="value-change" style="display:none">${source.last_week.change_from_2015}</span>
-                    <span class="value-change-2024" style="display:none">${source.last_week.change_from_2024}</span>
-                    <span class="value-change-2023" style="display:none">${source.last_week.change_from_2023}</span>
-                </td>`;
-                
-                // YTD Current Year - Display in TWh
-                html += `<td>
-                    <span class="value-pct">${source.ytd_2025.percentage}%</span>
-                    <span class="value-abs" style="display:none">${source.ytd_2025.twh.toFixed(2)} TWh</span>
-                    <span class="value-change" style="display:none">${source.ytd_2025.change_from_2015}</span>
-                    <span class="value-change-2024" style="display:none">${source.ytd_2025.change_from_2024}</span>
-                    <span class="value-change-2023" style="display:none">${source.ytd_2025.change_from_2023}</span>
-                </td>`;
-                
-                // Previous Year - Display in TWh
-                html += `<td>
-                    <span class="value-pct">${source.year_2024.percentage}%</span>
-                    <span class="value-abs" style="display:none">${source.year_2024.twh.toFixed(2)} TWh</span>
-                    <span class="value-change" style="display:none">${source.year_2024.change_from_2015}</span>
-                    <span class="value-change-2024" style="display:none">${source.year_2024.change_from_2024}</span>
-                    <span class="value-change-2023" style="display:none">${source.year_2024.change_from_2023}</span>
-                </td>`;
-                
+                // Source name with color dot
+                html += `<td class="source-name-cell-pro" style="display:flex;align-items:center;">${colorDot(source.source)}${source.source}</td>`;
+
+                cols.forEach((col, i) => {
+                    const d = colData[col];
+                    const pctBar  = dataBar(d?.percentage, maxPct[col], color);
+                    const absBar  = dataBar(d?.twh, maxTwh[col], color);
+                    const pctVal  = d?.percentage !== undefined ? d.percentage + '%' : '—';
+                    const absVal  = d?.twh !== undefined ? (typeof d.twh === 'number' ? d.twh.toFixed(2) : d.twh) + ' TWh' : '—';
+                    const chg2015 = d?.change_from_2015 || '—';
+                    const chg2024 = d?.change_from_2024 || '—';
+                    const chg2023 = d?.change_from_2023 || '—';
+
+                    html += `<td>
+                        <span class="value-pct" style="${pctBar}">${pctVal}</span>
+                        <span class="value-abs" style="display:none;${absBar}">${absVal}</span>
+                        <span class="value-change" style="display:none;${changeColor(chg2015)}">${chg2015}</span>
+                        <span class="value-change-2024" style="display:none;${changeColor(chg2024)}">${chg2024}</span>
+                        <span class="value-change-2023" style="display:none;${changeColor(chg2023)}">${chg2023}</span>
+                    </td>`;
+                });
+
                 html += '</tr>';
             });
             
             html += '</tbody></table>';
             html += `<div class="table-footer-pro">Last updated: ${data.last_updated}</div>`;
-            
             document.getElementById('summary-table-container').innerHTML = html;
         }
 
@@ -868,6 +899,15 @@
         .summary-table-pro td {
             white-space: nowrap;
         }
+        .summary-table-pro td span.value-pct,
+        .summary-table-pro td span.value-abs,
+        .summary-table-pro td span.value-change,
+        .summary-table-pro td span.value-change-2024,
+        .summary-table-pro td span.value-change-2023 {
+            display: block;
+            padding: 2px 6px;
+            border-radius: 3px;
+        }
 
         .summary-table-pro th:first-child,
         .summary-table-pro td:first-child {
@@ -951,7 +991,11 @@
         }
 
         .row-source-pro .source-name-cell-pro {
-            padding-left: 48px;
+            padding-left: 24px;
+        }
+        .source-name-cell-pro {
+            display: flex !important;
+            align-items: center;
         }
 
         .row-source-pro:hover {
