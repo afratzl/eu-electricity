@@ -228,15 +228,22 @@
             const currentYear = now.getFullYear();
             const currentMonth = now.getMonth(); // 0-indexed; last completed month
 
-            // Monthly: last 12 completed months -- show month name only
+            // Monthly: last 12 completed months in calendar order (Jan -> Dec)
+            // Build list first, then sort by month number
             const monthlyGroup = document.getElementById('monthly-group');
+            const monthEntries = [];
             for (let i = 0; i < 12; i++) {
                 let month = currentMonth - i;  // 0-indexed
                 let year = currentYear;
                 if (month <= 0) { month += 12; year -= 1; }
-                // month is now 1-indexed after adjustment
+                monthEntries.push({ month, year });
+            }
+            // Sort January (1) to December (12)
+            monthEntries.sort((a, b) => a.month - b.month);
+
+            monthEntries.forEach(({ month, year }) => {
                 const value = `monthly_${year}_${String(month).padStart(2,'0')}`;
-                const label = MONTH_NAMES[month - 1];  // just "January", "February" etc.
+                const label = MONTH_NAMES[month - 1];
                 monthPeriodMap[value] = { year, month };
 
                 const opt = document.createElement('div');
@@ -249,7 +256,7 @@
                     periodSelect.select(value, label, null);
                 });
                 monthlyGroup.appendChild(opt);
-            }
+            });
 
             // Annual: current year YTD + previous years down to 2015
             const annualGroup = document.getElementById('annual-group');
