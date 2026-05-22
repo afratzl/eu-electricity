@@ -623,8 +623,12 @@ def upload_map_to_drive(service, file_path, period, year=None):
         return None
 
 
-def save_map_links(period, source, result, year=None):
-    """Save map drive links to plots/drive_links.json under Maps section."""
+def save_map_links(period, source, result, year=None, plot_type='percentage'):
+    """
+    Save map drive links to plots/drive_links.json under Maps section.
+    Structure: Maps -> period -> [year ->] source -> plot_type -> {file_id, direct_url...}
+    plot_type: 'percentage' or 'absolute'
+    """
     drive_links_file = 'plots/drive_links.json'
     links = {}
     if os.path.exists(drive_links_file):
@@ -642,14 +646,18 @@ def save_map_links(period, source, result, year=None):
     if year is not None:
         if str(year) not in links['Maps'][period]:
             links['Maps'][period][str(year)] = {}
-        links['Maps'][period][str(year)][source] = result
+        if source not in links['Maps'][period][str(year)]:
+            links['Maps'][period][str(year)][source] = {}
+        links['Maps'][period][str(year)][source][plot_type] = result
     else:
-        links['Maps'][period][source] = result
+        if source not in links['Maps'][period]:
+            links['Maps'][period][source] = {}
+        links['Maps'][period][source][plot_type] = result
 
     os.makedirs('plots', exist_ok=True)
     with open(drive_links_file, 'w') as f:
         json.dump(links, f, indent=2)
-    print(f"  ✓ drive_links.json updated: Maps/{period}/{source}")
+    print(f"  ✓ drive_links.json updated: Maps/{period}/{source}/{plot_type}")
 
 
 # ============================================================
@@ -759,7 +767,7 @@ def main():
             if drive_service:
                 result = upload_map_to_drive(drive_service, plot_file, 'Yesterday')
                 if result:
-                    save_map_links('Yesterday', source, result)
+                    save_map_links('Yesterday', source, result, plot_type='percentage')
 
         elif args.period == 'last_week':
             date_str = f"Week ending {yesterday.strftime('%d %B %Y')}"
@@ -779,7 +787,7 @@ def main():
             if drive_service:
                 result = upload_map_to_drive(drive_service, plot_file, 'LastWeek')
                 if result:
-                    save_map_links('LastWeek', source, result)
+                    save_map_links('LastWeek', source, result, plot_type='percentage')
 
         elif args.period == 'monthly':
             year  = args.year  or (last_month_year if today.month == 1 else today.year if today.month > 1 else today.year - 1)
@@ -807,7 +815,7 @@ def main():
             if drive_service:
                 result = upload_map_to_drive(drive_service, plot_file, 'Monthly', year=f"{year}_{month:02d}")
                 if result:
-                    save_map_links('Monthly', source, result, year=f"{year}_{month:02d}")
+                    save_map_links('Monthly', source, result, year=f"{year}_{month:02d}", plot_type='percentage')
 
         elif args.period == 'annual':
             for year in range(2015, today.year + 1):
@@ -836,7 +844,7 @@ def main():
                 if drive_service:
                     result = upload_map_to_drive(drive_service, plot_file, 'Annual', year=year)
                     if result:
-                        save_map_links('Annual', source, result, year=year)
+                        save_map_links('Annual', source, result, year=year, plot_type='percentage')
 
 
 
