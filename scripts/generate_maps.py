@@ -499,8 +499,8 @@ def load_summary_table_for_country(gc, country_code):
 
     # Source name -> lowercase key mapping
     source_map = {
-        'All Renewables':     'all-renewables',
-        'All Non-Renewables': 'all-non-renewables',
+        'Renewables':     'all-renewables',
+        'Non-Renewables': 'all-non-renewables',
         'Solar':   'solar',   'Wind':  'wind',   'Hydro':     'hydro',
         'Biomass': 'biomass', 'Gas':   'gas',    'Coal':      'coal',
         'Nuclear': 'nuclear', 'Oil':   'oil',    'Waste':     'waste',
