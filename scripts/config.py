@@ -144,7 +144,7 @@ ENERGY_SOURCES = {
     'Nuclear':          SOURCE_KEYWORDS['nuclear'],
     'Oil':              SOURCE_KEYWORDS['oil'],
     'Waste':            SOURCE_KEYWORDS['waste'],
-    'All Renewables':   SOURCE_KEYWORDS['all-renewables'],
+    'Renewables':   SOURCE_KEYWORDS['all-renewables'],
     'Total Generation': 'ALL',
 }
 
@@ -163,8 +163,8 @@ DISPLAY_NAMES = {
     'nuclear':            'Nuclear',
     'oil':                'Oil',
     'waste':              'Waste',
-    'all-renewables':     'All Renewables',
-    'all-non-renewables': 'All Non-Renewables',
+    'all-renewables':     'Renewables',
+    'all-non-renewables': 'Non-Renewables',
 }
 
 # ============================================================
@@ -200,6 +200,6 @@ ENTSOE_COLORS = {
     'Nuclear':            '#8B4513',
     'Oil':                '#191970',
     'Waste':              '#808000',
-    'All Renewables':     '#00CED1',
-    'All Non-Renewables': '#000000',
+    'Renewables':     '#00CED1',
+    'Non-Renewables': '#000000',
 }
