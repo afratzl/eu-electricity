@@ -220,19 +220,25 @@
                              'July','August','September','October','November','December'];
 
         // Populate period dropdown with rolling 12 months + annual years
+        // Maps month values to {year, month} for drive_links lookup
+        const monthPeriodMap = {};
+
         function populatePeriodDropdown() {
             const now = new Date();
             const currentYear = now.getFullYear();
-            const currentMonth = now.getMonth(); // 0-indexed, so this is last completed month index
+            const currentMonth = now.getMonth(); // 0-indexed; last completed month
 
-            // Monthly: last 12 completed months
+            // Monthly: last 12 completed months -- show month name only
             const monthlyGroup = document.getElementById('monthly-group');
             for (let i = 0; i < 12; i++) {
-                let month = currentMonth - i;
+                let month = currentMonth - i;  // 0-indexed
                 let year = currentYear;
                 if (month <= 0) { month += 12; year -= 1; }
+                // month is now 1-indexed after adjustment
                 const value = `monthly_${year}_${String(month).padStart(2,'0')}`;
-                const label = `${MONTH_NAMES[month-1]} ${year}`;
+                const label = MONTH_NAMES[month - 1];  // just "January", "February" etc.
+                monthPeriodMap[value] = { year, month };
+
                 const opt = document.createElement('div');
                 opt.className = 'custom-select-option';
                 opt.dataset.value = value;
@@ -245,9 +251,8 @@
                 monthlyGroup.appendChild(opt);
             }
 
-            // Annual: current year YTD + 2025 down to 2015
+            // Annual: current year YTD + previous years down to 2015
             const annualGroup = document.getElementById('annual-group');
-            // Current year YTD
             const ytdOpt = document.createElement('div');
             ytdOpt.className = 'custom-select-option';
             ytdOpt.dataset.value = `annual_${currentYear}`;
