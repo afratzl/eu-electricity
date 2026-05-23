@@ -466,8 +466,9 @@
             };
 
             data.sources.forEach(source => {
-                const isAggregate = source.category.startsWith('aggregate');
-                const isRenewable = source.category.includes('renewable');
+                const cat = source.category || '';
+                const isAggregate = cat.startsWith('aggregate') || source.source === 'All Renewables' || source.source === 'Renewables' || source.source === 'All Non-Renewables' || source.source === 'Non-Renewables';
+                const isRenewable = cat.includes('renewable') || source.source === 'All Renewables' || source.source === 'Renewables';
                 const rowClass = isAggregate ? 'row-aggregate-pro' : 'row-source-pro';
                 const categoryClass = isRenewable ? 'renewable' : 'non-renewable';
                 const color = SOURCE_COLORS[source.source] || '#888';
