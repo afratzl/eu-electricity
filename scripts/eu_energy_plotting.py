@@ -239,40 +239,16 @@ def get_or_create_country_sheet(gc, drive_service, country_code='EU'):
                 if 'already exists' not in str(e).lower():
                     print(f"  ⚠ Could not set permissions: {e}")
     
-    # Move to correct Drive folder structure (ALWAYS check, not just for new sheets)
-    try:
-        # Find root folder
-        query = "name='EU-Electricity-Plots' and mimeType='application/vnd.google-apps.folder' and trashed=false"
-        results = drive_service.files().list(q=query, spaces='drive', fields='files(id)').execute()
-        folders = results.get('files', [])
-        
-        if folders:
-            root_folder_id = folders[0]['id']
-            
-            # Find or create country folder
-            query = f"name='{country_code}' and '{root_folder_id}' in parents and mimeType='application/vnd.google-apps.folder' and trashed=false"
-            results = drive_service.files().list(q=query, spaces='drive', fields='files(id)').execute()
-            country_folders = results.get('files', [])
-            
-            if country_folders:
-                country_folder_id = country_folders[0]['id']
-            else:
-                # Create country folder
-                file_metadata = {
-                    'name': country_code,
-                    'mimeType': 'application/vnd.google-apps.folder',
-                    'parents': [root_folder_id]
-                }
-                folder = drive_service.files().create(body=file_metadata, fields='id').execute()
-                country_folder_id = folder.get('id')
-                print(f"  ✓ Created folder: EU-Electricity-Plots/{country_code}/")
-            
-            # Check if sheet is already in correct folder
+    # Move to correct Drive folder structure -- only for NEW sheets
+    if is_new_sheet:
+        try:
+            root_folder_id = get_or_create_drive_folder(drive_service, 'EU-Electricity-Plots')
+            country_folder_id = get_or_create_drive_folder(drive_service, country_code, root_folder_id)
+
             file = drive_service.files().get(fileId=spreadsheet.id, fields='parents').execute()
             current_parents = file.get('parents', [])
-            
+
             if country_folder_id not in current_parents:
-                # Move sheet to country folder
                 previous_parents = ",".join(current_parents)
                 drive_service.files().update(
                     fileId=spreadsheet.id,
@@ -281,11 +257,10 @@ def get_or_create_country_sheet(gc, drive_service, country_code='EU'):
                     fields='id, parents'
                 ).execute()
                 print(f"  ✓ Moved to: EU-Electricity-Plots/{country_code}/")
-            else:
-                print(f"  ✓ Already in: EU-Electricity-Plots/{country_code}/")
-            
-    except Exception as e:
-        print(f"  ⚠ Could not move to Drive folder: {e}")
+        except Exception as e:
+            print(f"  ⚠ Could not move to Drive folder: {e}")
+    else:
+        print(f"  ✓ Existing sheet, skipping folder check")
     
     # Save sheet ID to JSON with PRESERVATION of existing sections
     try:
@@ -423,13 +398,13 @@ def load_data_from_google_sheets(country_code='EU'):
         print(f"\n✓ Successfully loaded data for {len(all_data)} energy sources")
         print(f"📊 API Reads: ~{worksheet_count + 1} (1 worksheet list + {worksheet_count} data reads)")
         
-        return all_data
+        return all_data, spreadsheet
         
     except Exception as e:
         print(f"✗ Error loading from Google Sheets: {e}")
         import traceback
         traceback.print_exc()
-        return None
+        return None, None
 
 
 def add_flag_and_labels(fig, country_code, main_title, subtitle):
@@ -2194,16 +2169,15 @@ def create_all_charts(all_data, country_code='EU'):
     return plot_links, drive_service
 
 
-def update_summary_table_historical_data(all_data, country_code='EU'):
+def update_summary_table_historical_data(all_data, country_code='EU', spreadsheet=None):
     """
     Update Google Sheets "Summary Table Data" with current year YTD and previous year data
     This fills in the columns that the intraday script leaves empty
     
-    KEPT ENTIRELY FROM BEFORE VERSION - This is the working version
-    
     Args:
         all_data: Historical data from load_data_from_google_sheets
         country_code: Country code for the sheet (EU, DE, etc.)
+        spreadsheet: Already-opened gspread Spreadsheet object (avoids re-opening)
     """
     print("\n" + "=" * 60)
     print("UPDATING SUMMARY TABLE (HISTORICAL DATA)")
@@ -2215,23 +2189,22 @@ def update_summary_table_historical_data(all_data, country_code='EU'):
             print("⚠ GOOGLE_CREDENTIALS_JSON not set - skipping update")
             return
         
-        creds_dict = json.loads(google_creds_json)
-        scope = ['https://www.googleapis.com/auth/spreadsheets', 'https://www.googleapis.com/auth/drive']
-        credentials = Credentials.from_service_account_info(creds_dict, scopes=scope)
-        gc = gspread.authorize(credentials)
-        
-        # Initialize drive service for sheet organization
-        from googleapiclient.discovery import build
-        from google.oauth2.service_account import Credentials as ServiceAccountCredentials
-        
-        credentials_drive = ServiceAccountCredentials.from_service_account_info(
-            creds_dict,
-            scopes=['https://www.googleapis.com/auth/drive.file']
-        )
-        drive_service = build('drive', 'v3', credentials=credentials_drive)
-        
-        # Get or create country sheet
-        spreadsheet = get_or_create_country_sheet(gc, drive_service, country_code=country_code)
+        # Use passed spreadsheet if available, otherwise open it
+        if spreadsheet is not None:
+            print(f"✓ Using existing spreadsheet connection ({country_code})")
+        else:
+            creds_dict = json.loads(google_creds_json)
+            scope = ['https://www.googleapis.com/auth/spreadsheets', 'https://www.googleapis.com/auth/drive']
+            credentials = Credentials.from_service_account_info(creds_dict, scopes=scope)
+            gc = gspread.authorize(credentials)
+            
+            from googleapiclient.discovery import build
+            from google.oauth2.service_account import Credentials as ServiceAccountCredentials
+            credentials_drive = ServiceAccountCredentials.from_service_account_info(
+                creds_dict, scopes=['https://www.googleapis.com/auth/drive.file']
+            )
+            drive_service = build('drive', 'v3', credentials=credentials_drive)
+            spreadsheet = get_or_create_country_sheet(gc, drive_service, country_code=country_code)
         print(f"✓ Connected to spreadsheet ({country_code})")
         
         # Get current date info (needed for headers)
@@ -2252,28 +2225,26 @@ def update_summary_table_historical_data(all_data, country_code='EU'):
                 print(f"  Expanding worksheet from {worksheet.col_count} to 22 columns...")
                 worksheet.resize(rows=worksheet.row_count, cols=22)
                 print("  ✓ Worksheet expanded")
-            
-            # Always update header row to ensure consistency
-            print("  Updating header row...")
-            headers = [
-                'Source', 
-                'Yesterday_GWh', 'Yesterday_%', 
-                'LastWeek_GWh', 'LastWeek_%',
-                f'YTD{current_year}_GWh', f'YTD{current_year}_%',
-                f'{previous_year}_GWh', f'{previous_year}_%',
-                'Last_Updated',
-                'Yesterday_Change_2015_%', 'LastWeek_Change_2015_%',
-                f'YTD{current_year}_Change_2015_%', f'{previous_year}_Change_2015_%',
-                f'Yesterday_Change_{previous_year}_%', f'LastWeek_Change_{previous_year}_%',
-                f'YTD{current_year}_Change_{previous_year}_%', f'{previous_year}_Change_{previous_year}_%',
-                f'Yesterday_Change_{two_years_ago}_%', f'LastWeek_Change_{two_years_ago}_%',
-                f'YTD{current_year}_Change_{two_years_ago}_%', f'{previous_year}_Change_{two_years_ago}_%'
-            ]
-            worksheet.update('A1:V1', [headers])
-            time.sleep(2)
-            worksheet.format('A1:V1', {'textFormat': {'bold': True}})
-            time.sleep(2)
-            print("  ✓ Header row updated")
+                # Update headers only when expanding (headers don't change otherwise)
+                headers = [
+                    'Source', 
+                    'Yesterday_GWh', 'Yesterday_%', 
+                    'LastWeek_GWh', 'LastWeek_%',
+                    f'YTD{current_year}_GWh', f'YTD{current_year}_%',
+                    f'{previous_year}_GWh', f'{previous_year}_%',
+                    'Last_Updated',
+                    'Yesterday_Change_2015_%', 'LastWeek_Change_2015_%',
+                    f'YTD{current_year}_Change_2015_%', f'{previous_year}_Change_2015_%',
+                    f'Yesterday_Change_{previous_year}_%', f'LastWeek_Change_{previous_year}_%',
+                    f'YTD{current_year}_Change_{previous_year}_%', f'{previous_year}_Change_{previous_year}_%',
+                    f'Yesterday_Change_{two_years_ago}_%', f'LastWeek_Change_{two_years_ago}_%',
+                    f'YTD{current_year}_Change_{two_years_ago}_%', f'{previous_year}_Change_{two_years_ago}_%'
+                ]
+                worksheet.update([headers], 'A1:V1')
+                time.sleep(2)
+                worksheet.format('A1:V1', {'textFormat': {'bold': True}})
+                time.sleep(2)
+                print("  ✓ Header row updated")
                 
         except gspread.WorksheetNotFound:
             print("⚠ 'Summary Table Data' worksheet not found - run intraday analysis first")
@@ -2964,7 +2935,7 @@ def main():
         print(f"PROCESSING {country_code}")
         print(f"{'='*60}")
         
-        all_data = load_data_from_google_sheets(country_code=country_code)
+        all_data, spreadsheet = load_data_from_google_sheets(country_code=country_code)
 
         if not all_data:
             print(f"Failed to load data for {country_code}.")
@@ -2976,8 +2947,8 @@ def main():
         # Store links by country (ADDED FROM AFTER)
         all_plot_links[country_code] = plot_links
         
-        # Update summary table with historical data (KEPT FROM BEFORE)
-        update_summary_table_historical_data(all_data, country_code=country_code)
+        # Update summary table with historical data -- reuse existing spreadsheet connection
+        update_summary_table_historical_data(all_data, country_code=country_code, spreadsheet=spreadsheet)
 
         print(f"\n✓ {country_code} complete!")
 
