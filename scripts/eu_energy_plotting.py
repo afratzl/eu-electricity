@@ -22,6 +22,9 @@ except ImportError:
 
 from config import ENTSOE_COUNTRIES, ENTSOE_COLORS, DISPLAY_NAMES, COUNTRY_DISPLAY_NAMES
 
+_LABEL_NAMES = {'All Renewables': 'Renewables', 'All Non-Renewables': 'Non-Renewables'}
+def _label(s): return _LABEL_NAMES.get(s, s)
+
 # === GOOGLE DRIVE FUNCTIONS (ADDED FROM AFTER VERSION) ===
 
 def get_or_create_drive_folder(service, folder_name, parent_id=None):
@@ -882,7 +885,7 @@ def create_all_charts(all_data, country_code='EU'):
                 color = ENTSOE_COLORS.get(source_name, 'black')
                 if source_name in available_sources:
                     ax1.plot(months, monthly_means_pct[source_name], marker='o', color=color,
-                             linewidth=6, markersize=13, label=source_name)
+                             linewidth=6, markersize=13, label=_label(source_name))
                 else:
                     # Plot zero line for missing sources
                     ax1.plot(months, [0]*12, marker='o', color=color,
@@ -962,7 +965,7 @@ def create_all_charts(all_data, country_code='EU'):
                 if source_name in available_sources:
                     values_twh = [val / 1000 for val in monthly_means_abs[source_name]]
                     ax2.plot(months, values_twh, marker='o', color=color,
-                             linewidth=6, markersize=13, label=source_name)
+                             linewidth=6, markersize=13, label=_label(source_name))
                 else:
                     # Plot zero line for missing sources
                     ax2.plot(months, [0]*12, marker='o', color=color,
@@ -1156,7 +1159,7 @@ def create_all_charts(all_data, country_code='EU'):
             for category_name in ['All Renewables', 'All Non-Renewables']:
                 color = ENTSOE_COLORS[category_name]
                 ax1.plot(month_names_abbr, monthly_means_pct[category_name], marker='o', color=color,
-                         linewidth=6, markersize=13, label=category_name)
+                         linewidth=6, markersize=13, label=_label(category_name))
 
             add_flag_and_labels(fig1, country_code,
                               'Electricity Generation',
@@ -1210,7 +1213,7 @@ def create_all_charts(all_data, country_code='EU'):
                 color = ENTSOE_COLORS[category_name]
                 values_twh = [val / 1000 for val in monthly_means_abs[category_name]]
                 ax2.plot(month_names_abbr, values_twh, marker='o', color=color,
-                         linewidth=6, markersize=13, label=category_name)
+                         linewidth=6, markersize=13, label=_label(category_name))
 
             add_flag_and_labels(fig2, country_code,
                               'Electricity Generation',
@@ -1341,7 +1344,7 @@ def create_all_charts(all_data, country_code='EU'):
                             percentages.append(0)
 
                     ax1.plot(pct_years, percentages, marker='o', color=color,
-                             linewidth=6, markersize=13, label=source_name)
+                             linewidth=6, markersize=13, label=_label(source_name))
             else:
                 # Plot zero line for missing sources
                 if 'Total Generation' in annual_totals:
@@ -1424,7 +1427,7 @@ def create_all_charts(all_data, country_code='EU'):
                 years_list = sorted(annual_totals[source_name].keys())
                 values_twh = [annual_totals[source_name][year] / 1000 for year in years_list]
                 ax2.plot(years_list, values_twh, marker='o', color=color,
-                         linewidth=6, markersize=13, label=source_name)
+                         linewidth=6, markersize=13, label=_label(source_name))
             else:
                 # Plot zero line for missing sources
                 if 'Total Generation' in annual_totals:
@@ -1525,7 +1528,7 @@ def create_all_charts(all_data, country_code='EU'):
                             percentages.append(0)
 
                     ax1.plot(pct_years, percentages, marker='o', color=color,
-                             linewidth=6, markersize=13, label=source_name)
+                             linewidth=6, markersize=13, label=_label(source_name))
                     lines_plotted += 1
 
         if lines_plotted > 0:
@@ -1585,7 +1588,7 @@ def create_all_charts(all_data, country_code='EU'):
                 values_twh = [annual_totals[source_name][year] / 1000 for year in years_list]
                 max_renewable_abs = max(max_renewable_abs, max(values_twh) if values_twh else 0)
                 ax2.plot(years_list, values_twh, marker='o', color=color,
-                         linewidth=6, markersize=13, label=source_name)
+                         linewidth=6, markersize=13, label=_label(source_name))
                 lines_plotted += 1
 
         if lines_plotted > 0:
@@ -1755,7 +1758,7 @@ def create_all_charts(all_data, country_code='EU'):
             # Plot the line (only if we have data points)
             if years_to_plot and yoy_pct_changes:
                 ax1.plot(years_to_plot, yoy_pct_changes, marker='o', color=color,
-                         linewidth=6, markersize=13, label=source_name)
+                         linewidth=6, markersize=13, label=_label(source_name))
             else:
                 # Edge case: baseline exists but no valid years to plot
                 ax1.plot([], [], marker='o', color=color, linewidth=6, 
@@ -1897,7 +1900,7 @@ def create_all_charts(all_data, country_code='EU'):
             # Only plot if we have matching data points
             if len(years_to_plot) > 0 and len(yoy_abs_changes) == len(years_to_plot):
                 ax2.plot(years_to_plot, yoy_abs_changes, marker='o', color=color,
-                         linewidth=6, markersize=13, label=source_name)
+                         linewidth=6, markersize=13, label=_label(source_name))
 
         if True:  # Always true since we force all sources
             if all_yoy_abs_values:
@@ -2024,7 +2027,7 @@ def create_all_charts(all_data, country_code='EU'):
             if len(years_to_plot) > 0 and len(yoy_pct_changes) == len(years_to_plot):
                 color = ENTSOE_COLORS[category_name]
                 ax3.plot(years_to_plot, yoy_pct_changes, marker='o', color=color,
-                         linewidth=6, markersize=13, label=category_name)
+                         linewidth=6, markersize=13, label=_label(category_name))
                 lines_plotted += 1
 
         if lines_plotted > 0:
@@ -2126,7 +2129,7 @@ def create_all_charts(all_data, country_code='EU'):
             if len(years_to_plot) > 0 and len(yoy_abs_changes) == len(years_to_plot):
                 color = ENTSOE_COLORS[category_name]
                 ax4.plot(years_to_plot, yoy_abs_changes, marker='o', color=color,
-                         linewidth=6, markersize=13, label=category_name)
+                         linewidth=6, markersize=13, label=_label(category_name))
                 lines_plotted += 1
 
         if lines_plotted > 0:
