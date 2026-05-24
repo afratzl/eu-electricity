@@ -1,0 +1,33 @@
+name: Generate Summary Table JSON
+
+on:
+  workflow_dispatch:
+
+jobs:
+  generate-summary-table:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          pip install gspread google-auth
+
+      - name: Generate Summary Table JSON
+        env:
+          GOOGLE_CREDENTIALS_JSON: ${{ secrets.GOOGLE_CREDENTIALS_JSON }}
+        run: |
+          python scripts/generate_summary_table_json.py
+
+      - name: Commit and push
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add plots/energy_summary_table.json
+          git diff --staged --quiet || git commit -m "Update energy summary table JSON"
+          git push
