@@ -40,7 +40,7 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install entsoe-py pandas==2.2.3 matplotlib numpy gspread google-auth pytz scipy google-api-python-client geopandas shapely pyproj
+          pip install entsoe-py pandas==2.2.3 matplotlib numpy gspread google-auth pytz scipy google-api-python-client geopandas shapely pyproj cairosvg Pillow
       
       - name: Create plots directory
         run: mkdir -p plots
