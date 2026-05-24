@@ -465,15 +465,21 @@
                 prev: 'year_2024'
             };
 
+            let sourceRowCount = {renewable: 0, 'non-renewable': 0};
             data.sources.forEach(source => {
                 const cat = source.category || '';
                 const isAggregate = cat.startsWith('aggregate') || source.source === 'All Renewables' || source.source === 'Renewables' || source.source === 'All Non-Renewables' || source.source === 'Non-Renewables';
                 const isRenewable = cat.includes('renewable') || source.source === 'All Renewables' || source.source === 'Renewables';
                 const rowClass = isAggregate ? 'row-aggregate-pro' : 'row-source-pro';
                 const categoryClass = isRenewable ? 'renewable' : 'non-renewable';
+                let altClass = '';
+                if (!isAggregate) {
+                    sourceRowCount[categoryClass]++;
+                    altClass = sourceRowCount[categoryClass] % 2 === 0 ? ' row-even' : ' row-odd';
+                }
                 const color = SOURCE_COLORS[source.source] || '#888';
 
-                html += `<tr class="${rowClass} ${categoryClass}">`;
+                html += `<tr class="${rowClass} ${categoryClass}${altClass}">`;
                 const displayName = source.source.replace('All Renewables', 'Renewables').replace('All Non-Renewables', 'Non-Renewables');
                 html += `<td class="source-name-cell-pro">${colorDot(source.source)}${displayName}</td>`;
 
@@ -852,19 +858,11 @@
             border-left: 3px solid rgba(0, 102, 204, 0.25);
         }
 
-        .row-source-pro.renewable:nth-of-type(even) {
-            background: rgba(0, 102, 204, 0.06);
+        .row-source-pro.row-even {
+            background: rgba(0, 102, 204, 0.07);
         }
 
-        .row-source-pro.renewable:nth-of-type(odd) {
-            background: white;
-        }
-
-        .row-source-pro.non-renewable:nth-of-type(even) {
-            background: rgba(74, 85, 104, 0.07);
-        }
-
-        .row-source-pro.non-renewable:nth-of-type(odd) {
+        .row-source-pro.row-odd {
             background: white;
         }
 
