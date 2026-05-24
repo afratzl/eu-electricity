@@ -50,7 +50,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install geopandas matplotlib numpy pyproj shapely \
+          pip install geopandas matplotlib numpy pyproj shapely cairosvg Pillow \
                       gspread google-auth google-auth-oauthlib \
                       google-auth-httplib2 google-api-python-client \
                       pandas
