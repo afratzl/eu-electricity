@@ -200,6 +200,9 @@ ENTSOE_COLORS = {
     'Nuclear':            '#8B4513',
     'Oil':                '#191970',
     'Waste':              '#808000',
-    'Renewables':     '#00CED1',
-    'Non-Renewables': '#000000',
+    'Renewables':         '#00CED1',
+    'Non-Renewables':     '#000000',
+    # Legacy aliases -- keep for backward compatibility with eu_energy_plotting.py
+    'All Renewables':     '#00CED1',
+    'All Non-Renewables': '#000000',
 }
