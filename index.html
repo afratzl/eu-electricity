@@ -392,10 +392,10 @@
             'Nuclear':            '#8B4513',
             'Oil':                '#191970',
             'Waste':              '#808000',
-            'Renewables':         '#00CED1',
             'All Renewables':     '#00CED1',
-            'Non-Renewables':     '#444444',
+            'Renewables':         '#00CED1',
             'All Non-Renewables': '#444444',
+            'Non-Renewables':     '#444444',
         };
 
         // Display summary table
@@ -474,7 +474,8 @@
                 const color = SOURCE_COLORS[source.source] || '#888';
 
                 html += `<tr class="${rowClass} ${categoryClass}">`;
-                html += `<td class="source-name-cell-pro">${colorDot(source.source)}${source.source}</td>`;
+                const displayName = source.source.replace('All Renewables', 'Renewables').replace('All Non-Renewables', 'Non-Renewables');
+                html += `<td class="source-name-cell-pro">${colorDot(source.source)}${displayName}</td>`;
 
                 [['yesterday','yesterday'], ['last_week','last_week'], ['ytd_2025','ytd_2025'], ['year_2024','year_2024']].forEach(([col, key]) => {
                     const d = source[key];
