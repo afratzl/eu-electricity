@@ -418,7 +418,7 @@
                 if (!val || val === '—' || val === '') return '';
                 const num = parseFloat(val);
                 if (isNaN(num)) return '';
-                if (num === 0) return '';
+                if (num === 0) return 'color:#888888;';
                 // Scale opacity 0-1 based on magnitude, cap at ±15%
                 const intensity = Math.min(Math.abs(num) / 15, 1);
                 if (num > 0) {
