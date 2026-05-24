@@ -163,8 +163,8 @@ DISPLAY_NAMES = {
     'nuclear':            'Nuclear',
     'oil':                'Oil',
     'waste':              'Waste',
-    'all-renewables':     'Renewables',
-    'all-non-renewables': 'Non-Renewables',
+    'all-renewables':     'All Renewables',
+    'all-non-renewables': 'All Non-Renewables',
 }
 
 # ============================================================
