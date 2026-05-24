@@ -337,6 +337,22 @@ def load_data_from_google_sheets(country_code='EU'):
     Args:
         country_code: Country code ('EU' for aggregate, 'DE' for Germany, etc.)
     """
+    from gspread.exceptions import APIError
+ 
+    def read_with_retry(worksheet, max_retries=5):
+        """Read worksheet with exponential backoff on 429."""
+        for attempt in range(max_retries):
+            try:
+                return worksheet.get_all_values()
+            except APIError as e:
+                if '429' in str(e):
+                    wait = 60 * (attempt + 1)
+                    print(f"    ⚠ Rate limited, waiting {wait}s (attempt {attempt+1}/{max_retries})...")
+                    time.sleep(wait)
+                else:
+                    raise
+        raise Exception("Max retries exceeded on worksheet read")
+ 
     try:
         google_creds_json = os.environ.get('GOOGLE_CREDENTIALS_JSON')
         if not google_creds_json:
@@ -373,10 +389,10 @@ def load_data_from_google_sheets(country_code='EU'):
             print(f"  [{worksheet_count}] Loading {source_name} data...")
             
             # ===== OPTIMIZATION: Add delay BEFORE each read =====
-            # This ensures we don't exceed 60 reads/minute (2 sec = 30 reads/min max)
-            time.sleep(10)
+            # This ensures we don't exceed 60 reads/minute (10 sec = 6 reads/min max)
+            time.sleep(4)
             
-            values = worksheet.get_all_values()
+            values = read_with_retry(worksheet)
             
             if len(values) < 2:
                 print(f"    ⚠ No data found in {sheet_name}")
