@@ -469,7 +469,7 @@
             data.sources.forEach(source => {
                 const cat = source.category || '';
                 const isAggregate = cat.startsWith('aggregate') || source.source === 'All Renewables' || source.source === 'Renewables' || source.source === 'All Non-Renewables' || source.source === 'Non-Renewables';
-                const isRenewable = cat.includes('renewable') || source.source === 'All Renewables' || source.source === 'Renewables';
+                const isRenewable = cat === 'renewable' || cat === 'aggregate-renewable';
                 const rowClass = isAggregate ? 'row-aggregate-pro' : 'row-source-pro';
                 const categoryClass = isRenewable ? 'renewable' : 'non-renewable';
                 let altClass = '';
@@ -859,7 +859,7 @@
         }
 
         .row-source-pro.row-even {
-            background: rgba(0, 102, 204, 0.07);
+            background: rgba(0, 102, 204, 0.08);
         }
 
         .row-source-pro.row-odd {
