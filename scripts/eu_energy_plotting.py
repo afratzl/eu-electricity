@@ -20,7 +20,8 @@ except ImportError:
     GDRIVE_AVAILABLE = False
     print("⚠ Google Drive API not available - plots will not be uploaded to Drive")
 
-from config import ENTSOE_COUNTRIES, ENTSOE_COLORS, DISPLAY_NAMES, COUNTRY_DISPLAY_NAMES
+from config import ENTSOE_COUNTRIES, ENTSOE_COLORS, DISPLAY_NAMES, COUNTRY_DISPLAY_NAMES, \
+    RENEWABLE_SOURCES, NON_RENEWABLE_SOURCES, ALL_SOURCES, AGGREGATE_SOURCES
 
 _LABEL_NAMES = {'All Renewables': 'Renewables', 'All Non-Renewables': 'Non-Renewables'}
 def _label(s): return _LABEL_NAMES.get(s, s)
@@ -484,8 +485,7 @@ def create_all_charts(all_data, country_code='EU'):
     month_names = [calendar.month_abbr[i] for i in range(1, 13)]
     
     # Define standard 10 energy sources for consistent plotting
-    all_sources = ['Solar', 'Wind', 'Hydro', 'Biomass', 'Geothermal', 
-                   'Nuclear', 'Gas', 'Coal', 'Oil', 'Waste']
+    all_sources = ALL_SOURCES
 
     # Color gradient for years
     import matplotlib.cm as cm
@@ -528,12 +528,8 @@ def create_all_charts(all_data, country_code='EU'):
         print(f"  ✓ All Non-Renewables calculated")
 
     # Individual sources for plotting
-    individual_sources = [
-        'Solar', 'Wind', 'Hydro', 'Biomass', 'Geothermal',
-        'Gas', 'Coal', 'Nuclear', 'Oil', 'Waste'
-    ]
-    
-    total_sources = ['All Renewables', 'All Non-Renewables']
+    individual_sources = ALL_SOURCES
+    total_sources = AGGREGATE_SOURCES
     
     sources_to_plot = individual_sources + total_sources
 
@@ -1240,9 +1236,9 @@ def create_all_charts(all_data, country_code='EU'):
 
     annual_totals = {}
 
-    renewable_sources = ['Solar', 'Wind', 'Hydro', 'Biomass', 'Geothermal']
-    non_renewable_sources = ['Gas', 'Coal', 'Nuclear', 'Oil', 'Waste']
-    total_sources = ['All Renewables', 'All Non-Renewables']
+    renewable_sources = RENEWABLE_SOURCES
+    non_renewable_sources = NON_RENEWABLE_SOURCES
+    total_sources = AGGREGATE_SOURCES
 
     available_renewables = [s for s in renewable_sources if s in all_data]
     available_non_renewables = [s for s in non_renewable_sources if s in all_data]
@@ -2251,9 +2247,9 @@ def update_summary_table_historical_data(all_data, country_code='EU', spreadshee
             return
         
         # Define source categories
-        renewables = ['Solar', 'Wind', 'Hydro', 'Biomass', 'Geothermal']
-        non_renewables = ['Gas', 'Coal', 'Nuclear', 'Oil', 'Waste']
-        all_sources = renewables + non_renewables
+        renewables = RENEWABLE_SOURCES
+        non_renewables = NON_RENEWABLE_SOURCES
+        all_sources = ALL_SOURCES
         
         # Calculate totals for each source
         source_calcs = {}
