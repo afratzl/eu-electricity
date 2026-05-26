@@ -144,9 +144,19 @@ ENERGY_SOURCES = {
     'Nuclear':          SOURCE_KEYWORDS['nuclear'],
     'Oil':              SOURCE_KEYWORDS['oil'],
     'Waste':            SOURCE_KEYWORDS['waste'],
-    'Renewables':   SOURCE_KEYWORDS['all-renewables'],
+    'All Renewables':   SOURCE_KEYWORDS['all-renewables'],
     'Total Generation': 'ALL',
 }
+
+# ============================================================
+# SOURCE CATEGORY LISTS
+# Single source of truth -- import these instead of hardcoding
+# ============================================================
+
+RENEWABLE_SOURCES     = ['Solar', 'Wind', 'Hydro', 'Biomass', 'Geothermal']
+NON_RENEWABLE_SOURCES = ['Gas', 'Coal', 'Nuclear', 'Oil', 'Waste']
+ALL_SOURCES           = RENEWABLE_SOURCES + NON_RENEWABLE_SOURCES
+AGGREGATE_SOURCES     = ['All Renewables', 'All Non-Renewables']
 
 # ============================================================
 # DISPLAY NAMES
