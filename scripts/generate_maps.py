@@ -408,14 +408,14 @@ def generate_map(geodata, values_by_country, source, date_str, scale='fixed'):
     )
 
     n_leg = len(sorted_countries)
-    n_cols_leg = 4
+    n_cols_leg = 5
     n_rows_leg = (n_leg + n_cols_leg - 1) // n_cols_leg
 
     flag_w = 0.019
     flag_h = flag_w * 0.6
     row_h = ph / n_rows_leg * 0.95
     entry_w = flag_w + 0.025
-    col_gap = 0.028
+    col_gap = 0.031
     total_w = n_cols_leg * entry_w + (n_cols_leg - 1) * col_gap
     start_x = px0 + (pw - total_w) / 2
 
