@@ -397,7 +397,7 @@ def generate_map(geodata, values_by_country, source, date_str, scale='fixed'):
         ax_y = (yd - miny) / y_range
         return map_left_f + ax_x * (map_right_f - map_left_f), map_bottom_f + ax_y * (map_top_f - map_bottom_f)
 
-    px0, py1 = data_to_fig(5650000, 5480000)
+    px0, py1 = data_to_fig(5750000, 5600000)
     px1, py0 = data_to_fig(7310000, 3340000)
     pw = px1 - px0
     ph = py1 - py0
@@ -432,7 +432,7 @@ def generate_map(geodata, values_by_country, source, date_str, scale='fixed'):
         (content_left - cw * leg_pad, content_bottom - ch * leg_pad),
         cw * (1 + 2 * leg_pad), ch * (1 + 2 * leg_pad),
         transform=fig.transFigure,
-        facecolor='#f5f5f5', edgecolor='none', alpha=0.88, zorder=10))
+        facecolor='#f9f9f9', edgecolor='none', alpha=0.88, zorder=10))
 
     flags_dir = 'flags'
     for i, (cc, val) in enumerate(sorted_countries):
