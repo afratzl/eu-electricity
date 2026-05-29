@@ -276,7 +276,7 @@ def generate_map(geodata, values_by_country, source, date_str, scale='fixed'):
         facecolor='#EBEBEB', edgecolor='none', zorder=0
     ))
     plt.subplots_adjust(left=0.0, right=0.99, top=0.84, bottom=0.11)
-    maxy_cropped = maxy + (maxy - miny) * 0.03 * 0.1  # crop top
+    maxy_cropped = maxy + (maxy - miny) * 0.03 * 0  # crop top
     ax.set_facecolor('#cce6ff')
 
     # All non-ENTSO-E countries (except Iceland which is handled separately):
@@ -364,6 +364,7 @@ def generate_map(geodata, values_by_country, source, date_str, scale='fixed'):
 
     # Titles centered across full banner
     source_display = DISPLAY_NAMES.get(source, source.title())
+    source_display = source_display.replace('All Renewables', 'Renewables').replace('All Non-Renewables', 'Non-Renewables')
     fig.text(0.5, 0.965, 'Electricity Generation',
              fontsize=36, fontweight='bold', ha='center', va='top')
     fig.text(0.5, 0.91, f'{source_display} · Fraction of Total · {date_str}',
@@ -880,7 +881,8 @@ def main():
                     save_map_links('Yesterday', source, result, plot_type='percentage')
 
         elif args.period == 'last_week':
-            date_str = f"Week ending {yesterday.strftime('%d %B %Y')}"
+            week_start = yesterday - timedelta(days=6)
+            date_str = f"{week_start.strftime('%-d')}-{yesterday.strftime('%-d %b %Y')}"
             values = {}
             for country_code in ENTSOE_COUNTRIES:
                 try:
