@@ -398,7 +398,7 @@ def generate_map(geodata, values_by_country, source, date_str, scale='fixed'):
         ax_y = (yd - miny) / y_range
         return map_left_f + ax_x * (map_right_f - map_left_f), map_bottom_f + ax_y * (map_top_f - map_bottom_f)
 
-    px0, py1 = data_to_fig(5500000, 5500000)
+    px0, py1 = data_to_fig(5500000, 5550000)
     px1, py0 = data_to_fig(7310000, 3340000)
     pw = px1 - px0
     ph = py1 - py0
