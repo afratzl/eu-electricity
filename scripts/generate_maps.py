@@ -276,7 +276,7 @@ def generate_map(geodata, values_by_country, source, date_str, scale='fixed'):
         facecolor='#EBEBEB', edgecolor='none', zorder=0
     ))
     plt.subplots_adjust(left=0.0, right=0.99, top=0.84, bottom=0.11)
-    maxy_cropped = maxy + (maxy - miny) * 0.03 * 0.3  # crop top
+    maxy_cropped = 5000000  # crop top to just below Norway mainland
     ax.set_facecolor('#cce6ff')
 
     # All non-ENTSO-E countries (except Iceland which is handled separately):
@@ -397,8 +397,8 @@ def generate_map(geodata, values_by_country, source, date_str, scale='fixed'):
         ax_y = (yd - miny) / y_range
         return map_left_f + ax_x * (map_right_f - map_left_f), map_bottom_f + ax_y * (map_top_f - map_bottom_f)
 
-    px0, py1 = data_to_fig(5500000, 5400000)
-    px1, py0 = data_to_fig(7310000, 3200000)
+    px0, py1 = data_to_fig(5500000, 5500000)
+    px1, py0 = data_to_fig(7310000, 3340000)
     pw = px1 - px0
     ph = py1 - py0
 
@@ -481,12 +481,12 @@ def generate_map(geodata, values_by_country, source, date_str, scale='fixed'):
                 facecolor=map_color, edgecolor='#888', linewidth=0.4, zorder=11))
 
         # CC label below flag
-        fig.text(fx + flag_w / 2, fy - flag_h / 2 - 0.005, cc,
+        fig.text(fx + flag_w / 2, fy - flag_h / 2 - 0.007, cc,
                  transform=fig.transFigure,
-                 fontsize=8, fontweight='bold', va='top', ha='center',
+                 fontsize=10, fontweight='bold', va='top', ha='center',
                  color='#333', zorder=12)
         # % to right of flag
-        fig.text(fx + flag_w + 0.013, fy - flag_h * 0.15, value_str,
+        fig.text(fx + flag_w + 0.010, fy - flag_h * 0.15, value_str,
                  transform=fig.transFigure,
                  fontsize=10, fontweight='bold', va='center', ha='left',
                  color='#111', zorder=12)
