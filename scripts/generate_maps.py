@@ -323,7 +323,7 @@ def generate_map(geodata, values_by_country, source, date_str, scale='fixed'):
                 ha='center', va='center', color='black', zorder=5,
                 path_effects=[pe.withStroke(linewidth=2.5, foreground='white')])
 
-    # ENTSO-E country labels -- show percentage value instead of country code
+    # ENTSO-E country labels
     for cc in ENTSOE_COUNTRIES:
         lx, ly = get_label_pos(geodata, iso2=cc)
         if lx is None:
@@ -332,21 +332,16 @@ def generate_map(geodata, values_by_country, source, date_str, scale='fixed'):
         lx += ox
         ly += oy
         if minx <= lx <= maxx_extended + 50000 and miny <= ly <= maxy_cropped:
-            val = values_by_country.get(cc)
-            label = f'{val:.0f}%' if val is not None else ''
-            if label:
-                ax.text(lx, ly, label,
-                        fontsize=14, fontweight='bold',
-                        ha='center', va='center', color='black', zorder=6,
-                        path_effects=[pe.withStroke(linewidth=2.5, foreground='white')])
+            ax.text(lx, ly, cc,
+                    fontsize=14, fontweight='bold',
+                    ha='center', va='center', color='black', zorder=6,
+                    path_effects=[pe.withStroke(linewidth=2.5, foreground='white')])
 
-    # Malta label
-    mt_val = values_by_country.get('MT')
-    if mt_val is not None:
-        ax.text(MT_X + 80000, MT_Y + 60000, f'{mt_val:.0f}%',
-                fontsize=14, fontweight='bold',
-                ha='center', va='center', color='black', zorder=6,
-                path_effects=[pe.withStroke(linewidth=2.5, foreground='white')])
+    # Malta label (no polygon in 110m dataset)
+    ax.text(MT_X + 80000, MT_Y + 60000, 'MT',  # MT_Y already adjusted (-60000)
+            fontsize=14, fontweight='bold',
+            ha='center', va='center', color='black', zorder=6,
+            path_effects=[pe.withStroke(linewidth=2.5, foreground='white')])
 
     # Context country labels
     for name, (label, weight, size, color) in CONTEXT_LABELS.items():
@@ -401,6 +396,100 @@ def generate_map(geodata, values_by_country, source, date_str, scale='fixed'):
         ax_x = (xd - minx) / x_range
         ax_y = (yd - miny) / y_range
         return map_left_f + ax_x * (map_right_f - map_left_f), map_bottom_f + ax_y * (map_top_f - map_bottom_f)
+
+    px0, py1 = data_to_fig(5750000, 5600000)
+    px1, py0 = data_to_fig(7310000, 3340000)
+    pw = px1 - px0
+    ph = py1 - py0
+
+    sorted_countries = sorted(
+        [(cc, values_by_country.get(cc)) for cc in values_by_country],
+        key=lambda x: (x[1] is None, -(x[1] or 0))
+    )
+
+    n_leg = len(sorted_countries)
+    n_cols_leg = 5
+    n_rows_leg = (n_leg + n_cols_leg - 1) // n_cols_leg
+
+    flag_w = 0.019
+    flag_h = flag_w * 0.6
+    row_h = ph / n_rows_leg * 0.95
+    entry_w = flag_w + 0.025
+    col_gap = 0.031
+    total_w = n_cols_leg * entry_w + (n_cols_leg - 1) * col_gap
+    start_x = px0 + (pw - total_w) / 2
+
+    content_top    = py1 - row_h * 0.5 + flag_h / 2 + 0.003
+    content_bottom = py1 - (n_rows_leg - 0.5) * row_h - flag_h / 2 - 0.010
+    content_left   = start_x - 0.004
+    content_right  = start_x + total_w + 0.004
+
+    cw = content_right - content_left
+    ch = content_top - content_bottom
+    leg_pad = 0.05
+
+    fig.patches.append(Rectangle(
+        (content_left - cw * leg_pad, content_bottom - ch * leg_pad),
+        cw * (1 + 2 * leg_pad), ch * (1 + 2 * leg_pad),
+        transform=fig.transFigure,
+        facecolor='#f9f9f9', edgecolor='none', alpha=0.88, zorder=10))
+
+    flags_dir = 'flags'
+    for i, (cc, val) in enumerate(sorted_countries):
+        row_i = i // n_cols_leg
+        col_i = i % n_cols_leg
+        fy = py1 - (row_i + 0.5) * row_h
+        fx = start_x + col_i * (entry_w + col_gap)
+
+        value_str = f"{val:.0f}%" if val is not None else "—"
+        map_color = cmap(norm(val)) if val is not None else '#eeeeee'
+
+        # Try real SVG flag via cairosvg, fall back to colored rectangle
+        flag_path = os.path.join(flags_dir, f'{cc}.svg')
+        flag_drawn = False
+        if os.path.exists(flag_path):
+            try:
+                import cairosvg, io
+                from PIL import Image as PILImage
+                from matplotlib.offsetbox import OffsetImage, AnnotationBbox
+                # Convert SVG to PNG at reasonable resolution
+                png_data = cairosvg.svg2png(url=os.path.abspath(flag_path), output_width=60, output_height=40)
+                pil_img = PILImage.open(io.BytesIO(png_data)).convert('RGBA')
+                img_arr = np.array(pil_img)
+                # Compute figure pixel size of flag
+                fig_w_px = fig.get_figwidth() * fig.get_dpi()
+                fig_h_px = fig.get_figheight() * fig.get_dpi()
+                flag_w_px = flag_w * fig_w_px
+                # Place flag using AnnotationBbox in figure coords
+                imagebox = OffsetImage(img_arr, zoom=flag_w_px / img_arr.shape[1])
+                imagebox.image.axes = ax
+                # Convert figure coords to display coords
+                disp_x = (fx + flag_w / 2) * fig_w_px
+                disp_y = (fy) * fig_h_px
+                ab = AnnotationBbox(imagebox, (fx + flag_w / 2, fy),
+                                    xycoords=fig.transFigure,
+                                    frameon=False, zorder=11, pad=0)
+                fig.add_artist(ab)
+                flag_drawn = True
+            except Exception as e:
+                pass
+
+        if not flag_drawn:
+            fig.patches.append(Rectangle(
+                (fx, fy - flag_h / 2), flag_w, flag_h,
+                transform=fig.transFigure,
+                facecolor=map_color, edgecolor='#888', linewidth=0.4, zorder=11))
+
+        # CC label below flag
+        fig.text(fx + flag_w / 2, fy - flag_h / 2 - 0.005, cc,
+                 transform=fig.transFigure,
+                 fontsize=8, fontweight='bold', va='top', ha='center',
+                 color='#333', zorder=12)
+        # % to right of flag
+        fig.text(fx + flag_w + 0.010, fy - flag_h * 0.15, value_str,
+                 transform=fig.transFigure,
+                 fontsize=10, fontweight='bold', va='center', ha='left',
+                 color='#111', zorder=12)
 
     return fig
 
