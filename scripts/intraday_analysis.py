@@ -3304,6 +3304,10 @@ def main():
                             preserved_sections['Trends'] = drive_links[country_code]['Trends']
                         if preserved_sections:
                             print(f"  💾 Preserving existing sections: {', '.join(preserved_sections.keys())}")
+                    # Preserve top-level Maps section
+                    preserved_maps = drive_links.get('Maps')
+                    if preserved_maps:
+                        print(f"  💾 Preserving top-level Maps section")
                     
                     # Initialize country structure
                     if country_code not in drive_links:
@@ -3380,6 +3384,10 @@ def main():
                         for section_name, section_data in preserved_sections.items():
                             drive_links[country_code][section_name] = section_data
                         print(f"  ✓ Restored preserved sections: {', '.join(preserved_sections.keys())}")
+                    # Restore top-level Maps section
+                    if preserved_maps:
+                        drive_links['Maps'] = preserved_maps
+                        print(f"  ✓ Restored top-level Maps section")
                     
                     # Save back to file (atomic write with validation)
                     drive_links_file_path = os.path.abspath(drive_links_file)
