@@ -135,7 +135,7 @@ CONTEXT_LABELS = {
 }
 
 # Europe clip box in EPSG:3035 (removes overseas territories)
-EUROPE_CLIP_BOX = box(1200000, 900000, 8000000, 5900000)
+EUROPE_CLIP_BOX = box(1200000, 900000, 8000000, 5800000)
 
 
 # ============================================================
