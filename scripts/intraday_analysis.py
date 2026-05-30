@@ -2331,7 +2331,7 @@ def generate_yesterday_plots(corrected_data, country_code='EU'):
     print(f"  📊 atomic_sources keys: {list(atomic_sources.keys())}")
     
     # Get yesterday's date for title
-    yesterday_date = (datetime.now() - timedelta(days=1)).strftime('%d.%m.%y')
+    yesterday_date = (datetime.now() - timedelta(days=1)).strftime('%d %B %Y')
     
     # Define the 10 sources in the order we want to plot them (MUST match intraday script)
     source_list = [
@@ -2842,7 +2842,7 @@ def generate_yesterday_aggregates_plots(corrected_data, country_code='EU'):
     yesterday_data = corrected_data['yesterday_projected']
     
     # Get yesterday's date for title
-    yesterday_date = (datetime.now() - timedelta(days=1)).strftime('%d.%m.%y')
+    yesterday_date = (datetime.now() - timedelta(days=1)).strftime('%d %B %Y')
     
     # Aggregates are at top level of yesterday_projected
     aggregate_names = ['all-renewables', 'all-non-renewables']
