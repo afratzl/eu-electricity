@@ -431,7 +431,7 @@ def generate_map(geodata, values_by_country, source, date_str, scale='fixed'):
 
     fig.patches.append(Rectangle(
         (content_left - cw * leg_pad, content_bottom - ch * leg_pad),
-        cw * (1 + 2 * leg_pad), ch * (1 + 2 * leg_pad) + 0.05,
+        cw * (1 + 2 * leg_pad), ch * (1 + 2 * leg_pad) + 0.03,
         transform=fig.transFigure,
         facecolor='white', edgecolor='none', alpha=1, zorder=10))
 
