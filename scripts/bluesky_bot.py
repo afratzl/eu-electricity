@@ -254,11 +254,23 @@ def post_to_bluesky():
         client.login(handle, password)
         print(f"✓ Logged in as {handle}")
         
+        def upload_with_retry(data, max_retries=3):
+            for attempt in range(max_retries):
+                try:
+                    return client.upload_blob(data)
+                except Exception as e:
+                    if attempt < max_retries - 1:
+                        print(f"  ⚠️  Upload attempt {attempt+1} failed, retrying...")
+                        import time
+                        time.sleep(5)
+                    else:
+                        raise
+
         # Upload plot image
         print("📤 Uploading plot image to Bluesky...")
         with open(plot_path, 'rb') as f:
             img_data = f.read()
-        upload_response = client.upload_blob(img_data)
+        upload_response = upload_with_retry(img_data)
         
         images = [{
             'alt': 'EU electricity generation chart showing Wind, Hydro, Solar, Nuclear, Gas, and Coal percentages for yesterday',
@@ -270,7 +282,7 @@ def post_to_bluesky():
             print("📤 Uploading renewables map to Bluesky...")
             with open(map_path, 'rb') as f:
                 map_data = f.read()
-            map_upload = client.upload_blob(map_data)
+            map_upload = upload_with_retry(map_data)
             images.append({
                 'alt': 'Map of EU renewable electricity generation by country for yesterday',
                 'image': map_upload.blob
