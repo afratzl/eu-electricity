@@ -19,7 +19,6 @@ def download_file_from_google_drive(file_id, destination):
     session = requests.Session()
     response = session.get(URL, params={'id': file_id}, stream=True)
     
-    # Save to file
     with open(destination, "wb") as f:
         for chunk in response.iter_content(32768):
             if chunk:
@@ -39,7 +38,6 @@ def get_plot_from_drive():
         with open(json_path, 'r') as f:
             links = json.load(f)
         
-        # Navigate to EU -> Yesterday -> all_sources -> percentage
         if 'EU' not in links:
             print("❌ EU not found in drive_links.json")
             return None
@@ -60,7 +58,6 @@ def get_plot_from_drive():
         
         print(f"✓ Found plot file_id: {file_id}")
         
-        # Download the file
         plot_path = 'plots/EU_yesterday_all_sources_percentage.png'
         os.makedirs('plots', exist_ok=True)
         
@@ -76,11 +73,42 @@ def get_plot_from_drive():
         traceback.print_exc()
         return None
 
+
+def get_map_from_drive():
+    """Get yesterday's renewables map file ID from drive_links.json and download it"""
+    json_path = 'plots/drive_links.json'
+    
+    if not os.path.exists(json_path):
+        return None
+    
+    try:
+        with open(json_path, 'r') as f:
+            links = json.load(f)
+        
+        file_id = links.get('Maps', {}).get('Yesterday', {}).get('all-renewables', {}).get('percentage', {}).get('file_id')
+        
+        if not file_id:
+            print("⚠️  No renewables map file_id found")
+            return None
+        
+        print(f"✓ Found map file_id: {file_id}")
+        
+        map_path = 'plots/map_all-renewables_yesterday.png'
+        os.makedirs('plots', exist_ok=True)
+        
+        print(f"📥 Downloading map from Google Drive...")
+        download_file_from_google_drive(file_id, map_path)
+        print(f"✓ Downloaded to: {map_path}")
+        
+        return map_path
+        
+    except Exception as e:
+        print(f"⚠️  Error getting map from Drive: {e}")
+        return None
+
+
 def get_stats_from_json():
-    """
-    Get yesterday's source percentages from energy_summary_table.json
-    This should already be in the repo from the intraday run
-    """
+    """Get yesterday's source percentages from energy_summary_table.json"""
     json_path = 'plots/energy_summary_table.json'
     
     if not os.path.exists(json_path):
@@ -91,14 +119,12 @@ def get_stats_from_json():
         with open(json_path, 'r') as f:
             data = json.load(f)
         
-        # Navigate to EU -> sources list
         if 'EU' not in data or 'sources' not in data['EU']:
             print("⚠️  EU data not found in JSON")
             return None
         
         sources = data['EU']['sources']
         
-        # Extract the 6 main sources AND the aggregates
         stats = {}
         source_map = {
             'Wind': 'wind',
@@ -125,11 +151,7 @@ def get_stats_from_json():
         return None
 
 def format_percentage(value):
-    """
-    Format percentage with right-alignment using spaces
-    Always 2 decimals, right-padded to width 6 (e.g., " 4.16%", "18.30%")
-    """
-    formatted = f"{value:>5.2f}%"  # Right-align in 5 chars, then add %
+    formatted = f"{value:>5.2f}%"
     return formatted
 
 def create_post_text_and_facets():
@@ -137,11 +159,9 @@ def create_post_text_and_facets():
     yesterday = datetime.now() - timedelta(days=1)
     date_str = yesterday.strftime('%B %d, %Y')
     
-    # Get stats from JSON
     stats = get_stats_from_json()
     
     if stats and len(stats) == 8:
-        # Format percentages
         wind_pct = format_percentage(stats['wind'])
         hydro_pct = format_percentage(stats['hydro'])
         solar_pct = format_percentage(stats['solar'])
@@ -151,7 +171,6 @@ def create_post_text_and_facets():
         ren_pct = format_percentage(stats['renewables'])
         non_ren_pct = format_percentage(stats['non_renewables'])
         
-        # EXACT spacing as specified:
         post_text = f"""EU Electricity Generation - {date_str}
 
 {ren_pct} of EU electricity generation was renewable.
@@ -163,7 +182,6 @@ Solar:    {solar_pct}     Coal:         {coal_pct}
 eu-electricity.eu
 #EU #Renewables #Electricity #EnergySky #ClimateSky"""
     else:
-        # Fallback if JSON data not available
         post_text = f"""EU Electricity Generation - {date_str}
 
 Yesterday's electricity generation breakdown across all EU member states.
@@ -173,10 +191,8 @@ eu-electricity.eu
 
 #Energy #EU #Renewables #Electricity"""
     
-    # Create facets for clickable link and hashtags
     facets = []
     
-    # Find the website link position
     link_text = "eu-electricity.eu"
     link_start = post_text.find(link_text)
     if link_start != -1:
@@ -190,14 +206,13 @@ eu-electricity.eu
             )
         )
     
-    # Find hashtag positions
     hashtags = ['#EU', '#Renewables', '#Electricity', '#EnergySky', '#ClimateSky']
     for tag in hashtags:
         tag_start = post_text.find(tag)
         if tag_start != -1:
             facets.append(
                 models.AppBskyRichtextFacet.Main(
-                    features=[models.AppBskyRichtextFacet.Tag(tag=tag[1:])],  # Remove # from tag
+                    features=[models.AppBskyRichtextFacet.Tag(tag=tag[1:])],
                     index=models.AppBskyRichtextFacet.ByteSlice(
                         byteStart=len(post_text[:tag_start].encode('utf-8')),
                         byteEnd=len(post_text[:tag_start + len(tag)].encode('utf-8'))
@@ -213,7 +228,6 @@ def post_to_bluesky():
     print("BLUESKY BOT - EU ELECTRICITY GENERATION")
     print("=" * 60)
     
-    # Get credentials from environment
     handle = os.environ.get('BLUESKY_HANDLE')
     password = os.environ.get('BLUESKY_PASSWORD')
     
@@ -221,42 +235,55 @@ def post_to_bluesky():
         print("❌ Error: BLUESKY_HANDLE and BLUESKY_PASSWORD must be set")
         sys.exit(1)
     
-    # Download plot from Google Drive
+    # Download yesterday's plot
     plot_path = get_plot_from_drive()
     if not plot_path:
         print("❌ Error: Could not get yesterday's plot from Google Drive")
         sys.exit(1)
     
-    # Create post text and facets
+    # Download renewables map (optional -- post without if unavailable)
+    map_path = get_map_from_drive()
+    
     post_text, facets = create_post_text_and_facets()
     print(f"\n📝 Post text:\n{post_text}\n")
     print(f"✓ Created {len(facets)} facets (clickable links/hashtags)")
     
     try:
-        # Login to Bluesky
         print("🔐 Logging in to Bluesky...")
         client = Client()
         client.login(handle, password)
         print(f"✓ Logged in as {handle}")
         
-        # Upload image
-        print("📤 Uploading image to Bluesky...")
+        # Upload plot image
+        print("📤 Uploading plot image to Bluesky...")
         with open(plot_path, 'rb') as f:
             img_data = f.read()
-        
         upload_response = client.upload_blob(img_data)
         
-        # Create post with image and facets
+        images = [{
+            'alt': 'EU electricity generation chart showing Wind, Hydro, Solar, Nuclear, Gas, and Coal percentages for yesterday',
+            'image': upload_response.blob
+        }]
+        
+        # Upload map image if available
+        if map_path:
+            print("📤 Uploading renewables map to Bluesky...")
+            with open(map_path, 'rb') as f:
+                map_data = f.read()
+            map_upload = client.upload_blob(map_data)
+            images.append({
+                'alt': 'Map of EU renewable electricity generation by country for yesterday',
+                'image': map_upload.blob
+            })
+            print("✓ Map image ready")
+        
         print("📮 Posting to Bluesky...")
         client.send_post(
             text=post_text,
             facets=facets,
             embed={
                 '$type': 'app.bsky.embed.images',
-                'images': [{
-                    'alt': 'EU electricity generation chart showing Wind, Hydro, Solar, Nuclear, Gas, and Coal percentages for yesterday',
-                    'image': upload_response.blob
-                }]
+                'images': images
             }
         )
         
