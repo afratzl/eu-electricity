@@ -442,7 +442,7 @@ def generate_map(geodata, values_by_country, source, date_str, scale='fixed'):
         fy = py1 - (row_i + 0.5) * row_h
         fx = start_x + col_i * (entry_w + col_gap)
 
-        value_str = f"{val:.0f}%" if val is not None else "—"
+        value_str = f"{val:.0f}%" if (val is not None and val > 0) else "—"
         map_color = cmap(norm(val)) if val is not None else '#eeeeee'
 
         # Try real SVG flag via cairosvg, fall back to colored rectangle
@@ -629,6 +629,19 @@ def load_summary_table_for_country(gc, country_code):
         except (ValueError, IndexError):
             y_pct = lw_pct = None
         result[src_key] = {'yesterday': y_pct, 'last_week': lw_pct}
+
+    # If ALL yesterday values are 0.0, country didn't report -- treat as no data
+    yesterday_vals = [v['yesterday'] for v in result.values() if v['yesterday'] is not None]
+    if yesterday_vals and all(v == 0.0 for v in yesterday_vals):
+        for k in result:
+            result[k]['yesterday'] = None
+
+    # Same for last_week
+    lastweek_vals = [v['last_week'] for v in result.values() if v['last_week'] is not None]
+    if lastweek_vals and all(v == 0.0 for v in lastweek_vals):
+        for k in result:
+            result[k]['last_week'] = None
+
     return result
 
 
@@ -843,14 +856,14 @@ def main():
                 time.sleep(20)
     else:
         # Full path: read monthly production sheets
-        for i, country_code in enumerate(ENTSOE_COUNTRIES):
-            print(f"  Loading {country_code} ({i+1}/{len(ENTSOE_COUNTRIES)})...")
+        for i, country_code in enumerate(ENTSOE_COUNTRIES + ['EU']):
+            print(f"  Loading {country_code} ({i+1}/{len(ENTSOE_COUNTRIES)+1})...")
             try:
                 all_country_data[country_code] = load_all_data_for_country(gc, country_code)
             except Exception as e:
                 print(f"  ⚠ Failed to load {country_code}: {e} -- will show as hatched")
                 all_country_data[country_code] = {}
-            if i < len(ENTSOE_COUNTRIES) - 1:
+            if i < len(ENTSOE_COUNTRIES):
                 time.sleep(15)
     print("  ✓ All country data loaded")
 
@@ -907,6 +920,7 @@ def main():
             year  = args.year  or (last_month_year if today.month == 1 else today.year if today.month > 1 else today.year - 1)
             month = args.month or (today.month - 1 if today.month > 1 else 12)
             date_str = datetime(year, month, 1).strftime('%B %Y')
+            month_name = datetime(year, month, 1).strftime('%B')
             values = {}
             for country_code in ENTSOE_COUNTRIES:
                 try:
@@ -921,15 +935,27 @@ def main():
                 except Exception as e:
                     print(f"  ⚠ {country_code}: {e}")
                     values[country_code] = None
+            # Add EU
+            try:
+                cd_eu     = all_country_data.get('EU', {})
+                total_val = cd_eu.get('total', {}).get(year, {}).get(month, None)
+                if is_non_renewables:
+                    ren_val    = cd_eu.get('all-renewables', {}).get(year, {}).get(month, None)
+                    source_val = max(0, total_val - ren_val) if (total_val and ren_val is not None) else None
+                else:
+                    source_val = cd_eu.get(source, {}).get(year, {}).get(month, None)
+                values['EU'] = compute_percentage(source_val, total_val)
+            except Exception:
+                values['EU'] = None
             fig       = generate_map(geodata, values, source, date_str, scale=args.scale)
             plot_file = f'plots/map_{source}_{year}_{month:02d}.png'
             fig.savefig(plot_file, dpi=150, facecolor='white')
             plt.close(fig)
             print(f"  ✓ Saved: {plot_file}")
             if drive_service:
-                result = upload_map_to_drive(drive_service, plot_file, 'Monthly', year=f"{year}_{month:02d}")
+                result = upload_map_to_drive(drive_service, plot_file, 'Monthly', year=month_name)
                 if result:
-                    save_map_links('Monthly', source, result, year=f"{year}_{month:02d}", plot_type='percentage')
+                    save_map_links('Monthly', source, result, year=month_name, plot_type='percentage')
 
         elif args.period == 'annual':
             for year in range(2015, today.year + 1):
@@ -948,6 +974,18 @@ def main():
                     except Exception as e:
                         print(f"  ⚠ {country_code}: {e}")
                         values[country_code] = None
+                # Add EU
+                try:
+                    cd_eu = all_country_data.get('EU', {})
+                    total_total_eu = sum(cd_eu.get('total', {}).get(year, {}).values()) if cd_eu.get('total', {}).get(year) else None
+                    if is_non_renewables:
+                        ren_total_eu    = sum(cd_eu.get('all-renewables', {}).get(year, {}).values()) if cd_eu.get('all-renewables', {}).get(year) else None
+                        source_total_eu = max(0, total_total_eu - ren_total_eu) if (total_total_eu and ren_total_eu is not None) else None
+                    else:
+                        source_total_eu = sum(cd_eu.get(source, {}).get(year, {}).values()) if cd_eu.get(source, {}).get(year) else None
+                    values['EU'] = compute_percentage(source_total_eu, total_total_eu)
+                except Exception:
+                    values['EU'] = None
 
                 date_str  = str(year)
                 fig       = generate_map(geodata, values, source, date_str, scale=args.scale)
