@@ -1,0 +1,69 @@
+name: Generate Monthly and Annual Maps
+
+on:
+  workflow_run:
+    workflows: ["Update Historical Data"]
+    types:
+      - completed
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  generate-maps:
+    runs-on: ubuntu-latest
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install gspread google-auth pandas matplotlib numpy google-api-python-client geopandas shapely pyproj cairosvg Pillow
+
+      - name: Create plots directory
+        run: mkdir -p plots
+
+      - name: Generate Annual Maps
+        env:
+          GOOGLE_CREDENTIALS_JSON: ${{ secrets.GOOGLE_CREDENTIALS_JSON }}
+        run: |
+          CURRENT_YEAR=$(date +%Y)
+          echo "Generating annual maps for 2015 to $CURRENT_YEAR..."
+          python scripts/generate_maps.py --period annual || echo "Failed annual maps"
+
+      - name: Generate All Monthly Maps
+        env:
+          GOOGLE_CREDENTIALS_JSON: ${{ secrets.GOOGLE_CREDENTIALS_JSON }}
+        run: |
+          CURRENT_YEAR=$(date +%Y)
+          CURRENT_MONTH=$(date +%-m)
+          PREV_YEAR=$((CURRENT_YEAR - 1))
+
+          for MONTH in $(seq 1 12); do
+            if [ "$MONTH" -lt "$CURRENT_MONTH" ]; then
+              MAP_YEAR=$CURRENT_YEAR
+            else
+              MAP_YEAR=$PREV_YEAR
+            fi
+            echo "Month $MONTH -> year $MAP_YEAR"
+            python scripts/generate_maps.py --period monthly --year $MAP_YEAR --month $MONTH || echo "Failed monthly map $MONTH"
+          done
+
+      - name: Commit and push changes
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git pull --rebase --autostash origin main
+          git add -f plots/*.json
+          git diff --quiet && git diff --staged --quiet || (git commit -m "Update monthly and annual maps [auto]" && git push)
