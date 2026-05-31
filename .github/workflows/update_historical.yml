@@ -88,27 +88,6 @@ jobs:
           echo "Generating summary table JSON..."
           python scripts/generate_summary_table_json.py || echo "Failed to generate JSON"
       
-      - name: Generate Current Year and All Monthly Maps
-        env:
-          GOOGLE_CREDENTIALS_JSON: ${{ secrets.GOOGLE_CREDENTIALS_JSON }}
-        run: |
-          CURRENT_YEAR=$(date +%Y)
-          CURRENT_MONTH=$(date +%-m)
-          PREV_YEAR=$((CURRENT_YEAR - 1))
-
-          echo "Generating annual map for $CURRENT_YEAR..."
-          python scripts/generate_maps.py --period annual --year $CURRENT_YEAR || echo "Failed annual map"
-
-          echo "Generating all 12 monthly maps..."
-          for MONTH in $(seq 1 12); do
-            if [ "$MONTH" -lt "$CURRENT_MONTH" ]; then
-              MAP_YEAR=$CURRENT_YEAR
-            else
-              MAP_YEAR=$PREV_YEAR
-            fi
-            echo "  Month $MONTH -> year $MAP_YEAR"
-            python scripts/generate_maps.py --period monthly --year $MAP_YEAR --month $MONTH || echo "Failed monthly map $MONTH"
-          done
       
       - name: Commit and push changes
         run: |
