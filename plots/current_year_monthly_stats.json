@@ -1,13 +1,13 @@
 {
   "EU": {
     "year": 2026,
-    "last_completed_month": 4,
-    "month_name": "April",
+    "last_completed_month": 5,
+    "month_name": "May",
     "months": {
       "1": {
-        "Solar": 3.39,
-        "Wind": 21.1,
-        "Hydro": 12.17,
+        "Solar": 3.4,
+        "Wind": 21.11,
+        "Hydro": 12.16,
         "Biomass": 2.93,
         "Geothermal": 0.01,
         "Nuclear": 23.85,
@@ -15,50 +15,64 @@
         "Coal": 11.2,
         "Oil": 0.61,
         "Waste": 0.69,
-        "All Renewables": 39.79,
-        "All Non-Renewables": 60.21
+        "All Renewables": 39.8,
+        "All Non-Renewables": 60.2
       },
       "2": {
         "Solar": 5.44,
-        "Wind": 21.22,
+        "Wind": 21.23,
         "Hydro": 14.27,
-        "Biomass": 3.0,
+        "Biomass": 3.01,
         "Geothermal": 0.15,
-        "Nuclear": 23.7,
+        "Nuclear": 23.69,
         "Gas": 16.98,
         "Coal": 10.71,
         "Oil": 0.48,
         "Waste": 0.73,
-        "All Renewables": 44.28,
-        "All Non-Renewables": 55.72
+        "All Renewables": 44.29,
+        "All Non-Renewables": 55.71
       },
       "3": {
-        "Solar": 11.7,
-        "Wind": 19.14,
-        "Hydro": 13.68,
-        "Biomass": 3.14,
+        "Solar": 11.72,
+        "Wind": 19.15,
+        "Hydro": 13.72,
+        "Biomass": 3.11,
         "Geothermal": 0.21,
-        "Nuclear": 23.61,
-        "Gas": 13.26,
-        "Coal": 10.44,
+        "Nuclear": 23.58,
+        "Gas": 13.24,
+        "Coal": 10.43,
         "Oil": 0.42,
         "Waste": 0.79,
-        "All Renewables": 48.06,
-        "All Non-Renewables": 51.94
+        "All Renewables": 48.11,
+        "All Non-Renewables": 51.89
       },
       "4": {
-        "Solar": 17.11,
-        "Wind": 17.83,
-        "Hydro": 13.59,
-        "Biomass": 3.38,
+        "Solar": 16.67,
+        "Wind": 17.58,
+        "Hydro": 13.3,
+        "Biomass": 3.32,
+        "Geothermal": 0.22,
+        "Nuclear": 23.53,
+        "Gas": 11.42,
+        "Coal": 8.53,
+        "Oil": 0.48,
+        "Waste": 0.87,
+        "All Renewables": 51.32,
+        "All Non-Renewables": 48.68
+      },
+      "5": {
+        "Solar": 20.1,
+        "Wind": 15.07,
+        "Hydro": 14.25,
+        "Biomass": 3.46,
         "Geothermal": 0.23,
-        "Nuclear": 24.06,
-        "Gas": 11.59,
-        "Coal": 8.7,
-        "Oil": 0.49,
+        "Nuclear": 23.12,
+        "Gas": 11.88,
+        "Coal": 8.55,
+        "Oil": 0.38,
         "Waste": 0.83,
-        "All Renewables": 52.37,
-        "All Non-Renewables": 47.63
+        "All Renewables": 53.34,
+        "All Non-Renewables": 46.66
       }
     }
   }
