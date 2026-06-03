@@ -845,7 +845,7 @@ def main():
     all_country_data    = {}  # monthly sheets: {country: {source: {year: {month: gwh}}}}
     summary_table_data  = {}  # summary sheet:  {country: {source: {yesterday, last_week}}}
 
-    if args.period in ('yesterday', 'last_week'):
+    if args.period in ('yesterday', 'last_week') and not args.all_months:
         # Fast path: read only Summary Table Data worksheet per country + EU
         countries_to_load = ENTSOE_COUNTRIES + ['EU']
         for i, country_code in enumerate(countries_to_load):
