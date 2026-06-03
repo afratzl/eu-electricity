@@ -46,19 +46,8 @@ jobs:
         env:
           GOOGLE_CREDENTIALS_JSON: ${{ secrets.GOOGLE_CREDENTIALS_JSON }}
         run: |
-          CURRENT_YEAR=$(date +%Y)
-          CURRENT_MONTH=$(date +%-m)
-          PREV_YEAR=$((CURRENT_YEAR - 1))
-
-          for MONTH in $(seq 1 12); do
-            if [ "$MONTH" -lt "$CURRENT_MONTH" ]; then
-              MAP_YEAR=$CURRENT_YEAR
-            else
-              MAP_YEAR=$PREV_YEAR
-            fi
-            echo "Month $MONTH -> year $MAP_YEAR"
-            python scripts/generate_maps.py --period monthly --year $MAP_YEAR --month $MONTH || echo "Failed monthly map $MONTH"
-          done
+          echo "Generating all 12 monthly maps in one run..."
+          python scripts/generate_maps.py --all-months || echo "Failed monthly maps"
 
       - name: Commit and push changes
         run: |
