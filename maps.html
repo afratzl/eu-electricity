@@ -323,7 +323,8 @@
             if (periodValue === 'LastWeek') return { period: 'LastWeek', key: null };
             if (periodValue.startsWith('monthly_')) {
                 const parts = periodValue.split('_'); // monthly_2026_04
-                return { period: 'Monthly', key: `${parts[1]}-${parts[2]}` };
+                const month = parseInt(parts[2]);
+                return { period: 'Monthly', key: MONTH_NAMES[month - 1] };
             }
             if (periodValue.startsWith('annual_')) {
                 const year = periodValue.split('_')[1];
