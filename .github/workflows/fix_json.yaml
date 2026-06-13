@@ -1,0 +1,35 @@
+name: Fix JSON Conflicts
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  fix-json:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+
+      - name: Fix JSON conflicts
+        run: |
+          echo "Fixing JSON conflicts..."
+          python scripts/fix_json_conflicts.py
+
+      - name: Commit and push
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git pull --rebase --autostash origin main
+          git add -f plots/*.json
+          git diff --quiet && git diff --staged --quiet || (git commit -m "Fix JSON conflicts [manual]" && git push)
