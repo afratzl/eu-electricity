@@ -280,7 +280,7 @@ def collect_all_data(api_key):
     # Define periods
     today = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
     yesterday = today - timedelta(days=1)
-    week_ago_end = yesterday
+    week_ago_end = yesterday - timedelta(days=1)
     week_ago_start = week_ago_end - timedelta(days=7)
     year_ago_end = datetime(today.year - 1, yesterday.month, yesterday.day)
     year_ago_start = year_ago_end - timedelta(days=7)
