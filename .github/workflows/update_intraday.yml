@@ -2,7 +2,7 @@ name: Update Intraday Data
 on:
   schedule:
     # Hourly updates for intraday analysis (at minute 5)
-    - cron: '20 1,3,5,7,9,12,15,18,21 * * *'
+    - cron: '20 1,3,5,7,9,12,15,18 * * *'
   
   workflow_dispatch:  # Allow manual triggers
 permissions:
