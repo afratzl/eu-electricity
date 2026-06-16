@@ -994,8 +994,8 @@ def calculate_daily_statistics(data_dict, fetch_time=None):
                 if len(day_data) > 0:
                     time_indexed = day_data.set_index('time')[['energy_production', 'energy_percentage']].groupby(level=0).mean()
                     
-                    aligned_energy = time_indexed['energy_production'].reindex(standard_times).interpolate().fillna(0.1)
-                    aligned_percentage = time_indexed['energy_percentage'].reindex(standard_times).interpolate().fillna(0)
+                    aligned_energy = time_indexed['energy_production'].reindex(standard_times).interpolate()
+                    aligned_percentage = time_indexed['energy_percentage'].reindex(standard_times).interpolate()
 
                     daily_energy_data.append(aligned_energy.values)
                     daily_percentage_data.append(aligned_percentage.values)
