@@ -812,7 +812,7 @@ def build_period_data_no_projection(data_matrix, period):
                 atomic_sources_data[source][timestamp] = {}
                 for country in source_data.columns:
                     val = source_data.loc[timestamp, country]
-                    atomic_sources_data[source][timestamp][country] = val if not pd.isna(val) else 0
+                    atomic_sources_data[source][timestamp][country] = val if not pd.isna(val) else None
     
     # Aggregates - build from atomic sources
     for agg_source in AGGREGATE_SOURCES:
@@ -829,7 +829,7 @@ def build_period_data_no_projection(data_matrix, period):
             total = 0
             for component in components:
                 if component in atomic_sources_data and timestamp in atomic_sources_data[component]:
-                    total += sum(atomic_sources_data[component][timestamp].values())
+                    total += sum(v for v in atomic_sources_data[component][timestamp].values() if v is not None)
             aggregate_sources_data[agg_source][timestamp] = {'EU': total}
     
     # Total generation from all atomic sources
@@ -843,7 +843,7 @@ def build_period_data_no_projection(data_matrix, period):
         total = 0
         for source in ATOMIC_SOURCES:
             if source in atomic_sources_data and timestamp in atomic_sources_data[source]:
-                total += sum(atomic_sources_data[source][timestamp].values())
+                total += sum(v for v in atomic_sources_data[source][timestamp].values() if v is not None)
         total_generation_data[timestamp] = total
     
     # Return structure matching apply_corrections_for_period
@@ -894,7 +894,7 @@ def convert_corrected_data_to_plot_format(source_type, corrected_data):
         rows = []
         for timestamp in sorted(source_data.keys()):
             # Sum across countries for this source
-            energy_prod = sum(source_data[timestamp].values())
+            energy_prod = sum(v for v in source_data[timestamp].values() if v is not None)
             total_gen = total_gen_data.get(timestamp, energy_prod)  # Fallback if missing
             
             if total_gen > 0:
