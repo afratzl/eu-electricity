@@ -120,12 +120,14 @@ def format_change_percentage(value):
         return f"{value:+.1f}%"
 
 
-def get_intraday_data_for_country(country, start_date, end_date, client, data_type='generation', max_retries=3):
+def get_intraday_data_for_country(country, start_date, end_date, client, data_type='generation', max_retries=3, extra_hour=True):
     """
     Get intraday data for a specific country and date range with retry logic
     """
     start = pd.Timestamp(start_date, tz='Europe/Brussels')
-    end = pd.Timestamp(end_date, tz='Europe/Brussels') + timedelta(hours=1)
+    end = pd.Timestamp(end_date, tz='Europe/Brussels')
+    if extra_hour:
+        end = end + timedelta(hours=1)
 
     for attempt in range(max_retries):
         try:
@@ -226,7 +228,7 @@ def interpolate_country_data(country_series, country_name, mark_extrapolated=Fal
     return interpolated
 
 
-def aggregate_eu_data(countries, start_date, end_date, client, source_keywords, data_type='generation', mark_extrapolated=False):
+def aggregate_eu_data(countries, start_date, end_date, client, source_keywords, data_type='generation', mark_extrapolated=False, extra_hour=True):
     """
     Aggregate energy data across EU countries
     Returns: (eu_total, country_data_df, successful_countries)
@@ -235,7 +237,7 @@ def aggregate_eu_data(countries, start_date, end_date, client, source_keywords, 
     successful_countries = []
 
     for country in countries:
-        country_data = get_intraday_data_for_country(country, start_date, end_date, client, data_type)
+        country_data = get_intraday_data_for_country(country, start_date, end_date, client, data_type, extra_hour=extra_hour)
 
         if not country_data.empty:
             if data_type == 'generation':
@@ -282,9 +284,9 @@ def collect_all_data(api_key):
     yesterday = today - timedelta(days=1)
     week_ago_end = yesterday
     week_ago_start = week_ago_end - timedelta(days=7)
-    year_ago_end = datetime(today.year - 1, yesterday.month, yesterday.day) - timedelta(days=1)
+    year_ago_end = datetime(today.year - 1, yesterday.month, yesterday.day)
     year_ago_start = year_ago_end - timedelta(days=7)
-    two_years_ago_end = datetime(today.year - 2, yesterday.month, yesterday.day) - timedelta(days=1)
+    two_years_ago_end = datetime(today.year - 2, yesterday.month, yesterday.day)
     two_years_ago_start = two_years_ago_end - timedelta(days=7)
     
     periods = {
@@ -310,15 +312,16 @@ def collect_all_data(api_key):
         
         for period_name, (start_date, end_date) in periods.items():
             mark_extrap = (period_name in ['today', 'yesterday'])
+            extra_hour = (period_name in ['today', 'yesterday'])
             
             eu_total, country_df, countries = aggregate_eu_data(
                 EU_COUNTRIES, start_date, end_date, client,
-                SOURCE_KEYWORDS[source], 'generation', mark_extrapolated=mark_extrap
+                SOURCE_KEYWORDS[source], 'generation', mark_extrapolated=mark_extrap, extra_hour=extra_hour
             )
             
             _, non_eu_df, non_eu_countries = aggregate_eu_data(
                 NON_EU_COUNTRIES, start_date, end_date, client,
-                SOURCE_KEYWORDS[source], 'generation', mark_extrapolated=mark_extrap
+                SOURCE_KEYWORDS[source], 'generation', mark_extrapolated=mark_extrap, extra_hour=extra_hour
             )
             if not non_eu_df.empty:
                 country_df = pd.concat([country_df, non_eu_df], axis=1)
@@ -339,10 +342,11 @@ def collect_all_data(api_key):
         
         for period_name, (start_date, end_date) in periods.items():
             mark_extrap = (period_name in ['today', 'yesterday'])
+            extra_hour = (period_name in ['today', 'yesterday'])
             
             eu_total, _, countries = aggregate_eu_data(
                 EU_COUNTRIES, start_date, end_date, client,
-                SOURCE_KEYWORDS[source], 'generation', mark_extrapolated=mark_extrap
+                SOURCE_KEYWORDS[source], 'generation', mark_extrapolated=mark_extrap, extra_hour=extra_hour
             )
             
             if not eu_total.empty:
@@ -355,15 +359,16 @@ def collect_all_data(api_key):
     print("\n📊 Fetching Total Generation (with country data)...")
     for period_name, (start_date, end_date) in periods.items():
         mark_extrap = (period_name in ['today', 'yesterday'])
+        extra_hour = (period_name in ['today', 'yesterday'])
         
         eu_total, country_df, countries = aggregate_eu_data(
             EU_COUNTRIES, start_date, end_date, client,
-            all_gen_keywords, 'generation', mark_extrapolated=mark_extrap
+            all_gen_keywords, 'generation', mark_extrapolated=mark_extrap, extra_hour=extra_hour
         )
         
         _, non_eu_df, non_eu_countries = aggregate_eu_data(
             NON_EU_COUNTRIES, start_date, end_date, client,
-            all_gen_keywords, 'generation', mark_extrapolated=mark_extrap
+            all_gen_keywords, 'generation', mark_extrapolated=mark_extrap, extra_hour=extra_hour
         )
         if not non_eu_df.empty:
             country_df = pd.concat([country_df, non_eu_df], axis=1)
@@ -2295,6 +2300,7 @@ def create_time_axis():
         for minute in [0, 15, 30, 45]:
             times.append(f"{hour:02d}:{minute:02d}")
     return times
+
 
 def generate_yesterday_plots(corrected_data, country_code='EU'):
     """
