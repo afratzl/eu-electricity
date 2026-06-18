@@ -280,7 +280,7 @@ def collect_all_data(api_key):
     # Define periods
     today = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
     yesterday = today - timedelta(days=1)
-    week_ago_end = yesterday + timedelta(days=1)
+    week_ago_end = yesterday
     week_ago_start = week_ago_end - timedelta(days=7)
     year_ago_end = datetime(today.year - 1, yesterday.month, yesterday.day) - timedelta(days=1)
     year_ago_start = year_ago_end - timedelta(days=7)
@@ -994,8 +994,8 @@ def calculate_daily_statistics(data_dict, fetch_time=None):
                 if len(day_data) > 0:
                     time_indexed = day_data.set_index('time')[['energy_production', 'energy_percentage']].groupby(level=0).mean()
                     
-                    aligned_energy = time_indexed['energy_production'].reindex(standard_times).interpolate()
-                    aligned_percentage = time_indexed['energy_percentage'].reindex(standard_times).interpolate()
+                    aligned_energy = time_indexed['energy_production'].reindex(standard_times).interpolate(limit_area='inside')
+                    aligned_percentage = time_indexed['energy_percentage'].reindex(standard_times).interpolate(limit_area='inside')
 
                     daily_energy_data.append(aligned_energy.values)
                     daily_percentage_data.append(aligned_percentage.values)
@@ -2367,4 +2367,4 @@ def generate_yesterday_plots(corrected_data, country_code='EU'):
         }
         bg_color = colors_map.get(country_code, '#4A90E2')
         ax_flag.add_patch(plt.Rectangle((0, 0), 1, 1, facecolor=bg_color, 
-                                        edgecolor='#CCCCCC'
+                                        e
