@@ -1577,7 +1577,7 @@ def calculate_period_totals(period_data, period_name):
         # Sum all countries, all timestamps
         source_total_mw = 0
         for timestamp, countries in source_data.items():
-            source_total_mw += sum(countries.values())
+            source_total_mw += sum(v for v in countries.values() if v is not None)
         
         # Convert MW to GWh: MW * hours / 1000
         # For 15-minute intervals, each reading represents 0.25 hours
@@ -1599,7 +1599,7 @@ def calculate_period_totals(period_data, period_name):
         # Sum all timestamps
         agg_total_mw = 0
         for timestamp, countries in agg_data.items():
-            agg_total_mw += sum(countries.values())
+            agg_total_mw += sum(v for v in countries.values() if v is not None)
         
         # Convert MW to GWh: MW * 0.25 hours (15-min intervals) / 1000
         agg_gwh = agg_total_mw * 0.25 / 1000
