@@ -8,7 +8,11 @@ on:
         required: false
         default: ''
       apply:
-        description: 'Actually apply changes and trash duplicates? Requires a country to be set. Type "yes" to apply, anything else stays dry-run.'
+        description: 'Actually apply changes and trash duplicates for ONE country (requires country to be set). Type "yes" to apply.'
+        required: false
+        default: 'no'
+      apply_all:
+        description: 'Actually apply changes and trash duplicates for EVERY duplicate country in one run. Type "yes" to enable. Leave country blank when using this.'
         required: false
         default: 'no'
       show_conflicts:
@@ -47,6 +51,7 @@ jobs:
         run: |
           COUNTRY="${{ github.event.inputs.country }}"
           APPLY="${{ github.event.inputs.apply }}"
+          APPLY_ALL="${{ github.event.inputs.apply_all }}"
           SHOW_CONFLICTS="${{ github.event.inputs.show_conflicts }}"
 
           CMD="python scripts/merge_duplicate_sheets.py"
@@ -55,6 +60,9 @@ jobs:
           fi
           if [ "$APPLY" = "yes" ]; then
             CMD="$CMD --apply"
+          fi
+          if [ "$APPLY_ALL" = "yes" ]; then
+            CMD="$CMD --apply-all"
           fi
           if [ "$SHOW_CONFLICTS" = "yes" ]; then
             CMD="$CMD --show-detail"
@@ -71,11 +79,11 @@ jobs:
           path: duplicate_sheets_report.json
           if-no-files-found: ignore
 
-      - name: Commit updated drive_links.json (only if apply was used)
-        if: github.event.inputs.apply == 'yes'
+      - name: Commit updated drive_links.json (only if apply or apply_all was used)
+        if: github.event.inputs.apply == 'yes' || github.event.inputs.apply_all == 'yes'
         run: |
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
           git config --local user.name "github-actions[bot]"
           git pull --rebase --autostash origin main
           git add -f plots/drive_links.json
-          git diff --quiet && git diff --staged --quiet || (git commit -m "Merge duplicate sheet for ${{ github.event.inputs.country }}" && git push)
+          git diff --quiet && git diff --staged --quiet || (git commit -m "Merge duplicate sheets" && git push)
