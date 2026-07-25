@@ -49,6 +49,7 @@ jobs:
         env:
           ENTSOE_API_KEY: ${{ secrets.ENTSOE_API_KEY }}
           GOOGLE_CREDENTIALS_JSON: ${{ secrets.GOOGLE_CREDENTIALS_JSON }}
+          NED_API_KEY: ${{ secrets.NED_API_KEY }}
         run: |
           YEAR_START="${{ github.event.inputs.years_start }}"
           YEAR_END="${{ github.event.inputs.years_end }}"
