@@ -14,7 +14,7 @@ import time
 # Keywords match exact ENTSO-E column names (verified against transparency platform)
 from config import (EU_COUNTRIES as eu_countries, NON_EU_COUNTRIES as non_eu_countries,
                     ENTSOE_COUNTRIES, SOURCE_KEYWORDS, ENERGY_SOURCES as energy_sources)
-from ned_client import fetch_ned_generation
+from ned_client import fetch_ned_generation_monthly
 
 def get_or_create_country_sheet(gc, drive_service, country_code='EU'):
     """
@@ -259,13 +259,11 @@ def get_all_energy_data_for_country_year(client, country, year):
     print(f"  Querying {country} for {year}...")
 
     if country == 'NL':
-        # ned.nl has no documented row limit like ENTSO-E's 1000-row cap, so
-        # the whole year is fetched in a single call instead of chunking.
-        # NOTE: only tested so far against single-day fetches (see
-        # smoke_test_ned_client.py) -- a full year is ~35,000 rows per type,
-        # untested at this scale. Worth watching the first real run closely
-        # (timeouts, truncated/incomplete responses) before trusting it for
-        # a full 2016-current backfill.
+        # Uses ned.nl's monthly granularity directly (not 15-minute), since
+        # this script only needs monthly totals. This also sidesteps ned.nl's
+        # Hydra pagination entirely for this use case -- a 15-minute fetch
+        # for a full year would need 1000+ paginated requests; monthly
+        # granularity needs about 12 rows per type, no pagination at all.
         year_start = datetime(year, 1, 1)
         if year == current_year:
             year_last_inclusive = current_date
@@ -276,10 +274,10 @@ def get_all_energy_data_for_country_year(client, country, year):
         start_str = year_start.strftime('%Y-%m-%d')
         end_str = year_end_exclusive.strftime('%Y-%m-%d')
 
-        print(f"    Fetching NL {year} via ned.nl ({start_str} to {end_str}, single request)...")
+        print(f"    Fetching NL {year} via ned.nl monthly granularity ({start_str} to {end_str})...")
 
         try:
-            generation_data = fetch_ned_generation(start_str, end_str)
+            generation_data = fetch_ned_generation_monthly(start_str, end_str)
         except Exception as e:
             print(f"    ✗ ned.nl fetch failed for NL {year}: {e}")
             return None
@@ -958,7 +956,21 @@ def main():
     print(f"📋 Countries to save:  {countries_to_save}")
     print(f"📋 EU aggregate:       {'Yes' if include_eu_aggregate else 'No'}")
     print(f"Estimated API calls: ~{len(countries_to_query) * len(list(years_to_analyze))}")
-  
+
+    # NL is fetched from ned.nl instead of ENTSO-E (see ned_client.py), so it
+    # needs its own key. Checked here (rather than relying on the deeper
+    # try/except in get_all_energy_data_for_country_year) so a missing key
+    # halts the whole run before any Google Sheets writes happen -- the same
+    # hard-stop-before-processing pattern already used for ENTSOE_API_KEY and
+    # GOOGLE_CREDENTIALS_JSON above. A prior run without this check silently
+    # wrote zero/undercounted NL data to the live sheet when this key was
+    # missing; this check exists specifically to prevent that happening again.
+    if 'NL' in countries_to_query and not os.environ.get('NED_API_KEY'):
+        print("\n⚠️  ERROR: NED_API_KEY environment variable not set!")
+        print("   NL is fetched from ned.nl (not ENTSO-E) and requires this key.")
+        print("   Please set this variable before running the script.")
+        sys.exit(1)
+
     saved_urls = {}  # ADD THIS HERE
     
     all_data = process_all_countries_and_years(client, years_to_analyze, countries_to_query, eu_countries)
