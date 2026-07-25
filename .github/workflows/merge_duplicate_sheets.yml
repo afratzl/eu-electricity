@@ -11,6 +11,10 @@ on:
         description: 'Actually apply changes and trash duplicates? Requires a country to be set. Type "yes" to apply, anything else stays dry-run.'
         required: false
         default: 'no'
+      show_conflicts:
+        description: 'Print month-by-month values for conflicting years (read-only, works alongside dry-run). Type "yes" to enable.'
+        required: false
+        default: 'no'
 
 jobs:
   merge-duplicates:
@@ -43,6 +47,7 @@ jobs:
         run: |
           COUNTRY="${{ github.event.inputs.country }}"
           APPLY="${{ github.event.inputs.apply }}"
+          SHOW_CONFLICTS="${{ github.event.inputs.show_conflicts }}"
 
           CMD="python scripts/merge_duplicate_sheets.py"
           if [ -n "$COUNTRY" ]; then
@@ -50,6 +55,9 @@ jobs:
           fi
           if [ "$APPLY" = "yes" ]; then
             CMD="$CMD --apply"
+          fi
+          if [ "$SHOW_CONFLICTS" = "yes" ]; then
+            CMD="$CMD --show-detail"
           fi
 
           echo "Running: $CMD"
