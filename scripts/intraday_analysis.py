@@ -106,7 +106,7 @@ AGGREGATE_DEFINITIONS = {
 
 # Energy source keyword mapping
 from config import EU_COUNTRIES, NON_EU_COUNTRIES, ENTSOE_COUNTRIES, SOURCE_KEYWORDS, DISPLAY_NAMES, ENTSOE_COLORS, COUNTRY_DISPLAY_NAMES
-
+from ned_client import fetch_ned_generation
 
 def format_change_percentage(value):
     """
@@ -124,6 +124,20 @@ def get_intraday_data_for_country(country, start_date, end_date, client, data_ty
     """
     Get intraday data for a specific country and date range with retry logic
     """
+      if country == 'NL' and data_type == 'generation':
+        start_str = pd.Timestamp(start_date).strftime('%Y-%m-%d')
+        end_str = pd.Timestamp(end_date).strftime('%Y-%m-%d')
+
+        try:
+            data = fetch_ned_generation(start_str, end_str)
+        except Exception as e:
+            print(f"    ✗ ned.nl fetch failed for NL ({start_str} to {end_str}): {e}")
+            return pd.DataFrame()
+
+        # fetch_ned_generation already returns Europe/Brussels-indexed data,
+        # so no timezone conversion is needed here (unlike the ENTSO-E path
+        # below, which does its own tz handling).
+        return data
     start = pd.Timestamp(start_date, tz='Europe/Brussels')
     end = pd.Timestamp(end_date, tz='Europe/Brussels')
     if extra_hour:
