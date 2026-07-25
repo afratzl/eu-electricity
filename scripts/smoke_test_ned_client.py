@@ -33,11 +33,17 @@ else:
     print("\nFirst few rows:")
     print(df.head())
 
-    print("\nAny missing columns from the 9 expected types?")
+    print("\nAny missing columns from the 10 expected types?")
     expected = {'Solar', 'Wind Onshore', 'Wind Offshore', 'Fossil Gas',
-                'Fossil Hard coal', 'Nuclear', 'Biomass', 'Geothermal', 'Waste'}
+                'Fossil Hard coal', 'Nuclear', 'Biomass', 'Waste',
+                'Other', 'Other (WKK)'}
     missing = expected - set(df.columns)
-    print(missing if missing else "None -- all 9 present")
+    print(missing if missing else "None -- all 10 present")
+
+    if 'Other (WKK)' in df.columns:
+        print(f"\nWKK Total shape check (should vary through the day, not be flat "
+              f"like Geothermal was): min={df['Other (WKK)'].min():.0f}, "
+              f"max={df['Other (WKK)'].max():.0f} MW")
 
     # Second call with the same dates should hit the cache and print nothing
     # new (no "Fetching ned.nl data..." line, no repeated requests)
