@@ -96,6 +96,17 @@ no error, just badly undercounted totals. _fetch_ned_type follows
 'hydra:next' in a loop until it runs out, logging a warning if
 'hydra:totalItems' (when present) doesn't match what was actually
 collected.
+IMPORTANT: this pagination metadata only appears when the request's Accept
+header is 'application/ld+json', matching ned.nl's own documented API
+examples. An earlier version of this code used 'application/json' instead,
+which returns a flat, unwrapped array with no 'hydra:view'/'hydra:next' at
+all -- so a first attempt at pagination-following still silently capped at
+one page (its "no wrapper found" fallback path assumed no more pages
+existed, when in fact the wrapper just wasn't being requested). Confirmed
+fixed by switching the Accept header; do not change it back to plain
+'application/json' without re-verifying pagination still works (the 50-day
+test in smoke_test_ned_client.py's Test 2 is specifically designed to catch
+this regression).
 
 Why two granularities (fetch_ned_generation vs fetch_ned_generation_monthly):
 Fetching a full year at 15-minute resolution is ~19,000 rows per type,
@@ -230,7 +241,7 @@ def _fetch_ned_type(type_code, date_from, date_to, api_key, granularity=GRANULAR
     """
     headers = {
         'X-AUTH-TOKEN': api_key,
-        'accept': 'application/json',
+        'accept': 'application/ld+json',
     }
     params = {
         'point': 0,                  # Netherlands
