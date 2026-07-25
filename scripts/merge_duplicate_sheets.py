@@ -247,16 +247,31 @@ def main():
     parser = argparse.ArgumentParser(description='Merge duplicate country spreadsheets')
     parser.add_argument('--country', help='Country code to process (e.g. BG). Omit to dry-run all.')
     parser.add_argument('--apply', action='store_true',
-                         help='Actually write changes and trash duplicates. Requires --country. '
+                         help='Actually write changes and trash duplicates for ONE country. Requires --country. '
                               'Without this flag, always dry-run (no changes).')
+    parser.add_argument('--apply-all', action='store_true',
+                         help='Actually write changes and trash duplicates for EVERY country in the report. '
+                              'A deliberate, separate flag from --apply so batch runs are an explicit choice, '
+                              'not an accident from leaving --country blank. One country failing (e.g. a '
+                              'rate-limit error) does not stop the rest from being processed.')
     parser.add_argument('--report', default='duplicate_sheets_report.json',
                          help='Path to the report from detect_duplicate_sheets.py')
     parser.add_argument('--show-detail', action='store_true',
                          help='Print month-by-month values for conflicting years. Read-only.')
     args = parser.parse_args()
 
+    if args.apply and args.apply_all:
+        print("⚠️  ERROR: Use either --apply (one country) or --apply-all (every country), not both.")
+        sys.exit(1)
+
     if args.apply and not args.country:
-        print("⚠️  ERROR: --apply requires --country (one country at a time, by design).")
+        print("⚠️  ERROR: --apply requires --country (one country at a time). "
+              "Use --apply-all if you want to process every country in one run.")
+        sys.exit(1)
+
+    if args.apply_all and args.country:
+        print("⚠️  ERROR: --apply-all processes every country in the report -- don't combine it with --country "
+              "(use --apply --country X for a single one instead).")
         sys.exit(1)
 
     if not os.path.exists(args.report):
@@ -287,10 +302,14 @@ def main():
         creds_dict, scopes=['https://www.googleapis.com/auth/drive']
     ))
 
-    mode_label = "APPLYING CHANGES" if args.apply else "DRY RUN (no changes will be made)"
+    will_write = args.apply or args.apply_all
+    mode_label = "APPLYING CHANGES" if will_write else "DRY RUN (no changes will be made)"
     print("=" * 80)
     print(f"MERGE DUPLICATE SHEETS -- {mode_label}")
     print("=" * 80)
+
+    succeeded = []
+    failed = []
 
     for country_code in countries_to_process:
         if country_code not in duplicates_report:
@@ -304,54 +323,71 @@ def main():
         print(f"\n{'=' * 80}")
         print(f"{country_code}: {len(candidates)} spreadsheets")
 
-        plan, primary, freshest, primary_ws_objects, all_candidate_data = build_country_merge_plan(
-            gc, country_code, candidates
-        )
+        try:
+            plan, primary, freshest, primary_ws_objects, all_candidate_data = build_country_merge_plan(
+                gc, country_code, candidates
+            )
 
-        print_plan(country_code, plan, primary, freshest)
+            print_plan(country_code, plan, primary, freshest)
 
-        if args.show_detail:
-            for ws_title, resolved_years in plan.items():
-                conflicts = {y: v for y, v in resolved_years.items() if v['is_conflict']}
-                for year, info in conflicts.items():
-                    print(f"\n    {ws_title} -- Year {year} month-by-month:")
-                    for month in MONTH_ORDER:
-                        row = []
-                        for source_id in info['all_sources']:
-                            val = all_candidate_data[source_id].get(ws_title, {}).get(year, {}).get(month, '-')
-                            tag = ' (used)' if source_id == info['source_id'] else ''
-                            row.append(f"{source_id[:8]}={val}{tag}")
-                        print(f"      {month}: " + "  ".join(row))
+            if args.show_detail:
+                for ws_title, resolved_years in plan.items():
+                    conflicts = {y: v for y, v in resolved_years.items() if v['is_conflict']}
+                    for year, info in conflicts.items():
+                        print(f"\n    {ws_title} -- Year {year} month-by-month:")
+                        for month in MONTH_ORDER:
+                            row = []
+                            for source_id in info['all_sources']:
+                                val = all_candidate_data[source_id].get(ws_title, {}).get(year, {}).get(month, '-')
+                                tag = ' (used)' if source_id == info['source_id'] else ''
+                                row.append(f"{source_id[:8]}={val}{tag}")
+                            print(f"      {month}: " + "  ".join(row))
 
-        if args.apply:
-            apply_merge(primary_ws_objects, plan, primary)
+            if will_write:
+                apply_merge(primary_ws_objects, plan, primary)
 
-            # Update drive_links.json to point at the primary
-            drive_links_file = 'plots/drive_links.json'
-            links = {}
-            if os.path.exists(drive_links_file):
-                with open(drive_links_file, 'r') as f:
-                    links = json.load(f)
-            if country_code not in links:
-                links[country_code] = {}
-            links[country_code]['data_sheet_id'] = primary['id']
-            os.makedirs('plots', exist_ok=True)
-            with open(drive_links_file, 'w') as f:
-                json.dump(links, f, indent=2)
-            print(f"  ✓ Updated drive_links.json to point {country_code} at primary")
+                # Update drive_links.json to point at the primary
+                drive_links_file = 'plots/drive_links.json'
+                links = {}
+                if os.path.exists(drive_links_file):
+                    with open(drive_links_file, 'r') as f:
+                        links = json.load(f)
+                if country_code not in links:
+                    links[country_code] = {}
+                links[country_code]['data_sheet_id'] = primary['id']
+                os.makedirs('plots', exist_ok=True)
+                with open(drive_links_file, 'w') as f:
+                    json.dump(links, f, indent=2)
+                print(f"  ✓ Updated drive_links.json to point {country_code} at primary")
 
-            # Trash (not permanently delete) every non-primary candidate
-            for c in candidates:
-                if c['id'] == primary['id']:
-                    continue
-                _with_retry(drive_service.files().update(fileId=c['id'], body={'trashed': True}).execute)
-                print(f"  ✓ Moved {c['id']} to Drive trash (recoverable, not permanently deleted)")
-        else:
-            print(f"\n  (dry run -- nothing written, nothing trashed. Re-run with "
-                  f"--country {country_code} --apply to actually merge and clean up)")
+                # Trash (not permanently delete) every non-primary candidate
+                for c in candidates:
+                    if c['id'] == primary['id']:
+                        continue
+                    _with_retry(drive_service.files().update(fileId=c['id'], body={'trashed': True}).execute)
+                    print(f"  ✓ Moved {c['id']} to Drive trash (recoverable, not permanently deleted)")
+
+                succeeded.append(country_code)
+            else:
+                print(f"\n  (dry run -- nothing written, nothing trashed. Re-run with "
+                      f"--country {country_code} --apply to actually merge and clean up)")
+
+        except Exception as e:
+            # One country's failure (e.g. a persistent rate limit) shouldn't
+            # abort the rest of a --apply-all batch -- record it and move on.
+            print(f"  ✗ {country_code}: FAILED -- {e}")
+            failed.append((country_code, str(e)))
+            continue
 
     print("\n" + "=" * 80)
-    print("Done." if args.apply else "Dry run complete. Nothing was changed.")
+    if will_write:
+        print(f"Done. Succeeded: {succeeded if succeeded else 'none'}")
+        if failed:
+            print(f"Failed (unchanged, safe to re-run individually): {[c for c, _ in failed]}")
+            for country_code, error in failed:
+                print(f"  {country_code}: {error}")
+    else:
+        print("Dry run complete. Nothing was changed.")
     print("=" * 80)
 
 
