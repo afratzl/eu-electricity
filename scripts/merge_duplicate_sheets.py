@@ -2,21 +2,23 @@
 """
 Merge duplicate country spreadsheets found by detect_duplicate_sheets.py.
 
-SAFETY MODEL:
-- Defaults to DRY RUN: prints exactly what would happen, changes nothing.
-- Real changes require --apply AND --country (one country at a time --
-  deliberately no "apply to all 12" option, so each merge gets reviewed).
-- Merge policy is conservative, not "newest/duplicate wins":
-    - A year present in a duplicate sheet but MISSING from the primary sheet
-      gets copied into the primary. This is the common case (duplicate has
-      2026 that the primary might be missing if it hasn't been updated yet).
-    - A year present in BOTH sheets is NEVER auto-overwritten, even if the
-      values differ. It's reported as a conflict for you to look at and
-      resolve by hand. Given this session already found two separate bugs
-      that silently wrote wrong data into live sheets (missing NED_API_KEY
-      writing zeros, then a pagination bug badly undercounting real
-      numbers), this script isn't willing to guess which of two differing
-      values is correct.
+MERGE POLICY:
+- The oldest-created candidate ("primary") is the write target -- it holds
+  the deepest history (2015-2026 in every case seen in this project) and
+  its non-overlapping years are kept as-is.
+- For a year that exists in MORE THAN ONE candidate (in every case seen so
+  far, this means the current year, e.g. 2026, since that's the only year
+  a fresh duplicate would have): the value comes from whichever candidate
+  has the LATEST Drive 'modified' timestamp overall for that country, not
+  just "primary" or "the most recent duplicate" by assumption. This matches
+  the actual mechanism causing these duplicates: whichever sheet
+  drive_links.json pointed at after the split is the one that kept
+  receiving live writes, while the other one is a stale snapshot frozen
+  as of the split. That "freshest" sheet is not always the same one --
+  it's determined per country from the real modification timestamps.
+- This resolution is NOT silent: every year that came from a non-primary
+  source, and every conflict that got auto-resolved, is printed so you can
+  see exactly which candidate's value was used and why.
 - "Delete" means moving the non-primary spreadsheet(s) to Google Drive's
   trash (recoverable there for a retention period), never a permanent
   delete. This only happens after a successful merge, under --apply.
@@ -29,8 +31,8 @@ Usage:
     # Dry run for everything in the report (default, safe, no changes):
     python scripts/merge_duplicate_sheets.py
 
-    # Dry run for just one country:
-    python scripts/merge_duplicate_sheets.py --country BG
+    # Dry run for just one country, with full year-by-year detail:
+    python scripts/merge_duplicate_sheets.py --country BG --show-detail
 
     # Actually apply the merge for one country (required: both flags):
     python scripts/merge_duplicate_sheets.py --country BG --apply
@@ -43,6 +45,7 @@ import time
 import argparse
 
 WORKSHEET_SUFFIX = ' Monthly Production'
+MONTH_ORDER = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
 REQUEST_SLEEP_SECONDS = 3  # matches existing codebase's Sheets API pacing convention
 MAX_RETRIES = 4
 
@@ -72,7 +75,7 @@ def _read_worksheet_table(worksheet):
     """
     values = _with_retry(worksheet.get_all_values)
     if len(values) < 2:
-        return {}, []
+        return {}
 
     headers = values[0]
     year_cols = [h for h in headers[1:] if h.isdigit()]
@@ -86,89 +89,158 @@ def _read_worksheet_table(worksheet):
             if year in year_cols and i < len(row):
                 table[year][month_name] = row[i]
 
-    return table, headers
+    return table
 
 
-def plan_merge_for_worksheet(primary_ws, duplicate_ws, worksheet_title):
+def _read_all_worksheets(gc, spreadsheet_id):
+    """Returns {worksheet_title: {year: {month: value}}} for one spreadsheet."""
+    spreadsheet = _with_retry(gc.open_by_key, spreadsheet_id)
+    worksheets = _with_retry(spreadsheet.worksheets)
+    result = {}
+    for ws in worksheets:
+        if ws.title.endswith(WORKSHEET_SUFFIX):
+            result[ws.title] = _read_worksheet_table(ws)
+    return result, {ws.title: ws for ws in worksheets}
+
+
+def build_country_merge_plan(gc, country_code, candidates):
     """
-    Compare one worksheet between primary and duplicate.
-    Returns a dict describing the plan: years to add, years in conflict,
-    and the fully merged table if applied. Read-only -- makes no changes.
+    Read every candidate's data and build one merge plan for the whole
+    country: for each worksheet, for each year found in any candidate,
+    decide which candidate's value to use.
+
+    Returns (plan, primary, freshest, worksheet_objects) where:
+    - plan: {worksheet_title: {year: {'value': {...}, 'source_id': ..., 'is_conflict': bool}}}
+    - primary: the oldest-created candidate (write target)
+    - freshest: the candidate with the latest 'modified' timestamp
+    - worksheet_objects: {worksheet_title: gspread Worksheet} for the primary spreadsheet
     """
-    primary_table, primary_headers = _read_worksheet_table(primary_ws)
-    dup_table, dup_headers = _read_worksheet_table(duplicate_ws)
+    sorted_by_created = sorted(candidates, key=lambda c: c['created'])
+    primary = sorted_by_created[0]
+    freshest = max(candidates, key=lambda c: c['modified'])
 
-    years_to_add = []
-    years_in_conflict = []
-    years_identical = []
+    print(f"  Primary (write target, oldest): {primary['id']} created {primary['created']}")
+    print(f"  Freshest (wins ties): {freshest['id']} modified {freshest['modified']}"
+          + (" -- same as primary" if freshest['id'] == primary['id'] else ""))
 
-    for year, month_values in dup_table.items():
-        if year not in primary_table:
-            years_to_add.append(year)
-        else:
-            # Year exists in both -- compare values
-            differs = False
-            for month, value in month_values.items():
-                primary_value = primary_table.get(year, {}).get(month, '0.00')
-                try:
-                    if abs(float(value or 0) - float(primary_value or 0)) > 0.01:
-                        differs = True
-                        break
-                except ValueError:
-                    if value != primary_value:
-                        differs = True
-                        break
-            if differs:
-                years_in_conflict.append(year)
+    all_candidate_data = {}
+    primary_worksheet_objects = {}
+    for c in candidates:
+        print(f"  Reading {c['id']} ({'primary' if c['id'] == primary['id'] else 'duplicate'})...")
+        tables, ws_objects = _read_all_worksheets(gc, c['id'])
+        all_candidate_data[c['id']] = tables
+        if c['id'] == primary['id']:
+            primary_worksheet_objects = ws_objects
+
+    worksheet_titles = set()
+    for tables in all_candidate_data.values():
+        worksheet_titles.update(tables.keys())
+
+    plan = {}
+    for ws_title in sorted(worksheet_titles):
+        year_sources = {}  # year -> list of candidate ids that have this year
+        for c in candidates:
+            table = all_candidate_data[c['id']].get(ws_title, {})
+            for year in table.keys():
+                year_sources.setdefault(year, []).append(c['id'])
+
+        resolved_years = {}
+        for year, source_ids in year_sources.items():
+            if len(source_ids) == 1:
+                winner_id = source_ids[0]
+                is_conflict = False
             else:
-                years_identical.append(year)
+                # Multiple candidates have this year -- freshest wins if it's
+                # one of them, otherwise fall back to primary if it's one of
+                # them, otherwise just pick the first (shouldn't normally happen).
+                if freshest['id'] in source_ids:
+                    winner_id = freshest['id']
+                elif primary['id'] in source_ids:
+                    winner_id = primary['id']
+                else:
+                    winner_id = source_ids[0]
+                is_conflict = True
 
-    return {
-        'worksheet_title': worksheet_title,
-        'years_to_add': sorted(years_to_add),
-        'years_in_conflict': sorted(years_in_conflict),
-        'years_identical': sorted(years_identical),
-        'primary_table': primary_table,
-        'dup_table': dup_table,
-    }
+            resolved_years[year] = {
+                'value': all_candidate_data[winner_id][ws_title][year],
+                'source_id': winner_id,
+                'is_conflict': is_conflict,
+                'all_sources': source_ids,
+            }
+
+        plan[ws_title] = resolved_years
+
+    return plan, primary, freshest, primary_worksheet_objects, all_candidate_data
 
 
-def apply_merge_for_worksheet(primary_ws, plan):
-    """
-    Actually write years_to_add from the duplicate into the primary
-    worksheet. Never touches years_in_conflict or years_identical -- those
-    are left exactly as they are in the primary.
-    """
-    if not plan['years_to_add']:
-        return False
+def print_plan(country_code, plan, primary, freshest):
+    for ws_title, resolved_years in plan.items():
+        conflicts = {y: v for y, v in resolved_years.items() if v['is_conflict']}
+        additions = {y: v for y, v in resolved_years.items() if not v['is_conflict']
+                     and v['source_id'] != primary['id']}
 
-    values = _with_retry(primary_ws.get_all_values)
-    headers = values[0]
-    month_rows = {row[0]: row for row in values[1:] if row and row[0] != 'Total'}
+        if not conflicts and not additions:
+            continue
 
-    for year in plan['years_to_add']:
-        headers.append(year)
-        for month_name, month_row in month_rows.items():
-            value = plan['dup_table'].get(year, {}).get(month_name, '0.00')
-            month_row.append(value)
+        print(f"    {ws_title}:")
+        for year, info in sorted(additions.items()):
+            print(f"      + {year}: adding from {info['source_id']} (not in primary)")
+        for year, info in sorted(conflicts.items()):
+            winner_label = 'freshest' if info['source_id'] == freshest['id'] else 'primary (fallback)'
+            print(f"      ⚠ {year}: CONFLICT across {info['all_sources']} -- "
+                  f"using {info['source_id']} ({winner_label})")
 
-    # Recompute total row
-    total_row = ['Total']
-    for year in headers[1:]:
-        col_idx = headers.index(year)
-        total = 0.0
-        for month_row in month_rows.values():
-            try:
-                total += float(month_row[col_idx] or 0)
-            except (ValueError, IndexError):
-                pass
-        total_row.append(f"{total:.2f}")
 
-    final_rows = [headers] + list(month_rows.values()) + [total_row]
+def apply_merge(primary_worksheet_objects, plan, primary):
+    """Write the resolved plan into the primary spreadsheet's worksheets."""
+    for ws_title, resolved_years in plan.items():
+        # Only write if there's at least one year that's new or resolved from
+        # a non-primary source -- otherwise the worksheet is untouched.
+        needs_write = any(info['source_id'] != primary['id'] for info in resolved_years.values())
+        if not needs_write:
+            continue
 
-    _with_retry(primary_ws.clear)
-    _with_retry(primary_ws.update, final_rows)
-    return True
+        if ws_title not in primary_worksheet_objects:
+            print(f"    ⚠ '{ws_title}' has data to merge but doesn't exist in primary -- skipping, needs manual review")
+            continue
+
+        worksheet = primary_worksheet_objects[ws_title]
+        values = _with_retry(worksheet.get_all_values)
+        headers = values[0] if values else ['Month']
+        month_rows = {row[0]: row for row in values[1:] if row and row[0] != 'Total'} if len(values) > 1 else {
+            m: [m] + ['0.00'] * (len(headers) - 1) for m in MONTH_ORDER
+        }
+
+        for year, info in resolved_years.items():
+            if info['source_id'] == primary['id']:
+                continue  # primary's own value, already correct in the sheet
+            if year not in headers:
+                headers.append(year)
+                for month_row in month_rows.values():
+                    month_row.append('0.00')
+            col_idx = headers.index(year)
+            for month_name, month_row in month_rows.items():
+                value = info['value'].get(month_name, '0.00')
+                while len(month_row) <= col_idx:
+                    month_row.append('0.00')
+                month_row[col_idx] = value
+
+        total_row = ['Total']
+        for year in headers[1:]:
+            col_idx = headers.index(year)
+            total = 0.0
+            for month_row in month_rows.values():
+                try:
+                    total += float(month_row[col_idx] or 0)
+                except (ValueError, IndexError):
+                    pass
+            total_row.append(f"{total:.2f}")
+
+        final_rows = [headers] + [month_rows[m] for m in MONTH_ORDER if m in month_rows] + [total_row]
+
+        _with_retry(worksheet.clear)
+        _with_retry(worksheet.update, final_rows)
+        print(f"    ✓ Wrote merged {ws_title}")
 
 
 def main():
@@ -179,6 +251,8 @@ def main():
                               'Without this flag, always dry-run (no changes).')
     parser.add_argument('--report', default='duplicate_sheets_report.json',
                          help='Path to the report from detect_duplicate_sheets.py')
+    parser.add_argument('--show-detail', action='store_true',
+                         help='Print month-by-month values for conflicting years. Read-only.')
     args = parser.parse_args()
 
     if args.apply and not args.country:
@@ -227,57 +301,30 @@ def main():
         if len(candidates) < 2:
             continue
 
-        # Primary = earliest created. Confirmed as the right rule for every
-        # one of the 12 countries checked in this project (oldest always has
-        # full history, newer ones are always 2026-only accidental duplicates).
-        sorted_candidates = sorted(candidates, key=lambda c: c['created'])
-        primary = sorted_candidates[0]
-        duplicates = sorted_candidates[1:]
-
         print(f"\n{'=' * 80}")
-        print(f"{country_code}: primary={primary['id']} (created {primary['created']})")
-        print(f"  {len(duplicates)} duplicate(s) to merge from")
+        print(f"{country_code}: {len(candidates)} spreadsheets")
 
-        primary_spreadsheet = _with_retry(gc.open_by_key, primary['id'])
-        primary_worksheets = {ws.title: ws for ws in _with_retry(primary_spreadsheet.worksheets)}
+        plan, primary, freshest, primary_ws_objects, all_candidate_data = build_country_merge_plan(
+            gc, country_code, candidates
+        )
 
-        any_conflicts = False
+        print_plan(country_code, plan, primary, freshest)
 
-        for dup in duplicates:
-            print(f"\n  --- Duplicate: {dup['id']} (created {dup['created']}) ---")
-            dup_spreadsheet = _with_retry(gc.open_by_key, dup['id'])
-            dup_worksheets = {ws.title: ws for ws in _with_retry(dup_spreadsheet.worksheets)}
-
-            for worksheet_title, dup_ws in dup_worksheets.items():
-                if not worksheet_title.endswith(WORKSHEET_SUFFIX):
-                    continue
-                if worksheet_title not in primary_worksheets:
-                    print(f"    ⚠ '{worksheet_title}' exists in duplicate but not in primary -- "
-                          f"skipping (needs manual review, not handled automatically)")
-                    continue
-
-                plan = plan_merge_for_worksheet(primary_worksheets[worksheet_title], dup_ws, worksheet_title)
-
-                if plan['years_to_add']:
-                    print(f"    {worksheet_title}: would add years {plan['years_to_add']}")
-                if plan['years_in_conflict']:
-                    any_conflicts = True
-                    print(f"    ⚠ {worksheet_title}: CONFLICT on years {plan['years_in_conflict']} "
-                          f"(differing values in both sheets -- NOT auto-resolved, review manually)")
-                if not plan['years_to_add'] and not plan['years_in_conflict']:
-                    print(f"    {worksheet_title}: nothing to add, no conflicts")
-
-                if args.apply:
-                    changed = apply_merge_for_worksheet(primary_worksheets[worksheet_title], plan)
-                    if changed:
-                        print(f"    ✓ Applied: added {plan['years_to_add']} to primary's {worksheet_title}")
+        if args.show_detail:
+            for ws_title, resolved_years in plan.items():
+                conflicts = {y: v for y, v in resolved_years.items() if v['is_conflict']}
+                for year, info in conflicts.items():
+                    print(f"\n    {ws_title} -- Year {year} month-by-month:")
+                    for month in MONTH_ORDER:
+                        row = []
+                        for source_id in info['all_sources']:
+                            val = all_candidate_data[source_id].get(ws_title, {}).get(year, {}).get(month, '-')
+                            tag = ' (used)' if source_id == info['source_id'] else ''
+                            row.append(f"{source_id[:8]}={val}{tag}")
+                        print(f"      {month}: " + "  ".join(row))
 
         if args.apply:
-            if any_conflicts:
-                print(f"\n  ⚠ {country_code}: conflicts were found and left untouched. "
-                      f"NOT trashing duplicates automatically -- resolve conflicts first, "
-                      f"then re-run to trash once you're satisfied everything's merged.")
-                continue
+            apply_merge(primary_ws_objects, plan, primary)
 
             # Update drive_links.json to point at the primary
             drive_links_file = 'plots/drive_links.json'
@@ -293,10 +340,12 @@ def main():
                 json.dump(links, f, indent=2)
             print(f"  ✓ Updated drive_links.json to point {country_code} at primary")
 
-            # Trash (not permanently delete) each duplicate
-            for dup in duplicates:
-                _with_retry(drive_service.files().update(fileId=dup['id'], body={'trashed': True}).execute)
-                print(f"  ✓ Moved duplicate {dup['id']} to Drive trash (recoverable, not permanently deleted)")
+            # Trash (not permanently delete) every non-primary candidate
+            for c in candidates:
+                if c['id'] == primary['id']:
+                    continue
+                _with_retry(drive_service.files().update(fileId=c['id'], body={'trashed': True}).execute)
+                print(f"  ✓ Moved {c['id']} to Drive trash (recoverable, not permanently deleted)")
         else:
             print(f"\n  (dry run -- nothing written, nothing trashed. Re-run with "
                   f"--country {country_code} --apply to actually merge and clean up)")
