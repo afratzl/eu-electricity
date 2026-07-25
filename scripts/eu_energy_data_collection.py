@@ -270,6 +270,110 @@ def generate_10day_chunks(year, current_year, current_date):
     return chunks
 
 
+def fetch_entsoe_full_year(client, country, year, current_year, current_date):
+    """
+    Fetch a full year of ENTSO-E generation data for one country, chunked
+    into 10-day windows to avoid ENTSO-E's 1000-row API limit, with retry
+    logic per chunk. Returns the concatenated DataFrame (native ENTSO-E
+    resolution), or None if nothing could be fetched.
+
+    Extracted out of get_all_energy_data_for_country_year() so it can also
+    be called for NL's pre-2021 years, which use ENTSO-E for every source
+    except Solar/Wind (see the NL branch below for why).
+    """
+    chunks = generate_10day_chunks(year, current_year, current_date)
+    print(f"    Fetching {len(chunks)} chunks to avoid API row limit...")
+
+    all_chunk_data = []
+
+    for chunk_idx, (chunk_start, chunk_end, chunk_month) in enumerate(chunks, 1):
+        max_retries = 4
+        chunk_success = False
+
+        for attempt in range(max_retries):
+            try:
+                start_ts = pd.Timestamp(chunk_start, tz='Europe/Brussels')
+                # IMPORTANT: ENTSO-E API treats end as EXCLUSIVE
+                end_ts = pd.Timestamp(chunk_end + timedelta(days=1), tz='Europe/Brussels')
+
+                chunk_data = client.query_generation(country, start=start_ts, end=end_ts)
+
+                if not chunk_data.empty:
+                    all_chunk_data.append(chunk_data)
+                    print(f"    ✓ Chunk {chunk_idx}/{len(chunks)}: {chunk_start.date()} to {chunk_end.date()} ({chunk_data.shape[0]} rows, {chunk_data.shape[1]} types)")
+                else:
+                    print(f"    ⚠ Chunk {chunk_idx}/{len(chunks)}: No data for {chunk_start.date()} to {chunk_end.date()}")
+
+                chunk_success = True
+                break
+
+            except Exception as e:
+                if attempt < max_retries - 1:
+                    wait_time = 0.1
+                    print(f"    ⚠ Chunk {chunk_idx} attempt {attempt + 1} failed: {e}")
+                    print(f"      Retrying in {wait_time}s...")
+                    time.sleep(wait_time)
+                else:
+                    print(f"    ✗ Chunk {chunk_idx} failed after {max_retries} attempts: {e}")
+
+        if not chunk_success:
+            print(f"    ⚠ Skipping failed chunk {chunk_idx}")
+
+    if not all_chunk_data:
+        print(f"    ⚠ No data returned for {country} {year}")
+        return None
+
+    generation_data = pd.concat(all_chunk_data, axis=0).sort_index()
+    print(f"    ✓ Combined {len(all_chunk_data)} chunks: {generation_data.shape[0]} total rows with {generation_data.shape[1]} generation types")
+    return generation_data
+
+
+def resample_to_monthly_avg_mw(generation_data, year, max_month):
+    """
+    Convert native-resolution generation data (ENTSO-E's typical shape) into
+    a ~12-row monthly DataFrame of average MW per column -- the same unit
+    convention as ned.nl's monthly-granularity 'capacity' figures. This is
+    what lets ENTSO-E data and ned.nl data be combined column-wise into one
+    unified monthly DataFrame (see NL's pre-2021 hybrid branch below), so
+    the existing per-source processing loop can run once, unmodified, over
+    the combined result -- rather than needing separate merge logic for
+    'All Renewables' / 'Total Generation'.
+
+    Uses the same time_diffs-weighting the main processing loop already
+    uses, just inverted (energy / hours = average power, instead of
+    power * hours = energy).
+    """
+    if len(generation_data) > 1:
+        time_diffs = generation_data.index.to_series().diff().dt.total_seconds() / 3600
+        time_diffs = time_diffs.fillna(time_diffs.median())
+    else:
+        time_diffs = pd.Series([1.0] * len(generation_data), index=generation_data.index)
+
+    monthly_rows = {}
+    for month in range(1, max_month + 1):
+        month_mask = generation_data.index.month == month
+        if not month_mask.any():
+            continue
+
+        days_in_month = calendar.monthrange(year, month)[1]
+        hours_in_month = days_in_month * 24
+
+        month_avg_mw = {}
+        for col in generation_data.columns:
+            if isinstance(col, tuple) and 'Actual Consumption' in col:
+                continue
+            energy_mwh = (generation_data[col] * time_diffs)[month_mask].sum()
+            month_avg_mw[col] = energy_mwh / hours_in_month
+
+        ts = pd.Timestamp(year=year, month=month, day=1, tz=generation_data.index.tz)
+        monthly_rows[ts] = month_avg_mw
+
+    if not monthly_rows:
+        return pd.DataFrame()
+
+    return pd.DataFrame(monthly_rows).T.sort_index()
+
+
 def get_all_energy_data_for_country_year(client, country, year):
     """
     Get all energy generation data for a specific country and year with single API call
@@ -290,7 +394,7 @@ def get_all_energy_data_for_country_year(client, country, year):
 
     print(f"  Querying {country} for {year}...")
 
-    if country == 'NL':
+    if country == 'NL' and year >= 2021:
         # Uses ned.nl's monthly granularity directly (not 15-minute), since
         # this script only needs monthly totals. This also sidesteps ned.nl's
         # Hydra pagination entirely for this use case -- a 15-minute fetch
@@ -320,59 +424,70 @@ def get_all_energy_data_for_country_year(client, country, year):
 
         print(f"    ✓ ned.nl: {generation_data.shape[0]} total rows with {generation_data.shape[1]} generation types")
 
-    else:
-        # Generate 10-day chunks to avoid ENTSO-E's 1000-row API limit
-        chunks = generate_10day_chunks(year, current_year, current_date)
-        print(f"    Fetching {len(chunks)} chunks to avoid API row limit...")
+    elif country == 'NL' and year <= 2020:
+        # HYBRID YEARS: ned.nl's own documentation confirms not every type
+        # has data back to 2016 ("bij sommige energiedragers wel zo vroeg
+        # als januari 2016" -- "for SOME energy carriers as early as
+        # January 2016"), and NL's own sheet showed no Gas data before 2020.
+        # Rather than leave pre-2021 gaps, this uses ENTSO-E as the base for
+        # every source (Gas, Coal, Nuclear, Biomass, Waste, Hydro, Oil,
+        # Other -- ENTSO-E's own numbers for NL were never flagged as wrong
+        # for these), then overlays ned.nl's Solar / Wind Onshore / Wind
+        # Offshore on top, since ENTSO-E's known problem with NL specifically
+        # is underreporting those.
+        print(f"    NL {year} <= 2020: hybrid mode (ENTSO-E base + ned.nl solar/wind overlay)")
 
-        all_chunk_data = []
-
-        # Fetch each chunk with retry logic
-        for chunk_idx, (chunk_start, chunk_end, chunk_month) in enumerate(chunks, 1):
-            max_retries = 4
-            chunk_success = False
-
-            for attempt in range(max_retries):
-                try:
-                    # Convert to pandas Timestamp with timezone
-                    start_ts = pd.Timestamp(chunk_start, tz='Europe/Brussels')
-
-                    # IMPORTANT: ENTSO-E API treats end as EXCLUSIVE
-                    # To get data for chunk_end day, we need to request chunk_end + 1 day
-                    end_ts = pd.Timestamp(chunk_end + timedelta(days=1), tz='Europe/Brussels')
-
-                    # Fetch this chunk
-                    chunk_data = client.query_generation(country, start=start_ts, end=end_ts)
-
-                    if not chunk_data.empty:
-                        all_chunk_data.append(chunk_data)
-                        print(f"    ✓ Chunk {chunk_idx}/{len(chunks)}: {chunk_start.date()} to {chunk_end.date()} ({chunk_data.shape[0]} rows, {chunk_data.shape[1]} types)")
-                    else:
-                        print(f"    ⚠ Chunk {chunk_idx}/{len(chunks)}: No data for {chunk_start.date()} to {chunk_end.date()}")
-
-                    chunk_success = True
-                    break  # Success, exit retry loop
-
-                except Exception as e:
-                    if attempt < max_retries - 1:
-                        wait_time = 0.1
-                        print(f"    ⚠ Chunk {chunk_idx} attempt {attempt + 1} failed: {e}")
-                        print(f"      Retrying in {wait_time}s...")
-                        time.sleep(wait_time)
-                    else:
-                        print(f"    ✗ Chunk {chunk_idx} failed after {max_retries} attempts: {e}")
-                        # Don't return None yet - continue with other chunks
-
-            if not chunk_success:
-                print(f"    ⚠ Skipping failed chunk {chunk_idx}")
-
-        # Combine all chunks
-        if not all_chunk_data:
-            print(f"    ⚠ No data returned for {country} {year}")
+        generation_data_entsoe = fetch_entsoe_full_year(client, country, year, current_year, current_date)
+        if generation_data_entsoe is None:
             return None
 
-        generation_data = pd.concat(all_chunk_data, axis=0).sort_index()
-        print(f"    ✓ Combined {len(all_chunk_data)} chunks: {generation_data.shape[0]} total rows with {generation_data.shape[1]} generation types")
+        entsoe_monthly = resample_to_monthly_avg_mw(generation_data_entsoe, year, max_month)
+        if entsoe_monthly.empty:
+            print(f"    ⚠ Resampling ENTSO-E data to monthly failed for NL {year}")
+            return None
+
+        year_start_str = f'{year}-01-01'
+        year_end_str = f'{year + 1}-01-01'
+        print(f"    Fetching ned.nl solar/wind overlay for {year} ({year_start_str} to {year_end_str})...")
+
+        try:
+            ned_monthly = fetch_ned_generation_monthly(year_start_str, year_end_str)
+        except Exception as e:
+            print(f"    ✗ ned.nl overlay fetch failed for NL {year}: {e} -- "
+                  f"falling back to ENTSO-E's own solar/wind for this year")
+            ned_monthly = pd.DataFrame()
+
+        overlay_keywords = ['Solar', 'Wind Onshore', 'Wind Offshore']
+        combined = entsoe_monthly.copy()
+
+        if not ned_monthly.empty:
+            # Drop ENTSO-E's own columns for these keywords so only ned.nl's
+            # versions remain -- avoids double-counting if both existed.
+            cols_to_drop = [col for col in combined.columns if any(kw in col for kw in overlay_keywords)]
+            combined = combined.drop(columns=cols_to_drop)
+
+            for col in overlay_keywords:
+                if col in ned_monthly.columns:
+                    combined[col] = ned_monthly[col].reindex(combined.index, method='nearest')
+                    print(f"    ✓ Overlaid ned.nl '{col}' onto ENTSO-E base for NL {year}")
+                else:
+                    print(f"    ⚠ ned.nl had no '{col}' data for NL {year} -- ENTSO-E's own value was dropped "
+                          f"and NOT replaced, this source will read as 0 for {year}. Needs manual review.")
+
+        generation_data = combined
+        print(f"    ✓ NL {year} hybrid: {generation_data.shape[0]} monthly rows, {generation_data.shape[1]} columns")
+
+    elif country == 'NL':
+        # Unreachable given the >= 2021 / <= 2020 branches above cover every
+        # integer year, but kept as an explicit guard rather than silently
+        # falling through to the ENTSO-E-only path below for NL.
+        print(f"    ✗ Unexpected year value for NL: {year}")
+        return None
+
+    else:
+        generation_data = fetch_entsoe_full_year(client, country, year, current_year, current_date)
+        if generation_data is None:
+            return None
 
     # Now process the combined data (single try block for processing)
     try:
