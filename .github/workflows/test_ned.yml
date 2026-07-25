@@ -1,0 +1,37 @@
+name: Test NED API
+
+on:
+  workflow_dispatch:
+
+jobs:
+  test-ned:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: |
+          pip install requests pandas matplotlib entsoe-py
+
+      - name: Create plots directory
+        run: mkdir -p plots
+
+      - name: Run NED API test
+        env:
+          ENTSOE_API_KEY: ${{ secrets.ENTSOE_API_KEY }}
+          NED_API_KEY: ${{ secrets.NED_API_KEY }}
+        run: |
+          python scripts/test_ned_api.py
+
+      - name: Upload plot
+        uses: actions/upload-artifact@v4
+        with:
+          name: ned-comparison-plot
+          path: plots/ned_entsoe_comparison.png
