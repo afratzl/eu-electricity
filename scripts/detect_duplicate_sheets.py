@@ -25,6 +25,29 @@ Usage:
 import os
 import sys
 import json
+import time
+
+
+def _open_spreadsheet_with_retry(gc, sheet_id, max_retries=4):
+    """
+    Open a spreadsheet and read its worksheet list/header row, retrying with
+    backoff on 429 (rate limit) errors. Returns (worksheets, error) where
+    error is None on success.
+    """
+    for attempt in range(max_retries):
+        try:
+            spreadsheet = gc.open_by_key(sheet_id)
+            worksheets = spreadsheet.worksheets()
+            time.sleep(2)  # pace subsequent reads, matches existing codebase convention
+            return worksheets, None
+        except Exception as e:
+            if '429' in str(e) or 'Quota exceeded' in str(e):
+                wait = 30 * (attempt + 1)
+                print(f"      ⏳ Rate limited, waiting {wait}s before retry ({attempt + 1}/{max_retries})...")
+                time.sleep(wait)
+                continue
+            return None, str(e)
+    return None, "Failed after max retries (persistent rate limiting)"
 
 
 def main():
@@ -109,9 +132,10 @@ def main():
                 'worksheet_count': None,
             }
 
-            try:
-                spreadsheet = gc.open_by_key(sheet_info['id'])
-                worksheets = spreadsheet.worksheets()
+            worksheets, error = _open_spreadsheet_with_retry(gc, sheet_info['id'])
+            if error:
+                detail['error'] = error
+            elif worksheets is not None:
                 detail['worksheet_count'] = len(worksheets)
 
                 # Use 'Total Generation Monthly Production' as a representative
@@ -119,12 +143,14 @@ def main():
                 # collection always writes this one.
                 total_gen_ws = next((ws for ws in worksheets if ws.title == 'Total Generation Monthly Production'), None)
                 if total_gen_ws:
-                    header_row = total_gen_ws.row_values(1)
-                    years = [int(c) for c in header_row if c.isdigit()]
-                    if years:
-                        detail['year_range'] = f"{min(years)}-{max(years)}"
-            except Exception as e:
-                detail['error'] = str(e)
+                    try:
+                        header_row = total_gen_ws.row_values(1)
+                        time.sleep(2)
+                        years = [int(c) for c in header_row if c.isdigit()]
+                        if years:
+                            detail['year_range'] = f"{min(years)}-{max(years)}"
+                    except Exception as e:
+                        detail['error'] = f"Could not read header row: {e}"
 
             candidates.append(detail)
 
@@ -136,6 +162,10 @@ def main():
 
         print()
         duplicates_found[country_code] = candidates
+
+        # Pace between countries too, on top of the per-sheet pacing above --
+        # cheap insurance against the same 429s recurring across a long scan.
+        time.sleep(3)
 
     print("=" * 80)
     if duplicates_found:
