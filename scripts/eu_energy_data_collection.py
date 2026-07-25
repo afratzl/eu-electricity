@@ -14,6 +14,7 @@ import time
 # Keywords match exact ENTSO-E column names (verified against transparency platform)
 from config import (EU_COUNTRIES as eu_countries, NON_EU_COUNTRIES as non_eu_countries,
                     ENTSOE_COUNTRIES, SOURCE_KEYWORDS, ENERGY_SOURCES as energy_sources)
+from ned_client import fetch_ned_generation
 
 def get_or_create_country_sheet(gc, drive_service, country_code='EU'):
     """
@@ -257,59 +258,92 @@ def get_all_energy_data_for_country_year(client, country, year):
 
     print(f"  Querying {country} for {year}...")
 
-    # Generate 10-day chunks to avoid ENTSO-E's 1000-row API limit
-    chunks = generate_10day_chunks(year, current_year, current_date)
-    print(f"    Fetching {len(chunks)} chunks to avoid API row limit...")
+    if country == 'NL':
+        # ned.nl has no documented row limit like ENTSO-E's 1000-row cap, so
+        # the whole year is fetched in a single call instead of chunking.
+        # NOTE: only tested so far against single-day fetches (see
+        # smoke_test_ned_client.py) -- a full year is ~35,000 rows per type,
+        # untested at this scale. Worth watching the first real run closely
+        # (timeouts, truncated/incomplete responses) before trusting it for
+        # a full 2016-current backfill.
+        year_start = datetime(year, 1, 1)
+        if year == current_year:
+            year_last_inclusive = current_date
+        else:
+            year_last_inclusive = datetime(year, 12, 31)
+        year_end_exclusive = year_last_inclusive + timedelta(days=1)
 
-    all_chunk_data = []
+        start_str = year_start.strftime('%Y-%m-%d')
+        end_str = year_end_exclusive.strftime('%Y-%m-%d')
 
-    # Fetch each chunk with retry logic
-    for chunk_idx, (chunk_start, chunk_end, chunk_month) in enumerate(chunks, 1):
-        max_retries = 4
-        chunk_success = False
-        
-        for attempt in range(max_retries):
-            try:
-                # Convert to pandas Timestamp with timezone
-                start_ts = pd.Timestamp(chunk_start, tz='Europe/Brussels')
-                
-                # IMPORTANT: ENTSO-E API treats end as EXCLUSIVE
-                # To get data for chunk_end day, we need to request chunk_end + 1 day
-                from datetime import timedelta
-                end_ts = pd.Timestamp(chunk_end + timedelta(days=1), tz='Europe/Brussels')
-                
-                # Fetch this chunk
-                chunk_data = client.query_generation(country, start=start_ts, end=end_ts)
-                
-                if not chunk_data.empty:
-                    all_chunk_data.append(chunk_data)
-                    print(f"    ✓ Chunk {chunk_idx}/{len(chunks)}: {chunk_start.date()} to {chunk_end.date()} ({chunk_data.shape[0]} rows, {chunk_data.shape[1]} types)")
-                else:
-                    print(f"    ⚠ Chunk {chunk_idx}/{len(chunks)}: No data for {chunk_start.date()} to {chunk_end.date()}")
-                
-                chunk_success = True
-                break  # Success, exit retry loop
-                
-            except Exception as e:
-                if attempt < max_retries - 1:
-                    wait_time = 0.1
-                    print(f"    ⚠ Chunk {chunk_idx} attempt {attempt + 1} failed: {e}")
-                    print(f"      Retrying in {wait_time}s...")
-                    time.sleep(wait_time)
-                else:
-                    print(f"    ✗ Chunk {chunk_idx} failed after {max_retries} attempts: {e}")
-                    # Don't return None yet - continue with other chunks
-        
-        if not chunk_success:
-            print(f"    ⚠ Skipping failed chunk {chunk_idx}")
+        print(f"    Fetching NL {year} via ned.nl ({start_str} to {end_str}, single request)...")
 
-    # Combine all chunks
-    if not all_chunk_data:
-        print(f"    ⚠ No data returned for {country} {year}")
-        return None
+        try:
+            generation_data = fetch_ned_generation(start_str, end_str)
+        except Exception as e:
+            print(f"    ✗ ned.nl fetch failed for NL {year}: {e}")
+            return None
 
-    generation_data = pd.concat(all_chunk_data, axis=0).sort_index()
-    print(f"    ✓ Combined {len(all_chunk_data)} chunks: {generation_data.shape[0]} total rows with {generation_data.shape[1]} generation types")
+        if generation_data.empty:
+            print(f"    ⚠ No data returned for NL {year} from ned.nl")
+            return None
+
+        print(f"    ✓ ned.nl: {generation_data.shape[0]} total rows with {generation_data.shape[1]} generation types")
+
+    else:
+        # Generate 10-day chunks to avoid ENTSO-E's 1000-row API limit
+        chunks = generate_10day_chunks(year, current_year, current_date)
+        print(f"    Fetching {len(chunks)} chunks to avoid API row limit...")
+
+        all_chunk_data = []
+
+        # Fetch each chunk with retry logic
+        for chunk_idx, (chunk_start, chunk_end, chunk_month) in enumerate(chunks, 1):
+            max_retries = 4
+            chunk_success = False
+
+            for attempt in range(max_retries):
+                try:
+                    # Convert to pandas Timestamp with timezone
+                    start_ts = pd.Timestamp(chunk_start, tz='Europe/Brussels')
+
+                    # IMPORTANT: ENTSO-E API treats end as EXCLUSIVE
+                    # To get data for chunk_end day, we need to request chunk_end + 1 day
+                    from datetime import timedelta
+                    end_ts = pd.Timestamp(chunk_end + timedelta(days=1), tz='Europe/Brussels')
+
+                    # Fetch this chunk
+                    chunk_data = client.query_generation(country, start=start_ts, end=end_ts)
+
+                    if not chunk_data.empty:
+                        all_chunk_data.append(chunk_data)
+                        print(f"    ✓ Chunk {chunk_idx}/{len(chunks)}: {chunk_start.date()} to {chunk_end.date()} ({chunk_data.shape[0]} rows, {chunk_data.shape[1]} types)")
+                    else:
+                        print(f"    ⚠ Chunk {chunk_idx}/{len(chunks)}: No data for {chunk_start.date()} to {chunk_end.date()}")
+
+                    chunk_success = True
+                    break  # Success, exit retry loop
+
+                except Exception as e:
+                    if attempt < max_retries - 1:
+                        wait_time = 0.1
+                        print(f"    ⚠ Chunk {chunk_idx} attempt {attempt + 1} failed: {e}")
+                        print(f"      Retrying in {wait_time}s...")
+                        time.sleep(wait_time)
+                    else:
+                        print(f"    ✗ Chunk {chunk_idx} failed after {max_retries} attempts: {e}")
+                        # Don't return None yet - continue with other chunks
+
+            if not chunk_success:
+                print(f"    ⚠ Skipping failed chunk {chunk_idx}")
+
+        # Combine all chunks
+        if not all_chunk_data:
+            print(f"    ⚠ No data returned for {country} {year}")
+            return None
+
+        generation_data = pd.concat(all_chunk_data, axis=0).sort_index()
+        print(f"    ✓ Combined {len(all_chunk_data)} chunks: {generation_data.shape[0]} total rows with {generation_data.shape[1]} generation types")
 
     # Now process the combined data (single try block for processing)
     try:
