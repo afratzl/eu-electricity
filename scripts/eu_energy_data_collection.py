@@ -49,9 +49,41 @@ def get_or_create_country_sheet(gc, drive_service, country_code='EU'):
                     spreadsheet = gc.open_by_key(sheet_id)
                     print(f"✓ Opened existing sheet: {sheet_name}")
                 except:
-                    print(f"  ⚠ Sheet ID in JSON is invalid, will create new")
+                    print(f"  ⚠ Sheet ID in JSON is invalid, will search Drive before creating new")
         except:
             pass
+
+    # JSON didn't have it (or the ID was stale) -- before creating a new sheet,
+    # search Drive by name first. This mirrors get_or_create_drive_folder's
+    # existing search-before-create pattern above, which the spreadsheet
+    # lookup was missing entirely. Without this, any run that loses track of
+    # drive_links.json (corrupted file, race with a concurrent workflow, etc.)
+    # would silently create a same-named orphan spreadsheet instead of finding
+    # the real one -- which is exactly what happened before this fix existed.
+    if spreadsheet is None and drive_service:
+        try:
+            query = (f"name='{sheet_name}' and "
+                     f"mimeType='application/vnd.google-apps.spreadsheet' and trashed=false")
+            results = drive_service.files().list(q=query, spaces='drive', fields='files(id, name, createdTime)').execute()
+            found = results.get('files', [])
+
+            if found:
+                # If Drive search itself finds more than one, that's a
+                # pre-existing duplicate this fix can't resolve on its own --
+                # don't guess, just report it and pick the oldest as the
+                # least-surprising choice while flagging it loudly.
+                if len(found) > 1:
+                    print(f"  ⚠ Found {len(found)} existing sheets named '{sheet_name}' in Drive -- "
+                          f"this is a pre-existing duplicate, not something this run created. "
+                          f"Using the oldest by creation time; run the duplicate-detection script "
+                          f"to review and merge the others.")
+                    found.sort(key=lambda f: f.get('createdTime', ''))
+
+                sheet_id = found[0]['id']
+                spreadsheet = gc.open_by_key(sheet_id)
+                print(f"✓ Found existing sheet via Drive search: {sheet_name}")
+        except Exception as e:
+            print(f"  ⚠ Drive search for existing sheet failed: {e}")
     
     # Sheet doesn't exist or JSON doesn't have it - create new
     if spreadsheet is None:
