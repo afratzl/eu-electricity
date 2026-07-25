@@ -1,0 +1,73 @@
+name: Merge Duplicate Sheets
+
+on:
+  workflow_dispatch:
+    inputs:
+      country:
+        description: 'Country code to process (e.g. BG). Leave empty to dry-run ALL duplicate countries.'
+        required: false
+        default: ''
+      apply:
+        description: 'Actually apply changes and trash duplicates? Requires a country to be set. Type "yes" to apply, anything else stays dry-run.'
+        required: false
+        default: 'no'
+
+jobs:
+  merge-duplicates:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: |
+          pip install gspread google-auth google-api-python-client
+
+      - name: Run duplicate detection (fresh report for this run)
+        env:
+          GOOGLE_CREDENTIALS_JSON: ${{ secrets.GOOGLE_CREDENTIALS_JSON }}
+        run: |
+          python scripts/detect_duplicate_sheets.py
+
+      - name: Run merge (dry-run unless apply=yes AND a country is set)
+        env:
+          GOOGLE_CREDENTIALS_JSON: ${{ secrets.GOOGLE_CREDENTIALS_JSON }}
+        run: |
+          COUNTRY="${{ github.event.inputs.country }}"
+          APPLY="${{ github.event.inputs.apply }}"
+
+          CMD="python scripts/merge_duplicate_sheets.py"
+          if [ -n "$COUNTRY" ]; then
+            CMD="$CMD --country $COUNTRY"
+          fi
+          if [ "$APPLY" = "yes" ]; then
+            CMD="$CMD --apply"
+          fi
+
+          echo "Running: $CMD"
+          eval $CMD
+
+      - name: Upload merge report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: duplicate-sheets-report
+          path: duplicate_sheets_report.json
+          if-no-files-found: ignore
+
+      - name: Commit updated drive_links.json (only if apply was used)
+        if: github.event.inputs.apply == 'yes'
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git pull --rebase --autostash origin main
+          git add -f plots/drive_links.json
+          git diff --quiet && git diff --staged --quiet || (git commit -m "Merge duplicate sheet for ${{ github.event.inputs.country }}" && git push)
