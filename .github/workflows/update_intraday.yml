@@ -35,6 +35,7 @@ jobs:
         env:
           ENTSOE_API_KEY: ${{ secrets.ENTSOE_API_KEY }}
           GOOGLE_CREDENTIALS_JSON: ${{ secrets.GOOGLE_CREDENTIALS_JSON }}
+          NED_API_KEY: ${{ secrets.NED_API_KEY }}
         run: |
           echo "Running hourly intraday analysis..."
           python scripts/intraday_analysis.py || echo "Failed to generate intraday plots"
