@@ -309,7 +309,6 @@ def get_all_energy_data_for_country_year(client, country, year):
 
                     # IMPORTANT: ENTSO-E API treats end as EXCLUSIVE
                     # To get data for chunk_end day, we need to request chunk_end + 1 day
-                    from datetime import timedelta
                     end_ts = pd.Timestamp(chunk_end + timedelta(days=1), tz='Europe/Brussels')
 
                     # Fetch this chunk
