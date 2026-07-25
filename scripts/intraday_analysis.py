@@ -123,8 +123,18 @@ def format_change_percentage(value):
 def get_intraday_data_for_country(country, start_date, end_date, client, data_type='generation', max_retries=3, extra_hour=True):
     """
     Get intraday data for a specific country and date range with retry logic
+
+    NL generation data comes from ned.nl instead of ENTSO-E, since ENTSO-E
+    massively underreports NL solar and onshore wind. See ned_client.py for
+    the full mapping and rationale. This only applies to generation data --
+    NL load data (not currently used anywhere in this file) still goes
+    through the normal ENTSO-E path below.
+
+    ned.nl's own exclusive-end date boundary (validfrom[strictly_before])
+    already does what ENTSO-E's extra_hour=True hack works around, so the
+    extra_hour parameter is intentionally ignored for the NL/ned.nl branch.
     """
-      if country == 'NL' and data_type == 'generation':
+    if country == 'NL' and data_type == 'generation':
         start_str = pd.Timestamp(start_date).strftime('%Y-%m-%d')
         end_str = pd.Timestamp(end_date).strftime('%Y-%m-%d')
 
@@ -138,6 +148,7 @@ def get_intraday_data_for_country(country, start_date, end_date, client, data_ty
         # so no timezone conversion is needed here (unlike the ENTSO-E path
         # below, which does its own tz handling).
         return data
+
     start = pd.Timestamp(start_date, tz='Europe/Brussels')
     end = pd.Timestamp(end_date, tz='Europe/Brussels')
     if extra_hour:
