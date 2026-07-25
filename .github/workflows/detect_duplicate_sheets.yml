@@ -1,0 +1,35 @@
+name: Detect Duplicate Sheets
+
+on:
+  workflow_dispatch:
+
+jobs:
+  detect-duplicates:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: |
+          pip install gspread google-auth google-api-python-client
+
+      - name: Run duplicate sheet detection (read-only)
+        env:
+          GOOGLE_CREDENTIALS_JSON: ${{ secrets.GOOGLE_CREDENTIALS_JSON }}
+        run: |
+          python scripts/detect_duplicate_sheets.py
+
+      - name: Upload duplicate report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: duplicate-sheets-report
+          path: duplicate_sheets_report.json
+          if-no-files-found: ignore
