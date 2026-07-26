@@ -25,10 +25,6 @@
     </nav>
 
     <div class="container">
-        <header class="page-header">
-            <h1>EU Electricity Generation</h1>
-        </header>
-
         <!-- Four main navigation cards -->
         <!--
         <div class="cards-grid-pro">
@@ -72,6 +68,7 @@
 
         <!-- Electricity Mix Summary Table -->
         <section class="summary-table-section-pro">
+            <h1 class="table-section-title-pro">Electricity Generation</h1>
 
             <!-- DESKTOP SIDE-BY-SIDE LAYOUT (table left, controls right) -->
             <div class="live-desktop-layout">
@@ -713,6 +710,23 @@
             margin-bottom: 0;
         }
 
+        /* Combined title -- replaces the removed banner and the removed
+           "Electricity Mix" table header, merged into one element instead
+           of two redundant "you are here" signals. */
+        .table-section-title-pro {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #1a202c;
+            text-align: center;
+            margin: 0 0 16px 0;
+        }
+        @media (max-width: 1023px) {
+            .table-section-title-pro {
+                font-size: 1.5rem;
+                margin-bottom: 12px;
+            }
+        }
+
         .section-header-pro {
             text-align: center;
             margin-bottom: var(--spacing-lg);
@@ -1190,10 +1204,25 @@
            container, banner, footer sizing, and flag em-scaling. */
         @media (max-width: 1023px) {
             .navbar {
-                padding: 0.85rem 0;
+                padding: 1.1rem 0;
+            }
+            .nav-title { font-size: 1.4rem; }
+            .nav-container {
+                gap: 0.85rem;
+            }
+            /* Stack menu below title through the full phone+tablet range
+               (shared styles.css only does this up to 768px, leaving
+               769-1023px showing them side by side) -- and center the
+               links within their row once stacked. */
+            .nav-container {
+                flex-direction: column;
+            }
+            .nav-links {
+                justify-content: center;
+                width: 100%;
             }
             .container {
-                padding-top: 0.8rem;
+                padding-top: 1.25rem;
                 padding-bottom: 0;
             }
             /* Banner-to-table gap, further reduced 40% for mobile only
@@ -1222,30 +1251,14 @@
             }
         }
         @media (min-width: 1024px) {
-            .container { padding-top: 0.75rem; padding-bottom: 1rem; }
+            .nav-title { font-size: 1.85rem; }
+            .container { padding-top: 1.5rem; padding-bottom: 1rem; }
             .table-controls-pro { margin-bottom: 6px; }
             .table-footer-pro { padding-bottom: 5px; }
             footer { margin-top: 0; padding: 1rem; font-size: 0.9rem; }
         }
         @media (max-width: 1023px) {
             footer { margin-top: 0; padding: 1rem; font-size: 0.75rem; }
-        }
-
-        /* Banner sizing, matched across breakpoints */
-        .page-header h1 {
-            margin-bottom: 0;
-        }
-        @media (min-width: 1024px) {
-            .page-header { padding: 1.25rem 1rem; margin-bottom: 0.75rem; }
-            .page-header h1 { font-size: 1.75rem; }
-        }
-        @media (max-width: 1023px) {
-            .page-header { margin-bottom: 0.75rem; padding: 1.1rem 0.9rem; }
-            .page-header h1 { font-size: 1.4rem; }
-        }
-        @media (max-width: 480px) {
-            .page-header { padding: 0.9rem 0.75rem; }
-            .page-header h1 { font-size: 1.2rem; }
         }
 
         /* Flag scales with the title text instead of a fixed 32x21px */
@@ -1265,7 +1278,7 @@
         .nav-links a { white-space: nowrap; flex-shrink: 0; }
         @media (max-width: 600px) {
             .nav-links a { font-size: 0.78em; padding: 4px 6px; }
-            .nav-title { font-size: 0.9em; }
+            .nav-title { font-size: 1.3rem; }
         }
         /* NEW: desktop side-by-side layout for the summary table -- table
            on the left, controls (country selector + display toggle) on
@@ -1312,6 +1325,27 @@
             }
         }
 
+        /* NEW: sticky footer -- with the banner removed, pages can now
+           be shorter than the viewport, leaving blank space below the
+           footer instead of it sitting flush at the bottom. Standard
+           flex sticky-footer pattern: body becomes a flex column,
+           .container grows to fill any leftover space, pushing the
+           footer down to the bottom when content is short. Has no
+           effect when content is already taller than the viewport --
+           footer just follows the content as before. */
+        body {
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh; /* fallback for browsers without svh support */
+            min-height: 100svh; /* actual visible viewport on load, not the larger address-bar-hidden height */
+        }
+        .container {
+            flex: 1 0 auto;
+            width: 100%;
+        }
+        footer {
+            flex-shrink: 0;
+        }
     </style>
 
     <!-- GoatCounter Analytics -->
