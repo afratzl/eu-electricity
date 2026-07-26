@@ -334,6 +334,8 @@
                                 </div>
                             </div>
                         </div>
+            </div>
+        </div>
 
                         <div id="chart-info-bar" class="chart-info-bar">
                             <button id="download-btn" class="download-btn" onclick="downloadChart()" title="Download current chart">
@@ -356,8 +358,6 @@
                                 <!-- Last update timestamp will be loaded here -->
                             </span>
                         </div>
-            </div>
-        </div>
     </div>
 
     <footer>
@@ -1349,7 +1349,19 @@
         /* TEST (live.html only for now): banner size, further reduced from
            the previous pass, at every breakpoint. */
         @media (min-width: 1024px) {
-            .page-header { padding: 1.5rem 1rem; margin-bottom: 0.75rem; }
+            .page-header { padding: 1rem 0.75rem; margin-bottom: 0.5rem; }
+            /* Reduce the gap above the banner too -- .container's base
+               padding (2rem, shared styles.css) applies to all sides
+               including top; this is the desktop-only override. */
+            .container { padding-top: 0.75rem; }
+            /* Download/Refresh buttons sized to match the toggle buttons
+               above (Relative/Absolute Generation) -- scoped to desktop
+               only so mobile's already-tuned smaller buttons are untouched. */
+            .download-btn, .refresh-btn {
+                padding: 12px 24px;
+                font-size: 0.95em;
+                font-weight: 600;
+            }
         }
         @media (max-width: 1023px) {
             .page-header { margin-bottom: 0.75rem; padding: 0.9rem 0.8rem; }
