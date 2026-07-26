@@ -1492,6 +1492,26 @@
             .nav-title { font-size: 0.9em; }
         }
 
+        /* NEW (monthly.html test): sticky footer -- with the banner
+           removed, pages can now be shorter than the viewport, leaving
+           blank space below the footer instead of it sitting flush at
+           the bottom. Standard flex sticky-footer pattern: body becomes
+           a flex column, .container grows to fill any leftover space,
+           pushing the footer down to the bottom when content is short.
+           Has no effect when content is already taller than the
+           viewport -- footer just follows the content as before. */
+        body {
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+        .container {
+            flex: 1 0 auto;
+            width: 100%;
+        }
+        footer {
+            flex-shrink: 0;
+        }
     </style>
 
     <!-- GoatCounter Analytics -->
