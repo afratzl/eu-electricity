@@ -402,10 +402,13 @@
         function displaySummaryTable(data) {
             // Pre-compute max values per column for data bars
             const cols = ['yesterday', 'last_week', 'ytd_current', 'year_previous'];
-            const maxPct = {}, maxTwh = {};
+            const maxPct = {}, maxTwh = {}, colUnit = {};
             cols.forEach(col => {
                 maxPct[col] = Math.max(...data.sources.map(s => parseFloat(s[col]?.percentage) || 0));
                 maxTwh[col] = Math.max(...data.sources.map(s => parseFloat(s[col]?.twh) || 0));
+                // Whole column shares one unit, decided by its largest value --
+                // mixing GWh and TWh row-to-row in the same column looked odd.
+                colUnit[col] = maxTwh[col] < 1 ? 'GWh' : 'TWh';
             });
 
             function dataBar(value, max, color) {
@@ -414,15 +417,12 @@
                 return `background: linear-gradient(to right, ${color}40 ${pct}%, transparent ${pct}%)`;
             }
 
-            // Auto-scale the displayed unit: below 100 GWh show GWh (more
-            // readable for small sources like Geothermal/Oil), at or above
-            // 100 GWh (0.1 TWh) show TWh (matches prior fixed-TWh behavior
-            // for anything that was already a reasonably large number).
-            function formatAbsolute(d) {
+            // Format one value using the unit already decided for its column.
+            function formatAbsolute(d, unit) {
                 if (d?.gwh === undefined) return '—';
                 const gwh = typeof d.gwh === 'number' ? d.gwh : parseFloat(d.gwh);
                 if (isNaN(gwh)) return '—';
-                if (Math.abs(gwh) < 100) {
+                if (unit === 'GWh') {
                     return gwh.toFixed(1) + ' GWh';
                 }
                 const twh = d?.twh !== undefined ? (typeof d.twh === 'number' ? d.twh : parseFloat(d.twh)) : gwh / 1000;
@@ -501,7 +501,7 @@
                 [['yesterday','yesterday'], ['last_week','last_week'], ['ytd_current','ytd_current'], ['year_previous','year_previous']].forEach(([col, key]) => {
                     const d = source[key];
                     const pctVal = d?.percentage !== undefined ? d.percentage + '%' : '—';
-                    const absVal = formatAbsolute(d);
+                    const absVal = formatAbsolute(d, colUnit[col]);
                     const pctBar = dataBar(d?.percentage, maxPct[col], color);
                     const absBar = dataBar(d?.twh, maxTwh[col], color);
                     const chg2015 = d?.change_from_2015 || '—';
