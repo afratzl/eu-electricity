@@ -83,25 +83,6 @@
 
                 <div class="live-selector-column">
                                 <div class="table-controls-pro">
-                                    <!-- Display Toggle -->
-                                    <div class="toggle-group">
-                                        <button id="toggle-percentage" class="toggle-btn-pro active" onclick="showPercentage()">
-                                            Relative Generation
-                                        </button>
-                                        <button id="toggle-absolute" class="toggle-btn-pro" onclick="showAbsolute()">
-                                            Absolute Generation
-                                        </button>
-                                        <button id="toggle-change-previous" class="toggle-btn-pro" onclick="showChangePreviousYear()">
-                                            <span id="change-previous-year-label">Change from Previous Year</span>
-                                        </button>
-                                        <button id="toggle-change-two-years-ago" class="toggle-btn-pro" onclick="showChangeTwoYearsAgo()">
-                                            <span id="change-two-years-ago-label">Change from 2 Years Ago</span>
-                                        </button>
-                                        <button id="toggle-change" class="toggle-btn-pro" onclick="showChange()">
-                                            Change from 2015
-                                        </button>
-                                    </div>
-
                                     <!-- Country Selector -->
                                     <div class="country-selector-group">
                                         <div class="custom-select-container" id="country-select-custom" style="display: inline-block; min-width: 250px;">
@@ -175,6 +156,25 @@
                                             </div>
                                     </div>
                                 </div>
+
+                                    <!-- Display Toggle -->
+                                    <div class="toggle-group">
+                                        <button id="toggle-percentage" class="toggle-btn-pro active" onclick="showPercentage()">
+                                            Relative Generation
+                                        </button>
+                                        <button id="toggle-absolute" class="toggle-btn-pro" onclick="showAbsolute()">
+                                            Absolute Generation
+                                        </button>
+                                        <button id="toggle-change-previous" class="toggle-btn-pro" onclick="showChangePreviousYear()">
+                                            <span id="change-previous-year-label">Change from Previous Year</span>
+                                        </button>
+                                        <button id="toggle-change-two-years-ago" class="toggle-btn-pro" onclick="showChangeTwoYearsAgo()">
+                                            <span id="change-two-years-ago-label">Change from 2 Years Ago</span>
+                                        </button>
+                                        <button id="toggle-change" class="toggle-btn-pro" onclick="showChange()">
+                                            Change from 2015
+                                        </button>
+                                    </div>
                                 </div>
 
                                 <div id="table-timestamp" class="table-footer-pro"></div>
@@ -1195,6 +1195,11 @@
             .container {
                 padding-top: 0.8rem;
                 padding-bottom: 0;
+            }
+            /* Banner-to-table gap, further reduced 40% for mobile only
+               (base rule already at 10px, this brings mobile to 6px) */
+            .summary-table-section-pro {
+                margin-top: 6px;
             }
             /* Slightly more space between the table and the controls below it */
             .live-selector-column {
