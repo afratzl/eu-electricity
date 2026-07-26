@@ -13,7 +13,7 @@
     <nav class="navbar">
         <div class="nav-container">
             <span class="nav-title">
-                <img src="flags/EU.svg" width="32" height="21" alt="EU flag" style="vertical-align: middle; margin-right: 10px;">
+                <img src="flags/EU.svg" alt="EU flag">
                 EU Electricity Generation
             </span>
             <div class="nav-links">
@@ -1313,6 +1313,25 @@
                 height: 16px;
                 margin-right: 6px;
             }
+        }
+
+        /* TEST (live.html only for now): make the EU flag scale with the
+           title text instead of staying a fixed 32x21px. Height is in em,
+           so it inherits .nav-title's font-size and automatically tracks
+           it at every existing breakpoint (1.5rem base, 1.2rem at 768px,
+           0.9em at 600px) without needing separate flag-specific media
+           queries. Flex + align-items handles vertical alignment robustly
+           instead of relying on vertical-align, which can be inconsistent
+           across font/image size changes. */
+        .nav-title {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .nav-title img {
+            height: 1em;
+            width: auto;
+            display: block;
         }
 
         /* TEST (live.html only for now): halve the gap below the banner on
