@@ -162,10 +162,10 @@
                     <button id="toggle-absolute" class="toggle-btn-pro" onclick="showAbsolute()">
                         Absolute
                     </button>
-                    <button id="toggle-change-2024" class="toggle-btn-pro" onclick="showChangePreviousYear()">
+                    <button id="toggle-change-previous" class="toggle-btn-pro" onclick="showChangePreviousYear()">
                         <span id="change-previous-year-label">Change from Previous Year</span>
                     </button>
-                    <button id="toggle-change-2023" class="toggle-btn-pro" onclick="showChangeTwoYearsAgo()">
+                    <button id="toggle-change-two-years-ago" class="toggle-btn-pro" onclick="showChangeTwoYearsAgo()">
                         <span id="change-two-years-ago-label">Change from 2 Years Ago</span>
                     </button>
                     <button id="toggle-change" class="toggle-btn-pro" onclick="showChange()">
@@ -371,10 +371,10 @@
                     case 'toggle-change':
                         showChange();
                         break;
-                    case 'toggle-change-2024':
+                    case 'toggle-change-previous':
                         showChangePreviousYear();
                         break;
-                    case 'toggle-change-2023':
+                    case 'toggle-change-two-years-ago':
                         showChangeTwoYearsAgo();
                         break;
                 }
@@ -401,7 +401,7 @@
         // Display summary table
         function displaySummaryTable(data) {
             // Pre-compute max values per column for data bars
-            const cols = ['yesterday', 'last_week', 'ytd_2025', 'year_2024'];
+            const cols = ['yesterday', 'last_week', 'ytd_current', 'year_previous'];
             const maxPct = {}, maxTwh = {};
             cols.forEach(col => {
                 maxPct[col] = Math.max(...data.sources.map(s => parseFloat(s[col]?.percentage) || 0));
@@ -461,8 +461,8 @@
             const colData = {
                 yesterday: 'yesterday',
                 last_week: 'last_week',
-                ytd: 'ytd_2025',
-                prev: 'year_2024'
+                ytd: 'ytd_current',
+                prev: 'year_previous'
             };
 
             let sourceRowCount = {renewable: 0, 'non-renewable': 0};
@@ -483,21 +483,21 @@
                 const displayName = source.source.replace('All Renewables', 'Renewables').replace('All Non-Renewables', 'Non-Renewables');
                 html += `<td class="source-name-cell-pro">${colorDot(source.source)}${displayName}</td>`;
 
-                [['yesterday','yesterday'], ['last_week','last_week'], ['ytd_2025','ytd_2025'], ['year_2024','year_2024']].forEach(([col, key]) => {
+                [['yesterday','yesterday'], ['last_week','last_week'], ['ytd_current','ytd_current'], ['year_previous','year_previous']].forEach(([col, key]) => {
                     const d = source[key];
                     const pctVal = d?.percentage !== undefined ? d.percentage + '%' : '—';
                     const absVal = d?.twh !== undefined ? (typeof d.twh === 'number' ? d.twh.toFixed(2) : d.twh) + ' TWh' : '—';
                     const pctBar = dataBar(d?.percentage, maxPct[col], color);
                     const absBar = dataBar(d?.twh, maxTwh[col], color);
                     const chg2015 = d?.change_from_2015 || '—';
-                    const chg2024 = d?.change_from_2024 || '—';
-                    const chg2023 = d?.change_from_2023 || '—';
+                    const chgPrevious = d?.change_from_previous_year || '—';
+                    const chgTwoYearsAgo = d?.change_from_two_years_ago || '—';
                     html += `<td>
                         <span class="value-pct" style="${pctBar}">${pctVal}</span>
                         <span class="value-abs" style="display:none;${absBar}">${absVal}</span>
                         <span class="value-change" style="display:none;${changeColor(chg2015)}">${chg2015}</span>
-                        <span class="value-change-2024" style="display:none;${changeColor(chg2024)}">${chg2024}</span>
-                        <span class="value-change-2023" style="display:none;${changeColor(chg2023)}">${chg2023}</span>
+                        <span class="value-change-previous" style="display:none;${changeColor(chgPrevious)}">${chgPrevious}</span>
+                        <span class="value-change-two-years-ago" style="display:none;${changeColor(chgTwoYearsAgo)}">${chgTwoYearsAgo}</span>
                     </td>`;
                 });
                 html += '</tr>';
@@ -514,70 +514,70 @@
             document.querySelectorAll('.value-pct').forEach(el => el.style.display = 'inline');
             document.querySelectorAll('.value-abs').forEach(el => el.style.display = 'none');
             document.querySelectorAll('.value-change').forEach(el => el.style.display = 'none');
-            document.querySelectorAll('.value-change-2024').forEach(el => el.style.display = 'none');
-            document.querySelectorAll('.value-change-2023').forEach(el => el.style.display = 'none');
+            document.querySelectorAll('.value-change-previous').forEach(el => el.style.display = 'none');
+            document.querySelectorAll('.value-change-two-years-ago').forEach(el => el.style.display = 'none');
             
             document.getElementById('toggle-percentage').classList.add('active');
             document.getElementById('toggle-absolute').classList.remove('active');
             document.getElementById('toggle-change').classList.remove('active');
-            document.getElementById('toggle-change-2024').classList.remove('active');
-            document.getElementById('toggle-change-2023').classList.remove('active');
+            document.getElementById('toggle-change-previous').classList.remove('active');
+            document.getElementById('toggle-change-two-years-ago').classList.remove('active');
         }
 
         function showAbsolute() {
             document.querySelectorAll('.value-pct').forEach(el => el.style.display = 'none');
             document.querySelectorAll('.value-abs').forEach(el => el.style.display = 'inline');
             document.querySelectorAll('.value-change').forEach(el => el.style.display = 'none');
-            document.querySelectorAll('.value-change-2024').forEach(el => el.style.display = 'none');
-            document.querySelectorAll('.value-change-2023').forEach(el => el.style.display = 'none');
+            document.querySelectorAll('.value-change-previous').forEach(el => el.style.display = 'none');
+            document.querySelectorAll('.value-change-two-years-ago').forEach(el => el.style.display = 'none');
             
             document.getElementById('toggle-percentage').classList.remove('active');
             document.getElementById('toggle-absolute').classList.add('active');
             document.getElementById('toggle-change').classList.remove('active');
-            document.getElementById('toggle-change-2024').classList.remove('active');
-            document.getElementById('toggle-change-2023').classList.remove('active');
+            document.getElementById('toggle-change-previous').classList.remove('active');
+            document.getElementById('toggle-change-two-years-ago').classList.remove('active');
         }
 
         function showChange() {
             document.querySelectorAll('.value-pct').forEach(el => el.style.display = 'none');
             document.querySelectorAll('.value-abs').forEach(el => el.style.display = 'none');
             document.querySelectorAll('.value-change').forEach(el => el.style.display = 'inline');
-            document.querySelectorAll('.value-change-2024').forEach(el => el.style.display = 'none');
-            document.querySelectorAll('.value-change-2023').forEach(el => el.style.display = 'none');
+            document.querySelectorAll('.value-change-previous').forEach(el => el.style.display = 'none');
+            document.querySelectorAll('.value-change-two-years-ago').forEach(el => el.style.display = 'none');
             
             document.getElementById('toggle-percentage').classList.remove('active');
             document.getElementById('toggle-absolute').classList.remove('active');
             document.getElementById('toggle-change').classList.add('active');
-            document.getElementById('toggle-change-2024').classList.remove('active');
-            document.getElementById('toggle-change-2023').classList.remove('active');
+            document.getElementById('toggle-change-previous').classList.remove('active');
+            document.getElementById('toggle-change-two-years-ago').classList.remove('active');
         }
 
         function showChangePreviousYear() {
             document.querySelectorAll('.value-pct').forEach(el => el.style.display = 'none');
             document.querySelectorAll('.value-abs').forEach(el => el.style.display = 'none');
             document.querySelectorAll('.value-change').forEach(el => el.style.display = 'none');
-            document.querySelectorAll('.value-change-2024').forEach(el => el.style.display = 'inline');
-            document.querySelectorAll('.value-change-2023').forEach(el => el.style.display = 'none');
+            document.querySelectorAll('.value-change-previous').forEach(el => el.style.display = 'inline');
+            document.querySelectorAll('.value-change-two-years-ago').forEach(el => el.style.display = 'none');
             
             document.getElementById('toggle-percentage').classList.remove('active');
             document.getElementById('toggle-absolute').classList.remove('active');
             document.getElementById('toggle-change').classList.remove('active');
-            document.getElementById('toggle-change-2024').classList.add('active');
-            document.getElementById('toggle-change-2023').classList.remove('active');
+            document.getElementById('toggle-change-previous').classList.add('active');
+            document.getElementById('toggle-change-two-years-ago').classList.remove('active');
         }
 
         function showChangeTwoYearsAgo() {
             document.querySelectorAll('.value-pct').forEach(el => el.style.display = 'none');
             document.querySelectorAll('.value-abs').forEach(el => el.style.display = 'none');
             document.querySelectorAll('.value-change').forEach(el => el.style.display = 'none');
-            document.querySelectorAll('.value-change-2024').forEach(el => el.style.display = 'none');
-            document.querySelectorAll('.value-change-2023').forEach(el => el.style.display = 'inline');
+            document.querySelectorAll('.value-change-previous').forEach(el => el.style.display = 'none');
+            document.querySelectorAll('.value-change-two-years-ago').forEach(el => el.style.display = 'inline');
             
             document.getElementById('toggle-percentage').classList.remove('active');
             document.getElementById('toggle-absolute').classList.remove('active');
             document.getElementById('toggle-change').classList.remove('active');
-            document.getElementById('toggle-change-2024').classList.remove('active');
-            document.getElementById('toggle-change-2023').classList.add('active');
+            document.getElementById('toggle-change-previous').classList.remove('active');
+            document.getElementById('toggle-change-two-years-ago').classList.add('active');
         }
 
         // Load on page load
