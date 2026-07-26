@@ -1050,12 +1050,26 @@
         }
 
 
+        /* NEW (monthly.html test): navbar title made larger now that the
+           banner is gone -- gives the page a stronger visual anchor at
+           the top instead of feeling under-emphasized. */
+        @media (min-width: 1024px) {
+            .nav-title { font-size: 1.85rem; }
+            .navbar { padding: 1.25rem 0; }
+        }
+        @media (max-width: 1023px) {
+            .nav-title { font-size: 1.4rem; }
+        }
+
         /* ===== PORTED FROM live.html (mobile/desktop refinement pass) ===== */
 
         /* Mobile + tablet optimizations */
         @media (max-width: 1023px) {
             .navbar {
-                padding: 0.85rem 0;
+                padding: 1.1rem 0;
+            }
+            .nav-container {
+                gap: 0.85rem;
             }
             .container {
                 padding-top: 1.25rem;
@@ -1489,7 +1503,7 @@
         .nav-links a { white-space: nowrap; flex-shrink: 0; }
         @media (max-width: 600px) {
             .nav-links a { font-size: 0.78em; padding: 4px 6px; }
-            .nav-title { font-size: 0.9em; }
+            .nav-title { font-size: 1.3rem; }
         }
 
         /* NEW (monthly.html test): sticky footer -- with the banner
