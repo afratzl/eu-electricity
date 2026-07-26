@@ -13,7 +13,7 @@
     <nav class="navbar">
         <div class="nav-container">
             <span class="nav-title">
-                <img src="flags/EU.svg" width="32" height="21" alt="EU flag" style="vertical-align: middle; margin-right: 10px;">
+                <img src="flags/EU.svg" alt="EU flag">
                 EU Electricity Generation
             </span>
             <div class="nav-links">
@@ -32,151 +32,157 @@
             <h1>Yesterday's Electricity Generation</h1>
         </header>
 
-        <!-- COMPACT SELECTOR BOX -->
-        <div class="compact-selector-box">
-            <!-- Country/Region Selector - Custom Dropdown with Flags -->
-            <div class="selector-item">
-                <label>Country/Region:</label>
-                <div class="custom-select-container" id="country-select-custom">
-                    <!-- Trigger -->
-                    <div class="custom-select-trigger">
-                        <img src="flags/EU.svg" alt="EU flag">
-                        <span class="label">European Union</span>
-                        <span class="arrow"></span>
-                    </div>
+        <!-- DESKTOP SIDE-BY-SIDE LAYOUT (chart left, selector right) -->
+        <div class="live-desktop-layout">
+            <div class="live-chart-column">
+                                <!-- DYNAMIC CHART DISPLAY -->
+                                <div id="chart-display" class="chart-container">
+                                    <!-- Charts will be loaded here by JavaScript -->
+                                </div>
+            </div>
+
+            <div class="live-selector-column">
+                                <!-- COMPACT SELECTOR BOX -->
+                                <div class="compact-selector-box">
+                                    <!-- Display Toggle -->
+                                    <div class="selector-item selector-item-toggle">
+                                        <div class="toggle-group-compact">
+                                            <button id="toggle-percentage" class="toggle-btn-compact active" onclick="showPercentagePlot()">
+                                                Relative Generation
+                                            </button>
+                                            <button id="toggle-absolute" class="toggle-btn-compact" onclick="showAbsolutePlot()">
+                                                Absolute Generation
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    <!-- Country/Region Selector - Custom Dropdown with Flags -->
+                                    <div class="selector-item">
+                                        <div class="custom-select-container" id="country-select-custom">
+                                            <!-- Trigger -->
+                                            <div class="custom-select-trigger" aria-label="Country/Region">
+                                                <img src="flags/EU.svg" alt="EU flag">
+                                                <span class="label">European Union</span>
+                                                <span class="arrow"></span>
+                                            </div>
                     
-                    <!-- Dropdown -->
-                    <div class="custom-select-dropdown">
-                        <!-- EU -->
-                        <div class="custom-select-group">
-                            <div class="custom-select-option selected" data-value="EU" data-flag="flags/EU.svg">
-                                <img src="flags/EU.svg" alt="EU">
-                                <span>European Union</span>
-                            </div>
-                        </div>
-                        <!-- EU Member States (alphabetical) -->
-                        <div class="custom-select-group">
-                            <div class="custom-select-group-label">EU Member States</div>
-                            <div class="custom-select-option" data-value="AT" data-flag="flags/AT.svg"><img src="flags/AT.svg" alt="AT"><span>Austria</span></div>
-                            <div class="custom-select-option" data-value="BE" data-flag="flags/BE.svg"><img src="flags/BE.svg" alt="BE"><span>Belgium</span></div>
-                            <div class="custom-select-option" data-value="BG" data-flag="flags/BG.svg"><img src="flags/BG.svg" alt="BG"><span>Bulgaria</span></div>
-                            <div class="custom-select-option" data-value="HR" data-flag="flags/HR.svg"><img src="flags/HR.svg" alt="HR"><span>Croatia</span></div>
-                            <div class="custom-select-option" data-value="CY" data-flag="flags/CY.svg"><img src="flags/CY.svg" alt="CY"><span>Cyprus</span></div>
-                            <div class="custom-select-option" data-value="CZ" data-flag="flags/CZ.svg"><img src="flags/CZ.svg" alt="CZ"><span>Czechia</span></div>
-                            <div class="custom-select-option" data-value="DK" data-flag="flags/DK.svg"><img src="flags/DK.svg" alt="DK"><span>Denmark</span></div>
-                            <div class="custom-select-option" data-value="EE" data-flag="flags/EE.svg"><img src="flags/EE.svg" alt="EE"><span>Estonia</span></div>
-                            <div class="custom-select-option" data-value="FI" data-flag="flags/FI.svg"><img src="flags/FI.svg" alt="FI"><span>Finland</span></div>
-                            <div class="custom-select-option" data-value="FR" data-flag="flags/FR.svg"><img src="flags/FR.svg" alt="FR"><span>France</span></div>
-                            <div class="custom-select-option" data-value="DE" data-flag="flags/DE.svg"><img src="flags/DE.svg" alt="DE"><span>Germany</span></div>
-                            <div class="custom-select-option" data-value="GR" data-flag="flags/GR.svg"><img src="flags/GR.svg" alt="GR"><span>Greece</span></div>
-                            <div class="custom-select-option" data-value="HU" data-flag="flags/HU.svg"><img src="flags/HU.svg" alt="HU"><span>Hungary</span></div>
-                            <div class="custom-select-option" data-value="IE" data-flag="flags/IE.svg"><img src="flags/IE.svg" alt="IE"><span>Ireland</span></div>
-                            <div class="custom-select-option" data-value="IT" data-flag="flags/IT.svg"><img src="flags/IT.svg" alt="IT"><span>Italy</span></div>
-                            <div class="custom-select-option" data-value="LV" data-flag="flags/LV.svg"><img src="flags/LV.svg" alt="LV"><span>Latvia</span></div>
-                            <div class="custom-select-option" data-value="LT" data-flag="flags/LT.svg"><img src="flags/LT.svg" alt="LT"><span>Lithuania</span></div>
-                            <div class="custom-select-option" data-value="LU" data-flag="flags/LU.svg"><img src="flags/LU.svg" alt="LU"><span>Luxembourg</span></div>
-                            <div class="custom-select-option" data-value="MT" data-flag="flags/MT.svg"><img src="flags/MT.svg" alt="MT"><span>Malta</span></div>
-                            <div class="custom-select-option" data-value="NL" data-flag="flags/NL.svg"><img src="flags/NL.svg" alt="NL"><span>Netherlands</span></div>
-                            <div class="custom-select-option" data-value="PL" data-flag="flags/PL.svg"><img src="flags/PL.svg" alt="PL"><span>Poland</span></div>
-                            <div class="custom-select-option" data-value="PT" data-flag="flags/PT.svg"><img src="flags/PT.svg" alt="PT"><span>Portugal</span></div>
-                            <div class="custom-select-option" data-value="RO" data-flag="flags/RO.svg"><img src="flags/RO.svg" alt="RO"><span>Romania</span></div>
-                            <div class="custom-select-option" data-value="SK" data-flag="flags/SK.svg"><img src="flags/SK.svg" alt="SK"><span>Slovakia</span></div>
-                            <div class="custom-select-option" data-value="SI" data-flag="flags/SI.svg"><img src="flags/SI.svg" alt="SI"><span>Slovenia</span></div>
-                            <div class="custom-select-option" data-value="ES" data-flag="flags/ES.svg"><img src="flags/ES.svg" alt="ES"><span>Spain</span></div>
-                            <div class="custom-select-option" data-value="SE" data-flag="flags/SE.svg"><img src="flags/SE.svg" alt="SE"><span>Sweden</span></div>
-                        </div>
-                        <!-- Other European Countries (alphabetical) -->
-                        <div class="custom-select-group">
-                            <div class="custom-select-group-label">Other European Countries</div>
-                            <div class="custom-select-option disabled" data-value="AL" data-flag="flags/AL.svg"><img src="flags/AL.svg" alt="AL"><span>Albania</span></div>
-                            <div class="custom-select-option disabled" data-value="AM" data-flag="flags/AM.svg"><img src="flags/AM.svg" alt="AM"><span>Armenia</span></div>
-                            <div class="custom-select-option disabled" data-value="AZ" data-flag="flags/AZ.svg"><img src="flags/AZ.svg" alt="AZ"><span>Azerbaijan</span></div>
-                            <div class="custom-select-option" data-value="BA" data-flag="flags/BA.svg"><img src="flags/BA.svg" alt="BA"><span>Bosnia and Herzegovina</span></div>
-                            <div class="custom-select-option" data-value="GE" data-flag="flags/GE.svg"><img src="flags/GE.svg" alt="GE"><span>Georgia</span></div>
-                            <div class="custom-select-option disabled" data-value="IS" data-flag="flags/IS.svg"><img src="flags/IS.svg" alt="IS"><span>Iceland</span></div>
-                            <div class="custom-select-option" data-value="XK" data-flag="flags/XK.svg"><img src="flags/XK.svg" alt="XK"><span>Kosovo</span></div>
-                            <div class="custom-select-option" data-value="MD" data-flag="flags/MD.svg"><img src="flags/MD.svg" alt="MD"><span>Moldova</span></div>
-                            <div class="custom-select-option" data-value="ME" data-flag="flags/ME.svg"><img src="flags/ME.svg" alt="ME"><span>Montenegro</span></div>
-                            <div class="custom-select-option" data-value="MK" data-flag="flags/MK.svg"><img src="flags/MK.svg" alt="MK"><span>North Macedonia</span></div>
-                            <div class="custom-select-option" data-value="NO" data-flag="flags/NO.svg"><img src="flags/NO.svg" alt="NO"><span>Norway</span></div>
-                            <div class="custom-select-option" data-value="RS" data-flag="flags/RS.svg"><img src="flags/RS.svg" alt="RS"><span>Serbia</span></div>
-                            <div class="custom-select-option" data-value="CH" data-flag="flags/CH.svg"><img src="flags/CH.svg" alt="CH"><span>Switzerland</span></div>
-                            <div class="custom-select-option disabled" data-value="TR" data-flag="flags/TR.svg"><img src="flags/TR.svg" alt="TR"><span>Turkey</span></div>
-                            <div class="custom-select-option disabled" data-value="UA" data-flag="flags/UA.svg"><img src="flags/UA.svg" alt="UA"><span>Ukraine</span></div>
-                            <div class="custom-select-option disabled" data-value="GB" data-flag="flags/GB.svg"><img src="flags/GB.svg" alt="GB"><span>United Kingdom</span></div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+                                            <!-- Dropdown -->
+                                            <div class="custom-select-dropdown">
+                                                <!-- EU -->
+                                                <div class="custom-select-group">
+                                                    <div class="custom-select-option selected" data-value="EU" data-flag="flags/EU.svg">
+                                                        <img src="flags/EU.svg" alt="EU">
+                                                        <span>European Union</span>
+                                                    </div>
+                                                </div>
+                                                <!-- EU Member States (alphabetical) -->
+                                                <div class="custom-select-group">
+                                                    <div class="custom-select-group-label">EU Member States</div>
+                                                    <div class="custom-select-option" data-value="AT" data-flag="flags/AT.svg"><img src="flags/AT.svg" alt="AT"><span>Austria</span></div>
+                                                    <div class="custom-select-option" data-value="BE" data-flag="flags/BE.svg"><img src="flags/BE.svg" alt="BE"><span>Belgium</span></div>
+                                                    <div class="custom-select-option" data-value="BG" data-flag="flags/BG.svg"><img src="flags/BG.svg" alt="BG"><span>Bulgaria</span></div>
+                                                    <div class="custom-select-option" data-value="HR" data-flag="flags/HR.svg"><img src="flags/HR.svg" alt="HR"><span>Croatia</span></div>
+                                                    <div class="custom-select-option" data-value="CY" data-flag="flags/CY.svg"><img src="flags/CY.svg" alt="CY"><span>Cyprus</span></div>
+                                                    <div class="custom-select-option" data-value="CZ" data-flag="flags/CZ.svg"><img src="flags/CZ.svg" alt="CZ"><span>Czechia</span></div>
+                                                    <div class="custom-select-option" data-value="DK" data-flag="flags/DK.svg"><img src="flags/DK.svg" alt="DK"><span>Denmark</span></div>
+                                                    <div class="custom-select-option" data-value="EE" data-flag="flags/EE.svg"><img src="flags/EE.svg" alt="EE"><span>Estonia</span></div>
+                                                    <div class="custom-select-option" data-value="FI" data-flag="flags/FI.svg"><img src="flags/FI.svg" alt="FI"><span>Finland</span></div>
+                                                    <div class="custom-select-option" data-value="FR" data-flag="flags/FR.svg"><img src="flags/FR.svg" alt="FR"><span>France</span></div>
+                                                    <div class="custom-select-option" data-value="DE" data-flag="flags/DE.svg"><img src="flags/DE.svg" alt="DE"><span>Germany</span></div>
+                                                    <div class="custom-select-option" data-value="GR" data-flag="flags/GR.svg"><img src="flags/GR.svg" alt="GR"><span>Greece</span></div>
+                                                    <div class="custom-select-option" data-value="HU" data-flag="flags/HU.svg"><img src="flags/HU.svg" alt="HU"><span>Hungary</span></div>
+                                                    <div class="custom-select-option" data-value="IE" data-flag="flags/IE.svg"><img src="flags/IE.svg" alt="IE"><span>Ireland</span></div>
+                                                    <div class="custom-select-option" data-value="IT" data-flag="flags/IT.svg"><img src="flags/IT.svg" alt="IT"><span>Italy</span></div>
+                                                    <div class="custom-select-option" data-value="LV" data-flag="flags/LV.svg"><img src="flags/LV.svg" alt="LV"><span>Latvia</span></div>
+                                                    <div class="custom-select-option" data-value="LT" data-flag="flags/LT.svg"><img src="flags/LT.svg" alt="LT"><span>Lithuania</span></div>
+                                                    <div class="custom-select-option" data-value="LU" data-flag="flags/LU.svg"><img src="flags/LU.svg" alt="LU"><span>Luxembourg</span></div>
+                                                    <div class="custom-select-option" data-value="MT" data-flag="flags/MT.svg"><img src="flags/MT.svg" alt="MT"><span>Malta</span></div>
+                                                    <div class="custom-select-option" data-value="NL" data-flag="flags/NL.svg"><img src="flags/NL.svg" alt="NL"><span>Netherlands</span></div>
+                                                    <div class="custom-select-option" data-value="PL" data-flag="flags/PL.svg"><img src="flags/PL.svg" alt="PL"><span>Poland</span></div>
+                                                    <div class="custom-select-option" data-value="PT" data-flag="flags/PT.svg"><img src="flags/PT.svg" alt="PT"><span>Portugal</span></div>
+                                                    <div class="custom-select-option" data-value="RO" data-flag="flags/RO.svg"><img src="flags/RO.svg" alt="RO"><span>Romania</span></div>
+                                                    <div class="custom-select-option" data-value="SK" data-flag="flags/SK.svg"><img src="flags/SK.svg" alt="SK"><span>Slovakia</span></div>
+                                                    <div class="custom-select-option" data-value="SI" data-flag="flags/SI.svg"><img src="flags/SI.svg" alt="SI"><span>Slovenia</span></div>
+                                                    <div class="custom-select-option" data-value="ES" data-flag="flags/ES.svg"><img src="flags/ES.svg" alt="ES"><span>Spain</span></div>
+                                                    <div class="custom-select-option" data-value="SE" data-flag="flags/SE.svg"><img src="flags/SE.svg" alt="SE"><span>Sweden</span></div>
+                                                </div>
+                                                <!-- Other European Countries (alphabetical) -->
+                                                <div class="custom-select-group">
+                                                    <div class="custom-select-group-label">Other European Countries</div>
+                                                    <div class="custom-select-option disabled" data-value="AL" data-flag="flags/AL.svg"><img src="flags/AL.svg" alt="AL"><span>Albania</span></div>
+                                                    <div class="custom-select-option disabled" data-value="AM" data-flag="flags/AM.svg"><img src="flags/AM.svg" alt="AM"><span>Armenia</span></div>
+                                                    <div class="custom-select-option disabled" data-value="AZ" data-flag="flags/AZ.svg"><img src="flags/AZ.svg" alt="AZ"><span>Azerbaijan</span></div>
+                                                    <div class="custom-select-option" data-value="BA" data-flag="flags/BA.svg"><img src="flags/BA.svg" alt="BA"><span>Bosnia and Herzegovina</span></div>
+                                                    <div class="custom-select-option" data-value="GE" data-flag="flags/GE.svg"><img src="flags/GE.svg" alt="GE"><span>Georgia</span></div>
+                                                    <div class="custom-select-option disabled" data-value="IS" data-flag="flags/IS.svg"><img src="flags/IS.svg" alt="IS"><span>Iceland</span></div>
+                                                    <div class="custom-select-option" data-value="XK" data-flag="flags/XK.svg"><img src="flags/XK.svg" alt="XK"><span>Kosovo</span></div>
+                                                    <div class="custom-select-option" data-value="MD" data-flag="flags/MD.svg"><img src="flags/MD.svg" alt="MD"><span>Moldova</span></div>
+                                                    <div class="custom-select-option" data-value="ME" data-flag="flags/ME.svg"><img src="flags/ME.svg" alt="ME"><span>Montenegro</span></div>
+                                                    <div class="custom-select-option" data-value="MK" data-flag="flags/MK.svg"><img src="flags/MK.svg" alt="MK"><span>North Macedonia</span></div>
+                                                    <div class="custom-select-option" data-value="NO" data-flag="flags/NO.svg"><img src="flags/NO.svg" alt="NO"><span>Norway</span></div>
+                                                    <div class="custom-select-option" data-value="RS" data-flag="flags/RS.svg"><img src="flags/RS.svg" alt="RS"><span>Serbia</span></div>
+                                                    <div class="custom-select-option" data-value="CH" data-flag="flags/CH.svg"><img src="flags/CH.svg" alt="CH"><span>Switzerland</span></div>
+                                                    <div class="custom-select-option disabled" data-value="TR" data-flag="flags/TR.svg"><img src="flags/TR.svg" alt="TR"><span>Turkey</span></div>
+                                                    <div class="custom-select-option disabled" data-value="UA" data-flag="flags/UA.svg"><img src="flags/UA.svg" alt="UA"><span>Ukraine</span></div>
+                                                    <div class="custom-select-option disabled" data-value="GB" data-flag="flags/GB.svg"><img src="flags/GB.svg" alt="GB"><span>United Kingdom</span></div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
 
-            <!-- Source Type Selector - Custom Dropdown -->
-            <div class="selector-item">
-                <label>Analysis Type:</label>
-                <div class="custom-select-container" id="source-type-select-custom">
-                    <!-- Trigger -->
-                    <div class="custom-select-trigger">
-                        <span class="label">Individual Sources</span>
-                        <span class="arrow"></span>
-                    </div>
+                                    <!-- Source Type Selector - Custom Dropdown -->
+                                    <div class="selector-item">
+                                        <div class="custom-select-container" id="source-type-select-custom">
+                                            <!-- Trigger -->
+                                            <div class="custom-select-trigger" aria-label="Analysis Type">
+                                                <span class="label">Individual Sources</span>
+                                                <span class="arrow"></span>
+                                            </div>
                     
-                    <!-- Dropdown -->
-                    <div class="custom-select-dropdown">
-                        <div class="custom-select-option selected" data-value="all_sources">
-                            <span>Individual Sources</span>
-                        </div>
-                        <div class="custom-select-option" data-value="aggregates">
-                            <span>Renewables vs Non-Renewables</span>
-                        </div>
-                    </div>
-                </div>
+                                            <!-- Dropdown -->
+                                            <div class="custom-select-dropdown">
+                                                <div class="custom-select-option selected" data-value="all_sources">
+                                                    <span>Individual Sources</span>
+                                                </div>
+                                                <div class="custom-select-option" data-value="aggregates">
+                                                    <span>Renewables vs Non-Renewables</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                </div>
+
+                                <div id="chart-info-bar" class="chart-info-bar">
+                                    <button id="download-btn" class="download-btn" onclick="downloadChart()" title="Download current chart">
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                            <polyline points="7 10 12 15 17 10"></polyline>
+                                            <line x1="12" y1="15" x2="12" y2="3"></line>
+                                        </svg>
+                                        <span>Download Chart</span>
+                                    </button>
+                                    <button id="refresh-btn" class="refresh-btn" onclick="refreshChart()" title="Refresh chart">
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <polyline points="23 4 23 10 17 10"></polyline>
+                                            <polyline points="1 20 1 14 7 14"></polyline>
+                                            <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+                                        </svg>
+                                        <span>Refresh</span>
+                                    </button>
+                                    <span id="last-update" class="timestamp">
+                                        <!-- Last update timestamp will be loaded here -->
+                                    </span>
+                                </div>
             </div>
-
-            <!-- Display Toggle -->
-            <div class="selector-item selector-item-toggle">
-                <label>Display:</label>
-                <div class="toggle-group-compact">
-                    <button id="toggle-percentage" class="toggle-btn-compact active" onclick="showPercentagePlot()">
-                        Relative
-                    </button>
-                    <button id="toggle-absolute" class="toggle-btn-compact" onclick="showAbsolutePlot()">
-                        Absolute
-                    </button>
-                </div>
-            </div>
         </div>
 
-        <!-- DYNAMIC CHART DISPLAY -->
-        <div id="chart-display" class="chart-container">
-            <!-- Charts will be loaded here by JavaScript -->
-        </div>
-
-        <div id="chart-info-bar" class="chart-info-bar">
-            <span id="last-update" class="timestamp">
-                <!-- Last update timestamp will be loaded here -->
-            </span>
-            <button id="refresh-btn" class="refresh-btn" onclick="refreshChart()" title="Refresh chart">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <polyline points="23 4 23 10 17 10"></polyline>
-                    <polyline points="1 20 1 14 7 14"></polyline>
-                    <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
-                </svg>
-                <span>Refresh</span>
-            </button>
-            <button id="download-btn" class="download-btn" onclick="downloadChart()" title="Download current chart">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                    <polyline points="7 10 12 15 17 10"></polyline>
-                    <line x1="12" y1="15" x2="12" y2="3"></line>
-                </svg>
-                <span>Download Chart</span>
-            </button>
-        </div>
     </div>
 
     <footer>
-        <p>Built with data from <a href="https://transparency.entsoe.eu/" target="_blank">ENTSO-E</a> | 
-           Source code on <a href="https://github.com/afratzl/eu-energy-analysis" target="_blank">GitHub</a> | 
-           Built by <a href="https://www.linkedin.com/in/alexfratzl/" target="_blank">Alex Fratzl</a> with Claude Sonnet</p>
+        <p>Data from <a href="https://transparency.entsoe.eu/" target="_blank">ENTSO-E</a> | 
+           Code on <a href="https://github.com/afratzl/eu-energy-analysis" target="_blank">GitHub</a> | 
+           By <a href="https://www.linkedin.com/in/alexfratzl/" target="_blank">Alex Fratzl</a> with Claude Sonnet</p>
     </footer>
 
     <script>
@@ -805,7 +811,7 @@
         /* Compact selector box - 3 columns for yesterday (country, source type, display toggle) */
         .compact-selector-box {
             background: #f7fafc;
-            border: 2px solid #cbd5e0;
+            border: 2px solid #f7fafc;
             border-radius: 8px;
             padding: 20px;
             margin-bottom: 24px;
@@ -1010,6 +1016,458 @@
                 display: block;
             }
         }
+
+        /* Prevent nav from wrapping on mobile */
+        .nav-links { display: flex; flex-wrap: nowrap; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+        .nav-links a { white-space: nowrap; flex-shrink: 0; }
+        @media (max-width: 600px) {
+            .nav-links a { font-size: 0.78em; padding: 4px 6px; }
+            .nav-title { font-size: 0.9em; }
+        }
+
+
+        /* ===== PORTED FROM live.html (mobile/desktop refinement pass) ===== */
+
+        /* Mobile + tablet optimizations */
+        @media (max-width: 1023px) {
+            .navbar {
+                padding: 0.85rem 0;
+            }
+            .container {
+                padding-top: 0.8rem;
+            }
+            .custom-select-dropdown {
+                max-height: 180px;
+            }
+            /* Same footer-gap fix as desktop -- shared styles.css's mobile
+               rule only reduces .container's padding to 1rem (16px, all
+               sides), and never touches footer's own margin-top (1rem
+               base, untouched at any size until now). */
+            .container { padding-bottom: 0; }
+            footer { margin-top: 0; padding: 1rem; font-size: 0.75rem; }
+        }
+        
+        /* ===== REST OF EXISTING STYLES ===== */
+        
+        /* Color-coded dropdown options */
+        select option[value="solar"] { color: #FFD700; font-weight: bold; }
+        select option[value="wind"] { color: #228B22; font-weight: bold; }
+        select option[value="hydro"] { color: #1E90FF; font-weight: bold; }
+        select option[value="biomass"] { color: #9ACD32; font-weight: bold; }
+        select option[value="geothermal"] { color: #708090; font-weight: bold; }
+        select option[value="gas"] { color: #FF1493; font-weight: bold; }
+        select option[value="coal"] { color: #8B008B; font-weight: bold; }
+        select option[value="nuclear"] { color: #8B4513; font-weight: bold; }
+        select option[value="oil"] { color: #191970; font-weight: bold; }
+        select option[value="waste"] { color: #808000; font-weight: bold; }
+        select option[value="all-renewables"] { color: #00CED1; font-weight: bold; }
+        select option[value="all-non-renewables"] { color: #000000; font-weight: bold; }
+        
+        /* Compact selector box - all controls in one container */
+        .compact-selector-box {
+            background: #f7fafc;
+            border: 2px solid #f7fafc;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 24px;
+            display: grid;
+            grid-template-columns: auto auto auto;  /* Size to content, no forced stretching -- works regardless of element order */
+            gap: 20px;
+            align-items: end;
+        }
+        
+        .selector-item {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        
+        .selector-item label {
+            font-weight: 500;
+            font-size: 0.95em;
+            color: #4a5568;
+            display: flex;
+            align-items: center;
+        }
+        
+        .selector-item select {
+            padding: 8px 10px;
+            font-size: 1em;
+            border: 2px solid #cbd5e0;
+            border-radius: 4px;
+            background: white;
+            width: 100%;
+        }
+        
+        .selector-item-toggle {
+            min-width: 420px;
+        }
+        
+        .toggle-group-compact {
+            display: flex;
+            background: white;
+            border: 2px solid #cbd5e0;
+            border-radius: 4px;
+            overflow: hidden;
+            height: 42px;  /* Match custom dropdown height */
+            box-sizing: border-box;
+        }
+        
+        .toggle-btn-compact {
+            flex: 1;
+            padding: 0 16px;  /* Remove vertical padding, use flex alignment */
+            border: none;
+            background: white;
+            color: #4a5568;
+            cursor: pointer;
+            font-size: 0.95em;
+            font-weight: 600;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            white-space: nowrap;
+        }
+        
+        .toggle-btn-compact.active {
+            background: #003399;
+            color: white;
+        }
+        
+        .toggle-btn-compact:hover:not(.active) {
+            background: #f0f4f8;
+        }
+        
+        .chart-container {
+            margin-bottom: 8px;
+            padding-bottom: 0;
+        }
+        
+        .chart-img {
+            display: block;
+            margin-bottom: 0;
+        }
+        
+        /* Chart info bar with timestamp and download button */
+        .chart-info-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #f7fafc;
+            border-top: 1px solid #e2e8f0;
+            border-bottom: 1px solid #e2e8f0;
+            padding: 6px 24px;
+            margin-top: 0px;
+            margin-bottom: 8px;
+            gap: 20px;
+        }
+        
+        .timestamp {
+            color: #666;
+            font-size: 14px;
+        }
+        
+        .download-btn {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 16px;
+            background: white;
+            border: 1px solid #cbd5e0;
+            border-radius: 4px;
+            color: #4a5568;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .download-btn:hover {
+            background: #003399;
+            color: white;
+            border-color: #003399;
+        }
+        
+        .refresh-btn {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 16px;
+            background: white;
+            border: 1px solid #cbd5e0;
+            border-radius: 4px;
+            color: #4a5568;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .refresh-btn:hover {
+            background: #003399;
+            color: white;
+            border-color: #003399;
+        }
+        
+        .download-btn svg {
+            width: 16px;
+            height: 16px;
+        }
+        
+        .download-btn:active {
+            transform: translateY(1px);
+        }
+        
+        /* Mobile + tablet: Download/Refresh share one row, timestamp wraps
+           to its own row below -- padding matched to
+           .compact-selector-box's 12px so left/right edges always align. */
+        @media (max-width: 1023px) {
+            .chart-info-bar {
+                padding: 12px 12px 10px 12px;
+                gap: 8px;
+                flex-wrap: wrap;
+            }
+            
+            .download-btn, .refresh-btn {
+                flex: 1;
+                justify-content: center;
+                white-space: nowrap;
+            }
+            
+            .timestamp {
+                flex-basis: 100%;
+                text-align: center;
+            }
+        }
+        
+        /* Mobile + tablet: Stack vertically -- tablet now gets the exact
+           same well-tuned treatment as phone (was a separate, less-refined
+           tablet-only block below that still had the old justify-self:
+           center bug on the toggle; removed in favor of just extending
+           this one). */
+        @media (max-width: 1023px) {
+            .compact-selector-box {
+                grid-template-columns: 1fr 1fr;
+                gap: 6px;
+                padding: 6px 12px;
+                margin-bottom: 6px;
+            }
+            
+            .selector-item {
+                gap: 4px;
+            }
+            
+            .selector-item-toggle {
+                min-width: unset;
+                grid-column: 1 / -1;
+            }
+            
+            .selector-item label {
+                font-size: 0.9em;
+            }
+            
+            .custom-select-trigger {
+                height: 32px;
+                padding: 6px 8px;
+                border-width: 1px;
+            }
+            
+            .toggle-group-compact {
+                height: 32px;
+                border-width: 1px;
+            }
+            
+            .custom-select-trigger .label {
+                font-size: 0.85em;
+            }
+            
+            .toggle-btn-compact {
+                font-size: 0.85em;
+            }
+            
+            .selector-item select {
+                font-size: 0.95em;
+            }
+        }
+        
+        /* Remove old styling */
+        .chart-selector {
+            display: none;
+        }
+        
+        .table-controls-pro {
+            display: none;
+        }
+        
+        /* Responsive image sizing - UPDATED TO 60% */
+        .chart-img {
+            width: 100%;
+            height: auto;
+        }
+        
+        /* Desktop: Scale down to 60% */
+        @media (min-width: 1024px) {
+            .chart-img {
+                width: 60%;
+                margin: 0 auto;
+                display: block;
+            }
+        }
+        
+        /* EU Flag responsive sizing (note: dead code on this page -- the
+           flag is an <img>, not an inline <svg>, so this rule never
+           actually applies; kept only for breakpoint consistency) */
+        @media (max-width: 1023px) {
+            .nav-title svg {
+                width: 28px;
+                height: 19px;
+                margin-right: 8px;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .nav-title svg {
+                width: 24px;
+                height: 16px;
+                margin-right: 6px;
+            }
+        }
+
+        /* TEST (live.html only for now): make the EU flag scale with the
+           title text instead of staying a fixed 32x21px. Height is in em,
+           so it inherits .nav-title's font-size and automatically tracks
+           it at every existing breakpoint (1.5rem base, 1.2rem at 768px,
+           0.9em at 600px) without needing separate flag-specific media
+           queries. Flex + align-items handles vertical alignment robustly
+           instead of relying on vertical-align, which can be inconsistent
+           across font/image size changes. */
+        .nav-title {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .nav-title img {
+            height: 1em;
+            width: auto;
+            display: block;
+        }
+
+        /* TEST (live.html only for now): banner size, further reduced from
+           the previous pass, at every breakpoint. */
+        @media (min-width: 1024px) {
+            .page-header { padding: 1.25rem 1rem; margin-bottom: 0.75rem; }
+            /* Reduce the gap above the banner too -- .container's base
+               padding (2rem, shared styles.css) applies to all sides
+               including top; this is the desktop-only override. */
+            .container { padding-top: 0.75rem; padding-bottom: 0; }
+            footer { margin-top: 0; }
+            /* Download/Refresh buttons sized to match the toggle buttons
+               above (Relative/Absolute Generation) -- scoped to desktop
+               only so mobile's already-tuned smaller buttons are untouched. */
+            .download-btn, .refresh-btn {
+                padding: 12px 24px;
+                font-size: 0.95em;
+                font-weight: 600;
+            }
+        }
+        @media (max-width: 1023px) {
+            .page-header { margin-bottom: 0.64rem; padding: 1.1rem 0.9rem; }
+        }
+        @media (max-width: 480px) {
+            .page-header { padding: 0.9rem 0.75rem; }
+        }
+
+        /* NEW (live.html test): desktop side-by-side layout -- chart on the
+           left, selector on the right. Below 1024px, .live-desktop-layout
+           has no special styling, so it behaves like a plain block wrapper
+           and everything stacks exactly as it already did (chart, then
+           selector, then info bar) -- no change to mobile/tablet.
+           chart-info-bar (Download/Refresh/timestamp) sits inside
+           .live-selector-column, below the selector box -- using the
+           empty space that's already there on desktop (selector box is
+           much shorter than the chart) instead of adding a whole new
+           full-width row below everything. */
+        @media (min-width: 1024px) {
+            .live-desktop-layout {
+                display: flex;
+                gap: 24px;
+                align-items: flex-start;
+            }
+            .live-chart-column {
+                /* Column width the chart image renders at (was 60%,
+                   reduced to 50% to make the chart smaller and give the
+                   selector column more room) -- column itself is only as
+                   wide as the image actually needs, no leftover space
+                   inside it that used to just blend into the page's own
+                   white background. */
+                flex: 0 0 50%;
+                min-width: 0;
+            }
+            .live-selector-column {
+                /* Takes whatever's left after the chart column + gap */
+                flex: 1 1 auto;
+            }
+            /* Chart image now fills 100% of its own (already 60%-sized)
+               column, left-aligned -- not 60% of the full page width
+               centered, which is what created the appearance of empty
+               space around it before. */
+            .live-chart-column .chart-img {
+                width: 100%;
+                margin: 0;
+            }
+            /* The 3-across auto/auto/auto grid doesn't fit this narrower
+               selector column -- fall back to a stacked layout here, same
+               idea as mobile. */
+            .live-selector-column .compact-selector-box {
+                grid-template-columns: 1fr;
+            }
+            .live-selector-column .selector-item-toggle {
+                min-width: unset;
+            }
+            /* Info bar (Download/Refresh/timestamp) stacks into 3 rows
+               here, same as the mobile treatment -- the selector column is
+               too narrow for them to sit side by side on one line. */
+            .live-selector-column .chart-info-bar {
+                flex-direction: column;
+                text-align: center;
+                padding: 12px 20px;
+                gap: 12px;
+            }
+            .live-selector-column .download-btn,
+            .live-selector-column .refresh-btn {
+                width: 100%;
+                justify-content: center;
+            }
+        }
+
+        /* TEST (live.html only for now): h1 wasn't vertically centered in
+           the banner because it had its own margin-bottom (0.5rem base,
+           meant for spacing above a subtitle) even though this page's
+           banner has no subtitle -- that extra space below with none above
+           pushed the text visually toward the top. Removing it re-centers
+           the text within the banner's own (symmetric top/bottom) padding.
+           Font-size also reduced further at every breakpoint. */
+        .page-header h1 {
+            margin-bottom: 0;
+        }
+        @media (min-width: 1024px) {
+            .page-header h1 { font-size: 1.75rem; }
+        }
+        @media (max-width: 1023px) {
+            .page-header h1 { font-size: 1.4rem; }
+        }
+        @media (max-width: 480px) {
+            .page-header h1 { font-size: 1.2rem; }
+        }
+
+        /* Prevent nav from wrapping on mobile */
+        .nav-links { display: flex; flex-wrap: nowrap; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+        .nav-links a { white-space: nowrap; flex-shrink: 0; }
+        @media (max-width: 600px) {
+            .nav-links a { font-size: 0.78em; padding: 4px 6px; }
+            .nav-title { font-size: 0.9em; }
+        }
+
     </style>
 
     <!-- GoatCounter Analytics -->
