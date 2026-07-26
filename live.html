@@ -37,28 +37,6 @@
             <!-- Charts will be loaded here by JavaScript -->
         </div>
 
-        <div id="chart-info-bar" class="chart-info-bar">
-            <span id="last-update" class="timestamp">
-                <!-- Last update timestamp will be loaded here -->
-            </span>
-            <button id="refresh-btn" class="refresh-btn" onclick="refreshChart()" title="Refresh chart">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <polyline points="23 4 23 10 17 10"></polyline>
-                    <polyline points="1 20 1 14 7 14"></polyline>
-                    <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
-                </svg>
-                <span>Refresh</span>
-            </button>
-            <button id="download-btn" class="download-btn" onclick="downloadChart()" title="Download current chart">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                    <polyline points="7 10 12 15 17 10"></polyline>
-                    <line x1="12" y1="15" x2="12" y2="3"></line>
-                </svg>
-                <span>Download Chart</span>
-            </button>
-        </div>
-
         <!-- COMPACT SELECTOR BOX -->
         <div class="compact-selector-box">
             <!-- Country/Region Selector - Custom Dropdown with Flags -->
@@ -353,6 +331,28 @@
                     </button>
                 </div>
             </div>
+        </div>
+
+        <div id="chart-info-bar" class="chart-info-bar">
+            <button id="download-btn" class="download-btn" onclick="downloadChart()" title="Download current chart">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                    <polyline points="7 10 12 15 17 10"></polyline>
+                    <line x1="12" y1="15" x2="12" y2="3"></line>
+                </svg>
+                <span>Download Chart</span>
+            </button>
+            <button id="refresh-btn" class="refresh-btn" onclick="refreshChart()" title="Refresh chart">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="23 4 23 10 17 10"></polyline>
+                    <polyline points="1 20 1 14 7 14"></polyline>
+                    <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+                </svg>
+                <span>Refresh</span>
+            </button>
+            <span id="last-update" class="timestamp">
+                <!-- Last update timestamp will be loaded here -->
+            </span>
         </div>
 
     </div>
@@ -1313,6 +1313,14 @@
                 height: 16px;
                 margin-right: 6px;
             }
+        }
+
+        /* TEST (live.html only for now): halve the gap below the banner on
+           mobile -- shared styles.css only reduces .page-header's padding
+           on mobile, not its margin-bottom, which was still the full 2rem
+           (32px) base value. If this looks right, migrate into styles.css. */
+        @media (max-width: 768px) {
+            .page-header { margin-bottom: 1rem; }
         }
 
         /* Prevent nav from wrapping on mobile */
