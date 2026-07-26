@@ -1041,6 +1041,12 @@
             .custom-select-dropdown {
                 max-height: 250px;
             }
+            /* Same footer-gap fix as desktop -- shared styles.css's mobile
+               rule only reduces .container's padding to 1rem (16px, all
+               sides), and never touches footer's own margin-top (1rem
+               base, untouched at any size until now). */
+            .container { padding-bottom: 0; }
+            footer { margin-top: 0; }
         }
         
         /* ===== REST OF EXISTING STYLES ===== */
@@ -1062,7 +1068,7 @@
         /* Compact selector box - all controls in one container */
         .compact-selector-box {
             background: #f7fafc;
-            border: 2px solid #cbd5e0;
+            border: 2px solid #f7fafc;
             border-radius: 8px;
             padding: 20px;
             margin-bottom: 24px;
@@ -1355,7 +1361,7 @@
             /* Reduce the gap above the banner too -- .container's base
                padding (2rem, shared styles.css) applies to all sides
                including top; this is the desktop-only override. */
-            .container { padding-top: 0.75rem; padding-bottom: 0.25rem; }
+            .container { padding-top: 0.75rem; padding-bottom: 0; }
             footer { margin-top: 0; }
             /* Download/Refresh buttons sized to match the toggle buttons
                above (Relative/Absolute Generation) -- scoped to desktop
