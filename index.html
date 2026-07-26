@@ -68,11 +68,11 @@
 
         <!-- Electricity Mix Summary Table -->
         <section class="summary-table-section-pro">
-            <h1 class="table-section-title-pro">Electricity Generation</h1>
 
             <!-- DESKTOP SIDE-BY-SIDE LAYOUT (table left, controls right) -->
             <div class="live-desktop-layout">
                 <div class="live-chart-column">
+                                <h1 class="table-section-title-pro">Electricity Generation</h1>
                                 <div id="summary-table-container">
                                     <div class="loading-message-pro">Loading summary data...</div>
                                 </div>
@@ -714,16 +714,19 @@
            "Electricity Mix" table header, merged into one element instead
            of two redundant "you are here" signals. */
         .table-section-title-pro {
-            font-size: 2rem;
+            font-size: 2.5rem;
             font-weight: 700;
             color: #1a202c;
             text-align: center;
-            margin: 0 0 16px 0;
+            background: #e8e8e8;
+            border-radius: 8px 8px 0 0;
+            padding: 24px 20px;
+            margin: 0;
         }
         @media (max-width: 1023px) {
             .table-section-title-pro {
-                font-size: 1.5rem;
-                margin-bottom: 12px;
+                font-size: 1.75rem;
+                padding: 16px 14px;
             }
         }
 
@@ -1280,46 +1283,36 @@
             .nav-links a { font-size: 0.78em; padding: 4px 6px; }
             .nav-title { font-size: 1.3rem; }
         }
-        /* NEW: desktop side-by-side layout for the summary table -- table
-           on the left, controls (country selector + display toggle) on
-           the right. Below 1024px, .live-desktop-layout has no special
-           styling, so it behaves like a plain block wrapper and table/
-           controls stack in DOM order (table first, controls below) --
-           no change needed for mobile/tablet. */
+        /* NEW: desktop now uses the same single-column layout as the
+           other pages -- table, then controls, all centered with a
+           max-width so it doesn't stretch edge-to-edge on a wide
+           monitor. Replaces the earlier side-by-side experiment. */
         @media (min-width: 1024px) {
             .live-desktop-layout {
-                display: flex;
-                gap: 24px;
-                align-items: flex-start;
-            }
-            .live-chart-column {
-                flex: 0 0 50%;
-                min-width: 0;
-            }
-            .live-selector-column {
-                flex: 1 1 auto;
+                max-width: 700px;
+                margin: 0 auto;
             }
             /* The controls (country selector + 5-button toggle) were
                designed for a full-width row -- fall back to a stacked
-               layout in the narrower sidebar column, reusing the same
+               layout in this narrower column, reusing the same
                treatment already used for mobile. */
-            .live-selector-column .table-controls-pro {
+            .table-controls-pro {
                 flex-direction: column;
                 align-items: stretch;
             }
-            .live-selector-column .country-selector-group {
+            .country-selector-group {
                 width: 100%;
                 justify-content: center;
             }
-            .live-selector-column .country-select-pro {
+            .country-select-pro {
                 flex: 1;
                 max-width: none;
             }
-            .live-selector-column .toggle-group {
+            .toggle-group {
                 flex-direction: column;
                 width: 100%;
             }
-            .live-selector-column .toggle-btn-pro {
+            .toggle-btn-pro {
                 width: 100%;
                 text-align: center;
             }
