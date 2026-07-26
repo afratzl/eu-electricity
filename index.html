@@ -861,6 +861,7 @@
             font-weight: 600;
             font-size: 1.0625em;
             letter-spacing: 0.025em;
+            border: none;
         }
 
         .summary-table-pro th:first-child {
@@ -1248,19 +1249,35 @@
             /* Space after the country selector (before "Last updated"),
                massively reduced from the base 32px */
             .table-controls-pro {
-                margin-bottom: 1px;
+                margin-bottom: 0;
             }
             /* "Last updated" element's own top padding was still adding
                16px on top of the margin above -- trim it specifically */
             .table-footer-pro {
-                padding-top: 1px;
+                padding-top: 0;
                 padding-bottom: 2px;
             }
         }
         @media (min-width: 1024px) {
             .nav-title { font-size: 1.85rem; }
+            /* Source column was taking too much space (30%), leaving the
+               numeric columns cramped -- rebalance on desktop only. */
+            .summary-table-pro th:first-child,
+            .summary-table-pro td:first-child {
+                width: 20%;
+            }
+            .summary-table-pro th:nth-child(2),
+            .summary-table-pro th:nth-child(3),
+            .summary-table-pro th:nth-child(4),
+            .summary-table-pro th:nth-child(5),
+            .summary-table-pro td:nth-child(2),
+            .summary-table-pro td:nth-child(3),
+            .summary-table-pro td:nth-child(4),
+            .summary-table-pro td:nth-child(5) {
+                width: 20%;
+            }
             .container { padding-top: 1.5rem; padding-bottom: 1rem; }
-            .table-controls-pro { margin-bottom: 2px; }
+            .table-controls-pro { margin-bottom: 0; }
             .table-footer-pro { padding-bottom: 2px; }
             footer { margin-top: 0; padding: 1rem; font-size: 0.9rem; }
         }
