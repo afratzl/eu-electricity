@@ -193,34 +193,34 @@ def generate_summary_json():
                 yesterday_pct = safe_float(row[2])
                 lastweek_gwh = safe_float(row[3])
                 lastweek_pct = safe_float(row[4])
-                ytd2025_gwh = safe_float(row[5])
-                ytd2025_pct = safe_float(row[6])
-                year2024_gwh = safe_float(row[7])
-                year2024_pct = safe_float(row[8])
+                ytd_current_gwh = safe_float(row[5])
+                ytd_current_pct = safe_float(row[6])
+                year_previous_gwh = safe_float(row[7])
+                year_previous_pct = safe_float(row[8])
                 
                 # Change from 2015 (columns K-N)
                 yesterday_change = safe_string(row[10]) if len(row) > 10 else ""
                 lastweek_change = safe_string(row[11]) if len(row) > 11 else ""
-                ytd2025_change = safe_string(row[12]) if len(row) > 12 else ""
-                year2024_change = safe_string(row[13]) if len(row) > 13 else ""
+                ytd_current_change_2015 = safe_string(row[12]) if len(row) > 12 else ""
+                year_previous_change_2015 = safe_string(row[13]) if len(row) > 13 else ""
                 
-                # Change from 2024 (columns O-R)
-                yesterday_change_2024 = safe_string(row[14]) if len(row) > 14 else ""
-                lastweek_change_2024 = safe_string(row[15]) if len(row) > 15 else ""
-                ytd2025_change_2024 = safe_string(row[16]) if len(row) > 16 else ""
-                year2024_change_2024 = safe_string(row[17]) if len(row) > 17 else ""
+                # Change from previous year (columns O-R)
+                yesterday_change_previous = safe_string(row[14]) if len(row) > 14 else ""
+                lastweek_change_previous = safe_string(row[15]) if len(row) > 15 else ""
+                ytd_current_change_previous = safe_string(row[16]) if len(row) > 16 else ""
+                year_previous_change_previous = safe_string(row[17]) if len(row) > 17 else ""
                 
-                # Change from 2023 (columns S-V)
-                yesterday_change_2023 = safe_string(row[18]) if len(row) > 18 else ""
-                lastweek_change_2023 = safe_string(row[19]) if len(row) > 19 else ""
-                ytd2025_change_2023 = safe_string(row[20]) if len(row) > 20 else ""
-                year2024_change_2023 = safe_string(row[21]) if len(row) > 21 else ""
+                # Change from two years ago (columns S-V)
+                yesterday_change_two_years_ago = safe_string(row[18]) if len(row) > 18 else ""
+                lastweek_change_two_years_ago = safe_string(row[19]) if len(row) > 19 else ""
+                ytd_current_change_two_years_ago = safe_string(row[20]) if len(row) > 20 else ""
+                year_previous_change_two_years_ago = safe_string(row[21]) if len(row) > 21 else ""
                 
                 # Convert GWh to TWh
                 yesterday_twh = yesterday_gwh / 1000
                 lastweek_twh = lastweek_gwh / 1000
-                ytd2025_twh = ytd2025_gwh / 1000
-                year2024_twh = year2024_gwh / 1000
+                ytd_current_twh = ytd_current_gwh / 1000
+                year_previous_twh = year_previous_gwh / 1000
                 
                 source_data = {
                     "source": source_name,
@@ -230,32 +230,32 @@ def generate_summary_json():
                         "twh": round(yesterday_twh, 2),
                         "percentage": round(yesterday_pct, 2),
                         "change_from_2015": yesterday_change,
-                        "change_from_2024": yesterday_change_2024,
-                        "change_from_2023": yesterday_change_2023
+                        "change_from_previous_year": yesterday_change_previous,
+                        "change_from_two_years_ago": yesterday_change_two_years_ago
                     },
                     "last_week": {
                         "gwh": round(lastweek_gwh, 1),
                         "twh": round(lastweek_twh, 2),
                         "percentage": round(lastweek_pct, 2),
                         "change_from_2015": lastweek_change,
-                        "change_from_2024": lastweek_change_2024,
-                        "change_from_2023": lastweek_change_2023
+                        "change_from_previous_year": lastweek_change_previous,
+                        "change_from_two_years_ago": lastweek_change_two_years_ago
                     },
-                    "ytd_2025": {
-                        "gwh": round(ytd2025_gwh, 1),
-                        "twh": round(ytd2025_twh, 2),
-                        "percentage": round(ytd2025_pct, 2),
-                        "change_from_2015": ytd2025_change,
-                        "change_from_2024": ytd2025_change_2024,
-                        "change_from_2023": ytd2025_change_2023
+                    "ytd_current": {
+                        "gwh": round(ytd_current_gwh, 1),
+                        "twh": round(ytd_current_twh, 2),
+                        "percentage": round(ytd_current_pct, 2),
+                        "change_from_2015": ytd_current_change_2015,
+                        "change_from_previous_year": ytd_current_change_previous,
+                        "change_from_two_years_ago": ytd_current_change_two_years_ago
                     },
-                    "year_2024": {
-                        "gwh": round(year2024_gwh, 1),
-                        "twh": round(year2024_twh, 2),
-                        "percentage": round(year2024_pct, 2),
-                        "change_from_2015": year2024_change,
-                        "change_from_2024": year2024_change_2024,
-                        "change_from_2023": year2024_change_2023
+                    "year_previous": {
+                        "gwh": round(year_previous_gwh, 1),
+                        "twh": round(year_previous_twh, 2),
+                        "percentage": round(year_previous_pct, 2),
+                        "change_from_2015": year_previous_change_2015,
+                        "change_from_previous_year": year_previous_change_previous,
+                        "change_from_two_years_ago": year_previous_change_two_years_ago
                     }
                 }
                 
@@ -276,7 +276,7 @@ def generate_summary_json():
             
             if renewables_idx is not None and non_renewables_idx is not None:
                 # Renormalize each period
-                for period in ["yesterday", "last_week", "ytd_2025", "year_2024"]:
+                for period in ["yesterday", "last_week", "ytd_current", "year_previous"]:
                     ren_pct = sources_list[renewables_idx][period]["percentage"]
                     non_ren_pct = sources_list[non_renewables_idx][period]["percentage"]
                     total = ren_pct + non_ren_pct
