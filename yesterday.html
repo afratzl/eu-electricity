@@ -985,7 +985,7 @@
         /* Mobile: Stack vertically */
         @media (max-width: 768px) {
             .compact-selector-box {
-                grid-template-columns: 1fr !important;
+                grid-template-columns: 1fr;
                 gap: 16px;
                 padding: 16px;
             }
@@ -1360,7 +1360,7 @@
                padding (2rem, shared styles.css) applies to all sides
                including top; this is the desktop-only override. */
             .container { padding-top: 0.75rem; padding-bottom: 0; }
-            footer { margin-top: 0; }
+            footer { margin-top: 0; padding: 1rem; font-size: 0.9rem; }
             /* Download/Refresh buttons sized to match the toggle buttons
                above (Relative/Absolute Generation) -- scoped to desktop
                only so mobile's already-tuned smaller buttons are untouched. */
