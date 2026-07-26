@@ -1071,6 +1071,17 @@
             .nav-container {
                 gap: 0.85rem;
             }
+            /* Stack menu below title through the full phone+tablet range
+               (shared styles.css only does this up to 768px, leaving
+               769-1023px showing them side by side) -- and center the
+               links within their row once stacked. */
+            .nav-container {
+                flex-direction: column;
+            }
+            .nav-links {
+                justify-content: center;
+                width: 100%;
+            }
             .container {
                 padding-top: 1.25rem;
             }
@@ -1177,7 +1188,7 @@
         }
         
         .chart-container {
-            margin-bottom: 8px;
+            margin-bottom: 14px;
             padding-bottom: 0;
         }
         
@@ -1288,7 +1299,7 @@
                 grid-template-columns: 1fr 1fr;
                 gap: 6px;
                 padding: 6px 12px;
-                margin-bottom: 6px;
+                margin-bottom: 18px;
             }
             
             .selector-item {
