@@ -417,16 +417,29 @@
                 return `background: linear-gradient(to right, ${color}40 ${pct}%, transparent ${pct}%)`;
             }
 
+            // Round (not truncate) to a max of 4 total digits combined
+            // across the integer and decimal parts -- e.g. 1234.56 becomes
+            // 1235 (integer alone already uses the full budget), while
+            // 731.34 becomes 731.3 (3 integer digits leaves room for 1
+            // decimal). Never adds decimals beyond what's already shown.
+            function truncateToMaxDigits(value, currentDecimals, maxTotalDigits = 4) {
+                const integerDigits = Math.max(1, Math.floor(Math.abs(value)).toString().length);
+                const allowedDecimals = Math.max(0, Math.min(currentDecimals, maxTotalDigits - integerDigits));
+                const factor = Math.pow(10, allowedDecimals);
+                const rounded = Math.round(value * factor) / factor;
+                return rounded.toFixed(allowedDecimals);
+            }
+
             // Format one value using the unit already decided for its column.
             function formatAbsolute(d, unit) {
                 if (d?.gwh === undefined) return '—';
                 const gwh = typeof d.gwh === 'number' ? d.gwh : parseFloat(d.gwh);
                 if (isNaN(gwh)) return '—';
                 if (unit === 'GWh') {
-                    return gwh.toFixed(1) + ' GWh';
+                    return truncateToMaxDigits(gwh, 1) + ' GWh';
                 }
                 const twh = d?.twh !== undefined ? (typeof d.twh === 'number' ? d.twh : parseFloat(d.twh)) : gwh / 1000;
-                return twh.toFixed(2) + ' TWh';
+                return truncateToMaxDigits(twh, 2) + ' TWh';
             }
 
             function changeColor(val) {
@@ -1260,22 +1273,6 @@
         }
         @media (min-width: 1024px) {
             .nav-title { font-size: 1.85rem; }
-            /* Source column was taking too much space (30%), leaving the
-               numeric columns cramped -- rebalance on desktop only. */
-            .summary-table-pro th:first-child,
-            .summary-table-pro td:first-child {
-                width: 20%;
-            }
-            .summary-table-pro th:nth-child(2),
-            .summary-table-pro th:nth-child(3),
-            .summary-table-pro th:nth-child(4),
-            .summary-table-pro th:nth-child(5),
-            .summary-table-pro td:nth-child(2),
-            .summary-table-pro td:nth-child(3),
-            .summary-table-pro td:nth-child(4),
-            .summary-table-pro td:nth-child(5) {
-                width: 20%;
-            }
             .container { padding-top: 1.5rem; padding-bottom: 1rem; }
             .table-controls-pro { margin-bottom: 0; }
             .table-footer-pro { padding-bottom: 2px; }
