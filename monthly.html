@@ -1440,6 +1440,17 @@
                 margin: 0;
                 display: block;
             }
+            /* Spacing between elements, reduced quite a bit for this
+               narrower centered column -- desktop was still using the
+               larger base values (14px / 24px). */
+            .live-chart-column .chart-container {
+                margin-bottom: 4px;
+            }
+            .live-selector-column .compact-selector-box {
+                margin-bottom: 6px;
+                padding: 12px 16px;
+                gap: 10px;
+            }
             /* Selector box: same 2-column pattern as mobile -- toggle
                spans its own row, country + source pair up below it --
                instead of the base 3-across grid cramming all three
@@ -1456,6 +1467,7 @@
             .live-selector-column .chart-info-bar {
                 flex-wrap: wrap;
                 gap: 8px;
+                padding: 8px 16px;
             }
             .live-selector-column .download-btn,
             .live-selector-column .refresh-btn {
