@@ -1503,7 +1503,8 @@
         body {
             display: flex;
             flex-direction: column;
-            min-height: 100vh;
+            min-height: 100vh; /* fallback for browsers without svh support */
+            min-height: 100svh; /* actual visible viewport on load, not the larger address-bar-hidden height */
         }
         .container {
             flex: 1 0 auto;
