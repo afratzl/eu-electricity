@@ -25,10 +25,6 @@
     </nav>
 
     <div class="container" style="margin-bottom: 20px;">
-        <header class="page-header">
-            <h1>Monthly Electricity Generation</h1>
-        </header>
-
         <!-- DESKTOP SIDE-BY-SIDE LAYOUT (chart left, selector right) -->
         <div class="live-desktop-layout">
             <div class="live-chart-column">
@@ -1014,18 +1010,6 @@
         }
         
         /* Tablet: 2 columns with toggle on separate row */
-        @media (min-width: 769px) and (max-width: 1024px) {
-            .compact-selector-box {
-                grid-template-columns: 1fr 1fr;
-                gap: 16px;
-            }
-            
-            .selector-item-toggle {
-                grid-column: 1 / -1;
-                justify-self: center;
-            }
-        }
-        
         /* Responsive image sizing - 60% on desktop */
         .chart-img {
             width: 100%;
@@ -1074,7 +1058,7 @@
                 padding: 0.85rem 0;
             }
             .container {
-                padding-top: 0.8rem;
+                padding-top: 1.25rem;
             }
             .custom-select-dropdown {
                 max-height: 180px;
@@ -1399,7 +1383,7 @@
             /* Reduce the gap above the banner too -- .container's base
                padding (2rem, shared styles.css) applies to all sides
                including top; this is the desktop-only override. */
-            .container { padding-top: 0.75rem; padding-bottom: 0; }
+            .container { padding-top: 1.5rem; padding-bottom: 0; }
             footer { margin-top: 0; padding: 1rem; font-size: 0.9rem; }
             /* Download/Refresh buttons sized to match the toggle buttons
                above (Relative/Absolute Generation) -- scoped to desktop
