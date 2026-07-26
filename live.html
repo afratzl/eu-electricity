@@ -34,6 +34,18 @@
 
         <!-- COMPACT SELECTOR BOX -->
         <div class="compact-selector-box">
+            <!-- Display Toggle -->
+            <div class="selector-item selector-item-toggle">
+                <div class="toggle-group-compact">
+                    <button id="toggle-percentage" class="toggle-btn-compact active" onclick="showPercentagePlot()">
+                        Relative Generation
+                    </button>
+                    <button id="toggle-absolute" class="toggle-btn-compact" onclick="showAbsolutePlot()">
+                        Absolute Generation
+                    </button>
+                </div>
+            </div>
+
             <!-- Country/Region Selector - Custom Dropdown with Flags -->
             <div class="selector-item">
                 <div class="custom-select-container" id="country-select-custom">
@@ -309,18 +321,6 @@
                             </div>
                         </div>
                     </div>
-                </div>
-            </div>
-
-            <!-- Display Toggle -->
-            <div class="selector-item selector-item-toggle">
-                <div class="toggle-group-compact">
-                    <button id="toggle-percentage" class="toggle-btn-compact active" onclick="showPercentagePlot()">
-                        Relative Generation
-                    </button>
-                    <button id="toggle-absolute" class="toggle-btn-compact" onclick="showAbsolutePlot()">
-                        Absolute Generation
-                    </button>
                 </div>
             </div>
         </div>
@@ -1090,7 +1090,7 @@
         }
         
         .selector-item-toggle {
-            min-width: 200px;
+            min-width: 420px;
         }
         
         .toggle-group-compact {
@@ -1116,6 +1116,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
+            white-space: nowrap;
         }
         
         .toggle-btn-compact.active {
