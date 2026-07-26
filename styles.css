@@ -305,6 +305,7 @@ footer a:hover { text-decoration: underline; color: #90cdf4; }
     }
 
     .container { padding: 1rem; }
+    .page-header { padding: 1.5rem 1.25rem; }
     .page-header h1 { font-size: 1.8rem; }
     .subtitle { font-size: 1rem; }
     .nav-grid { grid-template-columns: 1fr; gap: 1.5rem; }
@@ -327,5 +328,6 @@ footer a:hover { text-decoration: underline; color: #90cdf4; }
         margin-right: 6px;
     }
 
+    .page-header { padding: 1.25rem 1rem; }
     .page-header h1 { font-size: 1.5rem; }
 }
