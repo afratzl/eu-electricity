@@ -1060,7 +1060,7 @@
             padding: 20px;
             margin-bottom: 24px;
             display: grid;
-            grid-template-columns: 1fr 1fr auto;  /* Keep horizontal on desktop */
+            grid-template-columns: auto auto auto;  /* Size to content, no forced stretching -- works regardless of element order */
             gap: 20px;
             align-items: end;
         }
@@ -1346,12 +1346,23 @@
             display: block;
         }
 
+        /* TEST (live.html only for now): reduce banner padding ~20% on
+           desktop/tablet (base rule is 2.5rem 1.5rem). Scoped to
+           min-width:769px so it doesn't stack on top of the already-tuned
+           mobile banner values below. */
+        @media (min-width: 769px) {
+            .page-header { padding: 2rem 1.2rem; }
+        }
+
         /* TEST (live.html only for now): halve the gap below the banner on
            mobile -- shared styles.css only reduces .page-header's padding
            on mobile, not its margin-bottom, which was still the full 2rem
            (32px) base value. If this looks right, migrate into styles.css. */
         @media (max-width: 768px) {
-            .page-header { margin-bottom: 1rem; }
+            .page-header { margin-bottom: 1rem; padding: 1.2rem 1rem; }
+        }
+        @media (max-width: 480px) {
+            .page-header { padding: 1rem 0.8rem; }
         }
 
         /* Prevent nav from wrapping on mobile */
