@@ -32,6 +32,11 @@
             <h1>Live Electricity Generation</h1>
         </header>
 
+        <!-- DYNAMIC CHART DISPLAY -->
+        <div id="chart-display" class="chart-container">
+            <!-- Charts will be loaded here by JavaScript -->
+        </div>
+
         <!-- COMPACT SELECTOR BOX -->
         <div class="compact-selector-box">
             <!-- Country/Region Selector - Custom Dropdown with Flags -->
@@ -326,11 +331,6 @@
                     </button>
                 </div>
             </div>
-        </div>
-
-        <!-- DYNAMIC CHART DISPLAY -->
-        <div id="chart-display" class="chart-container">
-            <!-- Charts will be loaded here by JavaScript -->
         </div>
 
         <div id="chart-info-bar" class="chart-info-bar">
@@ -1233,8 +1233,13 @@
         @media (max-width: 768px) {
             .compact-selector-box {
                 grid-template-columns: 1fr !important;
-                gap: 16px;
-                padding: 16px;
+                gap: 10px;
+                padding: 12px;
+                margin-bottom: 12px;
+            }
+            
+            .selector-item {
+                gap: 4px;
             }
             
             .selector-item-toggle {
@@ -1302,6 +1307,16 @@
                 height: 16px;
                 margin-right: 6px;
             }
+        }
+
+        /* TEST (live.html only for now): shrink the banner further on mobile
+           than the shared styles.css currently does. If this looks right,
+           migrate these values into styles.css for all pages. */
+        @media (max-width: 768px) {
+            .page-header { padding: 0.9rem 1.25rem; margin-bottom: 0.75rem; }
+        }
+        @media (max-width: 480px) {
+            .page-header { padding: 0.7rem 1rem; margin-bottom: 0.6rem; }
         }
 
         /* Prevent nav from wrapping on mobile */
