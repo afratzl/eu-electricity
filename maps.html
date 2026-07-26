@@ -522,7 +522,7 @@
             color: white;
             border-color: #003399;
         }
-        @media (min-width: 1024px) { .chart-img { width: 65%; margin: 0 auto; display: block; } }
+        @media (min-width: 1024px) { .chart-img { width: 60%; margin: 0 auto; display: block; } }
 
         .chart-info-bar { display: flex; justify-content: space-between; align-items: center; background: #f7fafc; border-top: 1px solid #e2e8f0; border-bottom: 1px solid #e2e8f0; padding: 6px 24px; margin-bottom: 8px; gap: 20px; }
         .timestamp { color: #666; font-size: 14px; }
@@ -542,8 +542,10 @@
         @media (max-width: 768px) {
             .compact-selector-box { grid-template-columns: 1fr; gap: 16px; padding: 16px; }
             .selector-item-toggle { min-width: unset; }
+            .selector-item label { font-size: 0.9em; }
+            .selector-item select { font-size: 0.95em; }
             .chart-info-bar { flex-direction: column; text-align: center; padding: 12px 16px; gap: 12px; }
-            .download-btn { width: 100%; justify-content: center; }
+            .download-btn { width: 100%; max-width: 300px; justify-content: center; }
             .refresh-btn { width: 100%; max-width: 300px; justify-content: center; }
         }
         @media (min-width: 769px) and (max-width: 1024px) {
