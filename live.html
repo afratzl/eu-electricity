@@ -13,7 +13,7 @@
     <nav class="navbar">
         <div class="nav-container">
             <span class="nav-title">
-                <img src="flags/EU.svg" alt="EU flag">
+                <img src="flags/EU.svg" width="32" height="21" alt="EU flag" style="vertical-align: middle; margin-right: 10px;">
                 EU Electricity Generation
             </span>
             <div class="nav-links">
@@ -31,11 +31,6 @@
         <header class="page-header">
             <h1>Live Electricity Generation</h1>
         </header>
-
-        <!-- DYNAMIC CHART DISPLAY -->
-        <div id="chart-display" class="chart-container">
-            <!-- Charts will be loaded here by JavaScript -->
-        </div>
 
         <!-- COMPACT SELECTOR BOX -->
         <div class="compact-selector-box">
@@ -333,15 +328,15 @@
             </div>
         </div>
 
+        <!-- DYNAMIC CHART DISPLAY -->
+        <div id="chart-display" class="chart-container">
+            <!-- Charts will be loaded here by JavaScript -->
+        </div>
+
         <div id="chart-info-bar" class="chart-info-bar">
-            <button id="download-btn" class="download-btn" onclick="downloadChart()" title="Download current chart">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                    <polyline points="7 10 12 15 17 10"></polyline>
-                    <line x1="12" y1="15" x2="12" y2="3"></line>
-                </svg>
-                <span>Download Chart</span>
-            </button>
+            <span id="last-update" class="timestamp">
+                <!-- Last update timestamp will be loaded here -->
+            </span>
             <button id="refresh-btn" class="refresh-btn" onclick="refreshChart()" title="Refresh chart">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <polyline points="23 4 23 10 17 10"></polyline>
@@ -350,11 +345,15 @@
                 </svg>
                 <span>Refresh</span>
             </button>
-            <span id="last-update" class="timestamp">
-                <!-- Last update timestamp will be loaded here -->
-            </span>
+            <button id="download-btn" class="download-btn" onclick="downloadChart()" title="Download current chart">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                    <polyline points="7 10 12 15 17 10"></polyline>
+                    <line x1="12" y1="15" x2="12" y2="3"></line>
+                </svg>
+                <span>Download Chart</span>
+            </button>
         </div>
-
     </div>
 
     <footer>
@@ -1233,38 +1232,17 @@
         /* Mobile: Stack vertically */
         @media (max-width: 768px) {
             .compact-selector-box {
-                grid-template-columns: 1fr 1fr;
-                gap: 10px;
-                padding: 12px;
-                margin-bottom: 12px;
-            }
-            
-            .selector-item {
-                gap: 4px;
+                grid-template-columns: 1fr !important;
+                gap: 16px;
+                padding: 16px;
             }
             
             .selector-item-toggle {
                 min-width: unset;
-                grid-column: 1 / -1;
             }
             
             .selector-item label {
                 font-size: 0.9em;
-            }
-            
-            .custom-select-trigger {
-                height: 36px;
-                padding: 6px 8px;
-                border-width: 1px;
-            }
-            
-            .toggle-group-compact {
-                height: 36px;
-                border-width: 1px;
-            }
-            
-            .custom-select-trigger .label {
-                font-size: 0.85em;
             }
             
             .selector-item select {
@@ -1324,41 +1302,6 @@
                 height: 16px;
                 margin-right: 6px;
             }
-        }
-
-        /* TEST (live.html only for now): make the EU flag scale with the
-           title text instead of staying a fixed 32x21px. Height is in em,
-           so it inherits .nav-title's font-size and automatically tracks
-           it at every existing breakpoint (1.5rem base, 1.2rem at 768px,
-           0.9em at 600px) without needing separate flag-specific media
-           queries. Flex + align-items handles vertical alignment robustly
-           instead of relying on vertical-align, which can be inconsistent
-           across font/image size changes. */
-        .nav-title {
-            display: inline-flex;
-            align-items: center;
-            gap: 10px;
-        }
-        .nav-title img {
-            height: 1em;
-            width: auto;
-            display: block;
-        }
-
-        /* TEST (live.html only for now): halve the gap below the banner on
-           mobile -- shared styles.css only reduces .page-header's padding
-           on mobile, not its margin-bottom, which was still the full 2rem
-           (32px) base value. If this looks right, migrate into styles.css. */
-        @media (max-width: 768px) {
-            .page-header { margin-bottom: 1rem; }
-        }
-
-        /* Prevent nav from wrapping on mobile */
-        .nav-links { display: flex; flex-wrap: nowrap; overflow-x: auto; -webkit-overflow-scrolling: touch; }
-        .nav-links a { white-space: nowrap; flex-shrink: 0; }
-        @media (max-width: 600px) {
-            .nav-links a { font-size: 0.78em; padding: 4px 6px; }
-            .nav-title { font-size: 0.9em; }
         }
     </style>
 
