@@ -1214,23 +1214,25 @@
             transform: translateY(1px);
         }
         
-        /* Mobile + tablet: Stack info bar */
+        /* Mobile + tablet: Download/Refresh share one row, timestamp wraps
+           to its own row below -- padding matched to
+           .compact-selector-box's 12px so left/right edges always align. */
         @media (max-width: 1023px) {
             .chart-info-bar {
-                flex-direction: column;
+                padding: 12px;
+                gap: 8px;
+                flex-wrap: wrap;
+            }
+            
+            .download-btn, .refresh-btn {
+                flex: 1;
+                justify-content: center;
+                white-space: nowrap;
+            }
+            
+            .timestamp {
+                flex-basis: 100%;
                 text-align: center;
-                padding: 12px 16px;
-                gap: 12px;
-            }
-            
-            .download-btn {
-                width: 100%;
-                justify-content: center;
-            }
-            
-            .refresh-btn {
-                width: 100%;
-                justify-content: center;
             }
         }
         
@@ -1349,12 +1351,12 @@
         /* TEST (live.html only for now): banner size, further reduced from
            the previous pass, at every breakpoint. */
         @media (min-width: 1024px) {
-            .page-header { padding: 1rem 0.75rem; margin-bottom: 0.5rem; }
+            .page-header { padding: 1.25rem 1rem; margin-bottom: 0.75rem; }
             /* Reduce the gap above the banner too -- .container's base
                padding (2rem, shared styles.css) applies to all sides
                including top; this is the desktop-only override. */
-            .container { padding-top: 0.75rem; padding-bottom: 0.75rem; }
-            footer { margin-top: 0.25rem; }
+            .container { padding-top: 0.75rem; padding-bottom: 0.25rem; }
+            footer { margin-top: 0; }
             /* Download/Refresh buttons sized to match the toggle buttons
                above (Relative/Absolute Generation) -- scoped to desktop
                only so mobile's already-tuned smaller buttons are untouched. */
@@ -1365,10 +1367,10 @@
             }
         }
         @media (max-width: 1023px) {
-            .page-header { margin-bottom: 0.75rem; padding: 0.9rem 0.8rem; }
+            .page-header { margin-bottom: 0.75rem; padding: 1.1rem 0.9rem; }
         }
         @media (max-width: 480px) {
-            .page-header { padding: 0.75rem 0.6rem; }
+            .page-header { padding: 0.9rem 0.75rem; }
         }
 
         /* NEW (live.html test): desktop side-by-side layout -- chart on the
@@ -1424,7 +1426,7 @@
             .live-selector-column .chart-info-bar {
                 flex-direction: column;
                 text-align: center;
-                padding: 12px 16px;
+                padding: 12px 20px;
                 gap: 12px;
             }
             .live-selector-column .download-btn,
