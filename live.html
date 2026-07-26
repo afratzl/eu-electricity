@@ -334,8 +334,6 @@
                                 </div>
                             </div>
                         </div>
-            </div>
-        </div>
 
                         <div id="chart-info-bar" class="chart-info-bar">
                             <button id="download-btn" class="download-btn" onclick="downloadChart()" title="Download current chart">
@@ -358,7 +356,8 @@
                                 <!-- Last update timestamp will be loaded here -->
                             </span>
                         </div>
-
+            </div>
+        </div>
     </div>
 
     <footer>
@@ -1357,7 +1356,7 @@
         /* TEST (live.html only for now): banner size, further reduced from
            the previous pass, at every breakpoint. */
         @media (min-width: 769px) {
-            .page-header { padding: 1.5rem 1rem; }
+            .page-header { padding: 1.5rem 1rem; margin-bottom: 0.75rem; }
         }
         @media (max-width: 768px) {
             .page-header { margin-bottom: 0.75rem; padding: 0.9rem 0.8rem; }
@@ -1370,10 +1369,12 @@
            left, selector on the right. Below 1024px, .live-desktop-layout
            has no special styling, so it behaves like a plain block wrapper
            and everything stacks exactly as it already did (chart, then
-           selector) -- no change to mobile/tablet. chart-info-bar
-           (Download/Refresh/timestamp) sits OUTSIDE this wrapper entirely,
-           so it always spans full width at the very bottom regardless of
-           whether the chart/selector are side by side or stacked. */
+           selector, then info bar) -- no change to mobile/tablet.
+           chart-info-bar (Download/Refresh/timestamp) sits inside
+           .live-selector-column, below the selector box -- using the
+           empty space that's already there on desktop (selector box is
+           much shorter than the chart) instead of adding a whole new
+           full-width row below everything. */
         @media (min-width: 1024px) {
             .live-desktop-layout {
                 display: flex;
@@ -1381,11 +1382,13 @@
                 align-items: flex-start;
             }
             .live-chart-column {
-                /* Matches the image's own 60% proportion, so the column
-                   itself is only as wide as the image actually needs --
-                   no leftover space inside the column that used to just
-                   blend into the page's own white background. */
-                flex: 0 0 60%;
+                /* Column width the chart image renders at (was 60%,
+                   reduced to 50% to make the chart smaller and give the
+                   selector column more room) -- column itself is only as
+                   wide as the image actually needs, no leftover space
+                   inside it that used to just blend into the page's own
+                   white background. */
+                flex: 0 0 50%;
                 min-width: 0;
             }
             .live-selector-column {
