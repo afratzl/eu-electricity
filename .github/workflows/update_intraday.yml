@@ -62,28 +62,67 @@ jobs:
         run: |
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
           git config --local user.name "github-actions[bot]"
-          
-          # Fetch latest from remote
+
+          # Fetch latest from remote (doesn't touch the working directory yet)
           git fetch origin main
-          
-          # Save our generated files temporarily
+
+          # Merge plots/drive_links.json with whatever's on origin/main BEFORE
+          # doing anything else. This replaces a previous approach that backed
+          # up this job's own files, hard-reset to origin/main, then blindly
+          # pasted this job's stale copy back on top -- which silently
+          # discarded any newer Monthly/Trends data another concurrent job
+          # had already pushed, since it never actually merged anything.
+          # See merge_drive_links_for_commit.py for the full explanation.
+          python scripts/merge_drive_links_for_commit.py \
+            --owned-country-keys Intraday,Yesterday \
+            --owned-maps-keys Yesterday,LastWeek
+
+          # Save our generated files (now including the merged drive_links.json)
           mkdir -p /tmp/plots_backup
           cp plots/*_analysis.png plots/last_update.html plots/energy_summary_table.json plots/drive_links.json /tmp/plots_backup/ 2>/dev/null || true
-          
-          # Reset to remote (this avoids all merge conflicts)
+
+          # Reset to remote (safe now -- drive_links.json has already been
+          # merged above, so restoring it below won't lose anything new)
           git reset --hard origin/main
-          
-          # Restore our new files
+
+          # Restore our new files, including the already-merged drive_links.json
           cp /tmp/plots_backup/* plots/ 2>/dev/null || true
-          
+
           # Add and commit
           git add -f plots/*.html plots/*.json
-          
+
           # Only commit if there are changes
           if ! git diff --staged --quiet; then
             git commit -m "Update intraday plots, summary JSON and maps [hourly]"
-            git pull --rebase origin main
-            git push origin main
+
+            # Retry push a few times in case another job's commit landed on
+            # origin/main while this one was running. A plain 'git pull
+            # --rebase' here would risk the same conflict-marker corruption
+            # seen before if drive_links.json changed on both sides, so each
+            # retry re-runs the JSON-aware merge against the newest remote
+            # content instead of a text-level rebase for that file.
+            for attempt in 1 2 3; do
+              if git push origin main; then
+                echo "Pushed successfully."
+                break
+              fi
+
+              if [ "$attempt" = "3" ]; then
+                echo "::error::Failed to push after 3 attempts -- giving up, changes were not published."
+                exit 1
+              fi
+
+              echo "Push failed (attempt $attempt/3) -- likely a concurrent commit. Re-fetching and re-merging..."
+              git fetch origin main
+              # Move our branch onto the new remote tip, keeping our changes
+              # staged so they can be re-merged against the fresher content.
+              git reset --soft origin/main
+              python scripts/merge_drive_links_for_commit.py \
+                --owned-country-keys Intraday,Yesterday \
+                --owned-maps-keys Yesterday,LastWeek
+              git add -f plots/*.html plots/*.json
+              git commit -m "Update intraday plots, summary JSON and maps [hourly]"
+            done
           else
             echo "No changes to commit"
           fi
