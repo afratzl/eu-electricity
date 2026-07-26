@@ -1426,66 +1426,18 @@
             .page-header { padding: 0.9rem 0.75rem; }
         }
 
-        /* NEW (live.html test): desktop side-by-side layout -- chart on the
-           left, selector on the right. Below 1024px, .live-desktop-layout
-           has no special styling, so it behaves like a plain block wrapper
-           and everything stacks exactly as it already did (chart, then
-           selector, then info bar) -- no change to mobile/tablet.
-           chart-info-bar (Download/Refresh/timestamp) sits inside
-           .live-selector-column, below the selector box -- using the
-           empty space that's already there on desktop (selector box is
-           much shorter than the chart) instead of adding a whole new
-           full-width row below everything. */
+        /* NEW: desktop now uses the same single-column layout as mobile
+           -- chart, then selector, then download/refresh, all centered
+           with a max-width so it doesn't just stretch edge-to-edge on a
+           wide monitor. Replaces the earlier side-by-side experiment. */
         @media (min-width: 1024px) {
             .live-desktop-layout {
-                display: flex;
-                gap: 24px;
-                align-items: flex-start;
+                max-width: 800px;
+                margin: 0 auto;
             }
-            .live-chart-column {
-                /* Column width the chart image renders at (was 60%,
-                   reduced to 50% to make the chart smaller and give the
-                   selector column more room) -- column itself is only as
-                   wide as the image actually needs, no leftover space
-                   inside it that used to just blend into the page's own
-                   white background. */
-                flex: 0 0 50%;
-                min-width: 0;
-            }
-            .live-selector-column {
-                /* Takes whatever's left after the chart column + gap */
-                flex: 1 1 auto;
-            }
-            /* Chart image now fills 100% of its own (already 60%-sized)
-               column, left-aligned -- not 60% of the full page width
-               centered, which is what created the appearance of empty
-               space around it before. */
             .live-chart-column .chart-img {
                 width: 100%;
                 margin: 0;
-            }
-            /* The 3-across auto/auto/auto grid doesn't fit this narrower
-               selector column -- fall back to a stacked layout here, same
-               idea as mobile. */
-            .live-selector-column .compact-selector-box {
-                grid-template-columns: 1fr;
-            }
-            .live-selector-column .selector-item-toggle {
-                min-width: unset;
-            }
-            /* Info bar (Download/Refresh/timestamp) stacks into 3 rows
-               here, same as the mobile treatment -- the selector column is
-               too narrow for them to sit side by side on one line. */
-            .live-selector-column .chart-info-bar {
-                flex-direction: column;
-                text-align: center;
-                padding: 12px 20px;
-                gap: 12px;
-            }
-            .live-selector-column .download-btn,
-            .live-selector-column .refresh-btn {
-                width: 100%;
-                justify-content: center;
             }
         }
 
