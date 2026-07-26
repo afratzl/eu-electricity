@@ -858,9 +858,8 @@
             padding-left: 24px;
         }
 
-        .row-aggregate-pro {
+        .row-aggregate-pro td:first-child {
             font-weight: 600;
-            font-size: 1.125em;
         }
 
         .row-aggregate-pro.renewable {
@@ -868,7 +867,14 @@
         }
 
         .row-aggregate-pro.non-renewable {
-            background: #cdddf2;
+            background-color: #cdddf2;
+        }
+
+        .row-aggregate-pro.non-renewable td {
+            background-image: linear-gradient(90deg, #003399 0%, #6B9FD8 100%);
+            background-repeat: no-repeat;
+            background-size: 100% 3px;
+            background-position: top;
         }
 
         .row-source-pro {
