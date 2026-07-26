@@ -1070,7 +1070,7 @@
             .summary-table-pro th,
             .summary-table-pro td {
                 white-space: normal;
-                padding: 8px 4px;
+                padding: 6px 4px;
                 font-size: 0.85em;
                 word-break: break-word;
             }
@@ -1205,6 +1205,11 @@
                massively reduced from the base 32px */
             .table-controls-pro {
                 margin-bottom: 4px;
+            }
+            /* "Last updated" element's own top padding was still adding
+               16px on top of the margin above -- trim it specifically */
+            .table-footer-pro {
+                padding-top: 4px;
             }
         }
         @media (min-width: 1024px) {
