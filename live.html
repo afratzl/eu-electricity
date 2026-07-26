@@ -334,8 +334,6 @@
                                 </div>
                             </div>
                         </div>
-            </div>
-        </div>
 
                         <div id="chart-info-bar" class="chart-info-bar">
                             <button id="download-btn" class="download-btn" onclick="downloadChart()" title="Download current chart">
@@ -358,6 +356,8 @@
                                 <!-- Last update timestamp will be loaded here -->
                             </span>
                         </div>
+            </div>
+        </div>
     </div>
 
     <footer>
@@ -1353,7 +1353,8 @@
             /* Reduce the gap above the banner too -- .container's base
                padding (2rem, shared styles.css) applies to all sides
                including top; this is the desktop-only override. */
-            .container { padding-top: 0.75rem; }
+            .container { padding-top: 0.75rem; padding-bottom: 0.75rem; }
+            footer { margin-top: 0.25rem; }
             /* Download/Refresh buttons sized to match the toggle buttons
                above (Relative/Absolute Generation) -- scoped to desktop
                only so mobile's already-tuned smaller buttons are untouched. */
@@ -1416,6 +1417,20 @@
             }
             .live-selector-column .selector-item-toggle {
                 min-width: unset;
+            }
+            /* Info bar (Download/Refresh/timestamp) stacks into 3 rows
+               here, same as the mobile treatment -- the selector column is
+               too narrow for them to sit side by side on one line. */
+            .live-selector-column .chart-info-bar {
+                flex-direction: column;
+                text-align: center;
+                padding: 12px 16px;
+                gap: 12px;
+            }
+            .live-selector-column .download-btn,
+            .live-selector-column .refresh-btn {
+                width: 100%;
+                justify-content: center;
             }
         }
 
