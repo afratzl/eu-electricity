@@ -1010,6 +1010,14 @@
                 display: block;
             }
         }
+
+        /* Prevent nav from wrapping on mobile */
+        .nav-links { display: flex; flex-wrap: nowrap; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+        .nav-links a { white-space: nowrap; flex-shrink: 0; }
+        @media (max-width: 600px) {
+            .nav-links a { font-size: 0.78em; padding: 4px 6px; }
+            .nav-title { font-size: 0.9em; }
+        }
     </style>
 
     <!-- GoatCounter Analytics -->
