@@ -53,6 +53,45 @@ jobs:
         run: |
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
           git config --local user.name "github-actions[bot]"
-          git pull --rebase --autostash origin main
+
+          git fetch origin main
+
+          # Merge drive_links.json against origin/main BEFORE any rebase.
+          # This job legitimately computes Maps.Monthly and Maps.Annual --
+          # everything else (per-country Intraday/Yesterday/Monthly/Trends,
+          # Maps.Yesterday/LastWeek) should come from whatever's freshest on
+          # origin/main, not this job's own stale checkout. Replaces a plain
+          # 'git pull --rebase --autostash', which risked leaving raw
+          # conflict markers in the file if drive_links.json changed on both
+          # sides -- this is very likely what wiped Maps.Monthly/Annual down
+          # to nothing previously. See merge_drive_links_for_commit.py.
+          python scripts/merge_drive_links_for_commit.py \
+            --owned-maps-keys Monthly,Annual
+
           git add -f plots/*.json
-          git diff --quiet && git diff --staged --quiet || (git commit -m "Update monthly and annual maps [auto]" && git push)
+
+          if ! git diff --staged --quiet; then
+            git commit -m "Update monthly and annual maps [auto]"
+
+            for attempt in 1 2 3; do
+              if git push origin main; then
+                echo "Pushed successfully."
+                break
+              fi
+
+              if [ "$attempt" = "3" ]; then
+                echo "::error::Failed to push after 3 attempts -- giving up, changes were not published."
+                exit 1
+              fi
+
+              echo "Push failed (attempt $attempt/3) -- likely a concurrent commit. Re-fetching and re-merging..."
+              git fetch origin main
+              git reset --soft origin/main
+              python scripts/merge_drive_links_for_commit.py \
+                --owned-maps-keys Monthly,Annual
+              git add -f plots/*.json
+              git commit -m "Update monthly and annual maps [auto]"
+            done
+          else
+            echo "No changes to commit"
+          fi
