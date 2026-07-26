@@ -785,8 +785,8 @@
             background: transparent;
             color: var(--color-text-light);
             cursor: pointer;
-            font-size: 0.9375em;
-            font-weight: 500;
+            font-size: 0.95em;
+            font-weight: 600;
             transition: all 0.2s ease;
             border-radius: var(--radius-sm);
             white-space: nowrap;
@@ -906,7 +906,7 @@
             color: var(--color-text-light);
             font-size: 0.9375em;
             background: var(--color-bg-light);
-            border-top: 1px solid var(--color-border);
+            border-bottom: 1px solid var(--color-border);
         }
 
         .loading-message-pro, .error-message-pro {
@@ -1192,6 +1192,19 @@
             .container {
                 padding-top: 0.8rem;
                 padding-bottom: 0;
+            }
+            /* Slightly more space between the table and the controls below it */
+            .live-selector-column {
+                margin-top: 14px;
+            }
+            /* Toggle-to-country-selector gap, reduced from 16px */
+            .table-controls-pro {
+                gap: 6px;
+            }
+            /* Space after the country selector (before "Last updated"),
+               massively reduced from the base 32px */
+            .table-controls-pro {
+                margin-bottom: 4px;
             }
         }
         @media (min-width: 1024px) {
