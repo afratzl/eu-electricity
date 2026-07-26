@@ -1436,8 +1436,20 @@
                 margin: 0 auto;
             }
             .live-chart-column .chart-img {
-                width: 100%;
-                margin: 0;
+                width: 50%;
+                margin: 0 auto;
+                display: block;
+            }
+            /* Selector box: same 2-column pattern as mobile -- toggle
+               spans its own row, country + source pair up below it --
+               instead of the base 3-across grid cramming all three
+               into one row now that the desktop-specific override
+               (which used to force a full single-column stack) is gone. */
+            .live-selector-column .compact-selector-box {
+                grid-template-columns: 1fr 1fr;
+            }
+            .live-selector-column .selector-item-toggle {
+                grid-column: 1 / -1;
             }
         }
 
