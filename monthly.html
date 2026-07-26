@@ -1432,12 +1432,12 @@
            wide monitor. Replaces the earlier side-by-side experiment. */
         @media (min-width: 1024px) {
             .live-desktop-layout {
-                max-width: 800px;
+                max-width: 700px;
                 margin: 0 auto;
             }
             .live-chart-column .chart-img {
-                width: 50%;
-                margin: 0 auto;
+                width: 100%;
+                margin: 0;
                 display: block;
             }
             /* Selector box: same 2-column pattern as mobile -- toggle
@@ -1450,6 +1450,22 @@
             }
             .live-selector-column .selector-item-toggle {
                 grid-column: 1 / -1;
+            }
+            /* Download/Refresh share one row, timestamp wraps below --
+               same pattern already used on mobile. */
+            .live-selector-column .chart-info-bar {
+                flex-wrap: wrap;
+                gap: 8px;
+            }
+            .live-selector-column .download-btn,
+            .live-selector-column .refresh-btn {
+                flex: 1;
+                justify-content: center;
+                white-space: nowrap;
+            }
+            .live-selector-column .timestamp {
+                flex-basis: 100%;
+                text-align: center;
             }
         }
 
