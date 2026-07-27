@@ -25,10 +25,6 @@
     </nav>
 
     <div class="container">
-        <header class="page-header">
-            <h1>EU Electricity Generation</h1>
-        </header>
-
         <!-- Four main navigation cards -->
         <!--
         <div class="cards-grid-pro">
@@ -76,6 +72,7 @@
             <!-- DESKTOP SIDE-BY-SIDE LAYOUT (table left, controls right) -->
             <div class="live-desktop-layout">
                 <div class="live-chart-column">
+                                <h1 class="table-section-title-pro">Electricity Generation</h1>
                                 <div id="summary-table-container">
                                     <div class="loading-message-pro">Loading summary data...</div>
                                 </div>
@@ -420,16 +417,29 @@
                 return `background: linear-gradient(to right, ${color}40 ${pct}%, transparent ${pct}%)`;
             }
 
+            // Round (not truncate) to a max of 4 total digits combined
+            // across the integer and decimal parts -- e.g. 1234.56 becomes
+            // 1235 (integer alone already uses the full budget), while
+            // 731.34 becomes 731.3 (3 integer digits leaves room for 1
+            // decimal). Never adds decimals beyond what's already shown.
+            function truncateToMaxDigits(value, currentDecimals, maxTotalDigits = 4) {
+                const integerDigits = Math.max(1, Math.floor(Math.abs(value)).toString().length);
+                const allowedDecimals = Math.max(0, Math.min(currentDecimals, maxTotalDigits - integerDigits));
+                const factor = Math.pow(10, allowedDecimals);
+                const rounded = Math.round(value * factor) / factor;
+                return rounded.toFixed(allowedDecimals);
+            }
+
             // Format one value using the unit already decided for its column.
             function formatAbsolute(d, unit) {
                 if (d?.gwh === undefined) return '—';
                 const gwh = typeof d.gwh === 'number' ? d.gwh : parseFloat(d.gwh);
                 if (isNaN(gwh)) return '—';
                 if (unit === 'GWh') {
-                    return gwh.toFixed(1) + ' GWh';
+                    return truncateToMaxDigits(gwh, 1) + ' GWh';
                 }
                 const twh = d?.twh !== undefined ? (typeof d.twh === 'number' ? d.twh : parseFloat(d.twh)) : gwh / 1000;
-                return twh.toFixed(2) + ' TWh';
+                return truncateToMaxDigits(twh, 2) + ' TWh';
             }
 
             function changeColor(val) {
@@ -713,6 +723,26 @@
             margin-bottom: 0;
         }
 
+        /* Combined title -- replaces the removed banner and the removed
+           "Electricity Mix" table header, merged into one element instead
+           of two redundant "you are here" signals. */
+        .table-section-title-pro {
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: white;
+            text-align: center;
+            background: linear-gradient(to right, #003399 0%, #6B9FD8 100%);
+            border-radius: 8px 8px 0 0;
+            padding: 10px 20px;
+            margin: 0;
+        }
+        @media (max-width: 1023px) {
+            .table-section-title-pro {
+                font-size: 1.1rem;
+                padding: 8px 14px;
+            }
+        }
+
         .section-header-pro {
             text-align: center;
             margin-bottom: var(--spacing-lg);
@@ -737,6 +767,10 @@
             gap: var(--spacing-sm);
             margin-bottom: var(--spacing-lg);
             flex-wrap: wrap;
+            background: #f7fafc;
+            border: 2px solid #f7fafc;
+            border-radius: 8px;
+            padding: 12px;
         }
         
         .country-selector-group {
@@ -802,8 +836,7 @@
             max-width: 100%;
             border-collapse: collapse;
             background: white;
-            border: 1px solid var(--color-border);
-            border-radius: var(--radius-md);
+            border-radius: 0 0 var(--radius-md) var(--radius-md);
             overflow: hidden;
             box-shadow: 0 2px 4px rgba(0,0,0,0.05);
             table-layout: fixed;
@@ -831,16 +864,17 @@
         }
 
         .summary-table-pro thead {
-            background: linear-gradient(135deg, #003399 0%, #6B9FD8 100%);
+            background: linear-gradient(to right, #003399 0%, #6B9FD8 100%);
             color: white;
         }
 
         .summary-table-pro th {
-            padding: 14px 20px;
+            padding: 14px 10px;
             text-align: left;
             font-weight: 600;
             font-size: 1.0625em;
             letter-spacing: 0.025em;
+            border: none;
         }
 
         .summary-table-pro th:first-child {
@@ -848,7 +882,7 @@
         }
 
         .summary-table-pro td {
-            padding: 10px 20px;
+            padding: 10px 10px;
             border-bottom: 1px solid #ecf0f1;
             font-size: 1.0625em;
             color: var(--color-text);
@@ -1105,6 +1139,7 @@
 
             .table-controls-pro {
                 flex-direction: column;
+                padding: 8px 12px;
             }
             
             .country-selector-group {
@@ -1190,62 +1225,61 @@
            container, banner, footer sizing, and flag em-scaling. */
         @media (max-width: 1023px) {
             .navbar {
-                padding: 0.85rem 0;
+                padding: 1.1rem 0;
+            }
+            .nav-title { font-size: 1.4rem; }
+            .nav-container {
+                gap: 0.85rem;
+            }
+            /* Stack menu below title through the full phone+tablet range
+               (shared styles.css only does this up to 768px, leaving
+               769-1023px showing them side by side) -- and center the
+               links within their row once stacked. */
+            .nav-container {
+                flex-direction: column;
+            }
+            .nav-links {
+                justify-content: center;
+                width: 100%;
             }
             .container {
-                padding-top: 0.8rem;
+                padding-top: 1.25rem;
                 padding-bottom: 0;
             }
             /* Banner-to-table gap, further reduced 40% for mobile only
                (base rule already at 10px, this brings mobile to 6px) */
             .summary-table-section-pro {
-                margin-top: 6px;
+                margin-top: 2px;
             }
             /* Slightly more space between the table and the controls below it */
             .live-selector-column {
-                margin-top: 7px;
+                margin-top: 2px;
             }
             /* Toggle-to-country-selector gap, reduced from 16px */
             .table-controls-pro {
-                gap: 6px;
+                gap: 2px;
             }
             /* Space after the country selector (before "Last updated"),
                massively reduced from the base 32px */
             .table-controls-pro {
-                margin-bottom: 4px;
+                margin-bottom: 0;
             }
             /* "Last updated" element's own top padding was still adding
                16px on top of the margin above -- trim it specifically */
             .table-footer-pro {
-                padding-top: 4px;
-                padding-bottom: 5px;
+                padding-top: 0;
+                padding-bottom: 2px;
             }
         }
         @media (min-width: 1024px) {
-            .container { padding-top: 0.75rem; padding-bottom: 1rem; }
-            .table-controls-pro { margin-bottom: 6px; }
-            .table-footer-pro { padding-bottom: 5px; }
+            .nav-title { font-size: 1.85rem; }
+            .container { padding-top: 1.5rem; padding-bottom: 1rem; }
+            .table-controls-pro { margin-bottom: 0; }
+            .table-footer-pro { padding-bottom: 2px; }
             footer { margin-top: 0; padding: 1rem; font-size: 0.9rem; }
         }
         @media (max-width: 1023px) {
             footer { margin-top: 0; padding: 1rem; font-size: 0.75rem; }
-        }
-
-        /* Banner sizing, matched across breakpoints */
-        .page-header h1 {
-            margin-bottom: 0;
-        }
-        @media (min-width: 1024px) {
-            .page-header { padding: 1.25rem 1rem; margin-bottom: 0.75rem; }
-            .page-header h1 { font-size: 1.75rem; }
-        }
-        @media (max-width: 1023px) {
-            .page-header { margin-bottom: 0.75rem; padding: 1.1rem 0.9rem; }
-            .page-header h1 { font-size: 1.4rem; }
-        }
-        @media (max-width: 480px) {
-            .page-header { padding: 0.9rem 0.75rem; }
-            .page-header h1 { font-size: 1.2rem; }
         }
 
         /* Flag scales with the title text instead of a fixed 32x21px */
@@ -1265,53 +1299,64 @@
         .nav-links a { white-space: nowrap; flex-shrink: 0; }
         @media (max-width: 600px) {
             .nav-links a { font-size: 0.78em; padding: 4px 6px; }
-            .nav-title { font-size: 0.9em; }
+            .nav-title { font-size: 1.3rem; }
         }
-        /* NEW: desktop side-by-side layout for the summary table -- table
-           on the left, controls (country selector + display toggle) on
-           the right. Below 1024px, .live-desktop-layout has no special
-           styling, so it behaves like a plain block wrapper and table/
-           controls stack in DOM order (table first, controls below) --
-           no change needed for mobile/tablet. */
+        /* NEW: desktop now uses the same single-column layout as the
+           other pages -- table, then controls, all centered with a
+           max-width so it doesn't stretch edge-to-edge on a wide
+           monitor. Replaces the earlier side-by-side experiment. */
         @media (min-width: 1024px) {
             .live-desktop-layout {
-                display: flex;
-                gap: 24px;
-                align-items: flex-start;
-            }
-            .live-chart-column {
-                flex: 0 0 50%;
-                min-width: 0;
-            }
-            .live-selector-column {
-                flex: 1 1 auto;
+                max-width: 600px;
+                margin: 0 auto;
             }
             /* The controls (country selector + 5-button toggle) were
                designed for a full-width row -- fall back to a stacked
-               layout in the narrower sidebar column, reusing the same
+               layout in this narrower column, reusing the same
                treatment already used for mobile. */
-            .live-selector-column .table-controls-pro {
+            .table-controls-pro {
                 flex-direction: column;
                 align-items: stretch;
             }
-            .live-selector-column .country-selector-group {
+            .country-selector-group {
                 width: 100%;
                 justify-content: center;
             }
-            .live-selector-column .country-select-pro {
+            .country-select-pro {
                 flex: 1;
                 max-width: none;
             }
-            .live-selector-column .toggle-group {
+            .toggle-group {
                 flex-direction: column;
                 width: 100%;
             }
-            .live-selector-column .toggle-btn-pro {
+            .toggle-btn-pro {
                 width: 100%;
                 text-align: center;
             }
         }
 
+        /* NEW: sticky footer -- with the banner removed, pages can now
+           be shorter than the viewport, leaving blank space below the
+           footer instead of it sitting flush at the bottom. Standard
+           flex sticky-footer pattern: body becomes a flex column,
+           .container grows to fill any leftover space, pushing the
+           footer down to the bottom when content is short. Has no
+           effect when content is already taller than the viewport --
+           footer just follows the content as before. */
+        body {
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh; /* fallback for browsers without svh support */
+            min-height: 100svh; /* actual visible viewport on load, not the larger address-bar-hidden height */
+        }
+        .container {
+            flex: 1 0 auto;
+            width: 100%;
+        }
+        footer {
+            flex-shrink: 0;
+        }
     </style>
 
     <!-- GoatCounter Analytics -->
