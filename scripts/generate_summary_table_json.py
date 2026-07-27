@@ -13,30 +13,6 @@ from datetime import datetime
 
 import time
 
-
-def retry_with_backoff(func, max_attempts=3, base_delay=5, description="API call", no_retry=()):
-    """
-    Retry a Google API call with exponential backoff. Handles transient
-    errors (e.g. 503 Service Unavailable, rate limits) that would
-    otherwise kill the whole run for what's usually a momentary blip.
-    Exceptions listed in `no_retry` (e.g. gspread.WorksheetNotFound) are
-    permanent errors, not transient ones -- re-raised immediately rather
-    than wasting retries on something retrying won't fix.
-    """
-    for attempt in range(1, max_attempts + 1):
-        try:
-            return func()
-        except no_retry:
-            raise
-        except Exception as e:
-            if attempt == max_attempts:
-                print(f"✗ {description} failed after {max_attempts} attempts: {e}")
-                raise
-            delay = base_delay * attempt
-            print(f"⚠ {description} failed (attempt {attempt}/{max_attempts}): {e}")
-            print(f"  Retrying in {delay}s...")
-            time.sleep(delay)
-
 # Use drive_links.json as single source of truth for spreadsheet IDs
 DRIVE_LINKS_FILE = 'plots/drive_links.json'
 
@@ -119,16 +95,10 @@ def generate_summary_json():
             try:
                 # Try to open by ID first (if it looks like an ID - IDs are long alphanumeric strings)
                 if len(spreadsheet_identifier) > 30:
-                    spreadsheet = retry_with_backoff(
-                        lambda: gc.open_by_key(spreadsheet_identifier),
-                        description=f"Opening {country_code} spreadsheet"
-                    )
+                    spreadsheet = gc.open_by_key(spreadsheet_identifier)
                 else:
                     # Fall back to opening by name
-                    spreadsheet = retry_with_backoff(
-                        lambda: gc.open(spreadsheet_identifier),
-                        description=f"Opening {country_code} spreadsheet"
-                    )
+                    spreadsheet = gc.open(spreadsheet_identifier)
                 
                 print(f"✓ Opened spreadsheet: {spreadsheet.title}")
                 print(f"  URL: {spreadsheet.url}")
@@ -143,11 +113,7 @@ def generate_summary_json():
             # Get the "Summary Table Data" worksheet (same name for all countries)
             worksheet_name = 'Summary Table Data'
             try:
-                worksheet = retry_with_backoff(
-                    lambda: spreadsheet.worksheet(worksheet_name),
-                    description=f"Fetching '{worksheet_name}' worksheet for {country_code}",
-                    no_retry=(gspread.WorksheetNotFound,)
-                )
+                worksheet = spreadsheet.worksheet(worksheet_name)
                 time.sleep(10)
                 print(f"✓ Found '{worksheet_name}' worksheet")
             except gspread.WorksheetNotFound:
@@ -157,27 +123,9 @@ def generate_summary_json():
                     "sources": []
                 }
                 continue
-            except Exception as e:
-                print(f"✗ Failed to fetch worksheet for {country_code}: {e}")
-                final_json[country_code] = {
-                    "last_updated": "Data not available",
-                    "sources": []
-                }
-                continue
             
             # Get all data from worksheet
-            try:
-                all_values = retry_with_backoff(
-                    lambda: worksheet.get_all_values(),
-                    description=f"Fetching data for {country_code}"
-                )
-            except Exception as e:
-                print(f"✗ Failed to fetch data for {country_code}: {e}")
-                final_json[country_code] = {
-                    "last_updated": "Data not available",
-                    "sources": []
-                }
-                continue
+            all_values = worksheet.get_all_values()
             
             if len(all_values) < 2:
                 print(f"✗ No data found in worksheet!")

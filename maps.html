@@ -28,6 +28,10 @@
     </nav>
 
     <div class="container" style="margin-bottom: 20px;">
+        <header class="page-header">
+            <h1>Electricity Generation Maps</h1>
+        </header>
+
         <!-- DESKTOP SIDE-BY-SIDE LAYOUT (map left, selector right) -->
         <div class="live-desktop-layout">
             <div class="live-chart-column">
@@ -549,39 +553,21 @@
             .download-btn { width: 100%; max-width: 300px; justify-content: center; }
             .refresh-btn { width: 100%; max-width: 300px; justify-content: center; }
         }
-        /* NEW: navbar title made larger now that the banner is gone --
-           gives the page a stronger visual anchor at the top instead of
-           feeling under-emphasized. */
-        @media (min-width: 1024px) {
-            .nav-title { font-size: 1.85rem; }
+        @media (min-width: 769px) and (max-width: 1024px) {
+            .compact-selector-box { grid-template-columns: 1fr 1fr; }
+            .selector-item-toggle { grid-column: 1 / -1; justify-self: center; }
         }
-        @media (max-width: 1023px) {
-            .nav-title { font-size: 1.4rem; }
-        }
+
 
         /* ===== PORTED FROM live.html (mobile/desktop refinement pass) ===== */
 
         /* Mobile + tablet optimizations */
         @media (max-width: 1023px) {
             .navbar {
-                padding: 1.1rem 0;
-            }
-            .nav-container {
-                gap: 0.85rem;
-            }
-            /* Stack menu below title through the full phone+tablet range
-               (shared styles.css only does this up to 768px, leaving
-               769-1023px showing them side by side) -- and center the
-               links within their row once stacked. */
-            .nav-container {
-                flex-direction: column;
-            }
-            .nav-links {
-                justify-content: center;
-                width: 100%;
+                padding: 0.85rem 0;
             }
             .container {
-                padding-top: 1.25rem;
+                padding-top: 0.8rem;
             }
             .custom-select-dropdown {
                 max-height: 180px;
@@ -686,7 +672,7 @@
         }
         
         .chart-container {
-            margin-bottom: 14px;
+            margin-bottom: 8px;
             padding-bottom: 0;
         }
         
@@ -797,7 +783,7 @@
                 grid-template-columns: 1fr 1fr;
                 gap: 6px;
                 padding: 6px 12px;
-                margin-bottom: 18px;
+                margin-bottom: 6px;
             }
             
             .selector-item {
@@ -906,7 +892,7 @@
             /* Reduce the gap above the banner too -- .container's base
                padding (2rem, shared styles.css) applies to all sides
                including top; this is the desktop-only override. */
-            .container { padding-top: 1.5rem; padding-bottom: 0; }
+            .container { padding-top: 0.75rem; padding-bottom: 0; }
             footer { margin-top: 0; padding: 1rem; font-size: 0.9rem; }
             /* Download/Refresh buttons sized to match the toggle buttons
                above (Relative/Absolute Generation) -- scoped to desktop
@@ -924,58 +910,66 @@
             .page-header { padding: 0.9rem 0.75rem; }
         }
 
-        /* NEW: desktop now uses the same single-column layout as mobile
-           -- map, then selector, then download/refresh, all centered
-           with a max-width so it doesn't just stretch edge-to-edge on a
-           wide monitor. Replaces the earlier side-by-side experiment. */
+        /* NEW (live.html test): desktop side-by-side layout -- chart on the
+           left, selector on the right. Below 1024px, .live-desktop-layout
+           has no special styling, so it behaves like a plain block wrapper
+           and everything stacks exactly as it already did (chart, then
+           selector, then info bar) -- no change to mobile/tablet.
+           chart-info-bar (Download/Refresh/timestamp) sits inside
+           .live-selector-column, below the selector box -- using the
+           empty space that's already there on desktop (selector box is
+           much shorter than the chart) instead of adding a whole new
+           full-width row below everything. */
         @media (min-width: 1024px) {
             .live-desktop-layout {
-                max-width: 600px;
-                margin: 0 auto;
+                display: flex;
+                gap: 24px;
+                align-items: flex-start;
             }
+            .live-chart-column {
+                /* Column width the chart image renders at (was 60%,
+                   reduced to 50% to make the chart smaller and give the
+                   selector column more room) -- column itself is only as
+                   wide as the image actually needs, no leftover space
+                   inside it that used to just blend into the page's own
+                   white background. */
+                flex: 0 0 50%;
+                min-width: 0;
+            }
+            .live-selector-column {
+                /* Takes whatever's left after the chart column + gap */
+                flex: 1 1 auto;
+            }
+            /* Chart image now fills 100% of its own (already 60%-sized)
+               column, left-aligned -- not 60% of the full page width
+               centered, which is what created the appearance of empty
+               space around it before. */
             .live-chart-column .chart-img {
                 width: 100%;
                 margin: 0;
-                display: block;
             }
-            /* Spacing between elements, reduced quite a bit for this
-               narrower centered column -- desktop was still using the
-               larger base values (14px / 24px). */
-            .live-chart-column .chart-container {
-                margin-bottom: 4px;
-            }
+            /* The 3-across auto/auto/auto grid doesn't fit this narrower
+               selector column -- fall back to a stacked layout here, same
+               idea as mobile. */
             .live-selector-column .compact-selector-box {
-                margin-bottom: 6px;
-                padding: 12px 16px;
-                gap: 10px;
-            }
-            /* Selector box: same 2-column pattern as mobile -- toggle
-               spans its own row, other items pair up below it --
-               instead of the base 3-across grid cramming everything
-               into one row now that the desktop-specific override
-               (which used to force a full single-column stack) is gone. */
-            .live-selector-column .compact-selector-box {
-                grid-template-columns: 1fr 1fr;
+                grid-template-columns: 1fr;
             }
             .live-selector-column .selector-item-toggle {
-                grid-column: 1 / -1;
+                min-width: unset;
             }
-            /* Download/Refresh share one row, timestamp wraps below --
-               same pattern already used on mobile. */
+            /* Info bar (Download/Refresh/timestamp) stacks into 3 rows
+               here, same as the mobile treatment -- the selector column is
+               too narrow for them to sit side by side on one line. */
             .live-selector-column .chart-info-bar {
-                flex-wrap: wrap;
-                gap: 8px;
-                padding: 8px 16px;
+                flex-direction: column;
+                text-align: center;
+                padding: 12px 20px;
+                gap: 12px;
             }
             .live-selector-column .download-btn,
             .live-selector-column .refresh-btn {
-                flex: 1;
+                width: 100%;
                 justify-content: center;
-                white-space: nowrap;
-            }
-            .live-selector-column .timestamp {
-                flex-basis: 100%;
-                text-align: center;
             }
         }
 
@@ -1004,30 +998,9 @@
         .nav-links a { white-space: nowrap; flex-shrink: 0; }
         @media (max-width: 600px) {
             .nav-links a { font-size: 0.78em; padding: 4px 6px; }
-            .nav-title { font-size: 1.3rem; }
+            .nav-title { font-size: 0.9em; }
         }
 
-        /* NEW: sticky footer -- with the banner removed, pages can now
-           be shorter than the viewport, leaving blank space below the
-           footer instead of it sitting flush at the bottom. Standard
-           flex sticky-footer pattern: body becomes a flex column,
-           .container grows to fill any leftover space, pushing the
-           footer down to the bottom when content is short. Has no
-           effect when content is already taller than the viewport --
-           footer just follows the content as before. */
-        body {
-            display: flex;
-            flex-direction: column;
-            min-height: 100vh; /* fallback for browsers without svh support */
-            min-height: 100svh; /* actual visible viewport on load, not the larger address-bar-hidden height */
-        }
-        .container {
-            flex: 1 0 auto;
-            width: 100%;
-        }
-        footer {
-            flex-shrink: 0;
-        }
     </style>
 
     <!-- GoatCounter Analytics -->
