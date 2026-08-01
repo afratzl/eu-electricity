@@ -224,7 +224,7 @@ def post_to_bluesky():
 
     try:
         print("🔐 Logging in to Bluesky...")
-        client = Client()
+        client = Client(base_url='https://eurosky.social')
         client.login(handle, password)
         print(f"✓ Logged in as {handle}")
 
