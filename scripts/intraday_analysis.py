@@ -963,37 +963,38 @@ def convert_corrected_data_to_plot_format(source_type, corrected_data, country_c
             continue
         
         total_gen_data = period_data.get('total_generation', {})
-        
-        def eu_filtered_value(raw_value):
-            # raw_value may be a per-country dict (needs EU filtering +
-            # summing) or an already-scalar number, depending on the
-            # period -- e.g. today/yesterday compute all-renewables from
-            # the atomic sources' per-country breakdown (still a dict),
-            # while week_ago/year_ago/two_years_ago may already be a
-            # pre-summed scalar. Handle both correctly instead of assuming
-            # based on source_type, which caused a dict/float TypeError.
-            if isinstance(raw_value, dict):
-                if country_code == 'EU':
-                    relevant_values = [
-                        v for k, v in raw_value.items()
-                        if k in EU_COUNTRIES and v is not None
-                    ]
-                else:
-                    v = raw_value.get(country_code)
-                    relevant_values = [v] if v is not None else []
-                return sum(relevant_values)
-            return raw_value
+        is_atomic = source_type in ATOMIC_SOURCES
         
         # Build DataFrame
         rows = []
         for timestamp in sorted(source_data.keys()):
-            # Filtered to the requested selection -- without this filter,
-            # 'EU' silently summed every country present, including non-EU
-            # countries (Norway, Switzerland, etc.) that get stored in the
-            # same combined structure -- massively inflating hydro
-            # specifically, since Norway alone is ~90%+ hydro.
-            energy_prod = eu_filtered_value(source_data[timestamp])
-            total_gen = eu_filtered_value(total_gen_data.get(timestamp, energy_prod))  # Fallback if missing
+            if is_atomic:
+                # source_data[timestamp] is a dict of country -> value here.
+                # Sum across countries for this source -- filtered to the
+                # requested selection. Without this filter, 'EU' silently
+                # summed every country present, including non-EU countries
+                # (Norway, Switzerland, etc.) that get stored in the same
+                # combined structure -- massively inflating hydro
+                # specifically, since Norway alone is ~90%+ hydro.
+                # country_code='EU' now sums only EU_COUNTRIES; any other
+                # country_code sums only that single country's value.
+                timestamp_data = source_data[timestamp]
+                if country_code == 'EU':
+                    relevant_values = [
+                        v for k, v in timestamp_data.items()
+                        if k in EU_COUNTRIES and v is not None
+                    ]
+                else:
+                    v = timestamp_data.get(country_code)
+                    relevant_values = [v] if v is not None else []
+                energy_prod = sum(relevant_values)
+            else:
+                # Aggregate sources (all-renewables/all-non-renewables) are
+                # already a single already-EU-scoped scalar per timestamp
+                # (built from aggregate_eu_data(EU_COUNTRIES, ...) directly),
+                # not a per-country dict -- nothing to filter here.
+                energy_prod = source_data[timestamp]
+            total_gen = total_gen_data.get(timestamp, energy_prod)  # Fallback if missing
             
             if total_gen > 0:
                 percentage = np.clip((energy_prod / total_gen) * 100, 0, 100)
@@ -1645,7 +1646,7 @@ def generate_plot_for_source(source_type, corrected_data, output_file_base, fetc
 # PHASE 4: SUMMARY TABLE UPDATE
 # ==============================================================================
 
-def calculate_period_totals(period_data, period_name, country_code='EU'):
+def calculate_period_totals(period_data, period_name):
     """
     Calculate total production (GWh) and percentages for a period
     Returns dict: {source_name: {'gwh': value, 'percentage': value}}
@@ -1655,30 +1656,10 @@ def calculate_period_totals(period_data, period_name, country_code='EU'):
     
     totals = {}
     
-    def eu_scalar(raw_value):
-        # raw_value may be a per-country dict (needs filtering + summing)
-        # or an already-scalar number -- handle both. Without this filter,
-        # 'EU' silently summed every country present, including non-EU
-        # countries (Norway, Switzerland, etc.) stored in the same combined
-        # structure -- massively inflating hydro specifically, since Norway
-        # alone is ~90%+ hydro. This is what fed the Summary Table's
-        # Yesterday/Last Week columns with an inflated value.
-        # For individual countries (including non-EU ones like Norway),
-        # filter to just that one country instead -- otherwise Norway's own
-        # summary table would incorrectly zero out entirely, since 'NO'
-        # isn't in EU_COUNTRIES.
-        if isinstance(raw_value, dict):
-            if country_code == 'EU':
-                return sum(v for k, v in raw_value.items() if k in EU_COUNTRIES and v is not None)
-            else:
-                v = raw_value.get(country_code)
-                return v if v is not None else 0
-        return raw_value
-    
     # Get total generation
     total_gen_data = period_data.get('total_generation', {})
     # Convert MW to GWh: MW * 0.25 hours (15-min intervals) / 1000
-    total_gen_gwh = sum(eu_scalar(v) for v in total_gen_data.values()) * 0.25 / 1000
+    total_gen_gwh = sum(total_gen_data.values()) * 0.25 / 1000
     
     # Calculate for atomic sources
     for source in ATOMIC_SOURCES:
@@ -1687,10 +1668,10 @@ def calculate_period_totals(period_data, period_name, country_code='EU'):
         
         source_data = period_data['atomic_sources'][source]
         
-        # Sum all countries (EU-filtered), all timestamps
+        # Sum all countries, all timestamps
         source_total_mw = 0
         for timestamp, countries in source_data.items():
-            source_total_mw += eu_scalar(countries)
+            source_total_mw += sum(v for v in countries.values() if v is not None)
         
         # Convert MW to GWh: MW * hours / 1000
         # For 15-minute intervals, each reading represents 0.25 hours
@@ -1709,10 +1690,10 @@ def calculate_period_totals(period_data, period_name, country_code='EU'):
         
         agg_data = period_data[agg_source]
         
-        # Sum all timestamps (EU-filtered where applicable)
+        # Sum all timestamps
         agg_total_mw = 0
         for timestamp, countries in agg_data.items():
-            agg_total_mw += eu_scalar(countries)
+            agg_total_mw += sum(v for v in countries.values() if v is not None)
         
         # Convert MW to GWh: MW * 0.25 hours (15-min intervals) / 1000
         agg_gwh = agg_total_mw * 0.25 / 1000
@@ -1989,15 +1970,13 @@ def update_summary_table_worksheet(corrected_data, country_code='EU'):
         # Calculate yesterday totals (using PROJECTED data)
         yesterday_totals = calculate_period_totals(
             corrected_data.get('yesterday_projected', {}), 
-            'yesterday',
-            country_code=country_code
+            'yesterday'
         )
         
         # Calculate last week totals (no projection needed for historical)
         week_totals = calculate_period_totals(
             corrected_data.get('week_ago', {}),
-            'week_ago',
-            country_code=country_code
+            'week_ago'
         )
         
         if not yesterday_totals or not week_totals:
