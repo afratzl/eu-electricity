@@ -50,11 +50,68 @@ jobs:
             python scripts/current_year_analysis.py
           fi
 
-      - name: Commit updated drive_links.json
+      - name: Commit and push changes
         run: |
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
           git config --local user.name "github-actions[bot]"
-          git add -f plots/drive_links.json plots/last_update_current_year.html plots/current_year_monthly_stats.json || true
-          git diff --staged --quiet || git commit -m "Update current year plots [skip ci]"
-          git pull --rebase origin main || true
-          git push || true
+
+          # Fetch latest from remote (doesn't touch the working directory yet)
+          git fetch origin main
+
+          # Merge plots/drive_links.json with whatever's on origin/main BEFORE
+          # doing anything else, so this job's 'CurrentYear' section can't be
+          # silently discarded by (or discard) another concurrent workflow's
+          # own sections. See merge_drive_links_for_commit.py for the full
+          # explanation -- this replaces the previous 'git pull --rebase
+          # origin main || true' + 'git push || true' pattern, which silently
+          # swallowed any conflict/failure instead of resolving it, meaning
+          # this job's CurrentYear update could be generated and uploaded to
+          # Drive successfully while never actually reaching drive_links.json
+          # on the repo.
+          python scripts/merge_drive_links_for_commit.py \
+            --owned-country-keys CurrentYear
+
+          # Save our generated files (now including the merged drive_links.json)
+          mkdir -p /tmp/plots_backup
+          cp plots/drive_links.json plots/last_update_current_year.html plots/current_year_monthly_stats.json /tmp/plots_backup/ 2>/dev/null || true
+
+          # Reset to remote (safe now -- drive_links.json has already been
+          # merged above, so restoring it below won't lose anything new)
+          git reset --hard origin/main
+
+          # Restore our new files, including the already-merged drive_links.json
+          cp /tmp/plots_backup/* plots/ 2>/dev/null || true
+
+          # Add and commit
+          git add -f plots/drive_links.json plots/last_update_current_year.html plots/current_year_monthly_stats.json
+
+          # Only commit if there are changes
+          if ! git diff --staged --quiet; then
+            git commit -m "Update current year plots [skip ci]"
+
+            # Retry push a few times in case another job's commit landed on
+            # origin/main while this one was running -- each retry re-runs
+            # the JSON-aware merge against the newest remote content instead
+            # of a text-level rebase for that file.
+            for attempt in 1 2 3; do
+              if git push origin main; then
+                echo "Pushed successfully."
+                break
+              fi
+
+              if [ "$attempt" = "3" ]; then
+                echo "::error::Failed to push after 3 attempts -- giving up, changes were not published."
+                exit 1
+              fi
+
+              echo "Push failed (attempt $attempt/3) -- likely a concurrent commit. Re-fetching and re-merging..."
+              git fetch origin main
+              git reset --soft origin/main
+              python scripts/merge_drive_links_for_commit.py \
+                --owned-country-keys CurrentYear
+              git add -f plots/drive_links.json plots/last_update_current_year.html plots/current_year_monthly_stats.json
+              git commit -m "Update current year plots [skip ci]"
+            done
+          else
+            echo "No changes to commit"
+          fi
