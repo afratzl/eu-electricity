@@ -495,7 +495,21 @@ def get_all_energy_data_for_country_year(client, country, year):
         if len(generation_data) > 1:
             time_diffs = generation_data.index.to_series().diff().dt.total_seconds() / 3600
             time_diffs = time_diffs.fillna(time_diffs.median())
-
+            
+            # NL-specific fix only: ned.nl returns one row per MONTH (not
+            # native resolution like every other country's 15-min/hourly
+            # ENTSO-E data), so the current, still-in-progress month's row
+            # otherwise gets weighted by the PREVIOUS month's full length
+            # (e.g. August 1st's row gets diffed against July 1st -- 31
+            # days), multiplying a single real day's average rate by a
+            # full month's worth of hours. Every other country's last row
+            # is already a short, correct native-resolution interval and
+            # must not be touched here.
+            if country == 'NL' and year == current_year:
+                month_start = datetime(year, max_month, 1)
+                hours_elapsed_this_month = (current_date - month_start).total_seconds() / 3600 + 24
+                time_diffs.iloc[-1] = hours_elapsed_this_month
+            
             # Debug info for Spain in 2022 (to track the resolution issue we fixed)
             if country == 'ES' and year == 2022:
                 unique_intervals = time_diffs.unique()
