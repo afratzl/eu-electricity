@@ -209,7 +209,23 @@ def get_or_create_country_sheet(gc, drive_service, country_code='EU'):
                 sheet_id = links[country_code]['data_sheet_id']
                 try:
                     spreadsheet = gc.open_by_key(sheet_id)
-                    print(f"✓ Opened existing sheet from JSON: {sheet_name}")
+                    # A trashed file is still fully openable by ID via the
+                    # Drive API until it's permanently deleted -- so
+                    # open_by_key succeeding here doesn't mean the sheet is
+                    # actually still in use. Explicitly check trashed status
+                    # and treat a trashed sheet as not-found, so it falls
+                    # through to the by-name lookup / create-new logic
+                    # below instead of silently reopening and writing to a
+                    # deleted sheet indefinitely.
+                    if drive_service:
+                        file_meta = drive_service.files().get(fileId=sheet_id, fields='trashed').execute()
+                        if file_meta.get('trashed'):
+                            print(f"  ⚠ Sheet ID in JSON points to a trashed sheet, will search by name")
+                            spreadsheet = None
+                        else:
+                            print(f"✓ Opened existing sheet from JSON: {sheet_name}")
+                    else:
+                        print(f"✓ Opened existing sheet from JSON: {sheet_name}")
                 except:
                     print(f"  ⚠ Sheet ID in JSON is invalid, will search by name")
         except:
