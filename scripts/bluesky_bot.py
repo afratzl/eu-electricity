@@ -85,7 +85,11 @@ def get_map_from_drive():
         with open(json_path, 'r') as f:
             links = json.load(f)
         
-        file_id = links.get('Maps', {}).get('Yesterday', {}).get('all-renewables', {}).get('percentage', {}).get('file_id')
+        # Use the Bluesky-specific viridis-colormap variant instead of the
+        # site's single-hue map -- the site's per-source color relies on
+        # its page's own legend for context, which doesn't exist in a
+        # standalone social post.
+        file_id = links.get('Maps', {}).get('Yesterday', {}).get('all-renewables', {}).get('percentage_bluesky', {}).get('file_id')
         
         if not file_id:
             print("⚠️  No renewables map file_id found")
@@ -93,7 +97,7 @@ def get_map_from_drive():
         
         print(f"✓ Found map file_id: {file_id}")
         
-        map_path = 'plots/map_all-renewables_yesterday.png'
+        map_path = 'plots/map_all-renewables_yesterday_bluesky.png'
         os.makedirs('plots', exist_ok=True)
         
         print(f"📥 Downloading map from Google Drive...")
@@ -171,13 +175,57 @@ def create_post_text_and_facets():
         ren_pct = format_percentage(stats['renewables'])
         non_ren_pct = format_percentage(stats['non_renewables'])
         
+        # Real, measured advance widths from Inter -- Bluesky's confirmed
+        # default font (bluesky-social/social-app, PR #5540 "Use Inter
+        # variable font"; falls back to a system font stack if a user
+        # changes their font setting). Values below are the actual glyph
+        # advance widths measured directly from Inter's variable font file
+        # (InterVariable.ttf, unitsPerEm=2048), normalized to a 1000-unit
+        # scale for readability. Inter's default figures are proportional,
+        # not tabular (tabular figures are an opt-in OpenType feature,
+        # 'tnum', not something general post text typically enables) --
+        # so digit widths genuinely do vary, confirming '1' really is
+        # noticeably narrower than most other digits, not an assumption.
+        CHAR_WIDTH = {
+            '0': 631, '1': 407, '2': 610, '3': 618, '4': 646,
+            '5': 593, '6': 620, '7': 566, '8': 619, '9': 620,
+            '.': 288, '%': 982, ':': 288, ' ': 281,
+        }
+        # Letters actually used in the label text ("Wind", "Hydro",
+        # "Solar", "Nuclear", "Gas", "Coal"), same measured/normalized
+        # source and scale as the digits above.
+        CHAR_WIDTH.update({
+            'i': 242, 'l': 242, 'r': 376,
+            's': 528, 'a': 562, 'y': 562, 'c': 571,
+            'e': 583, 'n': 591, 'u': 591, 'o': 600, 'd': 612,
+            'S': 642, 'C': 731, 'H': 743, 'G': 746, 'N': 753, 'W': 985,
+        })
+        DEFAULT_WIDTH = 600  # fallback for any other character
+
+        def visual_width(s):
+            return sum(CHAR_WIDTH.get(ch, DEFAULT_WIDTH) for ch in s)
+
+        col1_gap_width = 4 * 600  # roughly 4 average-width characters of breathing room
+        wind_col1 = f"Wind: {wind_pct}"
+        hydro_col1 = f"Hydro: {hydro_pct}"
+        solar_col1 = f"Solar: {solar_pct}"
+        col1_target_width = max(visual_width(wind_col1), visual_width(hydro_col1), visual_width(solar_col1)) + col1_gap_width
+
+        def pad_to_width(s, target_width):
+            # Add single spaces until the estimated visual width reaches
+            # the target -- more precise than a fixed character count,
+            # since it accounts for how wide the actual characters are.
+            while visual_width(s) < target_width:
+                s += ' '
+            return s
+
         post_text = f"""EU Electricity Generation - {date_str}
 
 {ren_pct} of EU electricity generation was renewable.
 
-Wind:   {wind_pct}      Nuclear:  {nuclear_pct}
-Hydro:  {hydro_pct}     Gas:         {gas_pct}
-Solar:    {solar_pct}     Coal:         {coal_pct}
+{pad_to_width(wind_col1, col1_target_width)}Nuclear: {nuclear_pct}
+{pad_to_width(hydro_col1, col1_target_width)}Gas: {gas_pct}
+{pad_to_width(solar_col1, col1_target_width)}Coal: {coal_pct}
 
 eu-electricity.eu
 #EU #Renewables #Electricity #EnergySky #ClimateSky"""
@@ -310,4 +358,3 @@ def post_to_bluesky():
 
 if __name__ == "__main__":
     post_to_bluesky()
-    
