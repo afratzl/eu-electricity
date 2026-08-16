@@ -228,7 +228,7 @@ def get_label_pos(geodata, iso2=None, name=None):
 # MAP GENERATION
 # ============================================================
 
-def generate_map(geodata, values_by_country, source, date_str, scale='fixed', cmap_override=None):
+def generate_map(geodata, values_by_country, source, date_str, scale='fixed'):
     """
     Generate a single map for one source and one date.
 
@@ -244,12 +244,6 @@ def generate_map(geodata, values_by_country, source, date_str, scale='fixed', cm
         source: e.g. 'solar'
         date_str: e.g. '14 May 2026'
         scale: 'fixed' or 'dynamic'
-        cmap_override: optional matplotlib colormap name (e.g. 'viridis')
-            to use instead of the default single-hue source_color gradient.
-            Used for the Bluesky-specific All Renewables map variant, which
-            needs wider distinguishability than a single-hue gradient gives
-            in an isolated social post (no site-wide color legend for
-            context there). Leave as None for the normal site maps.
 
     Returns:
         matplotlib Figure
@@ -259,11 +253,8 @@ def generate_map(geodata, values_by_country, source, date_str, scale='fixed', cm
     minx, miny, maxx, maxy = geodata['bounds']
     maxx_extended = 7550000  # Extended east to include Caucasus
 
-    if cmap_override:
-        cmap = plt.get_cmap(cmap_override)
-    else:
-        source_color = ENTSOE_COLORS.get(source, '#888888')
-        cmap = LinearSegmentedColormap.from_list(source, ['white', source_color])
+    source_color = ENTSOE_COLORS.get(source, '#888888')
+    cmap = LinearSegmentedColormap.from_list(source, ['white', source_color])
 
     if scale == 'dynamic':
         vals = [v for v in values_by_country.values() if v is not None]
@@ -903,24 +894,6 @@ def main():
                 result = upload_map_to_drive(drive_service, plot_file, 'Yesterday')
                 if result:
                     save_map_links('Yesterday', source, result, plot_type='percentage')
-
-            # Additional Bluesky-specific variant, All Renewables only:
-            # the site's single-hue-per-source map relies on the page's own
-            # color legend for context, which doesn't exist in a standalone
-            # social post -- a viridis colormap reads far more clearly with
-            # no site context around it. Saved under a new filename and a
-            # new drive_links key ('percentage_bluesky'), entirely separate
-            # from the original map above, which is untouched.
-            if source == 'all-renewables':
-                fig_bluesky       = generate_map(geodata, values, source, date_str, scale=args.scale, cmap_override='viridis')
-                plot_file_bluesky = f'plots/map_{source}_yesterday_bluesky.png'
-                fig_bluesky.savefig(plot_file_bluesky, dpi=150, facecolor='white')
-                plt.close(fig_bluesky)
-                print(f"  ✓ Saved: {plot_file_bluesky}")
-                if drive_service:
-                    result_bluesky = upload_map_to_drive(drive_service, plot_file_bluesky, 'Yesterday')
-                    if result_bluesky:
-                        save_map_links('Yesterday', source, result_bluesky, plot_type='percentage_bluesky')
 
         elif args.period == 'last_week':
             week_start = yesterday - timedelta(days=6)
