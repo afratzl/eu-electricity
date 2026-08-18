@@ -631,14 +631,16 @@ def apply_corrections_for_period(data_matrix, target_period, reference_period):
         for component in components:
             if component in data_matrix['atomic_sources'] and reference_period in data_matrix['atomic_sources'][component]:
                 component_df = data_matrix['atomic_sources'][component][reference_period]
-                # Filter to actual EU member states before summing -- this
-                # DataFrame has non-EU countries (Norway, Switzerland, etc.)
-                # concatenated onto the same columns upstream, so a plain
-                # .sum(axis=1) here would silently inflate the EU total
-                # with their generation (same root cause fixed in
-                # convert_corrected_data_to_plot_format).
-                eu_cols = component_df.columns.intersection(EU_COUNTRIES)
-                component_eu = component_df[eu_cols].sum(axis=1)
+                # By this point data_matrix has already been through
+                # extract_country_from_raw_data, which correctly scoped
+                # this DataFrame's columns per the country currently being
+                # processed (all EU_COUNTRIES for 'EU', or just that one
+                # column for an individual country like 'CH'). Do NOT
+                # filter to EU_COUNTRIES again here -- for a non-EU
+                # country's own processing, that column name isn't in
+                # EU_COUNTRIES and would get incorrectly zeroed out
+                # entirely, inflating the projected/gap-filled values.
+                component_eu = component_df.sum(axis=1)
                 ref_atomic_sum = component_eu if ref_atomic_sum is None else ref_atomic_sum + component_eu
         
         if ref_atomic_sum is None:
