@@ -22,6 +22,32 @@ DEFAULT_SPREADSHEET_NAMES = {
     'DE': 'DE Electricity Production Data'
 }
 
+def retry_with_backoff(func, max_attempts=3, base_delay=5, no_retry=()):
+    """
+    Call func() with retries on transient errors (e.g. 429 quota-exceeded,
+    503 service-unavailable), using exponential backoff between attempts.
+
+    no_retry: a tuple of exception types that should NOT be retried and
+    should propagate immediately instead (e.g. gspread.WorksheetNotFound,
+    which means the worksheet genuinely doesn't exist, not a transient
+    failure worth waiting out).
+    """
+    last_exception = None
+    for attempt in range(1, max_attempts + 1):
+        try:
+            return func()
+        except no_retry:
+            raise
+        except Exception as e:
+            last_exception = e
+            if attempt < max_attempts:
+                delay = base_delay * (2 ** (attempt - 1))
+                print(f"  ⚠ Attempt {attempt}/{max_attempts} failed ({e}), retrying in {delay}s...")
+                time.sleep(delay)
+            else:
+                print(f"  ✗ All {max_attempts} attempts failed.")
+    raise last_exception
+
 def load_spreadsheet_config():
     """
     Load spreadsheet IDs from drive_links.json (single source of truth)
@@ -95,10 +121,10 @@ def generate_summary_json():
             try:
                 # Try to open by ID first (if it looks like an ID - IDs are long alphanumeric strings)
                 if len(spreadsheet_identifier) > 30:
-                    spreadsheet = gc.open_by_key(spreadsheet_identifier)
+                    spreadsheet = retry_with_backoff(lambda: gc.open_by_key(spreadsheet_identifier))
                 else:
                     # Fall back to opening by name
-                    spreadsheet = gc.open(spreadsheet_identifier)
+                    spreadsheet = retry_with_backoff(lambda: gc.open(spreadsheet_identifier))
                 
                 print(f"✓ Opened spreadsheet: {spreadsheet.title}")
                 print(f"  URL: {spreadsheet.url}")
@@ -113,7 +139,10 @@ def generate_summary_json():
             # Get the "Summary Table Data" worksheet (same name for all countries)
             worksheet_name = 'Summary Table Data'
             try:
-                worksheet = spreadsheet.worksheet(worksheet_name)
+                worksheet = retry_with_backoff(
+                    lambda: spreadsheet.worksheet(worksheet_name),
+                    no_retry=(gspread.WorksheetNotFound,)
+                )
                 time.sleep(10)
                 print(f"✓ Found '{worksheet_name}' worksheet")
             except gspread.WorksheetNotFound:
@@ -125,7 +154,7 @@ def generate_summary_json():
                 continue
             
             # Get all data from worksheet
-            all_values = worksheet.get_all_values()
+            all_values = retry_with_backoff(lambda: worksheet.get_all_values())
             
             if len(all_values) < 2:
                 print(f"✗ No data found in worksheet!")
