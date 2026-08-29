@@ -35,7 +35,7 @@ from shapely.ops import unary_union
 import pyproj
 import gspread
 from google.oauth2.service_account import Credentials
-from config import ENTSOE_COUNTRIES, ENTSOE_COLORS, DISPLAY_NAMES
+from config import ENTSOE_COUNTRIES, ENTSOE_COLORS, DISPLAY_NAMES, SOURCE_KEYWORDS
 
 try:
     from googleapiclient.discovery import build
@@ -244,12 +244,13 @@ def generate_map(geodata, values_by_country, source, date_str, scale='fixed', cm
         source: e.g. 'solar'
         date_str: e.g. '14 May 2026'
         scale: 'fixed' or 'dynamic'
-        cmap_override: optional matplotlib colormap name (e.g. 'viridis')
-            to use instead of the default single-hue source_color gradient.
-            Used for the Bluesky-specific All Renewables map variant, which
-            needs wider distinguishability than a single-hue gradient gives
-            in an isolated social post (no site-wide color legend for
-            context there). Leave as None for the normal site maps.
+        cmap_override: optional matplotlib colormap name to use instead of
+            the default 'viridis'. Viridis became the site-wide default
+            (previously per-source single-hue) since it's far more
+            distinguishable for a single continuous variable and is
+            colorblind-safe -- the per-source color's only real benefit
+            (source identification) is already covered by each map's own
+            title.
 
     Returns:
         matplotlib Figure
@@ -259,11 +260,7 @@ def generate_map(geodata, values_by_country, source, date_str, scale='fixed', cm
     minx, miny, maxx, maxy = geodata['bounds']
     maxx_extended = 7550000  # Extended east to include Caucasus
 
-    if cmap_override:
-        cmap = plt.get_cmap(cmap_override)
-    else:
-        source_color = ENTSOE_COLORS.get(source, '#888888')
-        cmap = LinearSegmentedColormap.from_list(source, ['white', source_color])
+    cmap = plt.get_cmap(cmap_override or 'viridis')
 
     if scale == 'dynamic':
         vals = [v for v in values_by_country.values() if v is not None]
@@ -911,24 +908,6 @@ def main():
                 if result:
                     save_map_links('Yesterday', source, result, plot_type='percentage')
 
-            # Additional Bluesky-specific variant, All Renewables only:
-            # the site's single-hue-per-source map relies on the page's own
-            # color legend for context, which doesn't exist in a standalone
-            # social post -- a viridis colormap reads far more clearly with
-            # no site context around it. Saved under a new filename and a
-            # new drive_links key ('percentage_bluesky'), entirely separate
-            # from the original map above, which is untouched.
-            if source == 'all-renewables':
-                fig_bluesky       = generate_map(geodata, values, source, date_str, scale=args.scale, cmap_override='viridis')
-                plot_file_bluesky = f'plots/map_{source}_yesterday_bluesky.png'
-                fig_bluesky.savefig(plot_file_bluesky, dpi=150, facecolor='white')
-                plt.close(fig_bluesky)
-                print(f"  ✓ Saved: {plot_file_bluesky}")
-                if drive_service:
-                    result_bluesky = upload_map_to_drive(drive_service, plot_file_bluesky, 'Yesterday')
-                    if result_bluesky:
-                        save_map_links('Yesterday', source, result_bluesky, plot_type='percentage_bluesky')
-
         elif args.period == 'last_week':
             week_start = yesterday - timedelta(days=6)
             date_str = f"{week_start.strftime('%-d')}-{yesterday.strftime('%-d %b %Y')}"
@@ -964,7 +943,7 @@ def main():
                     total_val = cd.get('total', {}).get(year, {}).get(month, None)
                     has_any_data = any(
                         cd.get(s, {}).get(year, {}).get(month) is not None
-                        for s in ATOMIC_SOURCES
+                        for s in SOURCE_KEYWORDS
                     )
                     if is_non_renewables:
                         ren_val    = cd.get('all-renewables', {}).get(year, {}).get(month, None)
@@ -981,7 +960,7 @@ def main():
                 total_val = cd_eu.get('total', {}).get(year, {}).get(month, None)
                 has_any_data = any(
                     cd_eu.get(s, {}).get(year, {}).get(month) is not None
-                    for s in ATOMIC_SOURCES
+                    for s in SOURCE_KEYWORDS
                 )
                 if is_non_renewables:
                     ren_val    = cd_eu.get('all-renewables', {}).get(year, {}).get(month, None)
@@ -1009,7 +988,7 @@ def main():
                     try:
                         cd = all_country_data[country_code]
                         total_total = sum(cd.get('total', {}).get(year, {}).values()) if cd.get('total', {}).get(year) else None
-                        has_any_data = any(cd.get(s, {}).get(year) for s in ATOMIC_SOURCES)
+                        has_any_data = any(cd.get(s, {}).get(year) for s in SOURCE_KEYWORDS)
                         if is_non_renewables:
                             ren_total    = sum(cd.get('all-renewables', {}).get(year, {}).values()) if cd.get('all-renewables', {}).get(year) else None
                             source_total = max(0, total_total - ren_total) if (total_total and ren_total is not None) else None
@@ -1023,7 +1002,7 @@ def main():
                 try:
                     cd_eu = all_country_data.get('EU', {})
                     total_total_eu = sum(cd_eu.get('total', {}).get(year, {}).values()) if cd_eu.get('total', {}).get(year) else None
-                    has_any_data = any(cd_eu.get(s, {}).get(year) for s in ATOMIC_SOURCES)
+                    has_any_data = any(cd_eu.get(s, {}).get(year) for s in SOURCE_KEYWORDS)
                     if is_non_renewables:
                         ren_total_eu    = sum(cd_eu.get('all-renewables', {}).get(year, {}).values()) if cd_eu.get('all-renewables', {}).get(year) else None
                         source_total_eu = max(0, total_total_eu - ren_total_eu) if (total_total_eu and ren_total_eu is not None) else None
@@ -1061,7 +1040,7 @@ def main():
                         total_val = cd.get('total', {}).get(year, {}).get(month, None)
                         has_any_data = any(
                             cd.get(s, {}).get(year, {}).get(month) is not None
-                            for s in ATOMIC_SOURCES
+                            for s in SOURCE_KEYWORDS
                         )
                         if is_non_renewables:
                             ren_val    = cd.get('all-renewables', {}).get(year, {}).get(month, None)
@@ -1077,7 +1056,7 @@ def main():
                     total_val = cd_eu.get('total', {}).get(year, {}).get(month, None)
                     has_any_data = any(
                         cd_eu.get(s, {}).get(year, {}).get(month) is not None
-                        for s in ATOMIC_SOURCES
+                        for s in SOURCE_KEYWORDS
                     )
                     if is_non_renewables:
                         ren_val    = cd_eu.get('all-renewables', {}).get(year, {}).get(month, None)
