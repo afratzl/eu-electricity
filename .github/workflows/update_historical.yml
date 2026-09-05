@@ -67,72 +67,9 @@ jobs:
           
           echo "Running: $CMD"
           eval $CMD
-      
-      - name: Run Historical Data Plotting
-        env:
-          GOOGLE_CREDENTIALS_JSON: ${{ secrets.GOOGLE_CREDENTIALS_JSON }}
-        run: |
-          COUNTRY="${{ github.event.inputs.country }}"
-          
-          CMD="python scripts/eu_energy_plotting.py"
-          if [ -n "$COUNTRY" ]; then
-            CMD="$CMD --country $COUNTRY"
-          fi
-          
-          echo "Running: $CMD"
-          eval $CMD
-      
-      - name: Generate Summary Table JSON
-        env:
-          GOOGLE_CREDENTIALS_JSON: ${{ secrets.GOOGLE_CREDENTIALS_JSON }}
-        run: |
-          echo "Generating summary table JSON..."
-          python scripts/generate_summary_table_json.py || echo "Failed to generate JSON"
-      
-      
-      - name: Commit and push changes
-        run: |
-          git config --local user.email "github-actions[bot]@users.noreply.github.com"
-          git config --local user.name "github-actions[bot]"
-
-          git fetch origin main
-
-          # Merge drive_links.json against origin/main BEFORE any rebase.
-          # This job (via eu_energy_plotting.py) legitimately computes
-          # per-country 'Monthly' and 'Trends' -- everything else (Intraday,
-          # Yesterday, Maps, data_sheet_id) should come from whatever's
-          # freshest on origin/main, not this job's own stale checkout.
-          # Replaces a plain 'git pull --rebase --autostash', which risked
-          # leaving raw conflict markers in the file if drive_links.json (or
-          # any other file) changed on both sides -- exactly what corrupted
-          # plots/last_update.html previously. See merge_drive_links_for_commit.py.
-          python scripts/merge_drive_links_for_commit.py \
-            --owned-country-keys Monthly,Trends
-
-          git add -f plots/*.html plots/*.json
-
-          if ! git diff --staged --quiet; then
-            git commit -m "Update historical plots, summary JSON and maps [daily]"
-
-            for attempt in 1 2 3; do
-              if git push origin main; then
-                echo "Pushed successfully."
-                break
-              fi
-
-              if [ "$attempt" = "3" ]; then
-                echo "::error::Failed to push after 3 attempts -- giving up, changes were not published."
-                exit 1
-              fi
-
-              echo "Push failed (attempt $attempt/3) -- likely a concurrent commit. Re-fetching and re-merging..."
-              git fetch origin main
-              git reset --soft origin/main
-              python scripts/merge_drive_links_for_commit.py \
-                --owned-country-keys Monthly,Trends
-              git add -f plots/*.html plots/*.json
-              git commit -m "Update historical plots, summary JSON and maps [daily]"
-            done
-          else
-            echo "No changes to commit"
-          fi
+      # Plotting and summary-table JSON generation moved to their own
+      # workflow (generate_historical_plots.yml), triggered after this one
+      # completes. This step only writes to Google Sheets, not local repo
+      # files, so no commit step is needed here at all -- keeps this job's
+      # own runtime comfortably under the 6-hour Actions limit, separate
+      # from the plotting/JSON step's own runtime.
