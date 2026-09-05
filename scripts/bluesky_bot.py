@@ -85,11 +85,10 @@ def get_map_from_drive():
         with open(json_path, 'r') as f:
             links = json.load(f)
         
-        # Use the Bluesky-specific viridis-colormap variant instead of the
-        # site's single-hue map -- the site's per-source color relies on
-        # its page's own legend for context, which doesn't exist in a
-        # standalone social post.
-        file_id = links.get('Maps', {}).get('Yesterday', {}).get('all-renewables', {}).get('percentage_bluesky', {}).get('file_id')
+        # The site's maps now use viridis by default (site-wide color
+        # scheme change), so the separate Bluesky-specific variant is no
+        # longer needed -- back to the regular map.
+        file_id = links.get('Maps', {}).get('Yesterday', {}).get('all-renewables', {}).get('percentage', {}).get('file_id')
         
         if not file_id:
             print("⚠️  No renewables map file_id found")
@@ -97,7 +96,7 @@ def get_map_from_drive():
         
         print(f"✓ Found map file_id: {file_id}")
         
-        map_path = 'plots/map_all-renewables_yesterday_bluesky.png'
+        map_path = 'plots/map_all-renewables_yesterday.png'
         os.makedirs('plots', exist_ok=True)
         
         print(f"📥 Downloading map from Google Drive...")
