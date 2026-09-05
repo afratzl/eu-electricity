@@ -49,15 +49,6 @@ jobs:
           echo "Generating summary table JSON..."
           python scripts/generate_summary_table_json.py || echo "Failed to generate JSON"
       
-      - name: Generate Yesterday and Last Week Maps
-        env:
-          GOOGLE_CREDENTIALS_JSON: ${{ secrets.GOOGLE_CREDENTIALS_JSON }}
-        run: |
-          echo "Generating yesterday map..."
-          python scripts/generate_maps.py --period yesterday || echo "Failed to generate yesterday maps"
-          echo "Generating last week map..."
-          python scripts/generate_maps.py --period last_week || echo "Failed to generate last week maps"
-      
       - name: Commit and push changes
         run: |
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
@@ -73,9 +64,12 @@ jobs:
           # discarded any newer Monthly/Trends data another concurrent job
           # had already pushed, since it never actually merged anything.
           # See merge_drive_links_for_commit.py for the full explanation.
+          # Maps (Yesterday/LastWeek) are no longer owned here -- map
+          # generation moved to its own workflow (generate_maps_intraday.yml),
+          # triggered after this one completes, so this job's run stays
+          # comfortably under the 6-hour Actions limit on its own.
           python scripts/merge_drive_links_for_commit.py \
-            --owned-country-keys Intraday,Yesterday \
-            --owned-maps-keys Yesterday,LastWeek
+            --owned-country-keys Intraday,Yesterday
 
           # Save our generated files (now including the merged drive_links.json)
           mkdir -p /tmp/plots_backup
@@ -93,7 +87,7 @@ jobs:
 
           # Only commit if there are changes
           if ! git diff --staged --quiet; then
-            git commit -m "Update intraday plots, summary JSON and maps [hourly]"
+            git commit -m "Update intraday plots and summary JSON [hourly]"
 
             # Retry push a few times in case another job's commit landed on
             # origin/main while this one was running. A plain 'git pull
@@ -118,10 +112,9 @@ jobs:
               # staged so they can be re-merged against the fresher content.
               git reset --soft origin/main
               python scripts/merge_drive_links_for_commit.py \
-                --owned-country-keys Intraday,Yesterday \
-                --owned-maps-keys Yesterday,LastWeek
+                --owned-country-keys Intraday,Yesterday
               git add -f plots/*.html plots/*.json
-              git commit -m "Update intraday plots, summary JSON and maps [hourly]"
+              git commit -m "Update intraday plots and summary JSON [hourly]"
             done
           else
             echo "No changes to commit"
