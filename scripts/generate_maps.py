@@ -550,7 +550,7 @@ def parse_worksheet(raw_values):
 
 
 def api_call_with_retry(fn, max_retries=5):
-    """Execute a Google API call with exponential backoff on 429 quota errors and 503 transient service errors."""
+    """Execute a Google API call with exponential backoff on 429 quota errors."""
     from gspread.exceptions import APIError
     for attempt in range(max_retries):
         try:
@@ -559,10 +559,6 @@ def api_call_with_retry(fn, max_retries=5):
             if '429' in str(e):
                 wait = 60 * (attempt + 1)
                 print(f"    Rate limited, waiting {wait}s before retry {attempt+1}/{max_retries}...")
-                time.sleep(wait)
-            elif '503' in str(e):
-                wait = 10 * (attempt + 1)
-                print(f"    Service unavailable, waiting {wait}s before retry {attempt+1}/{max_retries}...")
                 time.sleep(wait)
             else:
                 raise
