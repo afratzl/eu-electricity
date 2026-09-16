@@ -211,7 +211,7 @@ def create_post_text_and_facets():
         def visual_width(s):
             return sum(CHAR_WIDTH.get(ch, DEFAULT_WIDTH) for ch in s)
 
-        col1_gap_width = 4 * 600  # roughly 4 average-width characters of breathing room
+        col1_gap_width = 4 * 600 - 281  # roughly 4 average-width characters of breathing room, minus one space to save a character per line
         wind_col1 = f"Wind: {wind_pct}"
         hydro_col1 = f"Hydro: {hydro_pct}"
         solar_col1 = f"Solar: {solar_pct}"
