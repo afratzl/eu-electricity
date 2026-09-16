@@ -136,6 +136,7 @@ def get_stats_from_json():
             'Nuclear': 'nuclear',
             'Gas': 'gas',
             'Coal': 'coal',
+            'Biomass': 'biomass',
             'All Renewables': 'renewables',
             'All Non-Renewables': 'non_renewables'
         }
@@ -147,7 +148,7 @@ def get_stats_from_json():
                 if pct is not None:
                     stats[source_map[source_name]] = pct
         
-        return stats if len(stats) == 8 else None
+        return stats if len(stats) == 9 else None
     
     except Exception as e:
         print(f"⚠️  Error reading JSON: {e}")
@@ -164,7 +165,7 @@ def create_post_text_and_facets():
     
     stats = get_stats_from_json()
     
-    if stats and len(stats) == 8:
+    if stats and len(stats) == 9:
         wind_pct = format_percentage(stats['wind'])
         hydro_pct = format_percentage(stats['hydro'])
         solar_pct = format_percentage(stats['solar'])
@@ -173,6 +174,12 @@ def create_post_text_and_facets():
         coal_pct = format_percentage(stats['coal'])
         ren_pct = format_percentage(stats['renewables'])
         non_ren_pct = format_percentage(stats['non_renewables'])
+        # Low Emission = All Renewables + Nuclear - Biomass, per the EU
+        # Taxonomy's own 100 gCO2e/kWh lifecycle threshold -- correctly
+        # includes nuclear (non-renewable but low-emission) and excludes
+        # biomass (renewable but well above the threshold, ~230 gCO2eq/kWh).
+        low_emission_value = stats['renewables'] + stats['nuclear'] - stats['biomass']
+        low_pct = format_percentage(low_emission_value)
         
         # Real, measured advance widths from Inter -- Bluesky's confirmed
         # default font (bluesky-social/social-app, PR #5540 "Use Inter
@@ -220,7 +227,7 @@ def create_post_text_and_facets():
 
         post_text = f"""EU Electricity Generation - {date_str}
 
-{ren_pct} of EU electricity generation was renewable.
+{ren_pct} of EU electricity generation was renewable, {low_pct} low-emission.
 
 {pad_to_width(wind_col1, col1_target_width)}Nuclear: {nuclear_pct}
 {pad_to_width(hydro_col1, col1_target_width)}Gas: {gas_pct}
