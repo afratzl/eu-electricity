@@ -1,9 +1,14 @@
 name: Update Intraday Data
 on:
-  schedule:
-    # Hourly updates for intraday analysis (at minute 5)
-    - cron: '17 3,6,9,12,15,18,21 * * *'
-  
+  # Triggered by an external cron service (e.g. cron-job.org) calling
+  # POST /repos/{owner}/{repo}/dispatches with event_type: intraday-trigger,
+  # instead of GitHub's own native 'schedule' trigger -- which is well
+  # documented (by GitHub itself) to be delayed or silently dropped during
+  # periods of high shared-runner load, especially near the top of the
+  # hour, with reports of delays ranging from minutes to several hours.
+  repository_dispatch:
+    types: [intraday-trigger]
+
   workflow_dispatch:  # Allow manual triggers
 permissions:
   contents: write
