@@ -1,9 +1,12 @@
 name: Update Historical Data
 on:
-  schedule:
-    # Daily updates for historical data (at 0:00 AM UTC)
-    - cron: '0 18 * * *'
-  
+  # Triggered by an external cron service (e.g. cron-job.org) calling
+  # POST /repos/{owner}/{repo}/dispatches with event_type: historical-trigger,
+  # instead of GitHub's own native 'schedule' trigger -- see update_intraday.yml
+  # for the full explanation of why.
+  repository_dispatch:
+    types: [historical-trigger]
+
   workflow_dispatch:
     inputs:
       years_start:
