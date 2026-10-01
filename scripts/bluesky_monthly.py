@@ -136,6 +136,7 @@ def get_stats_from_json():
             'Nuclear':            'nuclear',
             'Gas':                'gas',
             'Coal':               'coal',
+            'Biomass':            'biomass',
             'All Renewables':     'renewables',
             'All Non-Renewables': 'non_renewables',
         }
@@ -173,6 +174,11 @@ def create_post_text_and_facets():
         coal_pct     = format_percentage(stats['coal'])
         ren_pct      = format_percentage(stats['renewables'])
         non_ren_pct  = format_percentage(stats['non_renewables'])
+        # Low Emission = All Renewables + Nuclear - Biomass, same formula
+        # and rationale as the daily bot (EU Taxonomy's 100 gCO2e/kWh
+        # lifecycle threshold).
+        low_emission_value = stats['renewables'] + stats['nuclear'] - stats['biomass']
+        low_pct = format_percentage(low_emission_value)
 
         # Real, measured advance widths from Inter -- Bluesky's confirmed
         # default font. Same table as the daily bot, mirrored exactly here.
@@ -198,7 +204,7 @@ def create_post_text_and_facets():
         def visual_width(s):
             return sum(CHAR_WIDTH.get(ch, DEFAULT_WIDTH) for ch in s)
 
-        col1_gap_width = 4 * 600  # roughly 4 average-width characters of breathing room
+        col1_gap_width = 4 * 600 - 281  # roughly 4 average-width characters of breathing room, minus one space to save a character per line
         wind_col1 = f"Wind: {wind_pct}"
         hydro_col1 = f"Hydro: {hydro_pct}"
         solar_col1 = f"Solar: {solar_pct}"
@@ -211,7 +217,7 @@ def create_post_text_and_facets():
 
         post_text = f"""EU Electricity Generation - {date_str}
 
-{ren_pct} of EU electricity generation was renewable.
+{ren_pct} of EU electricity generation was renewable, {low_pct} low-emission.
 
 {pad_to_width(wind_col1, col1_target_width)}Nuclear: {nuclear_pct}
 {pad_to_width(hydro_col1, col1_target_width)}Gas: {gas_pct}
