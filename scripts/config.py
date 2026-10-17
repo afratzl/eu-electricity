@@ -126,6 +126,37 @@ SOURCE_KEYWORDS['all-non-renewables'] = (
 )
 
 # ============================================================
+# EMISSION GROUPS
+# Second, independent split of the same 10 atomic sources, by
+# lifecycle emissions instead of by renewable/non-renewable:
+#   Low Emission  = All Renewables + Nuclear - Biomass
+#   High Emission = All Non-Renewables - Nuclear + Biomass
+# Basis: EU Taxonomy 100 gCO2e/kWh lifecycle threshold applied to
+# IPCC median lifecycle emissions. Biomass (~230 g/kWh) is above it;
+# nuclear (~12 g/kWh) is below it.
+# The small categories stay with their existing groups: 'Other
+# renewable' and 'Marine' count as low, 'Fossil Peat' and 'Other'
+# count as high.
+# ============================================================
+
+LOW_EMISSION  = ['solar', 'wind', 'hydro', 'geothermal', 'nuclear']
+HIGH_EMISSION = ['biomass', 'gas', 'coal', 'oil', 'waste']
+
+# Guard: the two groups must split the 10 atomic sources exactly, with
+# no overlap and nothing left out. Fails loudly at import time if a
+# source is ever added to one list but forgotten in another.
+assert set(LOW_EMISSION).isdisjoint(HIGH_EMISSION), "LOW_EMISSION and HIGH_EMISSION overlap"
+assert set(LOW_EMISSION) | set(HIGH_EMISSION) == set(RENEWABLES + NON_RENEWABLES), \
+    "LOW_EMISSION + HIGH_EMISSION must cover exactly the same sources as RENEWABLES + NON_RENEWABLES"
+
+SOURCE_KEYWORDS['all-low-emission'] = (
+    [kw for s in LOW_EMISSION for kw in SOURCE_KEYWORDS[s]] + SMALL_RENEWABLES
+)
+SOURCE_KEYWORDS['all-high-emission'] = (
+    [kw for s in HIGH_EMISSION for kw in SOURCE_KEYWORDS[s]] + SMALL_NON_RENEWABLES
+)
+
+# ============================================================
 # ENERGY SOURCES MAPPING
 # Maps display names to ENTSO-E API column keywords
 # 'Total Generation' is a special case: sum all columns
@@ -215,4 +246,24 @@ ENTSOE_COLORS = {
     # Legacy aliases -- keep for backward compatibility with eu_energy_plotting.py
     'All Renewables':     '#00CED1',
     'All Non-Renewables': '#000000',
+
+    # --- New aggregates: Total, Low Emission, High Emission ---
+    # Palette logic: Total is neutral black. Low/High Emission are a
+    # light-to-dark warm pair (orange to red-orange), deliberately in
+    # the opposite temperature family from the cool Renewables /
+    # Non-Renewables pair, so the two pairs never get confused on the
+    # 5-line aggregate plot. These five never share a plot with the 10
+    # individual sources.
+    # PENDING (deliberately not changed yet): Non-Renewables moves from
+    # black '#000000' to deep teal '#007A7F' so Total can own black. That
+    # recolor also changes the hardcoded colors on the website pages, so
+    # it lands together with the frontend step, not before it.
+    'total':              '#000000',
+    'all-low-emission':   '#FF9F40',
+    'all-high-emission':  '#C0392B',
+    'Total Generation':   '#000000',
+    'Low Emission':       '#FF9F40',
+    'High Emission':      '#C0392B',
+    'All Low Emission':   '#FF9F40',
+    'All High Emission':  '#C0392B',
 }
