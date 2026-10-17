@@ -21,10 +21,41 @@ except ImportError:
     print("⚠ Google Drive API not available - plots will not be uploaded to Drive")
 
 from config import ENTSOE_COUNTRIES, ENTSOE_COLORS, DISPLAY_NAMES, COUNTRY_DISPLAY_NAMES, \
-    RENEWABLE_SOURCES, NON_RENEWABLE_SOURCES, ALL_SOURCES, AGGREGATE_SOURCES
+    RENEWABLE_SOURCES, NON_RENEWABLE_SOURCES, ALL_SOURCES, AGGREGATE_SOURCES, DERIVED_SHEET_NAMES
 
-_LABEL_NAMES = {'All Renewables': 'Renewables', 'All Non-Renewables': 'Non-Renewables'}
+# Names of the derived rows in the Summary Table Data sheet (the same names the intraday
+# writer puts in column A). They are ordinary series in all_data by the time the
+# sheet is updated, so they go through the same per-source calculations.
+DERIVED_SHEET_ROWS = list(DERIVED_SHEET_NAMES.values())
+
+_LABEL_NAMES = {'All Renewables': 'Renewables', 'All Non-Renewables': 'Non-Renewables',
+                'All Low Emission': 'Low Emission', 'All High Emission': 'High Emission'}
 def _label(s): return _LABEL_NAMES.get(s, s)
+
+# Chart titles show the new series without the "All" prefix; existing titles stay as they were
+_TITLE_NAMES = {'All Low Emission': 'Low Emission', 'All High Emission': 'High Emission'}
+def _title(s): return _TITLE_NAMES.get(s, s)
+
+# The aggregate charts show five series: the split by source type (Renewables /
+# Non-Renewables), the split by lifecycle emissions (Low / High Emission) and the
+# total. They never share a chart with the 10 individual sources.
+# Draw order, bottom to top:
+AGGREGATE_CHART_SERIES = ['Total Generation', 'All Non-Renewables', 'All Renewables',
+                          'All High Emission', 'All Low Emission']
+# Legend order: the two pairs as columns, Total last
+AGGREGATE_LEGEND_ORDER = ['All Renewables', 'All Non-Renewables',
+                          'All Low Emission', 'All High Emission', 'Total Generation']
+
+def add_aggregate_legend(ax, fig):
+    """Legend for the aggregate charts. Five entries do not fit on one row, so use
+    three columns in legend order (matplotlib fills columns top to bottom:
+    Renewables over Non-Renewables, then Low over High, then Total)."""
+    by_label = dict(zip(*(reversed(ax.get_legend_handles_labels()))))
+    labels = [_label(n) for n in AGGREGATE_LEGEND_ORDER if _label(n) in by_label]
+    ax.legend([by_label[l] for l in labels], labels,
+              loc='upper center', bbox_to_anchor=(0.545, 0.15),
+              bbox_transform=fig.transFigure, ncol=min(3, len(labels)),
+              fontsize=18, frameon=False)
 
 # === GOOGLE DRIVE FUNCTIONS (ADDED FROM AFTER VERSION) ===
 
@@ -543,9 +574,36 @@ def create_all_charts(all_data, country_code='EU'):
         all_data['All Non-Renewables'] = all_non_renewables_data
         print(f"  ✓ All Non-Renewables calculated")
 
+    # Low / High Emission: derived the same way, they have no worksheet of their own
+    #   Low  = All Renewables + Nuclear - Biomass
+    #   High = Total Generation - Low
+    # A source with no data for a year (e.g. a country without nuclear) counts as 0.
+    if 'All Renewables' in all_data and 'Total Generation' in all_data:
+        print(f"  Creating All Low Emission and All High Emission...")
+        ren_year_data = all_data['All Renewables']['year_data']
+        tot_year_data = all_data['Total Generation']['year_data']
+        nuc_year_data = all_data.get('Nuclear', {}).get('year_data', {})
+        bio_year_data = all_data.get('Biomass', {}).get('year_data', {})
+
+        low_emission_data = {'year_data': {}}
+        high_emission_data = {'year_data': {}}
+        for year in set(ren_year_data.keys()) & set(tot_year_data.keys()):
+            low_emission_data['year_data'][year] = {}
+            high_emission_data['year_data'][year] = {}
+            for month in range(1, 13):
+                low = max(0, ren_year_data[year].get(month, 0)
+                             + nuc_year_data.get(year, {}).get(month, 0)
+                             - bio_year_data.get(year, {}).get(month, 0))
+                low_emission_data['year_data'][year][month] = low
+                high_emission_data['year_data'][year][month] = max(0, tot_year_data[year].get(month, 0) - low)
+
+        all_data['All Low Emission'] = low_emission_data
+        all_data['All High Emission'] = high_emission_data
+        print(f"  ✓ All Low Emission and All High Emission calculated")
+
     # Individual sources for plotting
     individual_sources = ALL_SOURCES
-    total_sources = AGGREGATE_SOURCES
+    total_sources = AGGREGATE_SOURCES + ['All Low Emission', 'All High Emission', 'Total Generation']
     
     sources_to_plot = individual_sources + total_sources
 
@@ -620,7 +678,7 @@ def create_all_charts(all_data, country_code='EU'):
                         linewidth=6, markersize=13, label=str(year))
 
         # Add flag, country name, titles, watermark, timestamp
-        add_flag_and_labels(fig1, country_code, 'Electricity Generation', f'{source_name} · Fraction of Total')
+        add_flag_and_labels(fig1, country_code, 'Electricity Generation', f'{_title(source_name)} · Fraction of Total')
         
         ax1.set_xlabel('Month', fontsize=24, fontweight='bold', labelpad=10)
         ax1.set_ylabel('Electricity Generation (%)', fontsize=24, fontweight='bold', labelpad=10)
@@ -696,7 +754,7 @@ def create_all_charts(all_data, country_code='EU'):
                     linewidth=6, markersize=13, label=str(year))
 
         # Add flag, country name, titles, watermark, timestamp
-        add_flag_and_labels(fig2, country_code, 'Electricity Generation', f'{source_name} · Absolute Values')
+        add_flag_and_labels(fig2, country_code, 'Electricity Generation', f'{_title(source_name)} · Absolute Values')
         
         ax2.set_xlabel('Month', fontsize=24, fontweight='bold', labelpad=10)
         ax2.set_ylabel('Electricity Generation (TWh)', fontsize=24, fontweight='bold', labelpad=10)
@@ -1026,6 +1084,8 @@ def create_all_charts(all_data, country_code='EU'):
     print("CREATING RENEWABLE VS NON-RENEWABLE CHARTS")
     print("=" * 60)
 
+    aggregate_series = [name for name in AGGREGATE_CHART_SERIES if name in all_data]
+
     if 'All Renewables' in all_data and 'All Non-Renewables' in all_data and 'Total Generation' in all_data:
         month_names_abbr = [calendar.month_abbr[i] for i in range(1, 13)]
 
@@ -1036,7 +1096,7 @@ def create_all_charts(all_data, country_code='EU'):
             if not period_years:
                 continue
 
-            for category_name in ['All Renewables', 'All Non-Renewables']:
+            for category_name in aggregate_series:
                 category_data = all_data[category_name]['year_data']
 
                 for year in period_years:
@@ -1059,7 +1119,7 @@ def create_all_charts(all_data, country_code='EU'):
             monthly_absolute = {}
             monthly_percentages = {}
 
-            for category_name in ['All Renewables', 'All Non-Renewables']:
+            for category_name in aggregate_series:
                 monthly_absolute[category_name] = {}
                 monthly_percentages[category_name] = {}
                 category_data = all_data[category_name]['year_data']
@@ -1094,7 +1154,7 @@ def create_all_charts(all_data, country_code='EU'):
             current_month = current_date.month
             current_day = current_date.day
             
-            for category_name in ['All Renewables', 'All Non-Renewables']:
+            for category_name in aggregate_series:
                 monthly_means_abs[category_name] = []
                 monthly_means_pct[category_name] = []
                 category_data = all_data[category_name]['year_data']
@@ -1159,7 +1219,7 @@ def create_all_charts(all_data, country_code='EU'):
             
             plt.subplots_adjust(left=0.15, right=0.94, top=0.83, bottom=0.25)
 
-            for category_name in ['All Renewables', 'All Non-Renewables']:
+            for category_name in aggregate_series:
                 color = ENTSOE_COLORS[category_name]
                 ax1.plot(month_names_abbr, monthly_means_pct[category_name], marker='o', color=color,
                          linewidth=6, markersize=13, label=_label(category_name))
@@ -1170,12 +1230,10 @@ def create_all_charts(all_data, country_code='EU'):
             
             ax1.set_xlabel('Month', fontsize=24, fontweight='bold', labelpad=10)
             ax1.set_ylabel('Electricity Generation (%)', fontsize=24, fontweight='bold', labelpad=10)
-            ax1.set_ylim(0, 100)
+            ax1.set_ylim(0, 110)  # headroom so the Total line at 100% is not clipped
             ax1.tick_params(axis='both', labelsize=22, length=8, pad=8)
             ax1.grid(True, linestyle='--', alpha=0.7)
-            ax1.legend(loc='upper left', bbox_to_anchor=(0.30, 0.15),
-                       bbox_transform=fig1.transFigure, ncol=2,
-                       fontsize=18, frameon=False)
+            add_aggregate_legend(ax1, fig1)
 
             period_name_clean = period['name'].replace('-', '_')
             percentage_filename = f'plots/{country_code.lower()}_monthly_renewable_vs_nonrenewable_mean_{period_name_clean}_percentage.png'
@@ -1212,7 +1270,7 @@ def create_all_charts(all_data, country_code='EU'):
             
             plt.subplots_adjust(left=0.15, right=0.94, top=0.83, bottom=0.25)
 
-            for category_name in ['All Renewables', 'All Non-Renewables']:
+            for category_name in aggregate_series:
                 color = ENTSOE_COLORS[category_name]
                 values_twh = [val / 1000 for val in monthly_means_abs[category_name]]
                 ax2.plot(month_names_abbr, values_twh, marker='o', color=color,
@@ -1227,9 +1285,7 @@ def create_all_charts(all_data, country_code='EU'):
             ax2.set_ylim(0, max_abs_renewable_periods)
             ax2.tick_params(axis='both', labelsize=22, length=8, pad=8)
             ax2.grid(True, linestyle='--', alpha=0.7)
-            ax2.legend(loc='upper left', bbox_to_anchor=(0.30, 0.15),
-                       bbox_transform=fig2.transFigure, ncol=2,
-                       fontsize=18, frameon=False)
+            add_aggregate_legend(ax2, fig2)
 
             absolute_filename = f'plots/{country_code.lower()}_monthly_renewable_vs_nonrenewable_mean_{period_name_clean}_absolute.png'
             plt.savefig(absolute_filename, dpi=150)
@@ -1254,7 +1310,7 @@ def create_all_charts(all_data, country_code='EU'):
 
     renewable_sources = RENEWABLE_SOURCES
     non_renewable_sources = NON_RENEWABLE_SOURCES
-    total_sources = AGGREGATE_SOURCES
+    total_sources = AGGREGATE_SOURCES + ['All Low Emission', 'All High Emission']
 
     available_renewables = [s for s in renewable_sources if s in all_data]
     available_non_renewables = [s for s in non_renewable_sources if s in all_data]
@@ -1486,6 +1542,7 @@ def create_all_charts(all_data, country_code='EU'):
             plt.close()
 
     # Chart: Renewables vs Non-Renewables Totals
+    annual_chart_series = [name for name in AGGREGATE_CHART_SERIES if name in annual_totals]
     if available_totals and 'Total Generation' in annual_totals:
         print("\nCreating Annual Renewables vs Non-Renewables...")
 
@@ -1510,7 +1567,7 @@ def create_all_charts(all_data, country_code='EU'):
         plt.subplots_adjust(left=0.15, right=0.94, top=0.83, bottom=0.25)
 
         lines_plotted = 0
-        for source_name in available_totals:
+        for source_name in annual_chart_series:
             if source_name in annual_totals and len(annual_totals[source_name]) > 0:
                 color = ENTSOE_COLORS[source_name]
                 
@@ -1541,12 +1598,10 @@ def create_all_charts(all_data, country_code='EU'):
             
             ax1.set_xlabel('Year', fontsize=24, fontweight='bold', labelpad=10)
             ax1.set_ylabel('Electricity Generation (%)', fontsize=24, fontweight='bold', labelpad=10)
-            ax1.set_ylim(0, 100)
+            ax1.set_ylim(0, 110)  # headroom so the Total line at 100% is not clipped
             ax1.tick_params(axis='both', labelsize=22, length=8, pad=8)
             ax1.grid(True, linestyle='--', alpha=0.7)
-            ax1.legend(loc='upper left', bbox_to_anchor=(0.30, 0.15),
-                       bbox_transform=fig1.transFigure, ncol=2,
-                       fontsize=18, frameon=False)
+            add_aggregate_legend(ax1, fig1)
 
             percentage_filename = f'plots/{country_code.lower()}_annual_renewable_vs_non_renewable_percentage.png'
             plt.savefig(percentage_filename, dpi=150)
@@ -1583,7 +1638,7 @@ def create_all_charts(all_data, country_code='EU'):
 
         lines_plotted = 0
         max_renewable_abs = 0
-        for source_name in available_totals:
+        for source_name in annual_chart_series:
             if source_name in annual_totals and len(annual_totals[source_name]) > 0:
                 years_list = sorted(annual_totals[source_name].keys())
                 color = ENTSOE_COLORS[source_name]
@@ -1604,9 +1659,7 @@ def create_all_charts(all_data, country_code='EU'):
             ax2.set_ylim(0, max_renewable_abs * 1.2 if max_renewable_abs > 0 else 10)
             ax2.tick_params(axis='both', labelsize=22, length=8, pad=8)
             ax2.grid(True, linestyle='--', alpha=0.7)
-            ax2.legend(loc='upper left', bbox_to_anchor=(0.30, 0.15),
-                       bbox_transform=fig2.transFigure, ncol=2,
-                       fontsize=18, frameon=False)
+            add_aggregate_legend(ax2, fig2)
 
             absolute_filename = f'plots/{country_code.lower()}_annual_renewable_vs_non_renewable_absolute.png'
             plt.savefig(absolute_filename, dpi=150)
@@ -1629,7 +1682,7 @@ def create_all_charts(all_data, country_code='EU'):
     if annual_totals:
         baseline_year = 2015
         all_sources_for_yoy = available_renewables + available_non_renewables
-        totals_for_yoy = ['All Renewables', 'All Non-Renewables']
+        totals_for_yoy = list(AGGREGATE_CHART_SERIES)
         
         # Calculate YTD for current year and prorated baseline for fair comparison
         current_date = datetime.now()
@@ -1686,6 +1739,14 @@ def create_all_charts(all_data, country_code='EU'):
             
             # Sum baseline year prorated
             baseline_year_prorated[aggregate_name] = sum(baseline_year_prorated.get(s, 0) for s in sources)
+        
+        # Total / Low / High from the Renewables and Non-Renewables sums above
+        for ytd_values in (current_year_ytd, baseline_year_prorated):
+            ren_ytd = ytd_values.get('All Renewables', 0)
+            non_ytd = ytd_values.get('All Non-Renewables', 0)
+            ytd_values['Total Generation'] = ren_ytd + non_ytd
+            ytd_values['All Low Emission'] = ren_ytd + ytd_values.get('Nuclear', 0) - ytd_values.get('Biomass', 0)
+            ytd_values['All High Emission'] = non_ytd - ytd_values.get('Nuclear', 0) + ytd_values.get('Biomass', 0)
         
         print(f"  ✓ Calculated YTD for aggregates: {totals_for_yoy}")
 
@@ -2054,9 +2115,7 @@ def create_all_charts(all_data, country_code='EU'):
             ax3.axhline(y=0, color='black', linestyle='--', linewidth=1, alpha=0.5)
             ax3.tick_params(axis='both', labelsize=22, length=8, pad=8)
             ax3.grid(True, linestyle='--', alpha=0.7)
-            ax3.legend(loc='upper left', bbox_to_anchor=(0.30, 0.15),
-                       bbox_transform=fig3.transFigure, ncol=2,
-                       fontsize=18, frameon=False)
+            add_aggregate_legend(ax3, fig3)
 
             percentage_filename = f'plots/{country_code.lower()}_annual_yoy_aggregates_vs_2015_percentage.png'
             plt.savefig(percentage_filename, dpi=150)
@@ -2156,9 +2215,7 @@ def create_all_charts(all_data, country_code='EU'):
             ax4.axhline(y=0, color='black', linestyle='--', linewidth=1, alpha=0.5)
             ax4.tick_params(axis='both', labelsize=22, length=8, pad=8)
             ax4.grid(True, linestyle='--', alpha=0.7)
-            ax4.legend(loc='upper left', bbox_to_anchor=(0.30, 0.15),
-                       bbox_transform=fig4.transFigure, ncol=2,
-                       fontsize=18, frameon=False)
+            add_aggregate_legend(ax4, fig4)
 
             absolute_filename = f'plots/{country_code.lower()}_annual_yoy_aggregates_vs_2015_absolute.png'
             plt.savefig(absolute_filename, dpi=150)
@@ -2270,7 +2327,7 @@ def update_summary_table_historical_data(all_data, country_code='EU', spreadshee
         # Calculate totals for each source
         source_calcs = {}
         
-        for source_name in all_sources:
+        for source_name in all_sources + DERIVED_SHEET_ROWS:
             if source_name not in all_data:
                 continue
             
@@ -2307,7 +2364,7 @@ def update_summary_table_historical_data(all_data, country_code='EU', spreadshee
         # Calculate 2015 baselines for change calculation
         baselines_2015 = {}
         
-        for source_name in all_sources:
+        for source_name in all_sources + DERIVED_SHEET_ROWS:
             if source_name not in all_data:
                 continue
             
@@ -2484,7 +2541,12 @@ def update_summary_table_historical_data(all_data, country_code='EU', spreadshee
             'Solar', 'Wind', 'Hydro', 'Biomass', 'Geothermal',
             'All Non-Renewables',
             'Gas', 'Coal', 'Nuclear', 'Oil', 'Waste'
-        ]
+        ] + DERIVED_SHEET_ROWS   # rows 14 to 16, below the existing 12
+        last_row = len(source_order) + 1  # row 1 is the header
+        
+        # Make sure the sheet has room for all rows (older sheets may be smaller)
+        if worksheet.row_count < last_row:
+            worksheet.resize(rows=last_row, cols=worksheet.col_count)
         
         # Prepare updates
         updates = []
@@ -2574,7 +2636,7 @@ def update_summary_table_historical_data(all_data, country_code='EU', spreadshee
             # Update timestamp in last column (batch update)
             timestamp = current_date.strftime('%Y-%m-%d %H:%M UTC')
             timestamp_updates = []
-            for row_idx in range(2, 14):
+            for row_idx in range(2, last_row + 1):
                 timestamp_updates.append({
                     'range': f'J{row_idx}',
                     'values': [[timestamp]]
@@ -2590,7 +2652,7 @@ def update_summary_table_historical_data(all_data, country_code='EU', spreadshee
             print(f"\nCalculating changes from {previous_year}...")
             
             # Read back Yesterday and LastWeek columns (B-E)
-            summary_data = worksheet.get('A2:E13')  # Source, Yesterday_GWh, Yesterday_%, LastWeek_GWh, LastWeek_%
+            summary_data = worksheet.get(f'A2:E{last_row}')  # Source, Yesterday_GWh, Yesterday_%, LastWeek_GWh, LastWeek_%
             time.sleep(2)
             
             # Prepare updates for change from previous year columns
