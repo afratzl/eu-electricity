@@ -126,35 +126,26 @@ SOURCE_KEYWORDS['all-non-renewables'] = (
 )
 
 # ============================================================
-# EMISSION GROUPS
-# Second, independent split of the same 10 atomic sources, by
-# lifecycle emissions instead of by renewable/non-renewable:
-#   Low Emission  = All Renewables + Nuclear - Biomass
-#   High Emission = All Non-Renewables - Nuclear + Biomass
-# Basis: EU Taxonomy 100 gCO2e/kWh lifecycle threshold applied to
-# IPCC median lifecycle emissions. Biomass (~230 g/kWh) is above it;
-# nuclear (~12 g/kWh) is below it.
-# The small categories stay with their existing groups: 'Other
-# renewable' and 'Marine' count as low, 'Fossil Peat' and 'Other'
-# count as high.
+# DERIVED SERIES
+# Computed from other series after collection. They are never fetched
+# from ENTSO-E and never get worksheets of their own:
+#   total             = All Renewables + All Non-Renewables
+#   all-low-emission  = All Renewables + Nuclear - Biomass
+#   all-high-emission = All Non-Renewables - Nuclear + Biomass
+# Basis for the emission split: the EU Taxonomy's 100 gCO2e/kWh
+# lifecycle threshold applied to IPCC medians. Biomass (~230 g/kWh)
+# is above it, nuclear (~12 g/kWh) is below it. The small categories
+# stay where they already are ('Other renewable' and 'Marine' count
+# as low, 'Fossil Peat' and 'Other' count as high), because the
+# formulas start from the two existing aggregates.
 # ============================================================
 
-LOW_EMISSION  = ['solar', 'wind', 'hydro', 'geothermal', 'nuclear']
-HIGH_EMISSION = ['biomass', 'gas', 'coal', 'oil', 'waste']
-
-# Guard: the two groups must split the 10 atomic sources exactly, with
-# no overlap and nothing left out. Fails loudly at import time if a
-# source is ever added to one list but forgotten in another.
-assert set(LOW_EMISSION).isdisjoint(HIGH_EMISSION), "LOW_EMISSION and HIGH_EMISSION overlap"
-assert set(LOW_EMISSION) | set(HIGH_EMISSION) == set(RENEWABLES + NON_RENEWABLES), \
-    "LOW_EMISSION + HIGH_EMISSION must cover exactly the same sources as RENEWABLES + NON_RENEWABLES"
-
-SOURCE_KEYWORDS['all-low-emission'] = (
-    [kw for s in LOW_EMISSION for kw in SOURCE_KEYWORDS[s]] + SMALL_RENEWABLES
-)
-SOURCE_KEYWORDS['all-high-emission'] = (
-    [kw for s in HIGH_EMISSION for kw in SOURCE_KEYWORDS[s]] + SMALL_NON_RENEWABLES
-)
+DERIVED_DISPLAY_NAMES = {
+    'total':             'Total Generation',
+    'all-low-emission':  'Low Emission',
+    'all-high-emission': 'High Emission',
+}
+DERIVED_SOURCES = list(DERIVED_DISPLAY_NAMES)
 
 # ============================================================
 # ENERGY SOURCES MAPPING
