@@ -129,7 +129,7 @@ SOURCE_KEYWORDS['all-non-renewables'] = (
 # DERIVED SERIES
 # Computed from other series after collection. They are never fetched
 # from ENTSO-E and never get worksheets of their own:
-#   total             = All Renewables + All Non-Renewables
+#   total-generation  = All Renewables + All Non-Renewables
 #   all-low-emission  = All Renewables + Nuclear - Biomass
 #   all-high-emission = All Non-Renewables - Nuclear + Biomass
 # Basis for the emission split: the EU Taxonomy's 100 gCO2e/kWh
@@ -141,11 +141,21 @@ SOURCE_KEYWORDS['all-non-renewables'] = (
 # ============================================================
 
 DERIVED_DISPLAY_NAMES = {
-    'total':             'Total Generation',
+    'total-generation':  'Total Generation',
     'all-low-emission':  'Low Emission',
     'all-high-emission': 'High Emission',
 }
 DERIVED_SOURCES = list(DERIVED_DISPLAY_NAMES)
+
+# Names of the three extra rows in the 'Summary Table Data' sheet (rows 14 to 16,
+# below the existing 12 so nothing already there moves). Both sheet writers must use
+# exactly these, because the second writer matches rows by the name in column A.
+# They follow the existing 'All Renewables' pattern.
+DERIVED_SHEET_NAMES = {
+    'all-low-emission':  'All Low Emission',
+    'all-high-emission': 'All High Emission',
+    'total-generation':  'Total Generation',
+}
 
 # ============================================================
 # ENERGY SOURCES MAPPING
@@ -249,7 +259,7 @@ ENTSOE_COLORS = {
     # Total can own black. STILL TO DO: the website pages hardcode the old
     # black for Non-Renewables (dropdown and table dots), so they do not
     # match the plots until the frontend step.
-    'total':              '#000000',
+    'total-generation':   '#000000',
     'all-low-emission':   '#FF9F40',
     'all-high-emission':  '#C0392B',
     'Total Generation':   '#000000',
