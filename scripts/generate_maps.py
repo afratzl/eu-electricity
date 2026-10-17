@@ -94,7 +94,7 @@ FIXED_SCALE_MAX = {
     'all-non-renewables': 100,
     'all-low-emission':   100,
     'all-high-emission':  100,
-    'total':              100,
+    'total-generation':   100,
 }
 
 
@@ -692,7 +692,7 @@ def sheet_map_value(source, cd, year, month=None):
         all-non-renewables = total - all-renewables
         all-low-emission   = all-renewables + nuclear - biomass
         all-high-emission  = total - all-low-emission
-        total              = total
+        total-generation   = total
     A missing nuclear or biomass counts as 0 (a country with no nuclear
     generates 0% of it), as long as the country has data at all.
     """
@@ -719,7 +719,7 @@ def sheet_map_value(source, cd, year, month=None):
             value = low
         else:
             value = max(0, total - low) if (total and low is not None) else None
-    elif source == 'total':
+    elif source == 'total-generation':
         value = total
     else:
         value = get(source)
@@ -735,7 +735,7 @@ def summary_map_value(source, rows, period):
     on the rows:
         all-low-emission  = all-renewables + nuclear - biomass
         all-high-emission = all-non-renewables - nuclear + biomass
-        total             = 100 wherever the country reported
+        total-generation  = 100 wherever the country reported
     """
     def get(name):
         return rows.get(name, {}).get(period)
@@ -749,7 +749,7 @@ def summary_map_value(source, rows, period):
         if non is None:
             return None
         return round(max(0, non - (get('nuclear') or 0) + (get('biomass') or 0)), 2)
-    if source == 'total':
+    if source == 'total-generation':
         return 100.0 if ren is not None else None
     return get(source)
 
