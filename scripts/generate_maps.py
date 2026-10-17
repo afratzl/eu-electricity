@@ -35,7 +35,12 @@ from shapely.ops import unary_union
 import pyproj
 import gspread
 from google.oauth2.service_account import Credentials
-from config import ENTSOE_COUNTRIES, ENTSOE_COLORS, DISPLAY_NAMES, SOURCE_KEYWORDS
+from config import ENTSOE_COUNTRIES, ENTSOE_COLORS, DISPLAY_NAMES, DERIVED_DISPLAY_NAMES
+from config import RENEWABLES, NON_RENEWABLES
+
+# Maps cover the derived series too (Low Emission, High Emission, Total). They are
+# merged here, not in config, so config's own DISPLAY_NAMES stays what it always was.
+DISPLAY_NAMES = {**DISPLAY_NAMES, **DERIVED_DISPLAY_NAMES}
 
 try:
     from googleapiclient.discovery import build
@@ -57,7 +62,8 @@ except ImportError:
 # DISPLAY_NAMES imported from config.py
 
 # Worksheet name mapping (Google Sheets)
-# Note: all-non-renewables is derived as Total - All Renewables
+# Note: all-non-renewables, all-low-emission and all-high-emission have no worksheet of
+# their own. They are derived from these (see sheet_map_value).
 WORKSHEET_NAMES = {
     'solar':          'Solar Monthly Production',
     'wind':           'Wind Monthly Production',
@@ -86,6 +92,9 @@ FIXED_SCALE_MAX = {
     'waste':              10,
     'all-renewables':     100,
     'all-non-renewables': 100,
+    'all-low-emission':   100,
+    'all-high-emission':  100,
+    'total':              100,
 }
 
 
@@ -672,6 +681,79 @@ def compute_percentage(source_val, total_val, has_any_data=True):
     return round(source_val / total_val * 100, 2)
 
 
+def sheet_map_value(source, cd, year, month=None):
+    """
+    Percentage of total generation for one country and one series, for one
+    month (or the whole year when month is None), from the monthly worksheet
+    data cd = {series: {year: {month: gwh}}}. None means genuinely unknown
+    (see compute_percentage).
+
+    Stored series are read directly. The rest are derived:
+        all-non-renewables = total - all-renewables
+        all-low-emission   = all-renewables + nuclear - biomass
+        all-high-emission  = total - all-low-emission
+        total              = total
+    A missing nuclear or biomass counts as 0 (a country with no nuclear
+    generates 0% of it), as long as the country has data at all.
+    """
+    if month is None:
+        def get(name):
+            months = cd.get(name, {}).get(year)
+            return sum(months.values()) if months else None
+    else:
+        def get(name):
+            return cd.get(name, {}).get(year, {}).get(month)
+
+    total = get('total')
+    # "Has data" is judged on the individual sources only. 'total' and
+    # 'all-renewables' load from their own worksheets, so they can succeed
+    # while every per-source worksheet failed.
+    has_any_data = any(get(s) is not None for s in RENEWABLES + NON_RENEWABLES)
+
+    ren = get('all-renewables')
+    if source == 'all-non-renewables':
+        value = max(0, total - ren) if (total and ren is not None) else None
+    elif source in ('all-low-emission', 'all-high-emission'):
+        low = max(0, ren + (get('nuclear') or 0) - (get('biomass') or 0)) if ren is not None else None
+        if source == 'all-low-emission':
+            value = low
+        else:
+            value = max(0, total - low) if (total and low is not None) else None
+    elif source == 'total':
+        value = total
+    else:
+        value = get(source)
+    return compute_percentage(value, total, has_any_data)
+
+
+def summary_map_value(source, rows, period):
+    """
+    Percentage for one country and one series from its Summary Table Data
+    rows ({series: {'yesterday': pct, 'last_week': pct}}), for period
+    'yesterday' or 'last_week'. The sheet percentages share one denominator
+    (Renewables + Non-Renewables), so the derived series are plain arithmetic
+    on the rows:
+        all-low-emission  = all-renewables + nuclear - biomass
+        all-high-emission = all-non-renewables - nuclear + biomass
+        total             = 100 wherever the country reported
+    """
+    def get(name):
+        return rows.get(name, {}).get(period)
+
+    ren, non = get('all-renewables'), get('all-non-renewables')
+    if source == 'all-low-emission':
+        if ren is None:
+            return None
+        return round(max(0, ren + (get('nuclear') or 0) - (get('biomass') or 0)), 2)
+    if source == 'all-high-emission':
+        if non is None:
+            return None
+        return round(max(0, non - (get('nuclear') or 0) + (get('biomass') or 0)), 2)
+    if source == 'total':
+        return 100.0 if ren is not None else None
+    return get(source)
+
+
 # Note: get_values_for_period and get_annual_values removed --
 # data loading is handled in main() to avoid redundant API calls.
 
@@ -884,20 +966,19 @@ def main():
 
     for source in sources:
         print(f"\n--- {DISPLAY_NAMES.get(source, source)} ---")
-        is_non_renewables = (source == 'all-non-renewables')
 
         if args.period == 'yesterday' and not args.all_months:
             date_str = yesterday.strftime('%d %B %Y')
             values = {}
             for country_code in ENTSOE_COUNTRIES:
                 try:
-                    pct = summary_table_data.get(country_code, {}).get(source, {}).get('yesterday')
+                    pct = summary_map_value(source, summary_table_data.get(country_code, {}), 'yesterday')
                     values[country_code] = pct
                 except Exception as e:
                     print(f"  ⚠ {country_code}: {e}")
                     values[country_code] = None
             # Add EU aggregate to legend
-            values['EU'] = summary_table_data.get('EU', {}).get(source, {}).get('yesterday')
+            values['EU'] = summary_map_value(source, summary_table_data.get('EU', {}), 'yesterday')
             fig       = generate_map(geodata, values, source, date_str, scale=args.scale)
             plot_file = f'plots/map_{source}_yesterday.png'
             fig.savefig(plot_file, dpi=150, facecolor='white')
@@ -914,13 +995,13 @@ def main():
             values = {}
             for country_code in ENTSOE_COUNTRIES:
                 try:
-                    pct = summary_table_data.get(country_code, {}).get(source, {}).get('last_week')
+                    pct = summary_map_value(source, summary_table_data.get(country_code, {}), 'last_week')
                     values[country_code] = pct
                 except Exception as e:
                     print(f"  ⚠ {country_code}: {e}")
                     values[country_code] = None
             # Add EU aggregate to legend
-            values['EU'] = summary_table_data.get('EU', {}).get(source, {}).get('last_week')
+            values['EU'] = summary_map_value(source, summary_table_data.get('EU', {}), 'last_week')
             fig       = generate_map(geodata, values, source, date_str, scale=args.scale)
             plot_file = f'plots/map_{source}_last_week.png'
             fig.savefig(plot_file, dpi=150, facecolor='white')
@@ -939,35 +1020,13 @@ def main():
             values = {}
             for country_code in ENTSOE_COUNTRIES:
                 try:
-                    cd        = all_country_data[country_code]
-                    total_val = cd.get('total', {}).get(year, {}).get(month, None)
-                    has_any_data = any(
-                        cd.get(s, {}).get(year, {}).get(month) is not None
-                        for s in SOURCE_KEYWORDS
-                    )
-                    if is_non_renewables:
-                        ren_val    = cd.get('all-renewables', {}).get(year, {}).get(month, None)
-                        source_val = max(0, total_val - ren_val) if (total_val and ren_val is not None) else None
-                    else:
-                        source_val = cd.get(source, {}).get(year, {}).get(month, None)
-                    values[country_code] = compute_percentage(source_val, total_val, has_any_data)
+                    values[country_code] = sheet_map_value(source, all_country_data[country_code], year, month)
                 except Exception as e:
                     print(f"  ⚠ {country_code}: {e}")
                     values[country_code] = None
             # Add EU
             try:
-                cd_eu     = all_country_data.get('EU', {})
-                total_val = cd_eu.get('total', {}).get(year, {}).get(month, None)
-                has_any_data = any(
-                    cd_eu.get(s, {}).get(year, {}).get(month) is not None
-                    for s in SOURCE_KEYWORDS
-                )
-                if is_non_renewables:
-                    ren_val    = cd_eu.get('all-renewables', {}).get(year, {}).get(month, None)
-                    source_val = max(0, total_val - ren_val) if (total_val and ren_val is not None) else None
-                else:
-                    source_val = cd_eu.get(source, {}).get(year, {}).get(month, None)
-                values['EU'] = compute_percentage(source_val, total_val, has_any_data)
+                values['EU'] = sheet_map_value(source, all_country_data.get('EU', {}), year, month)
             except Exception:
                 values['EU'] = None
             fig       = generate_map(geodata, values, source, date_str, scale=args.scale)
@@ -986,29 +1045,13 @@ def main():
                 values = {}
                 for country_code in ENTSOE_COUNTRIES:
                     try:
-                        cd = all_country_data[country_code]
-                        total_total = sum(cd.get('total', {}).get(year, {}).values()) if cd.get('total', {}).get(year) else None
-                        has_any_data = any(cd.get(s, {}).get(year) for s in SOURCE_KEYWORDS)
-                        if is_non_renewables:
-                            ren_total    = sum(cd.get('all-renewables', {}).get(year, {}).values()) if cd.get('all-renewables', {}).get(year) else None
-                            source_total = max(0, total_total - ren_total) if (total_total and ren_total is not None) else None
-                        else:
-                            source_total = sum(cd.get(source, {}).get(year, {}).values()) if cd.get(source, {}).get(year) else None
-                        values[country_code] = compute_percentage(source_total, total_total, has_any_data)
+                        values[country_code] = sheet_map_value(source, all_country_data[country_code], year)
                     except Exception as e:
                         print(f"  ⚠ {country_code}: {e}")
                         values[country_code] = None
                 # Add EU
                 try:
-                    cd_eu = all_country_data.get('EU', {})
-                    total_total_eu = sum(cd_eu.get('total', {}).get(year, {}).values()) if cd_eu.get('total', {}).get(year) else None
-                    has_any_data = any(cd_eu.get(s, {}).get(year) for s in SOURCE_KEYWORDS)
-                    if is_non_renewables:
-                        ren_total_eu    = sum(cd_eu.get('all-renewables', {}).get(year, {}).values()) if cd_eu.get('all-renewables', {}).get(year) else None
-                        source_total_eu = max(0, total_total_eu - ren_total_eu) if (total_total_eu and ren_total_eu is not None) else None
-                    else:
-                        source_total_eu = sum(cd_eu.get(source, {}).get(year, {}).values()) if cd_eu.get(source, {}).get(year) else None
-                    values['EU'] = compute_percentage(source_total_eu, total_total_eu, has_any_data)
+                    values['EU'] = sheet_map_value(source, all_country_data.get('EU', {}), year)
                 except Exception:
                     values['EU'] = None
 
@@ -1036,34 +1079,12 @@ def main():
                 values = {}
                 for country_code in ENTSOE_COUNTRIES:
                     try:
-                        cd        = all_country_data[country_code]
-                        total_val = cd.get('total', {}).get(year, {}).get(month, None)
-                        has_any_data = any(
-                            cd.get(s, {}).get(year, {}).get(month) is not None
-                            for s in SOURCE_KEYWORDS
-                        )
-                        if is_non_renewables:
-                            ren_val    = cd.get('all-renewables', {}).get(year, {}).get(month, None)
-                            source_val = max(0, total_val - ren_val) if (total_val and ren_val is not None) else None
-                        else:
-                            source_val = cd.get(source, {}).get(year, {}).get(month, None)
-                        values[country_code] = compute_percentage(source_val, total_val, has_any_data)
+                        values[country_code] = sheet_map_value(source, all_country_data[country_code], year, month)
                     except Exception as e:
                         print(f"    ⚠ {country_code}: {e}")
                         values[country_code] = None
                 try:
-                    cd_eu     = all_country_data.get('EU', {})
-                    total_val = cd_eu.get('total', {}).get(year, {}).get(month, None)
-                    has_any_data = any(
-                        cd_eu.get(s, {}).get(year, {}).get(month) is not None
-                        for s in SOURCE_KEYWORDS
-                    )
-                    if is_non_renewables:
-                        ren_val    = cd_eu.get('all-renewables', {}).get(year, {}).get(month, None)
-                        source_val = max(0, total_val - ren_val) if (total_val and ren_val is not None) else None
-                    else:
-                        source_val = cd_eu.get(source, {}).get(year, {}).get(month, None)
-                    values['EU'] = compute_percentage(source_val, total_val, has_any_data)
+                    values['EU'] = sheet_map_value(source, all_country_data.get('EU', {}), year, month)
                 except Exception:
                     values['EU'] = None
                 fig       = generate_map(geodata, values, source, date_str, scale=args.scale)
