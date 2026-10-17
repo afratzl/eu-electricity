@@ -3026,8 +3026,9 @@ def upload_yesterday_plot_to_drive(file_path, country='EU'):
 def generate_yesterday_aggregates_plots(corrected_data, country_code='EU'):
     """
     Generate two yesterday plots (absolute and percentage) showing only aggregates:
-    - All Renewables
-    - All Non-Renewables
+    - Renewables and Non-Renewables (split by source type)
+    - Low Emission and High Emission (split by lifecycle emissions)
+    - Total Generation
     
     Args:
         corrected_data: Dictionary containing yesterday_projected data
@@ -3050,7 +3051,20 @@ def generate_yesterday_aggregates_plots(corrected_data, country_code='EU'):
     yesterday_date = (datetime.now() - timedelta(days=1)).strftime('%d %B %Y')
     
     # Aggregates are at top level of yesterday_projected
-    aggregate_names = ['all-renewables', 'all-non-renewables']
+    aggregate_names = ['all-renewables', 'all-non-renewables',
+                       'all-low-emission', 'all-high-emission', 'total']
+    
+    # Only these two add up to total generation. The percentage denominator
+    # below must be built from exactly these, NOT from every series in
+    # aggregate_data, or the other three would be double counted.
+    BASE_AGGREGATES = ['all-renewables', 'all-non-renewables']
+    
+    # Draw order, bottom to top (z-order follows list position)
+    plot_order = ['total', 'all-non-renewables', 'all-renewables',
+                  'all-high-emission', 'all-low-emission']
+    # Legend order: the two pairs as columns, Total last
+    legend_order = ['all-renewables', 'all-non-renewables',
+                    'all-low-emission', 'all-high-emission', 'total']
     
     country_name = COUNTRY_DISPLAY_NAMES.get(country_code, country_code)
     
@@ -3135,8 +3149,9 @@ def generate_yesterday_aggregates_plots(corrected_data, country_code='EU'):
     
     # Calculate total generation for percentage calculation
     total_gen = np.zeros(len(x_values))
-    for agg_name, data in aggregate_data.items():
-        if len(data) == len(x_values):
+    for agg_name in BASE_AGGREGATES:
+        data = aggregate_data.get(agg_name)
+        if data is not None and len(data) == len(x_values):
             total_gen += data
     
     # Prevent division by zero
@@ -3147,8 +3162,28 @@ def generate_yesterday_aggregates_plots(corrected_data, country_code='EU'):
     # Display names for legend
     display_names = {
         'all-renewables': 'Renewables',
-        'all-non-renewables': 'Non-Renewables'
+        'all-non-renewables': 'Non-Renewables',
+        'all-low-emission': 'Low Emission',
+        'all-high-emission': 'High Emission',
+        'total': 'Total Generation'
     }
+    
+    def add_aggregates_legend(ax, fig):
+        # 5 entries do not fit on one row, so use 3 columns in legend_order
+        # (matplotlib fills columns top to bottom: Renewables / Non-Renewables,
+        # then Low / High, then Total)
+        by_label = dict(zip(*(reversed(ax.get_legend_handles_labels()))))
+        handles = [by_label[display_names[a]] for a in legend_order
+                   if display_names[a] in by_label]
+        labels = [display_names[a] for a in legend_order
+                  if display_names[a] in by_label]
+        ax.legend(handles, labels,
+                  loc='upper center',
+                  bbox_to_anchor=(0.545, 0.15),
+                  bbox_transform=fig.transFigure,
+                  ncol=3,
+                  fontsize=18,
+                  frameon=False)
     
     # ========== PLOT 1: PERCENTAGE ==========
     fig1 = plt.figure(figsize=(12, 12))
@@ -3175,14 +3210,14 @@ def generate_yesterday_aggregates_plots(corrected_data, country_code='EU'):
     max_pct_value = 0
     
     # Plot non-renewables first (below), then renewables (on top)
-    for agg_name in ['all-renewables','all-non-renewables']:
+    for agg_name in plot_order:
         if agg_name in aggregate_data:
             data = aggregate_data[agg_name]
             if len(data) == len(x_values):
                 pct_data = (data / total_gen) * 100
                 max_pct_value = max(max_pct_value, np.max(pct_data))
                 color = ENTSOE_COLORS.get(agg_name, 'black')
-                zorder = 2 if agg_name == 'all-renewables' else 1
+                zorder = plot_order.index(agg_name) + 2  # +2 keeps every line above the grid (z=1.5)
                 ax1.plot(x_values, pct_data, color=color, linewidth=6, 
                         label=display_names[agg_name], zorder=zorder)
     
@@ -3220,13 +3255,7 @@ def generate_yesterday_aggregates_plots(corrected_data, country_code='EU'):
     fig1.text(0.94, 0.04, f"Generated: {timestamp}",
               ha='right', va='top', fontsize=12, color='#666', style='italic')
     
-    # Simple legend (just 2 items, no reordering needed)
-    ax1.legend(loc='upper left', 
-              bbox_to_anchor=(0.3, 0.15),
-              bbox_transform=fig1.transFigure,
-              ncol=2,
-              fontsize=18, 
-              frameon=False)
+    add_aggregates_legend(ax1, fig1)
 
     # Save percentage plot
     percentage_file = f'plots/{country_code}_yesterday_aggregates_percentage.png'
@@ -3259,14 +3288,14 @@ def generate_yesterday_aggregates_plots(corrected_data, country_code='EU'):
     max_abs_value = 0
     
     # Plot non-renewables first (below), then renewables (on top)
-    for agg_name in ['all-renewables','all-non-renewables']:
+    for agg_name in plot_order:
         if agg_name in aggregate_data:
             data = aggregate_data[agg_name]
             if len(data) == len(x_values):
                 gw_data = data / 1000  # Convert MW to GW
                 max_abs_value = max(max_abs_value, np.max(gw_data))
                 color = ENTSOE_COLORS.get(agg_name, 'black')
-                zorder = 2 if agg_name == 'all-renewables' else 1
+                zorder = plot_order.index(agg_name) + 2  # +2 keeps every line above the grid (z=1.5)
                 ax2.plot(x_values, gw_data, color=color, linewidth=6, 
                         label=display_names[agg_name], zorder=zorder)
     
@@ -3303,13 +3332,7 @@ def generate_yesterday_aggregates_plots(corrected_data, country_code='EU'):
     fig2.text(0.94, 0.04, f"Generated: {timestamp}",
               ha='right', va='top', fontsize=12, color='#666', style='italic')
     
-    # Simple legend (just 2 items)
-    ax2.legend(loc='upper left', 
-              bbox_to_anchor=(0.3, 0.15),
-              bbox_transform=fig2.transFigure,
-              ncol=2,
-              fontsize=18, 
-              frameon=False)
+    add_aggregates_legend(ax2, fig2)
     
     # Save absolute plot
     absolute_file = f'plots/{country_code}_yesterday_aggregates_absolute.png'
