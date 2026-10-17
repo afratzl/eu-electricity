@@ -106,7 +106,7 @@ AGGREGATE_DEFINITIONS = {
 
 # Energy source keyword mapping
 from config import EU_COUNTRIES, NON_EU_COUNTRIES, ENTSOE_COUNTRIES, SOURCE_KEYWORDS, DISPLAY_NAMES, ENTSOE_COLORS, COUNTRY_DISPLAY_NAMES
-from config import DERIVED_SOURCES, DERIVED_DISPLAY_NAMES
+from config import DERIVED_SOURCES, DERIVED_DISPLAY_NAMES, DERIVED_SHEET_NAMES
 from ned_client import fetch_ned_generation
 
 # Derived series (Total, Low Emission, High Emission) need display names
@@ -562,7 +562,7 @@ def extract_country_from_raw_data(raw_data_matrix, country_code):
 def add_derived_sources(period_data):
     """
     Add the derived series to a period's data, in place:
-        total             = All Renewables + All Non-Renewables
+        total-generation  = All Renewables + All Non-Renewables
         all-low-emission  = All Renewables + Nuclear - Biomass
         all-high-emission = All Non-Renewables - Nuclear + Biomass
 
@@ -598,7 +598,7 @@ def add_derived_sources(period_data):
         low[timestamp] = {'EU': ren + nuc - bio}
         high[timestamp] = {'EU': non_ren - nuc + bio}
 
-    period_data['total'] = total
+    period_data['total-generation'] = total
     period_data['all-low-emission'] = low
     period_data['all-high-emission'] = high
     return period_data
@@ -2094,8 +2094,16 @@ def update_summary_table_worksheet(corrected_data, country_code='EU'):
             'all-renewables',
             'solar', 'wind', 'hydro', 'biomass', 'geothermal',
             'all-non-renewables',
-            'gas', 'coal', 'nuclear', 'oil', 'waste'
+            'gas', 'coal', 'nuclear', 'oil', 'waste',
+            # Derived rows, appended below the existing 12 so nothing already
+            # there moves (rows 14 to 16)
+            'all-low-emission', 'all-high-emission', 'total-generation'
         ]
+        last_row = len(source_order) + 1  # row 1 is the header
+        
+        # Make sure the sheet has room for all rows (older sheets may be smaller)
+        if worksheet.row_count < last_row:
+            worksheet.resize(rows=last_row, cols=worksheet.col_count)
         
         # Load 2015, 2025, and 2024 data for change calculation
         print("  Loading baseline data (2015, 2025, 2024)...")
@@ -2188,20 +2196,33 @@ def update_summary_table_worksheet(corrected_data, country_code='EU'):
                         total_2015_monthly = pd.to_numeric(month_row['2015'].iloc[0], errors='coerce')
                         if not pd.isna(total_2015_monthly):
                             data_2015['all-non-renewables'] = total_2015_monthly - data_2015['all-renewables']
+                            data_2015['total-generation'] = total_2015_monthly
                     
                     # 2025
                     if '2025' in df.columns and 'all-renewables' in data_2025:
                         total_2025_monthly = pd.to_numeric(month_row['2025'].iloc[0], errors='coerce')
                         if not pd.isna(total_2025_monthly):
                             data_2025['all-non-renewables'] = total_2025_monthly - data_2025['all-renewables']
+                            data_2025['total-generation'] = total_2025_monthly
                     
                     # 2024
                     if '2024' in df.columns and 'all-renewables' in data_2024:
                         total_2024_monthly = pd.to_numeric(month_row['2024'].iloc[0], errors='coerce')
                         if not pd.isna(total_2024_monthly):
                             data_2024['all-non-renewables'] = total_2024_monthly - data_2024['all-renewables']
+                            data_2024['total-generation'] = total_2024_monthly
             except:
                 pass
+        
+        # Derived baselines, same formulas as everywhere else. Missing nuclear or
+        # biomass counts as 0, as long as the renewables baseline exists.
+        for baseline in (data_2015, data_2025, data_2024):
+            if 'all-renewables' in baseline:
+                baseline['all-low-emission'] = max(
+                    0, baseline['all-renewables'] + baseline.get('nuclear', 0) - baseline.get('biomass', 0))
+            if 'all-non-renewables' in baseline:
+                baseline['all-high-emission'] = max(
+                    0, baseline['all-non-renewables'] - baseline.get('nuclear', 0) + baseline.get('biomass', 0))
         
         print(f"  ✓ Loaded baselines: 2015={len(data_2015)}, 2025={len(data_2025)}, 2024={len(data_2024)} sources")
         
@@ -2211,10 +2232,10 @@ def update_summary_table_worksheet(corrected_data, country_code='EU'):
         # First, update column A (Source names) if needed
         source_names = []
         for source in source_order:
-            display_name = DISPLAY_NAMES.get(source, source.title())
+            display_name = DERIVED_SHEET_NAMES.get(source) or DISPLAY_NAMES.get(source, source.title())
             source_names.append([display_name])
         
-        worksheet.update('A2:A13', source_names)
+        worksheet.update(f'A2:A{last_row}', source_names)
         
         # Now update columns B-E (Yesterday, Last Week) and K-L, O-P, S-T (all change columns)
         data_updates_be = []    # Columns B-E
@@ -2301,7 +2322,7 @@ def update_summary_table_worksheet(corrected_data, country_code='EU'):
         
         # Update columns B-E (preserves F-I for monthly script)
         if data_updates_be:
-            worksheet.update('B2:E13', data_updates_be)
+            worksheet.update(f'B2:E{last_row}', data_updates_be)
         
         # Update columns K-L, O-P, S-T (all intraday change columns)
         if data_updates_klops:
@@ -2311,13 +2332,13 @@ def update_summary_table_worksheet(corrected_data, country_code='EU'):
             data_op = [[row[2], row[3]] for row in data_updates_klops]  # O, P
             data_st = [[row[4], row[5]] for row in data_updates_klops]  # S, T
             
-            worksheet.update('K2:L13', data_kl)
-            worksheet.update('O2:P13', data_op)
-            worksheet.update('S2:T13', data_st)
+            worksheet.update(f'K2:L{last_row}', data_kl)
+            worksheet.update(f'O2:P{last_row}', data_op)
+            worksheet.update(f'S2:T{last_row}', data_st)
             
             # Update timestamp in column J
             timestamp_updates = [[timestamp]] * len(source_order)
-            worksheet.update('J2:J13', timestamp_updates)
+            worksheet.update(f'J2:J{last_row}', timestamp_updates)
             
             # Format aggregate rows (bold) - ONLY columns that intraday owns
             worksheet.format('A2:E2', {'textFormat': {'bold': True}})  # All Renewables
@@ -2329,6 +2350,13 @@ def update_summary_table_worksheet(corrected_data, country_code='EU'):
             worksheet.format('J8:L8', {'textFormat': {'bold': True}})
             worksheet.format('O8:P8', {'textFormat': {'bold': True}})
             worksheet.format('S8:T8', {'textFormat': {'bold': True}})
+            
+            # The three derived rows are aggregates too
+            first_derived = last_row - len(DERIVED_SHEET_NAMES) + 1
+            worksheet.format(f'A{first_derived}:E{last_row}', {'textFormat': {'bold': True}})
+            worksheet.format(f'J{first_derived}:L{last_row}', {'textFormat': {'bold': True}})
+            worksheet.format(f'O{first_derived}:P{last_row}', {'textFormat': {'bold': True}})
+            worksheet.format(f'S{first_derived}:T{last_row}', {'textFormat': {'bold': True}})
             
             print(f"✓ Updated {len(source_order)} sources with yesterday/last week data")
             print(f"   Columns updated: B-E (values), K-L (vs 2015), O-P (vs 2025), S-T (vs 2024)")
@@ -3052,7 +3080,7 @@ def generate_yesterday_aggregates_plots(corrected_data, country_code='EU'):
     
     # Aggregates are at top level of yesterday_projected
     aggregate_names = ['all-renewables', 'all-non-renewables',
-                       'all-low-emission', 'all-high-emission', 'total']
+                       'all-low-emission', 'all-high-emission', 'total-generation']
     
     # Only these two add up to total generation. The percentage denominator
     # below must be built from exactly these, NOT from every series in
@@ -3060,11 +3088,11 @@ def generate_yesterday_aggregates_plots(corrected_data, country_code='EU'):
     BASE_AGGREGATES = ['all-renewables', 'all-non-renewables']
     
     # Draw order, bottom to top (z-order follows list position)
-    plot_order = ['total', 'all-non-renewables', 'all-renewables',
+    plot_order = ['total-generation', 'all-non-renewables', 'all-renewables',
                   'all-high-emission', 'all-low-emission']
     # Legend order: the two pairs as columns, Total last
     legend_order = ['all-renewables', 'all-non-renewables',
-                    'all-low-emission', 'all-high-emission', 'total']
+                    'all-low-emission', 'all-high-emission', 'total-generation']
     
     country_name = COUNTRY_DISPLAY_NAMES.get(country_code, country_code)
     
@@ -3165,7 +3193,7 @@ def generate_yesterday_aggregates_plots(corrected_data, country_code='EU'):
         'all-non-renewables': 'Non-Renewables',
         'all-low-emission': 'Low Emission',
         'all-high-emission': 'High Emission',
-        'total': 'Total Generation'
+        'total-generation': 'Total Generation'
     }
     
     def add_aggregates_legend(ax, fig):
