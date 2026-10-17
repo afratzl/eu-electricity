@@ -218,7 +218,7 @@ ENTSOE_COLORS = {
     'oil':                '#191970',  # Midnight Blue
     'waste':              '#808000',  # Olive
     'all-renewables':     '#00CED1',  # Dark Turquoise
-    'all-non-renewables': '#000000',  # Black
+    'all-non-renewables': '#007A7F',  # Deep Teal (was black; black is now Total)
     # Title Case aliases (eu_energy_plotting.py)
     'Solar':              '#FFD700',
     'Wind':               '#228B22',
@@ -233,10 +233,10 @@ ENTSOE_COLORS = {
     'Oil':                '#191970',
     'Waste':              '#808000',
     'Renewables':         '#00CED1',
-    'Non-Renewables':     '#000000',
+    'Non-Renewables':     '#007A7F',
     # Legacy aliases -- keep for backward compatibility with eu_energy_plotting.py
     'All Renewables':     '#00CED1',
-    'All Non-Renewables': '#000000',
+    'All Non-Renewables': '#007A7F',
 
     # --- New aggregates: Total, Low Emission, High Emission ---
     # Palette logic: Total is neutral black. Low/High Emission are a
@@ -245,10 +245,10 @@ ENTSOE_COLORS = {
     # Non-Renewables pair, so the two pairs never get confused on the
     # 5-line aggregate plot. These five never share a plot with the 10
     # individual sources.
-    # PENDING (deliberately not changed yet): Non-Renewables moves from
-    # black '#000000' to deep teal '#007A7F' so Total can own black. That
-    # recolor also changes the hardcoded colors on the website pages, so
-    # it lands together with the frontend step, not before it.
+    # Non-Renewables moved from black to deep teal '#007A7F' (see above) so
+    # Total can own black. STILL TO DO: the website pages hardcode the old
+    # black for Non-Renewables (dropdown and table dots), so they do not
+    # match the plots until the frontend step.
     'total':              '#000000',
     'all-low-emission':   '#FF9F40',
     'all-high-emission':  '#C0392B',
