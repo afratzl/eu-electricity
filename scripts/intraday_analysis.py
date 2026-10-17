@@ -106,7 +106,14 @@ AGGREGATE_DEFINITIONS = {
 
 # Energy source keyword mapping
 from config import EU_COUNTRIES, NON_EU_COUNTRIES, ENTSOE_COUNTRIES, SOURCE_KEYWORDS, DISPLAY_NAMES, ENTSOE_COLORS, COUNTRY_DISPLAY_NAMES
+from config import DERIVED_SOURCES, DERIVED_DISPLAY_NAMES
 from ned_client import fetch_ned_generation
+
+# Derived series (Total, Low Emission, High Emission) need display names
+# here for plot titles. Overlaid locally on purpose: config's DISPLAY_NAMES
+# also drives which maps get generated, and the maps script cannot compute
+# these yet.
+DISPLAY_NAMES = {**DISPLAY_NAMES, **DERIVED_DISPLAY_NAMES}
 
 def format_change_percentage(value):
     """
@@ -552,6 +559,51 @@ def extract_country_from_raw_data(raw_data_matrix, country_code):
 # PHASE 2: PROJECTION & CORRECTION
 # ============================================================================
 
+def add_derived_sources(period_data):
+    """
+    Add the derived series to a period's data, in place:
+        total             = All Renewables + All Non-Renewables
+        all-low-emission  = All Renewables + Nuclear - Biomass
+        all-high-emission = All Non-Renewables - Nuclear + Biomass
+
+    Works on any period_data with the usual structure: 'atomic_sources'
+    (source -> timestamp -> country -> value) plus the two aggregates at the
+    top level (aggregate -> timestamp -> {'EU': value}). Must be called AFTER
+    the aggregates are final (after renormalization), so the derived series
+    are consistent with them and with the already-scaled atomic sources.
+    Percentages are then normalized by total generation like every other
+    source, in convert_corrected_data_to_plot_format.
+    """
+    renewables = period_data.get('all-renewables')
+    non_renewables = period_data.get('all-non-renewables')
+    if not renewables or not non_renewables:
+        return period_data  # nothing to derive from
+
+    atomic = period_data.get('atomic_sources', {})
+    nuclear = atomic.get('nuclear', {})
+    biomass = atomic.get('biomass', {})
+
+    def source_sum(source_data, timestamp):
+        # Sum across countries for one timestamp, ignoring missing (None) values
+        return sum(v for v in source_data.get(timestamp, {}).values() if v is not None)
+
+    total, low, high = {}, {}, {}
+    for timestamp in renewables:
+        ren = renewables[timestamp].get('EU', 0)
+        non_ren = non_renewables.get(timestamp, {}).get('EU', 0)
+        nuc = source_sum(nuclear, timestamp)
+        bio = source_sum(biomass, timestamp)
+
+        total[timestamp] = {'EU': ren + non_ren}
+        low[timestamp] = {'EU': ren + nuc - bio}
+        high[timestamp] = {'EU': non_ren - nuc + bio}
+
+    period_data['total'] = total
+    period_data['all-low-emission'] = low
+    period_data['all-high-emission'] = high
+    return period_data
+
+
 def apply_projections_and_corrections(data_matrix):
     """
     Phase 2: Apply 1% threshold and correct aggregates/total_gen using atomic sources
@@ -867,6 +919,11 @@ def apply_corrections_for_period(data_matrix, target_period, reference_period):
     
     print(f"  ✓ Renormalization complete")
     
+    # Derive Total / Low Emission / High Emission from the final, already
+    # renormalized values (both the projected and the actual version).
+    add_derived_sources(result['corrected'])
+    add_derived_sources(result['actual'])
+    
     return result
 
 
@@ -932,6 +989,9 @@ def build_period_data_no_projection(data_matrix, period):
     for agg_source, agg_data in aggregate_sources_data.items():
         result[agg_source] = agg_data
     
+    # Derive Total / Low Emission / High Emission from the aggregates above
+    add_derived_sources(result)
+    
     return result
 
 
@@ -957,7 +1017,7 @@ def convert_corrected_data_to_plot_format(source_type, corrected_data, country_c
             if 'atomic_sources' not in period_data or source_type not in period_data['atomic_sources']:
                 continue
             source_data = period_data['atomic_sources'][source_type]
-        elif source_type in AGGREGATE_SOURCES:
+        elif source_type in AGGREGATE_SOURCES or source_type in DERIVED_SOURCES:
             if source_type not in period_data:
                 continue
             source_data = period_data[source_type]
@@ -1711,8 +1771,8 @@ def calculate_period_totals(period_data, period_name, country_code='EU'):
             'percentage': percentage
         }
     
-    # Calculate for aggregates
-    for agg_source in AGGREGATE_SOURCES:
+    # Calculate for aggregates and derived series
+    for agg_source in AGGREGATE_SOURCES + DERIVED_SOURCES:
         if agg_source not in period_data:
             continue
         
@@ -3262,11 +3322,11 @@ def generate_yesterday_aggregates_plots(corrected_data, country_code='EU'):
 def main():
     """
     Main function - orchestrates the 3 phases
-    Generates ALL 12 plots by default, or single plot if --source specified
+    Generates ALL 15 plots by default, or single plot if --source specified
     """
     parser = argparse.ArgumentParser(description='EU Energy Intraday Analysis v2')
     parser.add_argument('--source', 
-                       choices=ATOMIC_SOURCES + AGGREGATE_SOURCES,
+                       choices=ATOMIC_SOURCES + AGGREGATE_SOURCES + DERIVED_SOURCES,
                        help='Optional: Generate only this source (default: all sources)')
     
     args = parser.parse_args()
@@ -3280,7 +3340,7 @@ def main():
         # Batch mode (default)
         print("\n" + "=" * 80)
         print("EU ENERGY INTRADAY ANALYSIS - BATCH MODE")
-        print("Generating all 12 source plots from single data collection")
+        print("Generating all 15 source plots from single data collection")
         print("=" * 80)
     
     # Get API key
@@ -3337,10 +3397,10 @@ def main():
             else:
                 # Batch mode - generate all plots
                 print("\n" + "=" * 80)
-                print("PHASE 3: GENERATING ALL 12 PLOTS (24 files: percentage + absolute)")
+                print("PHASE 3: GENERATING ALL 15 PLOTS (30 files: percentage + absolute)")
                 print("=" * 80)
                 
-                all_sources = ATOMIC_SOURCES + AGGREGATE_SOURCES
+                all_sources = ATOMIC_SOURCES + AGGREGATE_SOURCES + DERIVED_SOURCES
                 drive_file_ids = {}
                 plots_generated = 0  # Track successful plots
                 
