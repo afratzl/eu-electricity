@@ -394,8 +394,13 @@
             'Waste':              '#808000',
             'All Renewables':     '#00CED1',
             'Renewables':         '#00CED1',
-            'All Non-Renewables': '#444444',
-            'Non-Renewables':     '#444444',
+            'All Non-Renewables': '#C9852B',
+            'Non-Renewables':     '#C9852B',
+            'All Low Emission':   '#007A7F',
+            'Low Emission':       '#007A7F',
+            'All High Emission':  '#5A3A22',
+            'High Emission':      '#5A3A22',
+            'Total Generation':   '#000000',
         };
 
         // Display summary table
@@ -403,6 +408,8 @@
             // Pre-compute max values per column for data bars
             const cols = ['yesterday', 'last_week', 'ytd_current', 'year_previous'];
             const maxPct = {}, maxTwh = {}, colUnit = {};
+            // Bars are scaled to the largest value in the column, which is now Total Generation
+            // (100% / the biggest number), so every bar reads as a share of the whole.
             cols.forEach(col => {
                 maxPct[col] = Math.max(...data.sources.map(s => parseFloat(s[col]?.percentage) || 0));
                 maxTwh[col] = Math.max(...data.sources.map(s => parseFloat(s[col]?.twh) || 0));
@@ -493,22 +500,23 @@
                 prev: 'year_previous'
             };
 
-            let sourceRowCount = {renewable: 0, 'non-renewable': 0};
-            data.sources.forEach(source => {
-                const cat = source.category || '';
-                const isAggregate = cat.startsWith('aggregate') || source.source === 'All Renewables' || source.source === 'Renewables' || source.source === 'All Non-Renewables' || source.source === 'Non-Renewables';
-                const isRenewable = cat === 'renewable' || cat === 'aggregate-renewable';
+            // Layout: the aggregates (Total, Renewables, Non-Renewables, Low Emission, High
+            // Emission) come first, then the 10 individual sources as one striped block.
+            const isAggregateSource = s => (s.category || '').startsWith('aggregate');
+            data.sources.forEach((source, idx) => {
+                const isAggregate = isAggregateSource(source);
                 const rowClass = isAggregate ? 'row-aggregate-pro' : 'row-source-pro';
-                const categoryClass = isRenewable ? 'renewable' : 'non-renewable';
-                let altClass = '';
-                if (!isAggregate) {
-                    sourceRowCount[categoryClass]++;
-                    altClass = sourceRowCount[categoryClass] % 2 === 0 ? ' row-even' : ' row-odd';
+                // One alternation runs through the whole table, aggregates included
+                let altClass = (idx + 1) % 2 === 0 ? ' row-even' : ' row-odd';
+                if (isAggregate) {
+                    // last aggregate row: draw the divider rule under it
+                    const next = data.sources[idx + 1];
+                    if (next && !isAggregateSource(next)) altClass += ' block-end';
                 }
                 const color = SOURCE_COLORS[source.source] || '#888';
 
-                html += `<tr class="${rowClass} ${categoryClass}${altClass}">`;
-                const displayName = source.source.replace('All Renewables', 'Renewables').replace('All Non-Renewables', 'Non-Renewables');
+                html += `<tr class="${rowClass}${altClass}">`;
+                const displayName = source.source.replace(/^All /, '');
                 html += `<td class="source-name-cell-pro">${colorDot(source.source)}${displayName}</td>`;
 
                 [['yesterday','yesterday'], ['last_week','last_week'], ['ytd_current','ytd_current'], ['year_previous','year_previous']].forEach(([col, key]) => {
@@ -832,6 +840,8 @@
         }
 
         .summary-table-pro {
+            --cell-pad-y: 10px;   /* vertical padding of the cells (smaller on small screens) */
+            --divider-h: 5px;     /* thickness of the rule under the aggregates */
             width: 100%;
             max-width: 100%;
             border-collapse: collapse;
@@ -882,7 +892,7 @@
         }
 
         .summary-table-pro td {
-            padding: 10px 10px;
+            padding: var(--cell-pad-y) 10px;
             border-bottom: 1px solid #ecf0f1;
             font-size: 1.0625em;
             color: var(--color-text);
@@ -896,16 +906,29 @@
             font-weight: 600;
         }
 
-        .row-aggregate-pro.renewable {
-            background: #cdddf2;
+        /* aggregate rows alternate like the source rows; their bold name sets them apart */
+        .row-aggregate-pro.row-even {
+            background: #dde8f7;
         }
 
-        .row-aggregate-pro.non-renewable {
-            background-color: #cdddf2;
+        .row-aggregate-pro.row-odd {
+            background: white;
+        }
+
+        /* divider rule between the aggregates block and the individual sources
+           (must stay after the two rules above so the gradient is not reset) */
+        .row-aggregate-pro.block-end {
             background-image: linear-gradient(90deg, #003399 0%, #6B9FD8 100%);
             background-repeat: no-repeat;
-            background-size: 100% 5px;
-            background-position: top;
+            background-size: 100% var(--divider-h);
+            background-position: bottom;
+        }
+
+        /* the rule is painted over the bottom of this row, so add its thickness (plus a
+           little air) to the row's bottom padding. The text then keeps the same distance
+           from the line as other rows keep from their bottom edge. */
+        .row-aggregate-pro.block-end td {
+            padding-bottom: calc(var(--cell-pad-y) + var(--divider-h) + 3px);
         }
 
         .row-source-pro {
@@ -1099,6 +1122,7 @@
             }
 
             .summary-table-pro {
+                --cell-pad-y: 6px;
                 font-size: 0.75em;
                 width: 100%;
                 table-layout: fixed;
@@ -1107,7 +1131,7 @@
             .summary-table-pro th,
             .summary-table-pro td {
                 white-space: normal;
-                padding: 6px 4px;
+                padding: var(--cell-pad-y) 4px;
                 font-size: 0.85em;
                 word-break: break-word;
             }
@@ -1185,7 +1209,7 @@
             .summary-table-pro th,
             .summary-table-pro td {
                 white-space: normal;
-                padding: 6px 3px;
+                padding: var(--cell-pad-y) 3px;
                 font-size: 0.9em;
                 word-break: break-word;
             }
