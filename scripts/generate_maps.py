@@ -26,7 +26,7 @@ matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import matplotlib.patheffects as pe
 from matplotlib.patches import Rectangle
-from matplotlib.colors import LinearSegmentedColormap, Normalize
+from matplotlib.colors import LinearSegmentedColormap, ListedColormap, Normalize
 from datetime import datetime, timedelta
 import geopandas as gpd
 from shapely.affinity import translate
@@ -237,6 +237,22 @@ def get_label_pos(geodata, iso2=None, name=None):
 # MAP GENERATION
 # ============================================================
 
+# ============================================================
+# MAP COLOR SCALE (one style for every map)
+# Pale yellow (low) through orange and red to purple (high): light means
+# little, dark means a lot, the convention readers expect on a white
+# background, with the hue and saturation also shifting so values stay
+# easy to tell apart across the whole 0-100% range. It is matplotlib's
+# 'inferno' reversed, with the last part of the dark end cut off so that
+# 100% is a saturated purple and not black (black reads as "no signal").
+# MAP_CMAP_TRIM is the share of the scale that is kept; lower values end in
+# a lighter purple, higher values end in a darker one (0.76 ends #520e6d,
+# 0.82 ends #390963, 0.90 ends #160b39, nearly black).
+# ============================================================
+MAP_CMAP_TRIM = 0.82
+MAP_CMAP = ListedColormap(plt.get_cmap('inferno_r')(np.linspace(0, MAP_CMAP_TRIM, 256)), name='map_scale')
+
+
 def generate_map(geodata, values_by_country, source, date_str, scale='fixed', cmap_override=None):
     """
     Generate a single map for one source and one date.
@@ -253,13 +269,9 @@ def generate_map(geodata, values_by_country, source, date_str, scale='fixed', cm
         source: e.g. 'solar'
         date_str: e.g. '14 May 2026'
         scale: 'fixed' or 'dynamic'
-        cmap_override: optional matplotlib colormap name to use instead of
-            the default 'viridis'. Viridis became the site-wide default
-            (previously per-source single-hue) since it's far more
-            distinguishable for a single continuous variable and is
-            colorblind-safe -- the per-source color's only real benefit
-            (source identification) is already covered by each map's own
-            title.
+        cmap_override: optional matplotlib colormap (name or object) to use
+            instead of MAP_CMAP, the single color scale shared by every
+            map. Leave as None for the normal site maps.
 
     Returns:
         matplotlib Figure
@@ -269,7 +281,7 @@ def generate_map(geodata, values_by_country, source, date_str, scale='fixed', cm
     minx, miny, maxx, maxy = geodata['bounds']
     maxx_extended = 7550000  # Extended east to include Caucasus
 
-    cmap = plt.get_cmap(cmap_override or 'viridis')
+    cmap = plt.get_cmap(cmap_override) if cmap_override else MAP_CMAP
 
     if scale == 'dynamic':
         vals = [v for v in values_by_country.values() if v is not None]
