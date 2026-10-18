@@ -239,26 +239,53 @@ def get_label_pos(geodata, iso2=None, name=None):
 
 # ============================================================
 # MAP COLOR SCALE (one style for every map)
-# Pale yellow (low) through orange and red to purple (high): light means
-# little, dark means a lot, the convention readers expect on a white
-# background, with the hue and saturation also shifting so values stay
-# easy to tell apart across the whole 0-100% range. It is matplotlib's
-# 'inferno' reversed, with the last part of the dark end cut off so that
-# 100% is a saturated purple and not black (black reads as "no signal").
-# MAP_CMAP_TRIM is the share of the scale that is kept; lower values end in
-# a lighter purple, higher values end in a darker one (0.76 ends #520e6d,
-# 0.82 ends #390963, 0.90 ends #160b39, nearly black).
+# Low values are pale and high values are dark, the convention readers expect on a
+# white background. The default, 'ylgnbu', runs pale yellow, green, teal, blue, deep blue.
+# It is ColorBrewer's YlGnBu hue path, rebuilt so the lightness falls in even steps:
+# the stock scale compresses its pale half (values from 0 to about 20% look alike,
+# which is where most countries sit on the per-source maps) and has a stretch where
+# the colour barely changes for some colour-blind readers. The end is a saturated
+# deep blue, not near-black (black reads as "no signal").
+#
+# Change MAP_CMAP_NAME to switch the whole site's maps:
+#   'ylgnbu'       the rebuilt scale described above (default)
+#   'ylgnbu_stock' ColorBrewer YlGnBu as published, cut before its near-black last class
+#   'inferno'      pale yellow, orange, red, purple (matplotlib inferno reversed and trimmed)
 # ============================================================
-MAP_CMAP_TRIM = 0.82
-MAP_CMAP = ListedColormap(plt.get_cmap('inferno_r')(np.linspace(0, MAP_CMAP_TRIM, 256)), name='map_scale')
+MAP_CMAP_NAME = 'ylgnbu'
+
+# 17 colours along the rebuilt scale; matplotlib interpolates between them (the result is
+# within 0.8 CAM02-UCS units of the exact scale, below what the eye can tell apart).
+YLGNBU_EVEN = ['#ffffd9', '#eff3bf', '#dee8a5', '#c9dc9d', '#b3d19a', '#97c69d', '#77bca3', '#57b0a7',
+               '#35a3a9', '#0e96a9', '#0086a9', '#0076a7', '#0865a3', '#19549e', '#1f4398', '#223090', '#182a7a']
+
+
+def build_map_cmap(name):
+    if name == 'ylgnbu':
+        return LinearSegmentedColormap.from_list('map_scale', YLGNBU_EVEN, N=256)
+    if name == 'ylgnbu_stock':
+        return ListedColormap(plt.get_cmap('YlGnBu')(np.linspace(0, 0.875, 256)), name='map_scale')
+    if name == 'inferno':
+        return ListedColormap(plt.get_cmap('inferno_r')(np.linspace(0, 0.82, 256)), name='map_scale')
+    raise ValueError(f"unknown MAP_CMAP_NAME {name!r}")
+
+
+MAP_CMAP = build_map_cmap(MAP_CMAP_NAME)
+
+# Countries with no data (outside ENTSO-E, or nothing reported): a plain light gray, no hatching.
+# Kept light so it stays quiet, but not paler than this: lighter grays get hard to tell apart
+# from the pale-yellow low end of the scale for readers with blue-yellow color blindness.
+NO_DATA_COLOR = '#e2e2e2'
+# Width of every country border on the map, coloured and no-data alike (in points).
+BORDER_WIDTH = 0.8
 
 
 def generate_map(geodata, values_by_country, source, date_str, scale='fixed', cmap_override=None):
     """
     Generate a single map for one source and one date.
 
-    Hatching rule (consistent for all countries):
-    - Any country WITHOUT data (None) -> white + gray hatch
+    No-data rule (consistent for all countries):
+    - Any country WITHOUT data (None) -> light gray (NO_DATA_COLOR), no hatching
     - Any country WITH data (including 0.0) -> colored by value
 
     Applies to: all non-ENTSO-E countries, ENTSO-E NaN, Iceland.
@@ -291,10 +318,9 @@ def generate_map(geodata, values_by_country, source, date_str, scale='fixed', cm
 
     norm = Normalize(vmin=0, vmax=vmax)
 
-    def plot_hatched(gdf, ax, zorder):
-        """White base + light sparse diagonal stripes = no data"""
-        gdf.plot(ax=ax, color='white', edgecolor='#bbbbbb', linewidth=0.6, zorder=zorder)
-        gdf.plot(ax=ax, color='none', edgecolor='#cccccc', linewidth=0.6, hatch='/', zorder=zorder)
+    def plot_no_data(gdf, ax, zorder):
+        """Plain light gray = no data"""
+        gdf.plot(ax=ax, color=NO_DATA_COLOR, edgecolor='#bbbbbb', linewidth=BORDER_WIDTH, zorder=zorder)
 
     fig, ax = plt.subplots(figsize=(12, 12))
     fig.patches.append(Rectangle(
@@ -307,7 +333,7 @@ def generate_map(geodata, values_by_country, source, date_str, scale='fixed', cm
     ax.set_facecolor('#cce6ff')
 
     # All non-ENTSO-E countries (except Iceland which is handled separately):
-    # hatched -- no data
+    # no data (light gray)
     non_entsoe = world_proj_clipped[
         (~world_proj_clipped['iso2'].isin(ENTSOE_COUNTRIES)) &
         (~world_proj_clipped['geometry'].is_empty) &
@@ -319,9 +345,9 @@ def generate_map(geodata, values_by_country, source, date_str, scale='fixed', cm
     ].copy()
     non_entsoe = non_entsoe[~non_entsoe['geometry'].is_empty]
     if not non_entsoe.empty:
-        plot_hatched(non_entsoe, ax, zorder=1)
+        plot_no_data(non_entsoe, ax, zorder=1)
 
-    # ENTSO-E countries: colored if data, hatched if None
+    # ENTSO-E countries: colored if data, light gray if None
     for cc in ENTSOE_COUNTRIES:
         country_geom = world_proj_clipped[world_proj_clipped['iso2'] == cc]
         country_geom = country_geom[~country_geom['geometry'].is_empty]
@@ -329,15 +355,15 @@ def generate_map(geodata, values_by_country, source, date_str, scale='fixed', cm
             continue
         val = values_by_country.get(cc)
         if val is None:
-            plot_hatched(country_geom, ax, zorder=2)
+            plot_no_data(country_geom, ax, zorder=2)
         else:
             country_geom.plot(ax=ax, color=cmap(norm(val)),
-                              edgecolor='#bbbbbb', linewidth=0.6, zorder=2)
+                              edgecolor='#bbbbbb', linewidth=BORDER_WIDTH, zorder=2)
 
-    # Iceland (relocated): hatched -- no data
+    # Iceland (relocated): no data (light gray)
     if iceland_shifted is not None:
         iceland_gdf = gpd.GeoDataFrame(geometry=[iceland_shifted], crs=world_proj_clipped.crs)
-        plot_hatched(iceland_gdf, ax, zorder=3)
+        plot_no_data(iceland_gdf, ax, zorder=3)
         b = iceland_shifted.bounds
         pad = 50000
         ax.add_patch(Rectangle(
@@ -470,7 +496,7 @@ def generate_map(geodata, values_by_country, source, date_str, scale='fixed', cm
         fx = start_x + col_i * (entry_w + col_gap)
 
         value_str = f"{val:.0f}%" if val is not None else "—"
-        map_color = cmap(norm(val)) if val is not None else '#eeeeee'
+        map_color = cmap(norm(val)) if val is not None else NO_DATA_COLOR
 
         # Try real SVG flag via cairosvg, fall back to colored rectangle
         flag_path = os.path.join(flags_dir, f'{cc}.svg')
@@ -675,10 +701,10 @@ def load_summary_table_for_country(gc, country_code):
 def compute_percentage(source_val, total_val, has_any_data=True):
     """
     Compute percentage with correct None vs 0 logic:
-    - None if this country has no data for ANY source at all -> hatch
+    - None if this country has no data for ANY source at all -> no data (gray)
       (genuinely unknown, not a confirmed zero -- e.g. total_val's own
       worksheet loaded fine while every per-source worksheet failed)
-    - None if total is missing/zero -> hatch (can't compute denominator)
+    - None if total is missing/zero -> no data (gray) (can't compute denominator)
     - 0.0 if source is missing but total available AND other sources
       have data -> white (confirmed zero, e.g. a country with no nuclear
       capacity at all genuinely generates 0% nuclear, not "unknown")
@@ -960,7 +986,7 @@ def main():
             try:
                 summary_table_data[country_code] = load_summary_table_for_country(gc, country_code)
             except Exception as e:
-                print(f"  ⚠ Failed to load {country_code}: {e} -- will show as hatched")
+                print(f"  ⚠ Failed to load {country_code}: {e} -- will show as no data (gray)")
                 summary_table_data[country_code] = {}
             if i < len(countries_to_load) - 1:
                 time.sleep(20)
@@ -970,7 +996,7 @@ def main():
             try:
                 all_country_data[country_code] = load_all_data_for_country(gc, country_code)
             except Exception as e:
-                print(f"  ⚠ Failed to load {country_code}: {e} -- will show as hatched")
+                print(f"  ⚠ Failed to load {country_code}: {e} -- will show as no data (gray)")
                 all_country_data[country_code] = {}
             if i < len(ENTSOE_COUNTRIES):
                 time.sleep(15)
