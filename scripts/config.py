@@ -228,7 +228,7 @@ ENTSOE_COLORS = {
     'oil':                '#191970',  # Midnight Blue
     'waste':              '#808000',  # Olive
     'all-renewables':     '#00CED1',  # Dark Turquoise
-    'all-non-renewables': '#007A7F',  # Deep Teal (was black; black is now Total)
+    'all-non-renewables': '#C9852B',  # Ochre
     # Title Case aliases (eu_energy_plotting.py)
     'Solar':              '#FFD700',
     'Wind':               '#228B22',
@@ -243,28 +243,26 @@ ENTSOE_COLORS = {
     'Oil':                '#191970',
     'Waste':              '#808000',
     'Renewables':         '#00CED1',
-    'Non-Renewables':     '#007A7F',
+    'Non-Renewables':     '#C9852B',
     # Legacy aliases -- keep for backward compatibility with eu_energy_plotting.py
     'All Renewables':     '#00CED1',
-    'All Non-Renewables': '#007A7F',
+    'All Non-Renewables': '#C9852B',
 
-    # --- New aggregates: Total, Low Emission, High Emission ---
-    # Palette logic: Total is neutral black. Low/High Emission are a
-    # light-to-dark warm pair (orange to red-orange), deliberately in
-    # the opposite temperature family from the cool Renewables /
-    # Non-Renewables pair, so the two pairs never get confused on the
-    # 5-line aggregate plot. These five never share a plot with the 10
-    # individual sources.
-    # Non-Renewables moved from black to deep teal '#007A7F' (see above) so
-    # Total can own black. STILL TO DO: the website pages hardcode the old
-    # black for Non-Renewables (dropdown and table dots), so they do not
-    # match the plots until the frontend step.
+    # --- Aggregate palette: Total, Renewables, Non-Renewables, Low/High Emission ---
+    # The shade carries the grouping and the hue carries the side:
+    #   cool = clean side:  Renewables (turquoise), Low Emission (deep teal)
+    #   warm = heavy side:  Non-Renewables (ochre), High Emission (dark brown)
+    #   light shades = the split by source type, dark shades = the split by emissions
+    # so a legend with one column per split and one row per side reads as a grid.
+    # Total is black. These five never share a plot with the 10 individual sources.
+    # STILL TO DO: the website pages hardcode the old colors for these series
+    # (dropdown and table dots), so they do not match the plots until the frontend step.
     'total-generation':   '#000000',
-    'all-low-emission':   '#FF9F40',
-    'all-high-emission':  '#C0392B',
+    'all-low-emission':   '#007A7F',
+    'all-high-emission':  '#5A3A22',
     'Total Generation':   '#000000',
-    'Low Emission':       '#FF9F40',
-    'High Emission':      '#C0392B',
-    'All Low Emission':   '#FF9F40',
-    'All High Emission':  '#C0392B',
+    'Low Emission':       '#007A7F',
+    'High Emission':      '#5A3A22',
+    'All Low Emission':   '#007A7F',
+    'All High Emission':  '#5A3A22',
 }
