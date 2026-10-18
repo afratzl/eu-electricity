@@ -500,18 +500,39 @@
                 prev: 'year_previous'
             };
 
-            // Layout: the aggregates (Total, Renewables, Non-Renewables, Low Emission, High
-            // Emission) come first, then the 10 individual sources as one striped block.
-            const isAggregateSource = s => (s.category || '').startsWith('aggregate');
+            // Two layouts, chosen from the data itself:
+            //  - stacked: all aggregates first (Total, Renewables, Non-Renewables, Low Emission,
+            //    High Emission), then the 10 individual sources as one striped block.
+            //  - sectioned: each aggregate heads its own sources, as the table always looked.
+            //    Used whenever the data is still in that older order (for example before the new
+            //    rows exist for a country), so the table never gets stray dividers.
+            const isAggregateSource = s => (s.category || '').startsWith('aggregate') ||
+                ['All Renewables', 'Renewables', 'All Non-Renewables', 'Non-Renewables'].includes(s.source);
+            const firstSourceIdx = data.sources.findIndex(s => !isAggregateSource(s));
+            const lastAggregateIdx = data.sources.map(isAggregateSource).lastIndexOf(true);
+            const stacked = firstSourceIdx === -1 || lastAggregateIdx < firstSourceIdx;
+            const sectionRowCount = {renewable: 0, 'non-renewable': 0};
             data.sources.forEach((source, idx) => {
                 const isAggregate = isAggregateSource(source);
                 const rowClass = isAggregate ? 'row-aggregate-pro' : 'row-source-pro';
-                // One alternation runs through the whole table, aggregates included
-                let altClass = (idx + 1) % 2 === 0 ? ' row-even' : ' row-odd';
-                if (isAggregate) {
-                    // last aggregate row: draw the divider rule under it
-                    const next = data.sources[idx + 1];
-                    if (next && !isAggregateSource(next)) altClass += ' block-end';
+                let altClass = '';
+                if (stacked) {
+                    // One alternation runs through the whole table, aggregates included
+                    altClass = (idx + 1) % 2 === 0 ? ' row-even' : ' row-odd';
+                    if (isAggregate) {
+                        // last aggregate row: draw the divider rule under it
+                        const next = data.sources[idx + 1];
+                        if (next && !isAggregateSource(next)) altClass += ' block-end';
+                    }
+                } else {
+                    // sectioned: stripe each section on its own
+                    const cat = source.category || '';
+                    const section = (cat === 'renewable' || cat === 'aggregate-renewable') ? 'renewable' : 'non-renewable';
+                    altClass = ' ' + section;
+                    if (!isAggregate) {
+                        sectionRowCount[section]++;
+                        altClass += sectionRowCount[section] % 2 === 0 ? ' row-even' : ' row-odd';
+                    }
                 }
                 const color = SOURCE_COLORS[source.source] || '#888';
 
@@ -929,6 +950,21 @@
            from the line as other rows keep from their bottom edge. */
         .row-aggregate-pro.block-end td {
             padding-bottom: calc(var(--cell-pad-y) + var(--divider-h) + 3px);
+        }
+
+        /* LEGACY: sectioned layout, used only while the data is still in the older order
+           (an aggregate above each group of sources). Delete once every country's data has
+           the aggregates first. */
+        .row-aggregate-pro.renewable {
+            background: #cdddf2;
+        }
+
+        .row-aggregate-pro.non-renewable {
+            background-color: #cdddf2;
+            background-image: linear-gradient(90deg, #003399 0%, #6B9FD8 100%);
+            background-repeat: no-repeat;
+            background-size: 100% var(--divider-h);
+            background-position: top;
         }
 
         .row-source-pro {
