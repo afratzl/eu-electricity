@@ -85,8 +85,8 @@ def get_map_from_drive():
         with open(json_path, 'r') as f:
             links = json.load(f)
         
-        # The site's maps now use viridis by default (site-wide color
-        # scheme change), so the separate Bluesky-specific variant is no
+        # The site's maps use one shared color scale (see MAP_CMAP in
+        # generate_maps.py), so the separate Bluesky-specific variant is no
         # longer needed -- back to the regular map.
         file_id = links.get('Maps', {}).get('Yesterday', {}).get('all-renewables', {}).get('percentage', {}).get('file_id')
         
