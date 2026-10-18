@@ -13,6 +13,13 @@ from datetime import datetime
 
 import time
 
+# Same names the sheet writers use for the three derived rows. Imported so the
+# generator and the writers cannot drift apart.
+from config import DERIVED_SHEET_NAMES
+LOW_EMISSION_ROW = DERIVED_SHEET_NAMES['all-low-emission']
+HIGH_EMISSION_ROW = DERIVED_SHEET_NAMES['all-high-emission']
+TOTAL_ROW = DERIVED_SHEET_NAMES['total-generation']
+
 # Use drive_links.json as single source of truth for spreadsheet IDs
 DRIVE_LINKS_FILE = 'plots/drive_links.json'
 
@@ -177,7 +184,8 @@ def generate_summary_json():
                 'All Renewables',
                 'Solar', 'Wind', 'Hydro', 'Biomass', 'Geothermal',
                 'All Non-Renewables',
-                'Gas', 'Coal', 'Nuclear', 'Oil', 'Waste'
+                'Gas', 'Coal', 'Nuclear', 'Oil', 'Waste',
+                LOW_EMISSION_ROW, HIGH_EMISSION_ROW, TOTAL_ROW
             ]
             
             # Build sources list for THIS COUNTRY
@@ -197,6 +205,12 @@ def generate_summary_json():
                     category = 'aggregate-renewable'
                 elif source_name == 'All Non-Renewables':
                     category = 'aggregate-non-renewable'
+                elif source_name == LOW_EMISSION_ROW:
+                    category = 'aggregate-low-emission'
+                elif source_name == HIGH_EMISSION_ROW:
+                    category = 'aggregate-high-emission'
+                elif source_name == TOTAL_ROW:
+                    category = 'aggregate-total'
                 elif source_name in ['Solar', 'Wind', 'Hydro', 'Biomass', 'Geothermal']:
                     category = 'renewable'
                 else:
@@ -319,26 +333,34 @@ def generate_summary_json():
                         
                         # Scale all individual sources in same proportion
                         for source in sources_list:
-                            if source["category"] in ["renewable", "non-renewable"]:
+                            # Low/High Emission are sums and differences of the rows above, so they
+                            # scale by the same factor. Total stays at exactly 100%.
+                            if source["category"] in ["renewable", "non-renewable",
+                                                      "aggregate-low-emission", "aggregate-high-emission"]:
                                 old_pct = source[period]["percentage"]
                                 source[period]["percentage"] = round(old_pct * norm_factor, 2)
                         
                         print(f"    {period}: {total:.2f}% → 100.00% (factor: {norm_factor:.6f})")
                         
             # Define source order by contribution
+            # The five aggregates first (Total, then the two splits: source type, emissions),
+            # then the 10 individual sources
             source_order_map = {
-                'All Renewables': 0,
-                'Wind': 1,
-                'Hydro': 2,
-                'Solar': 3,
-                'Biomass': 4,
-                'Geothermal': 5,
-                'All Non-Renewables': 6,
-                'Nuclear': 7,
-                'Gas': 8,
-                'Coal': 9,
-                'Waste': 10,
-                'Oil': 11
+                TOTAL_ROW: 0,
+                'All Renewables': 1,
+                'All Non-Renewables': 2,
+                LOW_EMISSION_ROW: 3,
+                HIGH_EMISSION_ROW: 4,
+                'Wind': 5,
+                'Hydro': 6,
+                'Solar': 7,
+                'Biomass': 8,
+                'Geothermal': 9,
+                'Nuclear': 10,
+                'Gas': 11,
+                'Coal': 12,
+                'Waste': 13,
+                'Oil': 14
             }
             
             # Sort sources
