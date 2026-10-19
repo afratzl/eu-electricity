@@ -109,6 +109,7 @@ LABEL_OFFSETS = {
     'CZ': (-30000, -30000),
     'ME': (-65000, 0),
     'XK': (65000, 0),
+    'DK': (-155000, 0),   # on the open sea just west of Jutland (about a 5 pixel gap): black on white
 }
 
 CONTEXT_LABEL_OFFSETS = {
@@ -279,6 +280,60 @@ NO_DATA_COLOR = '#e2e2e2'
 # Width of every country border on the map, coloured and no-data alike (in points).
 BORDER_WIDTH = 0.8
 
+# Country-code labels are plain black (no halo) and turn white where the background behind them
+# is dark. LABEL_FLIP_AT is the point on the colour scale, as a share of it, from which labels
+# turn white: 0.40 means labels are white on every colour at 40% of the colour bar or beyond.
+# (For reference: white text starts to have more contrast than black at about 65% of the default
+# scale. Flipping earlier than that trades some contrast for a lighter look: on the default scale
+# white text has about 2.3:1 contrast at 40%, 3.0:1 at 50% and 4.5:1 at 65%, black has 8.9, 6.9
+# and 4.6. Raise the value to keep black longer, lower it to flip to white sooner.)
+LABEL_FLIP_AT = 0.40
+
+
+def relative_luminance(rgb):
+    """WCAG relative luminance of an RGB colour (components 0-1), 0 = black, 1 = white."""
+    c = np.asarray(rgb[:3], dtype=float)
+    lin = np.where(c <= 0.03928, c / 12.92, ((c + 0.055) / 1.055) ** 2.4)
+    return float(lin @ np.array([0.2126, 0.7152, 0.0722]))
+
+
+# A label flips when most of the pixels behind it are darker than the colour at LABEL_FLIP_AT.
+LABEL_DARK_LUMINANCE = relative_luminance(MAP_CMAP(LABEL_FLIP_AT))
+# Labels that sit on the open sea by design (Denmark's is moved there, Malta and Cyprus are islands
+# labelled beside them): always black, never flipped.
+ALWAYS_BLACK_LABELS = ('DK', 'MT', 'CY')
+# Labels never get an outline or halo. All labels use the same size; a label that would sit badly
+# can be moved with LABEL_OFFSETS (above), as Denmark's is, onto the open sea where black always reads.
+
+
+def adapt_label_colors(fig, texts):
+    """Set each label to black or white depending on what is actually drawn behind it.
+
+    Looks at the rendered pixels under every label (so labels that sit across a border or over
+    the sea are judged by what is really behind them, not by one country's value) and picks white
+    when the majority of those pixels are dark, black otherwise. No outline is ever drawn."""
+    renderer = fig.canvas.get_renderer()
+    boxes = [t.get_window_extent(renderer) for t in texts]   # measure first: hidden text has no extent
+    for t in texts:
+        t.set_visible(False)                      # then read the background, not the text itself
+    fig.canvas.draw()
+    pixels = np.asarray(fig.canvas.buffer_rgba())[..., :3] / 255.0
+    height, width = pixels.shape[:2]
+    for t, box in zip(texts, boxes):
+        if t.get_text() in ALWAYS_BLACK_LABELS:
+            t.set_color('black')
+            t.set_visible(True)
+            continue
+        x0, x1 = int(max(box.x0, 0)), int(min(box.x1, width))
+        y0, y1 = int(max(height - box.y1, 0)), int(min(height - box.y0, height))
+        region = pixels[y0:y1, x0:x1].reshape(-1, 3)
+        if len(region):
+            lin = np.where(region <= 0.03928, region / 12.92, ((region + 0.055) / 1.055) ** 2.4)
+            luminance = lin @ np.array([0.2126, 0.7152, 0.0722])
+            white = np.mean(luminance < LABEL_DARK_LUMINANCE) > 0.5
+            t.set_color('white' if white else 'black')
+        t.set_visible(True)
+
 
 def generate_map(geodata, values_by_country, source, date_str, scale='fixed', cmap_override=None):
     """
@@ -323,6 +378,7 @@ def generate_map(geodata, values_by_country, source, date_str, scale='fixed', cm
         gdf.plot(ax=ax, color=NO_DATA_COLOR, edgecolor='#bbbbbb', linewidth=BORDER_WIDTH, zorder=zorder)
 
     fig, ax = plt.subplots(figsize=(12, 12))
+    flip_labels = []   # black labels that may turn white on a dark background (see adapt_label_colors)
     fig.patches.append(Rectangle(
         (0, 0.86), 1.0, 0.14,
         transform=fig.transFigure,
@@ -371,10 +427,9 @@ def generate_map(geodata, values_by_country, source, date_str, scale='fixed', cm
             linewidth=2.0, edgecolor='#555555', facecolor='none',
             linestyle=(0, (6, 3)), zorder=4
         ))
-        ax.text((b[0]+b[2])/2, (b[1]+b[3])/2 - 50000, 'IS',
-                fontsize=14, fontweight='bold',
-                ha='center', va='center', color='black', zorder=5,
-                path_effects=[pe.withStroke(linewidth=2.5, foreground='white')])
+        flip_labels.append(ax.text((b[0]+b[2])/2, (b[1]+b[3])/2 - 50000, 'IS',
+                                   fontsize=14, fontweight='bold',
+                                   ha='center', va='center', color='black', zorder=5))
 
     # ENTSO-E country labels
     for cc in ENTSOE_COUNTRIES:
@@ -385,16 +440,14 @@ def generate_map(geodata, values_by_country, source, date_str, scale='fixed', cm
         lx += ox
         ly += oy
         if minx <= lx <= maxx_extended + 50000 and miny <= ly <= maxy_cropped:
-            ax.text(lx, ly, cc,
-                    fontsize=14, fontweight='bold',
-                    ha='center', va='center', color='black', zorder=6,
-                    path_effects=[pe.withStroke(linewidth=2.5, foreground='white')])
+            flip_labels.append(ax.text(lx, ly, cc,
+                                       fontsize=14, fontweight='bold',
+                                       ha='center', va='center', color='black', zorder=6))
 
     # Malta label (no polygon in 110m dataset)
-    ax.text(MT_X + 80000, MT_Y + 60000, 'MT',  # MT_Y already adjusted (-60000)
-            fontsize=14, fontweight='bold',
-            ha='center', va='center', color='black', zorder=6,
-            path_effects=[pe.withStroke(linewidth=2.5, foreground='white')])
+    flip_labels.append(ax.text(MT_X + 80000, MT_Y + 60000, 'MT',  # MT_Y already adjusted (-60000)
+                               fontsize=14, fontweight='bold',
+                               ha='center', va='center', color='black', zorder=6))
 
     # Context country labels
     for name, (label, weight, size, color) in CONTEXT_LABELS.items():
@@ -405,10 +458,11 @@ def generate_map(geodata, values_by_country, source, date_str, scale='fixed', cm
         lx += ox
         ly += oy
         if minx <= lx <= maxx_extended + 50000 and miny <= ly <= maxy_cropped:
-            ax.text(lx, ly, label,
-                    fontsize=size, fontweight=weight,
-                    ha='center', va='center', color=color, zorder=6,
-                    path_effects=[pe.withStroke(linewidth=2.0, foreground='white')])
+            t = ax.text(lx, ly, label,
+                        fontsize=size, fontweight=weight,
+                        ha='center', va='center', color=color, zorder=6)
+            if color == 'black':
+                flip_labels.append(t)       # the gray 'suspended' labels keep their own color
 
     ax.set_xlim(minx, maxx_extended + 50000)
     ax.set_ylim(miny, maxy_cropped)
@@ -544,6 +598,10 @@ def generate_map(geodata, values_by_country, source, date_str, scale='fixed', cm
                  transform=fig.transFigure,
                  fontsize=10, fontweight='bold', va='center', ha='left',
                  color='#111', zorder=12)
+
+    # Last step, once the layout is final: black labels turn white only where the map behind
+    # them is dark
+    adapt_label_colors(fig, flip_labels)
 
     return fig
 
