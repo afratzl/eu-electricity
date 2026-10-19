@@ -104,11 +104,16 @@ LABEL_OFFSETS = {
     'AT': (50000, 0),
     'SE': (-130000, -300000),
     'DE': (50000, 0),
-    'HR': (80000, 0),
+    'HR': (65000, -23000),    # was (80000, -8000): a bit more down and left
     'CH': (50000, 0),
     'CZ': (-30000, -30000),
-    'ME': (-65000, 0),
-    'XK': (65000, 0),
+    'ME': (-38000, 0),        # a bit more right (was -53000, originally -65000)
+    'XK': (53000, 0),         # a very small amount left (was 65000)
+    'SI': (0, -8000),         # a tiny bit down
+    'MK': (8000, 0),          # a tiny bit right
+    'SK': (12000, 0),         # a very small amount right
+    'PT': (15000, 15000),     # a little up and right
+    'LV': (0, -15000),        # a little down
     'DK': (-155000, 0),   # on the open sea just west of Jutland (about a 5 pixel gap): black on white
 }
 
