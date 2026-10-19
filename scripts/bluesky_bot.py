@@ -74,8 +74,8 @@ def get_plot_from_drive():
         return None
 
 
-def get_map_from_drive():
-    """Get yesterday's renewables map file ID from drive_links.json and download it"""
+def get_map_from_drive(source='all-renewables', label='renewables'):
+    """Get yesterday's map for one source (default: renewables) from drive_links.json and download it"""
     json_path = 'plots/drive_links.json'
     
     if not os.path.exists(json_path):
@@ -88,15 +88,15 @@ def get_map_from_drive():
         # The site's maps use one shared color scale (see MAP_CMAP in
         # generate_maps.py), so the separate Bluesky-specific variant is no
         # longer needed -- back to the regular map.
-        file_id = links.get('Maps', {}).get('Yesterday', {}).get('all-renewables', {}).get('percentage', {}).get('file_id')
+        file_id = links.get('Maps', {}).get('Yesterday', {}).get(source, {}).get('percentage', {}).get('file_id')
         
         if not file_id:
-            print("⚠️  No renewables map file_id found")
+            print(f"⚠️  No {label} map file_id found")
             return None
         
-        print(f"✓ Found map file_id: {file_id}")
+        print(f"✓ Found {label} map file_id: {file_id}")
         
-        map_path = 'plots/map_all-renewables_yesterday.png'
+        map_path = f'plots/map_{source}_yesterday.png'
         os.makedirs('plots', exist_ok=True)
         
         print(f"📥 Downloading map from Google Drive...")
@@ -297,6 +297,9 @@ def post_to_bluesky():
     
     # Download renewables map (optional -- post without if unavailable)
     map_path = get_map_from_drive()
+
+    # Download low emission map (optional as well)
+    low_map_path = get_map_from_drive('all-low-emission', 'low emission')
     
     post_text, facets = create_post_text_and_facets()
     print(f"\n📝 Post text:\n{post_text}\n")
@@ -342,6 +345,22 @@ def post_to_bluesky():
                 'image': map_upload.blob
             })
             print("✓ Map image ready")
+
+        # Low emission map (renewables + nuclear - biomass). An optional extra: if anything
+        # goes wrong with it, the post still goes out with the other images.
+        if low_map_path:
+            try:
+                print("📤 Uploading low emission map to Bluesky...")
+                with open(low_map_path, 'rb') as f:
+                    low_map_data = f.read()
+                low_map_upload = upload_with_retry(low_map_data)
+                images.append({
+                    'alt': 'Map of EU low-emission electricity generation (renewables plus nuclear, minus biomass) by country for yesterday',
+                    'image': low_map_upload.blob
+                })
+                print("✓ Low emission map image ready")
+            except Exception as e:
+                print(f"⚠️  Could not add the low emission map, posting without it: {e}")
         
         print("📮 Posting to Bluesky...")
         client.send_post(
