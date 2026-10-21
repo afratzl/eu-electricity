@@ -1348,8 +1348,10 @@ def create_all_charts(all_data, country_code='EU'):
                 max_annual_twh = max(max_annual_twh, val_twh)
 
                 source_value = annual_totals[source_name][year]
-                total_value = annual_totals['Total Generation'][year]
-                if total_value > 0:
+                # A year the Total Generation sheet has no entry for (a country whose sheets do not
+                # all start in the same year) cannot give a percentage, so it is skipped here.
+                total_value = annual_totals['Total Generation'].get(year)
+                if total_value is not None and total_value > 0:
                     percentage = (source_value / total_value) * 100
                     max_annual_pct = max(max_annual_pct, percentage)
 
