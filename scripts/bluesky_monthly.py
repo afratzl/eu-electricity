@@ -68,8 +68,8 @@ def get_plot_from_drive():
         return None
 
 
-def get_monthly_map_from_drive(month_name):
-    """Get the month's renewables map file ID from drive_links.json and download it -- mirrors the daily bot's get_map_from_drive"""
+def get_monthly_map_from_drive(month_name, source='all-renewables', label='renewables'):
+    """Get the month's map for one source (default: renewables) from drive_links.json and download it -- mirrors the daily bot's get_map_from_drive"""
     json_path = 'plots/drive_links.json'
 
     if not os.path.exists(json_path):
@@ -79,15 +79,15 @@ def get_monthly_map_from_drive(month_name):
         with open(json_path, 'r') as f:
             links = json.load(f)
 
-        file_id = links.get('Maps', {}).get('Monthly', {}).get(month_name, {}).get('all-renewables', {}).get('percentage', {}).get('file_id')
+        file_id = links.get('Maps', {}).get('Monthly', {}).get(month_name, {}).get(source, {}).get('percentage', {}).get('file_id')
 
         if not file_id:
-            print(f"⚠️  No renewables map file_id found for {month_name}")
+            print(f"⚠️  No {label} map file_id found for {month_name}")
             return None
 
-        print(f"✓ Found map file_id: {file_id}")
+        print(f"✓ Found {label} map file_id: {file_id}")
 
-        map_path = f'plots/map_all-renewables_{month_name}.png'
+        map_path = f'plots/map_{source}_{month_name}.png'
         os.makedirs('plots', exist_ok=True)
 
         print("📥 Downloading map from Google Drive...")
@@ -99,6 +99,15 @@ def get_monthly_map_from_drive(month_name):
     except Exception as e:
         print(f"⚠️  Error getting map from Drive: {e}")
         return None
+
+
+def expected_last_month():
+    """The calendar month that has just ended, as (month number, year). Uses the same clock as the
+    analysis that writes the stats (the runner's date), and is the month this post must be about."""
+    now = datetime.now()
+    month = now.month - 1 or 12
+    year = now.year if now.month > 1 else now.year - 1
+    return month, year
 
 
 def get_stats_from_json():
@@ -299,6 +308,16 @@ def post_to_bluesky():
     # aren't available.
     stats_for_map = get_stats_from_json()
     if stats_for_map:
+        # Guard against posting an old month. The stats come from the manually run "Current Year
+        # Monthly Analysis" workflow; if it has not been re-run since the month ended, the stats
+        # still describe the month before and the post would silently report the wrong month.
+        exp_month, exp_year = expected_last_month()
+        if (stats_for_map['month_name'], int(stats_for_map['year'])) != (calendar.month_name[exp_month], exp_year):
+            print(f"❌ Stale statistics: the stats are for {stats_for_map['month_name']} {stats_for_map['year']}, "
+                  f"but the month that just ended is {calendar.month_name[exp_month]} {exp_year}.")
+            print("   Nothing was posted. Run the 'Current Year Monthly Analysis' workflow (after the historical "
+                  "data update has finished), then run this again.")
+            sys.exit(1)
         map_month_name = stats_for_map['month_name']
     else:
         current_date = datetime.now()
@@ -307,6 +326,9 @@ def post_to_bluesky():
 
     # Download renewables map (optional -- post without it if unavailable)
     map_path = get_monthly_map_from_drive(map_month_name)
+
+    # Download low emission map (optional as well, like the daily bot)
+    low_map_path = get_monthly_map_from_drive(map_month_name, 'all-low-emission', 'low emission')
 
     post_text, facets = create_post_text_and_facets()
     print(f"\n📝 Post text:\n{post_text}\n")
@@ -351,6 +373,22 @@ def post_to_bluesky():
                 'image': map_upload.blob
             })
             print("✓ Map image ready")
+
+        # Low emission map (renewables + nuclear - biomass). An optional extra, as in the daily bot:
+        # if anything goes wrong with it, the post still goes out with the other images.
+        if low_map_path:
+            try:
+                print("📤 Uploading low emission map to Bluesky...")
+                with open(low_map_path, 'rb') as f:
+                    low_map_data = f.read()
+                low_map_upload = upload_with_retry(low_map_data)
+                images.append({
+                    'alt': f'Map of EU low-emission electricity generation (renewables plus nuclear, minus biomass) by country for {map_month_name}',
+                    'image': low_map_upload.blob
+                })
+                print("✓ Low emission map image ready")
+            except Exception as e:
+                print(f"⚠️  Could not add the low emission map, posting without it: {e}")
 
         print("📮 Posting to Bluesky...")
         client.send_post(
