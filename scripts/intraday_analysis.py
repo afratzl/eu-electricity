@@ -16,6 +16,7 @@ Key improvements:
 """
 
 from entsoe import EntsoePandasClient
+from entsoe.exceptions import NoMatchingDataError
 import entsoe.entsoe
 import entsoe.parsers
 
@@ -127,6 +128,19 @@ def format_change_percentage(value):
         return f"{value:+.1f}%"
 
 
+# ENTSO-E answers received during this run, keyed by the request. A request has no source in it: it
+# returns every generation type for one country and window. The collection loop, however, asks for
+# the same country and window once per source pass (13 times, with 5 windows per country), only to
+# keep a different column each time. Remembering each answer means ENTSO-E is asked once and every
+# pass picks its own columns out of the saved table. Only final answers are kept (data, or "ENTSO-E
+# has no data for this"). A failed request is never kept, so a passing hiccup is retried by the next
+# pass exactly as before instead of leaving every pass without data.
+# Every caller receives its own independent copy of the saved table, so what one pass does to its
+# table can never reach another pass (exactly as when every pass downloaded its own).
+_ENTSOE_CACHE = {}
+_ENTSOE_STATS = {'requests': 0, 'from_memory': 0}
+
+
 def get_intraday_data_for_country(country, start_date, end_date, client, data_type='generation', max_retries=3, extra_hour=True):
     """
     Get intraday data for a specific country and date range with retry logic
@@ -161,16 +175,24 @@ def get_intraday_data_for_country(country, start_date, end_date, client, data_ty
     if extra_hour:
         end = end + timedelta(hours=1)
 
+    cache_key = (country, start, end, data_type)   # start and end already include the extra hour
+    if cache_key in _ENTSOE_CACHE:
+        _ENTSOE_STATS['from_memory'] += 1
+        return _ENTSOE_CACHE[cache_key].copy()
+
     for attempt in range(max_retries):
         try:
             if data_type == 'generation':
+                _ENTSOE_STATS['requests'] += 1
                 data = client.query_generation(country, start=start, end=end)
             elif data_type == 'load':
+                _ENTSOE_STATS['requests'] += 1
                 data = client.query_load(country, start=start, end=end)
             else:
                 return pd.DataFrame()
 
             if data.empty:
+                _ENTSOE_CACHE[cache_key] = pd.DataFrame()
                 return pd.DataFrame()
 
             # Convert to Brussels timezone
@@ -180,7 +202,14 @@ def get_intraday_data_for_country(country, start_date, end_date, client, data_ty
                 data.index = data.index.tz_convert('Europe/Brussels')
 
             time.sleep(0.1)
+            _ENTSOE_CACHE[cache_key] = data.copy()
             return data
+
+        except NoMatchingDataError:
+            # ENTSO-E has no data for this country and window. That answer does not change within a
+            # run, so keep it and stop asking (before, every pass retried it 3 times).
+            _ENTSOE_CACHE[cache_key] = pd.DataFrame()
+            return pd.DataFrame()
 
         except Exception as e:
             if attempt < max_retries - 1:
@@ -455,6 +484,8 @@ def collect_all_data(api_key):
             print(f"  {period_name}: ✗ No data")
     
     print("\n✓ Data collection complete!")
+    print(f"   ENTSO-E requests this run: {_ENTSOE_STATS['requests']} "
+          f"({_ENTSOE_STATS['from_memory']} further answers served from memory)")
     return data_matrix, periods, fetch_time
 
 
