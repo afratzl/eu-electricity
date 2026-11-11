@@ -240,7 +240,11 @@ def extract_source_from_generation_data(generation_data, source_keywords):
         if len(relevant_columns) == 1:
             energy_series = generation_data[relevant_columns[0]]
         else:
-            energy_series = generation_data[relevant_columns].sum(axis=1)
+            # min_count=1: a timestamp that is missing in ALL of the source's columns stays missing (NaN)
+            # instead of becoming 0.0. A plain sum() turns "no data" into a zero, and the projection only
+            # fills in values that are missing, never zeros. Without this, a source made of several columns
+            # (coal, gas, wind, hydro) was never projected while a one-column source (solar) was.
+            energy_series = generation_data[relevant_columns].sum(axis=1, min_count=1)
         return energy_series, relevant_columns
     else:
         return pd.Series(0, index=generation_data.index), []
