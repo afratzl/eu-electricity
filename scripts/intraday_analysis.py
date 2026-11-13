@@ -923,6 +923,16 @@ def apply_corrections_for_period(data_matrix, target_period, reference_period):
         for source in ATOMIC_SOURCES:
             if timestamp in corrected_sources[source]:
                 total_corrected += sum(corrected_sources[source][timestamp].values())
+        # The aggregates (renewables, non-renewables) include the weekly gap for categories that belong to
+        # none of the tracked sources ("Other", "Other renewable", ...). The total has to include that gap
+        # too. Without it the renormalisation below shrinks EVERY source by the gap's share, even values that
+        # were measured and complete, so the projected line sat a few percent under the actual one.
+        time_str = timestamp.strftime('%H:%M')
+        for agg_source in AGGREGATE_SOURCES:
+            if agg_source in weekly_hourly_gaps and time_str in weekly_hourly_gaps[agg_source].index:
+                gap = weekly_hourly_gaps[agg_source][time_str]
+                if not pd.isna(gap):
+                    total_corrected += gap
         corrected_total_gen[timestamp] = total_corrected
         
         # Actual total
