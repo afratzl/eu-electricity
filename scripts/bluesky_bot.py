@@ -8,7 +8,9 @@ With clickable links and hashtags, and exact spacing as specified
 import os
 import sys
 from datetime import datetime, timedelta
-from atproto import Client, models
+from atproto import Client, Request, models
+import httpx
+import time
 import json
 import requests
 
@@ -307,19 +309,21 @@ def post_to_bluesky():
     
     try:
         print("🔐 Logging in to Bluesky...")
-        client = Client(base_url='https://eurosky.social')
+        # httpx's default timeout is 5 seconds, which is too short when Eurosky is slow to answer an upload
+        client = Client(base_url='https://eurosky.social', request=Request(timeout=httpx.Timeout(60.0, connect=15.0)))
         client.login(handle, password)
         print(f"✓ Logged in as {handle}")
         
-        def upload_with_retry(data, max_retries=3):
+        def upload_with_retry(data, max_retries=4):
+            # Uploading a blob is safe to repeat (it is stored by its content), unlike creating the post itself
             for attempt in range(max_retries):
                 try:
                     return client.upload_blob(data)
                 except Exception as e:
                     if attempt < max_retries - 1:
-                        print(f"  ⚠️  Upload attempt {attempt+1} failed, retrying...")
-                        import time
-                        time.sleep(5)
+                        wait = 10 * 2 ** attempt        # 10 s, 20 s, 40 s
+                        print(f"  ⚠️  Upload attempt {attempt+1} failed ({type(e).__name__}: {e}), retrying in {wait}s...")
+                        time.sleep(wait)
                     else:
                         raise
 
@@ -376,7 +380,7 @@ def post_to_bluesky():
         print(f"   Profile: https://bsky.app/profile/{handle}")
         
     except Exception as e:
-        print(f"❌ Error posting to Bluesky: {e}")
+        print(f"❌ Error posting to Bluesky: {type(e).__name__}: {e}")
         import traceback
         traceback.print_exc()
         sys.exit(1)
