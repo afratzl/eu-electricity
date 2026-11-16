@@ -83,6 +83,8 @@ print = functools.partial(print, flush=True)
 # Google Sheets imports (lazy loaded to avoid errors if not installed)
 try:
     import gspread
+    from gspread.http_client import HTTPClient as _GspreadHTTPClient
+    import requests as _requests
     from google.oauth2.service_account import Credentials
     GSPREAD_AVAILABLE = True
 except ImportError:
@@ -2042,87 +2044,128 @@ def get_or_create_country_sheet(gc, drive_service, country_code='EU'):
     return spreadsheet
 
 
-def update_summary_table_worksheet(corrected_data, country_code='EU'):
-    """
-    Update Google Sheets "Summary Table Data" worksheet with yesterday/last week data
-    Uses PROJECTED (corrected) data for accuracy
-    
-    FIXED: Now uses 22 columns (A-V) matching monthly/trends script
-    """
-    if not GSPREAD_AVAILABLE:
-        print("\n⚠ Skipping Google Sheets update - gspread not available")
-        return
-    
-    print("\n" + "=" * 80)
-    print("PHASE 4: UPDATE SUMMARY TABLE (GOOGLE SHEETS)")
-    print("=" * 80)
-    
-    try:
-        # Get credentials
-        google_creds_json = os.environ.get('GOOGLE_CREDENTIALS_JSON')
-        if not google_creds_json:
-            print("⚠ GOOGLE_CREDENTIALS_JSON not set - skipping Sheets update")
-            return
-        
-        creds_dict = json.loads(google_creds_json)
+# ============================================================================
+# GOOGLE SHEETS ACCESS: few, paced and retried requests
+# ============================================================================
+# Every Sheets request goes through PacedHTTPClient, which
+#   - keeps at least SHEETS_MIN_GAP_SECONDS between two requests, so this script on its own can never
+#     exceed about 55 requests a minute (Google's default limit is 60 reads and 60 writes a minute per
+#     user, and all workflows share one service account),
+#   - retries rate-limit (429) and server errors with growing waits instead of failing silently,
+#   - counts the requests, so the run log shows what was used (print_sheets_summary).
+SHEETS_MIN_GAP_SECONDS = 1.1
+SHEETS_RETRY_STATUS = (429, 500, 502, 503, 504)
+SHEETS_MAX_ATTEMPTS = 4
+SHEETS_STATS = {'reads': 0, 'writes': 0, 'retries': 0, 'waited_seconds': 0.0}
+_last_sheets_request = [0.0]
+_SHEETS_CLIENT = {}
+
+if GSPREAD_AVAILABLE:
+    class PacedHTTPClient(_GspreadHTTPClient):
+        def request(self, method, endpoint, *args, **kwargs):
+            for attempt in range(SHEETS_MAX_ATTEMPTS):
+                gap = SHEETS_MIN_GAP_SECONDS - (time.monotonic() - _last_sheets_request[0])
+                if gap > 0:
+                    time.sleep(gap)
+                    SHEETS_STATS['waited_seconds'] += gap
+                _last_sheets_request[0] = time.monotonic()
+                SHEETS_STATS['reads' if str(method).lower() == 'get' else 'writes'] += 1
+                try:
+                    return super().request(method, endpoint, *args, **kwargs)
+                except gspread.exceptions.APIError as e:
+                    status = getattr(e.response, 'status_code', None)
+                    if status not in SHEETS_RETRY_STATUS or attempt == SHEETS_MAX_ATTEMPTS - 1:
+                        raise
+                    reason = f"HTTP {status}"
+                except (_requests.exceptions.ConnectionError, _requests.exceptions.Timeout) as e:
+                    if attempt == SHEETS_MAX_ATTEMPTS - 1:
+                        raise
+                    reason = type(e).__name__
+                wait = 10 * 2 ** attempt          # 10 s, 20 s, 40 s
+                print(f"  ⚠ Google Sheets request failed ({reason}), retrying in {wait}s...")
+                SHEETS_STATS['retries'] += 1
+                SHEETS_STATS['waited_seconds'] += wait
+                time.sleep(wait)
+
+
+def get_sheets_client(creds_dict):
+    """One authorised Sheets client for the whole run (instead of a new one per country)."""
+    if 'gc' not in _SHEETS_CLIENT:
         scope = ['https://www.googleapis.com/auth/spreadsheets', 'https://www.googleapis.com/auth/drive']
         credentials = Credentials.from_service_account_info(creds_dict, scopes=scope)
-        gc = gspread.authorize(credentials)
-        
-        # Initialize drive service for sheet organization
-        from googleapiclient.discovery import build
-        from google.oauth2.service_account import Credentials as ServiceAccountCredentials
-        
-        credentials_drive = ServiceAccountCredentials.from_service_account_info(
-            creds_dict,
-            scopes=['https://www.googleapis.com/auth/drive.file']
-        )
-        drive_service = build('drive', 'v3', credentials=credentials_drive)
-        
-        # Get or create country-specific spreadsheet
-        spreadsheet = get_or_create_country_sheet(gc, drive_service, country_code=country_code)
-        print(f"✓ Connected to Google Sheets ({country_code}): {spreadsheet.url}")
-        
-        # Get current date info for dynamic headers
-        current_date = datetime.now()
-        current_year = current_date.year      # 2026
-        previous_year = current_year - 1      # 2025
-        two_years_ago = current_year - 2      # 2024
-        
-        # Get or create worksheet
+        _SHEETS_CLIENT['gc'] = gspread.authorize(credentials, http_client=PacedHTTPClient)
+    return _SHEETS_CLIENT['gc']
+
+
+def print_sheets_summary():
+    st = SHEETS_STATS
+    print(f"\n📊 Google Sheets requests this run: {st['reads']} reads, {st['writes']} writes "
+          f"({st['retries']} retries, {st['waited_seconds']:.0f}s spent pacing or waiting)")
+
+
+def load_sheet_state(country_code, links_file='plots/drive_links.json'):
+    """What drive_links.json remembers about a country's spreadsheet: its id and the day of its last full check."""
+    try:
+        with open(links_file, 'r') as f:
+            entry = json.load(f).get(country_code, {})
+        return {'data_sheet_id': entry.get('data_sheet_id'), 'sheet_checked': entry.get('sheet_checked')}
+    except Exception:
+        return {}   # unreadable or missing: the full check simply runs again
+
+
+def save_sheet_state(country_code, links_file='plots/drive_links.json', **fields):
+    """Remember something about a country's spreadsheet in drive_links.json (never fatal)."""
+    try:
+        links = {}
+        if os.path.exists(links_file):
+            with open(links_file, 'r') as f:
+                links = json.load(f)
+        links.setdefault(country_code, {}).update(fields)
+        tmp = links_file + '.tmp'
+        with open(tmp, 'w') as f:
+            json.dump(links, f, indent=2)
+        os.replace(tmp, links_file)
+    except Exception as e:
+        print(f"  ⚠ Could not save sheet state for {country_code}: {e}")
+
+
+def read_monthly_tables(gc, spreadsheet_id, worksheet_names):
+    """Read the monthly baseline worksheets in ONE request.
+    Returns {worksheet name: rows or None}. Rows are padded to equal length, like get_all_values."""
+    from gspread.utils import fill_gaps
+    ranges = [f"'{name}'" for name in worksheet_names]            # the whole worksheet, exactly what get_all_values read
+    tables = {}
+    try:
+        result = gc.http_client.values_batch_get(spreadsheet_id, ranges)
+        for name, value_range in zip(worksheet_names, result.get('valueRanges', [])):
+            tables[name] = fill_gaps(value_range.get('values', []))
+        return tables
+    except gspread.exceptions.APIError as e:
+        # One missing worksheet makes Google reject the whole batch. Ask one by one, as before, so the
+        # worksheets that do exist still load.
+        print(f"  ⚠ Batched baseline read failed ({e}); reading the worksheets one by one")
+    for name, rng in zip(worksheet_names, ranges):
         try:
-            worksheet = spreadsheet.worksheet('Summary Table Data')
-            print("✓ Found existing 'Summary Table Data' worksheet")
+            tables[name] = fill_gaps(gc.http_client.values_get(spreadsheet_id, rng).get('values', []))
+        except Exception as e:
+            print(f"  ⚠ Could not load baseline data for {name}: {e}")
+            tables[name] = None
+    return tables
+
+
+def ensure_summary_worksheet(spreadsheet, current_year, previous_year, two_years_ago):
+    """The once-a-day check that 'Summary Table Data' exists, with its headers and 22 columns."""
+    # Get or create worksheet
+    try:
+        worksheet = spreadsheet.worksheet('Summary Table Data')
+        print("✓ Found existing 'Summary Table Data' worksheet")
+        
+        # Check if worksheet has enough columns (need 22: A-V)
+        if worksheet.col_count < 22:
+            print(f"  Expanding worksheet from {worksheet.col_count} to 22 columns...")
+            worksheet.resize(rows=worksheet.row_count, cols=22)
             
-            # Check if worksheet has enough columns (need 22: A-V)
-            if worksheet.col_count < 22:
-                print(f"  Expanding worksheet from {worksheet.col_count} to 22 columns...")
-                worksheet.resize(rows=worksheet.row_count, cols=22)
-                
-                # Update header row with new columns
-                headers = [
-                    'Source', 
-                    'Yesterday_GWh', 'Yesterday_%', 
-                    'LastWeek_GWh', 'LastWeek_%',
-                    f'YTD{current_year}_GWh', f'YTD{current_year}_%',
-                    f'{previous_year}_GWh', f'{previous_year}_%',
-                    'Last_Updated',
-                    'Yesterday_Change_2015_%', 'LastWeek_Change_2015_%',
-                    f'YTD{current_year}_Change_2015_%', f'{previous_year}_Change_2015_%',
-                    f'Yesterday_Change_{previous_year}_%', f'LastWeek_Change_{previous_year}_%',
-                    f'YTD{current_year}_Change_{previous_year}_%', f'{previous_year}_Change_{previous_year}_%',
-                    f'Yesterday_Change_{two_years_ago}_%', f'LastWeek_Change_{two_years_ago}_%',
-                    f'YTD{current_year}_Change_{two_years_ago}_%', f'{previous_year}_Change_{two_years_ago}_%'
-                ]
-                worksheet.update('A1:V1', [headers])
-                worksheet.format('A1:V1', {'textFormat': {'bold': True}})
-                print("  ✓ Worksheet expanded and header updated")
-                
-        except gspread.WorksheetNotFound:
-            worksheet = spreadsheet.add_worksheet(title='Summary Table Data', rows=20, cols=25)
-            print("✓ Created new 'Summary Table Data' worksheet")
-            
-            # Add headers (22 columns A-V)
+            # Update header row with new columns
             headers = [
                 'Source', 
                 'Yesterday_GWh', 'Yesterday_%', 
@@ -2139,6 +2182,93 @@ def update_summary_table_worksheet(corrected_data, country_code='EU'):
             ]
             worksheet.update('A1:V1', [headers])
             worksheet.format('A1:V1', {'textFormat': {'bold': True}})
+            print("  ✓ Worksheet expanded and header updated")
+            
+    except gspread.WorksheetNotFound:
+        worksheet = spreadsheet.add_worksheet(title='Summary Table Data', rows=20, cols=25)
+        print("✓ Created new 'Summary Table Data' worksheet")
+        
+        # Add headers (22 columns A-V)
+        headers = [
+            'Source', 
+            'Yesterday_GWh', 'Yesterday_%', 
+            'LastWeek_GWh', 'LastWeek_%',
+            f'YTD{current_year}_GWh', f'YTD{current_year}_%',
+            f'{previous_year}_GWh', f'{previous_year}_%',
+            'Last_Updated',
+            'Yesterday_Change_2015_%', 'LastWeek_Change_2015_%',
+            f'YTD{current_year}_Change_2015_%', f'{previous_year}_Change_2015_%',
+            f'Yesterday_Change_{previous_year}_%', f'LastWeek_Change_{previous_year}_%',
+            f'YTD{current_year}_Change_{previous_year}_%', f'{previous_year}_Change_{previous_year}_%',
+            f'Yesterday_Change_{two_years_ago}_%', f'LastWeek_Change_{two_years_ago}_%',
+            f'YTD{current_year}_Change_{two_years_ago}_%', f'{previous_year}_Change_{two_years_ago}_%'
+        ]
+        worksheet.update('A1:V1', [headers])
+        worksheet.format('A1:V1', {'textFormat': {'bold': True}})
+    
+    return worksheet
+
+
+def update_summary_table_worksheet(corrected_data, country_code='EU'):
+    """
+    Update Google Sheets "Summary Table Data" worksheet with yesterday/last week data
+    Uses PROJECTED (corrected) data for accuracy
+    
+    FIXED: Now uses 22 columns (A-V) matching monthly/trends script
+    """
+    if not GSPREAD_AVAILABLE:
+        print("\n⚠ Skipping Google Sheets update - gspread not available")
+        return
+    
+    print("\n" + "=" * 80)
+    print("PHASE 4: UPDATE SUMMARY TABLE (GOOGLE SHEETS)")
+    print("=" * 80)
+    
+    daily_check = True    # set to False below when today's full check was already done for this country
+    try:
+        # Get credentials
+        google_creds_json = os.environ.get('GOOGLE_CREDENTIALS_JSON')
+        if not google_creds_json:
+            print("⚠ GOOGLE_CREDENTIALS_JSON not set - skipping Sheets update")
+            return
+        
+        creds_dict = json.loads(google_creds_json)
+        gc = get_sheets_client(creds_dict)
+        
+        # Get current date info for dynamic headers
+        current_date = datetime.now()
+        current_year = current_date.year      # 2026
+        previous_year = current_year - 1      # 2025
+        two_years_ago = current_year - 2      # 2024
+        today_str = current_date.strftime('%Y-%m-%d')
+        
+        # The full checks (open or create the spreadsheet, is it trashed, Drive folder, does the worksheet
+        # have its headers and enough rows and columns, bold rows) are done once a day per country. The runs
+        # in between only read the baselines and write the values: two Sheets requests.
+        state = load_sheet_state(country_code)
+        spreadsheet_id = state.get('data_sheet_id')
+        daily_check = not (spreadsheet_id and state.get('sheet_checked') == today_str)
+        spreadsheet = None
+        worksheet = None
+        
+        if daily_check:
+            # Initialize drive service for sheet organization
+            from googleapiclient.discovery import build
+            from google.oauth2.service_account import Credentials as ServiceAccountCredentials
+            
+            credentials_drive = ServiceAccountCredentials.from_service_account_info(
+                creds_dict,
+                scopes=['https://www.googleapis.com/auth/drive.file']
+            )
+            drive_service = build('drive', 'v3', credentials=credentials_drive)
+            
+            # Get or create country-specific spreadsheet
+            spreadsheet = get_or_create_country_sheet(gc, drive_service, country_code=country_code)
+            print(f"✓ Connected to Google Sheets ({country_code}): {spreadsheet.url}  [full daily check]")
+            spreadsheet_id = spreadsheet.id
+            worksheet = ensure_summary_worksheet(spreadsheet, current_year, previous_year, two_years_ago)
+        else:
+            print(f"✓ Google Sheets ({country_code}): checked earlier today, fast path")
         
         # Calculate yesterday totals (using PROJECTED data)
         yesterday_totals = calculate_period_totals(
@@ -2171,7 +2301,7 @@ def update_summary_table_worksheet(corrected_data, country_code='EU'):
         last_row = len(source_order) + 1  # row 1 is the header
         
         # Make sure the sheet has room for all rows (older sheets may be smaller)
-        if worksheet.row_count < last_row:
+        if worksheet is not None and worksheet.row_count < last_row:
             worksheet.resize(rows=last_row, cols=worksheet.col_count)
         
         # Load 2015, 2025, and 2024 data for change calculation
@@ -2200,6 +2330,11 @@ def update_summary_table_worksheet(corrected_data, country_code='EU'):
             'all-non-renewables': None  # Calculated from Total - Renewables
         }
         
+        # ONE request for all baseline worksheets (before: a lookup and a full read for each of them)
+        total_sheet = 'Total Generation Monthly Production'
+        needed_sheets = [source_to_worksheet[s_] for s_ in source_order if s_ != 'all-non-renewables' and source_to_worksheet.get(s_)]
+        tables = read_monthly_tables(gc, spreadsheet_id, needed_sheets + [total_sheet])
+        
         for source in source_order:
             if source == 'all-non-renewables':
                 continue  # Will calculate this separately
@@ -2209,10 +2344,9 @@ def update_summary_table_worksheet(corrected_data, country_code='EU'):
                 continue
             
             try:
-                ws_baseline = spreadsheet.worksheet(worksheet_name)
-                values = ws_baseline.get_all_values()
+                values = tables.get(worksheet_name)
                 
-                if len(values) < 2:
+                if not values or len(values) < 2:
                     continue
                 
                 # Parse to find baseline data
@@ -2251,8 +2385,7 @@ def update_summary_table_worksheet(corrected_data, country_code='EU'):
         # Calculate all-non-renewables from Total - Renewables for all 3 years
         if 'all-renewables' in data_2015 or 'all-renewables' in data_2025 or 'all-renewables' in data_2024:
             try:
-                ws_total = spreadsheet.worksheet('Total Generation Monthly Production')
-                values = ws_total.get_all_values()
+                values = tables.get(total_sheet)
                 df = pd.DataFrame(values[1:], columns=values[0])
                 df = df[df['Month'] != 'Total']
                 
@@ -2304,7 +2437,8 @@ def update_summary_table_worksheet(corrected_data, country_code='EU'):
             display_name = DERIVED_SHEET_NAMES.get(source) or DISPLAY_NAMES.get(source, source.title())
             source_names.append([display_name])
         
-        worksheet.update(f'A2:A{last_row}', source_names)
+        sheet_title = 'Summary Table Data'
+        batch_data = [{'range': f"'{sheet_title}'!A2:A{last_row}", 'values': source_names}]
         
         # Now update columns B-E (Yesterday, Last Week) and K-L, O-P, S-T (all change columns)
         data_updates_be = []    # Columns B-E
@@ -2391,46 +2525,52 @@ def update_summary_table_worksheet(corrected_data, country_code='EU'):
         
         # Update columns B-E (preserves F-I for monthly script)
         if data_updates_be:
-            worksheet.update(f'B2:E{last_row}', data_updates_be)
+            batch_data.append({'range': f"'{sheet_title}'!B2:E{last_row}", 'values': data_updates_be})
         
         # Update columns K-L, O-P, S-T (all intraday change columns)
         if data_updates_klops:
-            # Need to update non-contiguous ranges: K-L, then O-P, then S-T
-            # Split the 6-column data into 3 separate 2-column updates
+            # Non-contiguous ranges: K-L, then O-P, then S-T (all sent in the same request)
             data_kl = [[row[0], row[1]] for row in data_updates_klops]  # K, L
             data_op = [[row[2], row[3]] for row in data_updates_klops]  # O, P
             data_st = [[row[4], row[5]] for row in data_updates_klops]  # S, T
-            
-            worksheet.update(f'K2:L{last_row}', data_kl)
-            worksheet.update(f'O2:P{last_row}', data_op)
-            worksheet.update(f'S2:T{last_row}', data_st)
+            batch_data.append({'range': f"'{sheet_title}'!K2:L{last_row}", 'values': data_kl})
+            batch_data.append({'range': f"'{sheet_title}'!O2:P{last_row}", 'values': data_op})
+            batch_data.append({'range': f"'{sheet_title}'!S2:T{last_row}", 'values': data_st})
             
             # Update timestamp in column J
             timestamp_updates = [[timestamp]] * len(source_order)
-            worksheet.update(f'J2:J{last_row}', timestamp_updates)
+            batch_data.append({'range': f"'{sheet_title}'!J2:J{last_row}", 'values': timestamp_updates})
             
-            # Format aggregate rows (bold) - ONLY columns that intraday owns
-            worksheet.format('A2:E2', {'textFormat': {'bold': True}})  # All Renewables
-            worksheet.format('J2:L2', {'textFormat': {'bold': True}})
-            worksheet.format('O2:P2', {'textFormat': {'bold': True}})
-            worksheet.format('S2:T2', {'textFormat': {'bold': True}})
+            # All values in ONE request (RAW, like worksheet.update did)
+            gc.http_client.values_batch_update(spreadsheet_id, {'valueInputOption': 'RAW', 'data': batch_data})
             
-            worksheet.format('A8:E8', {'textFormat': {'bold': True}})  # All Non-Renewables
-            worksheet.format('J8:L8', {'textFormat': {'bold': True}})
-            worksheet.format('O8:P8', {'textFormat': {'bold': True}})
-            worksheet.format('S8:T8', {'textFormat': {'bold': True}})
-            
-            # The three derived rows are aggregates too
-            first_derived = last_row - len(DERIVED_SHEET_NAMES) + 1
-            worksheet.format(f'A{first_derived}:E{last_row}', {'textFormat': {'bold': True}})
-            worksheet.format(f'J{first_derived}:L{last_row}', {'textFormat': {'bold': True}})
-            worksheet.format(f'O{first_derived}:P{last_row}', {'textFormat': {'bold': True}})
-            worksheet.format(f'S{first_derived}:T{last_row}', {'textFormat': {'bold': True}})
+            if daily_check:
+                # Bold rows (aggregates): the same rows every time, so once a day, in one request
+                # (before: 12 requests per country per run)
+                first_derived = last_row - len(DERIVED_SHEET_NAMES) + 1
+                bold = {'textFormat': {'bold': True}}
+                worksheet.batch_format([
+                    {'range': 'A2:E2', 'format': bold},   # All Renewables
+                    {'range': 'J2:L2', 'format': bold},
+                    {'range': 'O2:P2', 'format': bold},
+                    {'range': 'S2:T2', 'format': bold},
+                    {'range': 'A8:E8', 'format': bold},   # All Non-Renewables
+                    {'range': 'J8:L8', 'format': bold},
+                    {'range': 'O8:P8', 'format': bold},
+                    {'range': 'S8:T8', 'format': bold},
+                    # The three derived rows are aggregates too
+                    {'range': f'A{first_derived}:E{last_row}', 'format': bold},
+                    {'range': f'J{first_derived}:L{last_row}', 'format': bold},
+                    {'range': f'O{first_derived}:P{last_row}', 'format': bold},
+                    {'range': f'S{first_derived}:T{last_row}', 'format': bold},
+                ])
+                save_sheet_state(country_code, sheet_checked=today_str)
             
             print(f"✓ Updated {len(source_order)} sources with yesterday/last week data")
             print(f"   Columns updated: B-E (values), K-L (vs 2015), O-P (vs 2025), S-T (vs 2024)")
             print(f"   Historical data (columns F-I, M-N, Q-R, U-V) preserved for monthly script!")
-            print(f"   Worksheet: {spreadsheet.url}")
+            print(f"   Worksheet: https://docs.google.com/spreadsheets/d/{spreadsheet_id}")
+            print(f"   Sheets requests so far this run: {SHEETS_STATS['reads']} reads, {SHEETS_STATS['writes']} writes")
         else:
             print("⚠ No data to update")
     
@@ -2438,6 +2578,9 @@ def update_summary_table_worksheet(corrected_data, country_code='EU'):
         print(f"✗ Error updating Google Sheets: {e}")
         import traceback
         traceback.print_exc()
+        if not daily_check:
+            # the spreadsheet may have moved or changed since the last full check
+            save_sheet_state(country_code, sheet_checked='')
 
 def get_or_create_drive_folder(service, folder_name, parent_id=None):
     """
@@ -3807,6 +3950,8 @@ def main():
             update_summary_table_worksheet(corrected_data, country_code=country_code)
             
             print(f"\n✓ {country_code} COMPLETE!")
+        
+        print_sheets_summary()
         
         # Create timestamp file
         timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S UTC')
