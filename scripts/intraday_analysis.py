@@ -434,33 +434,39 @@ def collect_all_data(api_key):
             else:
                 print(f"    {period_name}: ✗ No data")
     
-    # Fetch aggregates (EU totals only, no country breakdown needed)
-    print("\n📊 Fetching 2 Aggregate Sources (EU totals only)...")
-    all_gen_keywords = SOURCE_KEYWORDS['all-renewables'] + SOURCE_KEYWORDS['all-non-renewables']
+    # Fetch All Renewables per country, like the atomic sources (EU members plus non-EU countries).
+    # It includes categories that none of the tracked sources covers (Other renewable, Marine).
+    # All Non-Renewables is derived below from the total, like the monthly data does.
+    print("\n📊 Fetching All Renewables (with country data)...")
+    print(f"\n  {DISPLAY_NAMES['all-renewables']}:")
+    data_matrix['aggregates']['all-renewables'] = {}
     
-    for source in AGGREGATE_SOURCES:
-        print(f"\n  {DISPLAY_NAMES[source]}:")
-        data_matrix['aggregates'][source] = {}
+    for period_name, (start_date, end_date) in periods.items():
+        mark_extrap = (period_name in ['today', 'yesterday'])
+        extra_hour = True
         
-        for period_name, (start_date, end_date) in periods.items():
-            mark_extrap = (period_name in ['today', 'yesterday'])
-            # Same fix as atomic_sources above -- always capture the last
-            # hour, then trim any accidental 8th-day spillover.
-            extra_hour = True
-            
-            eu_total, _, countries = aggregate_eu_data(
-                EU_COUNTRIES, start_date, end_date, client,
-                SOURCE_KEYWORDS[source], 'generation', mark_extrapolated=mark_extrap, extra_hour=extra_hour
-            )
-            
-            if not eu_total.empty:
-                eu_total = eu_total[eu_total.index < pd.Timestamp(end_date, tz='Europe/Brussels')]
-            
-            if not eu_total.empty:
-                data_matrix['aggregates'][source][period_name] = eu_total
-                print(f"    {period_name}: ✓ {len(eu_total)} timestamps")
-            else:
-                print(f"    {period_name}: ✗ No data")
+        _, country_df, countries = aggregate_eu_data(
+            EU_COUNTRIES, start_date, end_date, client,
+            SOURCE_KEYWORDS['all-renewables'], 'generation', mark_extrapolated=mark_extrap, extra_hour=extra_hour
+        )
+        _, non_eu_df, non_eu_countries = aggregate_eu_data(
+            NON_EU_COUNTRIES, start_date, end_date, client,
+            SOURCE_KEYWORDS['all-renewables'], 'generation', mark_extrapolated=mark_extrap, extra_hour=extra_hour
+        )
+        if not non_eu_df.empty:
+            country_df = pd.concat([country_df, non_eu_df], axis=1)
+        
+        if not country_df.empty:
+            country_df = country_df[country_df.index < pd.Timestamp(end_date, tz='Europe/Brussels')]
+        
+        if not country_df.empty:
+            data_matrix['aggregates']['all-renewables'][period_name] = country_df
+            print(f"    {period_name}: ✓ {len(countries) + len(non_eu_countries)} countries, {len(country_df)} timestamps")
+        else:
+            print(f"    {period_name}: ✗ No data")
+    
+    # Every category (the keywords of both aggregates together): used for the total generation below
+    all_gen_keywords = SOURCE_KEYWORDS['all-renewables'] + SOURCE_KEYWORDS['all-non-renewables']
     
     # Fetch Total Generation (with country breakdown for denominator correction)
     print("\n📊 Fetching Total Generation (with country data)...")
@@ -490,6 +496,20 @@ def collect_all_data(api_key):
             print(f"  {period_name}: ✓ {len(countries) + len(non_eu_countries)} countries, {len(country_df)} timestamps")
         else:
             print(f"  {period_name}: ✗ No data")
+    
+    # All Non-Renewables = Total Generation - All Renewables, per country: the same definition the monthly data
+    # uses. (Summing the non-renewable keywords instead would count Other renewable twice, because the keyword
+    # "Other" also matches the column "Other renewable".)
+    data_matrix['aggregates']['all-non-renewables'] = {}
+    for period_name, total_df in data_matrix['total_generation'].items():
+        renewables_df = data_matrix['aggregates'].get('all-renewables', {}).get(period_name)
+        if renewables_df is None:
+            continue
+        countries_with_both = [c for c in total_df.columns if c in renewables_df.columns]
+        if not countries_with_both:
+            continue
+        non_renewables_df = (total_df[countries_with_both] - renewables_df[countries_with_both].reindex(total_df.index)).clip(lower=0)
+        data_matrix['aggregates']['all-non-renewables'][period_name] = non_renewables_df
     
     print("\n✓ Data collection complete!")
     print(f"   ENTSO-E requests this run: {_ENTSOE_STATS['requests']} "
@@ -554,37 +574,28 @@ def extract_country_from_raw_data(raw_data_matrix, country_code):
                     })
                     extracted_data['atomic_sources'][source][period_name] = zero_df
     
-    # Extract aggregates (already EU totals in raw data, but handle country-specific)
+    # Extract aggregates: per country, like the atomic sources. They include the categories that no tracked
+    # source covers (Other renewable, Marine, Fossil Peat, Other), so a country and the EU are defined alike
+    # and the EU is exactly the sum of its countries.
     for agg_source in AGGREGATE_SOURCES:
         if agg_source not in raw_data_matrix['aggregates']:
             continue
         
         extracted_data['aggregates'][agg_source] = {}
         
-        for period_name, eu_series in raw_data_matrix['aggregates'][agg_source].items():
-            if eu_series is None or eu_series.empty:
+        for period_name, country_df in raw_data_matrix['aggregates'][agg_source].items():
+            if country_df is None or country_df.empty:
                 continue
             
             if country_code == 'EU':
-                # Already EU aggregate - keep as Series
-                extracted_data['aggregates'][agg_source][period_name] = eu_series
+                eu_cols = country_df.columns.intersection(EU_COUNTRIES)
+                extracted_data['aggregates'][agg_source][period_name] = country_df[eu_cols].copy()
+            elif country_code in country_df.columns:
+                extracted_data['aggregates'][agg_source][period_name] = country_df[[country_code]].copy()
             else:
-                # Build aggregate from atomic sources for this country
-                components = AGGREGATE_DEFINITIONS[agg_source]
-                summed_series = None
-                
-                for component in components:
-                    if component in extracted_data['atomic_sources']:
-                        if period_name in extracted_data['atomic_sources'][component]:
-                            # Each is a DataFrame with single country column - extract as Series
-                            component_series = extracted_data['atomic_sources'][component][period_name].iloc[:, 0]
-                            if summed_series is None:
-                                summed_series = component_series
-                            else:
-                                summed_series = summed_series + component_series
-                
-                if summed_series is not None:
-                    extracted_data['aggregates'][agg_source][period_name] = summed_series
+                # Country has no value for this aggregate - zero-filled, like a missing atomic source
+                extracted_data['aggregates'][agg_source][period_name] = pd.DataFrame(
+                    {country_code: pd.Series(0.0, index=country_df.index)})
     
     # Extract total generation
     for period_name, country_df in raw_data_matrix['total_generation'].items():
@@ -663,6 +674,23 @@ def add_derived_sources(period_data):
     return period_data
 
 
+def untracked_part(agg_df, atomic_sources, components, period):
+    """The part of an aggregate that none of the tracked sources account for (Other renewable and Marine for
+    renewables; Fossil Peat and Other for non-renewables), per country and never negative.
+
+    agg_df: a raw aggregate, index = timestamps, one column per country.
+    Returns a DataFrame of the same shape, NaN where the aggregate itself has no value."""
+    result = pd.DataFrame(np.nan, index=agg_df.index, columns=agg_df.columns)
+    for country in agg_df.columns:
+        tracked = pd.Series(0.0, index=agg_df.index)
+        for component in components:
+            component_df = atomic_sources.get(component, {}).get(period)
+            if component_df is not None and country in component_df.columns:
+                tracked = tracked.add(component_df[country].reindex(agg_df.index), fill_value=0.0)
+        result[country] = (agg_df[country] - tracked).clip(lower=0)
+    return result
+
+
 def apply_projections_and_corrections(data_matrix):
     """
     Phase 2: Apply 1% threshold and correct aggregates/total_gen using atomic sources
@@ -727,43 +755,18 @@ def apply_corrections_for_period(data_matrix, target_period, reference_period):
             # Group by time to get hourly averages across the week
             weekly_hourly_avgs[source] = ref_data_with_time.groupby('time').mean(numeric_only=True)
           
-    # Compute weekly hourly average gap for aggregates
+    # Weekly hourly average of the UNTRACKED part of each aggregate, per country (what "All Renewables" and
+    # "All Non-Renewables" contain beyond the tracked sources). Used where the real value is not known.
     weekly_hourly_gaps = {}
     for agg_source in AGGREGATE_SOURCES:
-        components = AGGREGATE_DEFINITIONS[agg_source]
-        
-        if agg_source not in data_matrix['aggregates'] or reference_period not in data_matrix['aggregates'][agg_source]:
-            weekly_hourly_gaps[agg_source] = {}
+        ref_agg = data_matrix['aggregates'].get(agg_source, {}).get(reference_period)
+        if ref_agg is None:
+            weekly_hourly_gaps[agg_source] = pd.DataFrame()
             continue
         
-        ref_agg = data_matrix['aggregates'][agg_source][reference_period]
-        
-        ref_atomic_sum = None
-        for component in components:
-            if component in data_matrix['atomic_sources'] and reference_period in data_matrix['atomic_sources'][component]:
-                component_df = data_matrix['atomic_sources'][component][reference_period]
-                # By this point data_matrix has already been through
-                # extract_country_from_raw_data, which correctly scoped
-                # this DataFrame's columns per the country currently being
-                # processed (all EU_COUNTRIES for 'EU', or just that one
-                # column for an individual country like 'CH'). Do NOT
-                # filter to EU_COUNTRIES again here -- for a non-EU
-                # country's own processing, that column name isn't in
-                # EU_COUNTRIES and would get incorrectly zeroed out
-                # entirely, inflating the projected/gap-filled values.
-                component_eu = component_df.sum(axis=1)
-                ref_atomic_sum = component_eu if ref_atomic_sum is None else ref_atomic_sum + component_eu
-        
-        if ref_atomic_sum is None:
-            weekly_hourly_gaps[agg_source] = {}
-            continue
-        
-        gap_series = ref_agg - ref_atomic_sum
-        gap_series = gap_series.clip(lower=0)
-        
-        gap_df = gap_series.to_frame(name='gap')
+        gap_df = untracked_part(ref_agg, data_matrix['atomic_sources'], AGGREGATE_DEFINITIONS[agg_source], reference_period)
         gap_df['time'] = gap_df.index.strftime('%H:%M')
-        weekly_hourly_gaps[agg_source] = gap_df.groupby('time')['gap'].mean()
+        weekly_hourly_gaps[agg_source] = gap_df.groupby('time').mean(numeric_only=True)
       
     # Get target period data
     target_atomic = {src: data_matrix['atomic_sources'][src].get(target_period) 
@@ -888,62 +891,85 @@ def apply_corrections_for_period(data_matrix, target_period, reference_period):
     else:
         print("  ✓ No corrections needed")
     
-    # Build aggregates: corrected atomic sum + weekly average gap
-    # Consistent for both today and yesterday - avoids atomic sum > aggregate issue
+    # The untracked part of each aggregate at the target period, per country: the REAL value where the raw
+    # aggregate has data (NaN where it has none)
+    untracked_target = {}
     for agg_source in AGGREGATE_SOURCES:
-        components = AGGREGATE_DEFINITIONS[agg_source]
-        print(f"  Using atomic sum + weekly gap for {agg_source} ({target_period})")
+        agg_df = data_matrix['aggregates'].get(agg_source, {}).get(target_period)
+        untracked_target[agg_source] = (
+            untracked_part(agg_df, data_matrix['atomic_sources'], AGGREGATE_DEFINITIONS[agg_source], target_period)
+            if agg_df is not None else None)
+    
+    # For every aggregate and timestamp, summed over the countries of this run (all EU members for the EU):
+    #   measured  = the real untracked values
+    #   projected = the real value where there is one, otherwise that country's weekly average at this time
+    # so the projected line sits exactly on the measured one wherever nothing is missing, and the EU is the
+    # sum of its countries.
+    untracked_amounts = {}
+    for agg_source in AGGREGATE_SOURCES:
+        real_df = untracked_target[agg_source]
+        gap_df = weekly_hourly_gaps.get(agg_source)
+        countries = set()
+        if real_df is not None:
+            countries.update(real_df.columns)
+        if gap_df is not None and not gap_df.empty:
+            countries.update(gap_df.columns)
         
         for timestamp in full_timestamp_range:
             time_str = timestamp.strftime('%H:%M')
+            measured = 0.0
+            projected = 0.0
+            for country in countries:
+                real = np.nan
+                if real_df is not None and country in real_df.columns and timestamp in real_df.index:
+                    real = real_df.at[timestamp, country]
+                if not pd.isna(real):
+                    measured += real
+                    projected += real
+                elif gap_df is not None and country in gap_df.columns and time_str in gap_df.index:
+                    gap = gap_df.at[time_str, country]
+                    if not pd.isna(gap):
+                        projected += gap
+            untracked_amounts[(agg_source, timestamp)] = (measured, projected)
+    
+    # Build aggregates: tracked atomic components + the untracked part
+    for agg_source in AGGREGATE_SOURCES:
+        components = AGGREGATE_DEFINITIONS[agg_source]
+        print(f"  Using atomic sum + untracked part for {agg_source} ({target_period})")
+        
+        for timestamp in full_timestamp_range:
+            measured_untracked, projected_untracked = untracked_amounts[(agg_source, timestamp)]
             
-            # Actual: sum actual atomic components
+            # Actual: sum actual atomic components + the real untracked part
             actual_agg_value = 0
             for component in components:
                 if timestamp in actual_sources[component]:
                     actual_agg_value += sum(actual_sources[component][timestamp].values())
-            actual_sources[agg_source][timestamp] = {'EU': actual_agg_value}
+            actual_sources[agg_source][timestamp] = {'EU': actual_agg_value + measured_untracked}
             
-            # Projected: sum corrected atomic components + weekly average gap
+            # Projected: sum corrected atomic components + the untracked part (real, else weekly average)
             projected_agg_value = 0
             for component in components:
                 if timestamp in corrected_sources[component]:
                     projected_agg_value += sum(corrected_sources[component][timestamp].values())
-            
-            # Add weekly average gap (untracked sources e.g. "Other renewable")
-            if agg_source in weekly_hourly_gaps and time_str in weekly_hourly_gaps[agg_source].index:
-                gap = weekly_hourly_gaps[agg_source][time_str]
-                if not pd.isna(gap):
-                    projected_agg_value += gap
-            
-            corrected_sources[agg_source][timestamp] = {'EU': projected_agg_value}
+            corrected_sources[agg_source][timestamp] = {'EU': projected_agg_value + projected_untracked}
     
-    # Build corrected and actual total generation
+    # Build corrected and actual total generation: tracked atomic sources + the untracked parts of both aggregates
     corrected_total_gen = {}
     actual_total_gen = {}
     for timestamp in full_timestamp_range:
-        # Corrected total
         total_corrected = 0
+        total_actual = 0
         for source in ATOMIC_SOURCES:
             if timestamp in corrected_sources[source]:
                 total_corrected += sum(corrected_sources[source][timestamp].values())
-        # The aggregates (renewables, non-renewables) include the weekly gap for categories that belong to
-        # none of the tracked sources ("Other", "Other renewable", ...). The total has to include that gap
-        # too. Without it the renormalisation below shrinks EVERY source by the gap's share, even values that
-        # were measured and complete, so the projected line sat a few percent under the actual one.
-        time_str = timestamp.strftime('%H:%M')
-        for agg_source in AGGREGATE_SOURCES:
-            if agg_source in weekly_hourly_gaps and time_str in weekly_hourly_gaps[agg_source].index:
-                gap = weekly_hourly_gaps[agg_source][time_str]
-                if not pd.isna(gap):
-                    total_corrected += gap
-        corrected_total_gen[timestamp] = total_corrected
-        
-        # Actual total
-        total_actual = 0
-        for source in ATOMIC_SOURCES:
             if timestamp in actual_sources[source]:
                 total_actual += sum(actual_sources[source][timestamp].values())
+        for agg_source in AGGREGATE_SOURCES:
+            measured_untracked, projected_untracked = untracked_amounts[(agg_source, timestamp)]
+            total_actual += measured_untracked
+            total_corrected += projected_untracked
+        corrected_total_gen[timestamp] = total_corrected
         actual_total_gen[timestamp] = total_actual
     
     # Return BOTH versions
@@ -1020,10 +1046,18 @@ def build_period_data_no_projection(data_matrix, period):
                     val = source_data.loc[timestamp, country]
                     atomic_sources_data[source][timestamp][country] = val if not pd.isna(val) else None
     
-    # Aggregates - build from atomic sources
+    # Aggregates: the raw per-country aggregates, which include the categories that no tracked source covers
+    # (Other renewable, Marine, Fossil Peat, Other), summed over the countries. Where an aggregate is not
+    # available, fall back to the tracked atomic sources.
     for agg_source in AGGREGATE_SOURCES:
         components = AGGREGATE_DEFINITIONS[agg_source]
         aggregate_sources_data[agg_source] = {}
+        
+        agg_df = data_matrix['aggregates'].get(agg_source, {}).get(period)
+        if agg_df is not None and not agg_df.empty:
+            for timestamp, value in agg_df.sum(axis=1, skipna=True).items():
+                aggregate_sources_data[agg_source][timestamp] = {'EU': float(value)}
+            continue
         
         # Get all timestamps from any component
         all_timestamps = set()
@@ -1038,19 +1072,25 @@ def build_period_data_no_projection(data_matrix, period):
                     total += sum(v for v in atomic_sources_data[component][timestamp].values() if v is not None)
             aggregate_sources_data[agg_source][timestamp] = {'EU': total}
     
-    # Total generation from all atomic sources
+    # Total generation = renewables + non-renewables (so it includes the untracked categories too)
     total_generation_data = {}
-    all_timestamps = set()
-    for source in ATOMIC_SOURCES:
-        if source in atomic_sources_data:
-            all_timestamps.update(atomic_sources_data[source].keys())
-    
-    for timestamp in all_timestamps:
-        total = 0
+    renewables_data = aggregate_sources_data.get('all-renewables', {})
+    non_renewables_data = aggregate_sources_data.get('all-non-renewables', {})
+    if renewables_data and non_renewables_data:
+        for timestamp in set(renewables_data) | set(non_renewables_data):
+            total_generation_data[timestamp] = (renewables_data.get(timestamp, {}).get('EU', 0)
+                                                + non_renewables_data.get(timestamp, {}).get('EU', 0))
+    else:
+        all_timestamps = set()
         for source in ATOMIC_SOURCES:
-            if source in atomic_sources_data and timestamp in atomic_sources_data[source]:
-                total += sum(v for v in atomic_sources_data[source][timestamp].values() if v is not None)
-        total_generation_data[timestamp] = total
+            if source in atomic_sources_data:
+                all_timestamps.update(atomic_sources_data[source].keys())
+        for timestamp in all_timestamps:
+            total = 0
+            for source in ATOMIC_SOURCES:
+                if source in atomic_sources_data and timestamp in atomic_sources_data[source]:
+                    total += sum(v for v in atomic_sources_data[source][timestamp].values() if v is not None)
+            total_generation_data[timestamp] = total
     
     # Return structure matching apply_corrections_for_period
     result = {
