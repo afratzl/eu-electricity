@@ -1,4 +1,6 @@
 import gspread
+from gspread.http_client import HTTPClient as _GspreadHTTPClient
+import requests as _requests
 from google.oauth2.service_account import Credentials
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -14,6 +16,7 @@ import time
 try:
     from googleapiclient.discovery import build
     from googleapiclient.http import MediaFileUpload
+    from googleapiclient.errors import HttpError
     from google.oauth2.service_account import Credentials as ServiceAccountCredentials
     GDRIVE_AVAILABLE = True
 except ImportError:
@@ -59,28 +62,157 @@ def add_aggregate_legend(ax, fig):
 
 # === GOOGLE DRIVE FUNCTIONS (ADDED FROM AFTER VERSION) ===
 
+# ============================================================================
+# GOOGLE SHEETS ACCESS: few, paced and retried requests
+# ============================================================================
+# Per country this script used to read every monthly worksheet one by one with a 4 s sleep before each read, and
+# sleep 1 to 2 s after most calls of the summary-table update (about 75 s of sleeping per country, 45 min per night).
+# Now all monthly worksheets are read in ONE request and every request goes through PacedHTTPClient, which
+#   - keeps at least SHEETS_MIN_GAP_SECONDS between two requests (this script alone stays far under Google's
+#     default limit of 60 reads and 60 writes a minute per user; all workflows share one service account),
+#   - retries rate-limit (429) and server errors with growing waits,
+#   - counts the requests, so the run log shows what was used (print_sheets_summary).
+SHEETS_MIN_GAP_SECONDS = 1.2
+SHEETS_RATE_LIMIT_WAITS = (20, 60, 120)     # HTTP 429: Google's quota is per minute, so wait longer
+SHEETS_SERVER_ERROR_WAITS = (10, 20, 40)    # HTTP 500, 502, 503, 504 and dropped connections
+SHEETS_STATS = {'reads': 0, 'writes': 0, 'retries': 0, 'waited_seconds': 0.0}
+_last_sheets_request = [0.0]
+
+
+class PacedHTTPClient(_GspreadHTTPClient):
+    def request(self, method, endpoint, *args, **kwargs):
+        attempt = 0
+        while True:
+            gap = SHEETS_MIN_GAP_SECONDS - (time.monotonic() - _last_sheets_request[0])
+            if gap > 0:
+                time.sleep(gap)
+                SHEETS_STATS['waited_seconds'] += gap
+            _last_sheets_request[0] = time.monotonic()
+            SHEETS_STATS['reads' if str(method).lower() == 'get' else 'writes'] += 1
+            try:
+                return super().request(method, endpoint, *args, **kwargs)
+            except gspread.exceptions.APIError as e:
+                error = e
+                status = getattr(e.response, 'status_code', None)
+                reason = f"HTTP {status}"
+                waits = (SHEETS_RATE_LIMIT_WAITS if status == 429
+                         else SHEETS_SERVER_ERROR_WAITS if status in (500, 502, 503, 504) else None)
+            except (_requests.exceptions.ConnectionError, _requests.exceptions.Timeout) as e:
+                error = e
+                reason = type(e).__name__
+                waits = SHEETS_SERVER_ERROR_WAITS
+            if waits is None or attempt >= len(waits):
+                raise error
+            wait = waits[attempt]
+            attempt += 1
+            print(f"  ⚠ Google Sheets request failed ({reason}), retrying in {wait}s...")
+            SHEETS_STATS['retries'] += 1
+            SHEETS_STATS['waited_seconds'] += wait
+            time.sleep(wait)
+
+
+def print_sheets_summary():
+    st = SHEETS_STATS
+    print(f"📊 Google Sheets requests this run: {st['reads']} reads, {st['writes']} writes "
+          f"({st['retries']} retries, {st['waited_seconds']:.0f}s spent pacing or waiting)")
+
+
+def quote_title(title):
+    """A worksheet title as it appears in a range such as 'Solar Monthly Production'!A1."""
+    return "'" + title.replace("'", "''") + "'"
+
+
+def read_worksheets_batch(gc, spreadsheet, titles):
+    """The values of many worksheets in ONE request: {title: rows}. Rows are padded to equal width, exactly
+    like get_all_values. A failed read raises (the caller skips the country) instead of returning partial data."""
+    from gspread.utils import fill_gaps
+    if not titles:
+        return {}
+    result = gc.http_client.values_batch_get(spreadsheet.id, [quote_title(t) for t in titles])
+    value_ranges = result.get('valueRanges', [])
+    if len(value_ranges) != len(titles):
+        raise RuntimeError(f"Asked for {len(titles)} worksheets, got {len(value_ranges)} back")
+    return {title: fill_gaps(vr.get('values', [])) for title, vr in zip(titles, value_ranges)}
+
+
+# ============================================================================
+# GOOGLE DRIVE UPLOADS: folders and files looked up once per run
+# ============================================================================
+# Before: every image looked up its three folders and its own file by name, uploaded, then checked and
+# re-wrote the sharing permission: 7 requests for one upload (about 50 images per country, 1,850 a night).
+# Now each folder is resolved once, each folder's files are listed once, and sharing is set only on files
+# that were just created. The usual image costs one request: the upload.
+DRIVE_RETRIES = 3     # googleapiclient retries rate-limit, server and connection errors with growing waits
+_DRIVE_CACHE = {'folders': {}, 'files': {}}   # (name, parent id) -> folder id ; folder id -> {file name: file id}
+DRIVE_STATS = {'uploads': 0, 'creates': 0, 'lookups': 0, 'permissions': 0, 'fallbacks': 0}
+
+
+def reset_drive_cache():
+    """Forget the remembered folders and files (used when something we remembered no longer exists)."""
+    _DRIVE_CACHE['folders'].clear()
+    _DRIVE_CACHE['files'].clear()
+
+
+def print_drive_summary():
+    st = DRIVE_STATS
+    print(f"📊 Google Drive requests this run: {st['uploads']} uploads ({st['creates']} new files), "
+          f"{st['lookups']} folder/file lookups, {st['permissions']} sharing changes, {st['fallbacks']} fallbacks")
+
+
 def get_or_create_drive_folder(service, folder_name, parent_id=None):
-    """Get or create a folder in Google Drive. Returns folder ID."""
+    """Get or create a folder in Google Drive (looked up once per run, then remembered). Returns folder ID."""
+    key = (folder_name, parent_id)
+    if key in _DRIVE_CACHE['folders']:
+        return _DRIVE_CACHE['folders'][key]
+    
     query = f"name='{folder_name}' and mimeType='application/vnd.google-apps.folder' and trashed=false"
     if parent_id:
         query += f" and '{parent_id}' in parents"
     
-    results = service.files().list(q=query, spaces='drive', fields='files(id, name)').execute()
+    results = service.files().list(q=query, spaces='drive', fields='files(id, name)').execute(num_retries=DRIVE_RETRIES)
+    DRIVE_STATS['lookups'] += 1
     existing_folders = results.get('files', [])
     
     if existing_folders:
-        return existing_folders[0]['id']
+        folder_id = existing_folders[0]['id']
+    else:
+        # Create new folder
+        file_metadata = {
+            'name': folder_name,
+            'mimeType': 'application/vnd.google-apps.folder'
+        }
+        if parent_id:
+            file_metadata['parents'] = [parent_id]
+        
+        folder = service.files().create(body=file_metadata, fields='id').execute(num_retries=DRIVE_RETRIES)
+        folder_id = folder.get('id')
     
-    # Create new folder
-    file_metadata = {
-        'name': folder_name,
-        'mimeType': 'application/vnd.google-apps.folder'
-    }
-    if parent_id:
-        file_metadata['parents'] = [parent_id]
-    
-    folder = service.files().create(body=file_metadata, fields='id').execute()
-    return folder.get('id')
+    _DRIVE_CACHE['folders'][key] = folder_id
+    return folder_id
+
+
+def drive_folder_files(service, folder_id):
+    """{file name: file id} of a Drive folder. Listed once per run (before: one lookup per image)."""
+    files = _DRIVE_CACHE['files'].get(folder_id)
+    if files is None:
+        files = {}
+        page_token = None
+        while True:
+            result = service.files().list(
+                q=f"'{folder_id}' in parents and trashed=false",
+                spaces='drive',
+                fields='nextPageToken, files(id, name)',
+                pageSize=1000,
+                pageToken=page_token
+            ).execute(num_retries=DRIVE_RETRIES)
+            DRIVE_STATS['lookups'] += 1
+            for f in result.get('files', []):
+                files.setdefault(f['name'], f['id'])
+            page_token = result.get('nextPageToken')
+            if not page_token:
+                break
+        _DRIVE_CACHE['files'][folder_id] = files
+    return files
 
 
 def upload_plot_to_drive(service, file_path, plot_type='Monthly', country='EU'):
@@ -92,72 +224,65 @@ def upload_plot_to_drive(service, file_path, plot_type='Monthly', country='EU'):
     if not GDRIVE_AVAILABLE:
         return None
     
-    try:
-        # Create folder structure: EU-Electricity-Plots/[Country]/[Monthly|Trends]/
-        root_folder_id = get_or_create_drive_folder(service, 'EU-Electricity-Plots')
-        country_folder_id = get_or_create_drive_folder(service, country, root_folder_id)
-        type_folder_id = get_or_create_drive_folder(service, plot_type, country_folder_id)
-        
-        filename = os.path.basename(file_path)
-        
-        # Check if file already exists
-        query = f"name='{filename}' and '{type_folder_id}' in parents and trashed=false"
-        results = service.files().list(q=query, spaces='drive', fields='files(id, name)').execute()
-        existing_files = results.get('files', [])
-        
-        if existing_files:
-            # Update existing file
-            file_id = existing_files[0]['id']
-            media = MediaFileUpload(file_path, mimetype='image/png')
-            service.files().update(fileId=file_id, media_body=media).execute()
-        else:
-            # Create new file
-            file_metadata = {'name': filename, 'parents': [type_folder_id]}
-            media = MediaFileUpload(file_path, mimetype='image/png')
-            file = service.files().create(body=file_metadata, media_body=media, fields='id').execute()
-            file_id = file.get('id')
-        
-        # Set permissions to "Anyone with the link can view"
+    filename = os.path.basename(file_path)
+    for attempt in (1, 2):
         try:
-            existing_perms = service.permissions().list(
-                fileId=file_id,
-                fields='permissions(id,type)'
-            ).execute()
+            # Create folder structure: EU-Electricity-Plots/[Country]/[Monthly|Trends]/
+            root_folder_id = get_or_create_drive_folder(service, 'EU-Electricity-Plots')
+            country_folder_id = get_or_create_drive_folder(service, country, root_folder_id)
+            type_folder_id = get_or_create_drive_folder(service, plot_type, country_folder_id)
             
-            anyone_perm = None
-            for perm in existing_perms.get('permissions', []):
-                if perm.get('type') == 'anyone':
-                    anyone_perm = perm
-                    break
+            # Files already in the folder (listed once per run)
+            known_files = drive_folder_files(service, type_folder_id)
+            file_id = known_files.get(filename)
+            media = MediaFileUpload(file_path, mimetype='image/png')
             
-            if anyone_perm:
-                service.permissions().update(
-                    fileId=file_id,
-                    permissionId=anyone_perm['id'],
-                    body={'role': 'reader'}
-                ).execute()
+            if file_id:
+                # Update existing file (it was shared when it was created)
+                service.files().update(fileId=file_id, media_body=media).execute(num_retries=DRIVE_RETRIES)
+                DRIVE_STATS['uploads'] += 1
             else:
-                permission = {
-                    'type': 'anyone',
-                    'role': 'reader'
-                }
-                service.permissions().create(
-                    fileId=file_id,
-                    body=permission
-                ).execute()
+                # Create new file
+                file_metadata = {'name': filename, 'parents': [type_folder_id]}
+                file = service.files().create(body=file_metadata, media_body=media, fields='id').execute(num_retries=DRIVE_RETRIES)
+                file_id = file.get('id')
+                known_files[filename] = file_id
+                DRIVE_STATS['uploads'] += 1
+                DRIVE_STATS['creates'] += 1
+                
+                # Set permissions to "Anyone with the link can view" (only needed for a new file)
+                try:
+                    service.permissions().create(
+                        fileId=file_id,
+                        body={'type': 'anyone', 'role': 'reader'}
+                    ).execute(num_retries=DRIVE_RETRIES)
+                    DRIVE_STATS['permissions'] += 1
+                except Exception as e:
+                    print(f"  ⚠ Warning: Could not set permissions on {filename}: {e}")
+            
+            return {
+                'file_id': file_id,
+                'view_url': f'https://drive.google.com/file/d/{file_id}/view',
+                'direct_url': f'https://drive.google.com/thumbnail?id={file_id}&sz=w2000',
+                'updated': datetime.now().isoformat()
+            }
+        
+        except HttpError as e:
+            if e.resp.status == 404 and attempt == 1:
+                # A folder or file we remembered no longer exists: forget everything we remembered, look again
+                DRIVE_STATS['fallbacks'] += 1
+                reset_drive_cache()
+                continue
+            print(f"  ⚠ Drive upload failed for {filename}: {e}")
+            return None
         except Exception as e:
-            print(f"  ⚠ Warning: Could not set permissions on {os.path.basename(file_path)}: {e}")
-        
-        return {
-            'file_id': file_id,
-            'view_url': f'https://drive.google.com/file/d/{file_id}/view',
-            'direct_url': f'https://drive.google.com/thumbnail?id={file_id}&sz=w2000',
-            'updated': datetime.now().isoformat()
-        }
-        
-    except Exception as e:
-        print(f"  ⚠ Drive upload failed for {os.path.basename(file_path)}: {e}")
-        return None
+            if attempt == 1:
+                # The connection may have dropped since the client was last used: try once more
+                DRIVE_STATS['fallbacks'] += 1
+                continue
+            print(f"  ⚠ Drive upload failed for {filename}: {e}")
+            return None
+    return None
 
 
 def initialize_drive_service():
@@ -385,7 +510,7 @@ def load_data_from_google_sheets(country_code='EU'):
         
         scope = ['https://www.googleapis.com/auth/spreadsheets', 'https://www.googleapis.com/auth/drive']
         credentials = Credentials.from_service_account_info(creds_dict, scopes=scope)
-        gc = gspread.authorize(credentials)
+        gc = gspread.authorize(credentials, http_client=PacedHTTPClient)
         
         # Initialize drive service for sheet organization
         drive_service = initialize_drive_service()
@@ -394,10 +519,11 @@ def load_data_from_google_sheets(country_code='EU'):
         spreadsheet = get_or_create_country_sheet(gc, drive_service, country_code=country_code)
         print(f"✓ Connected to Google Sheets ({country_code}): {spreadsheet.url}")
         
-        # ===== OPTIMIZATION: Get worksheets list once =====
+        # ===== ONE request lists the worksheets, ONE request reads all monthly worksheets =====
         worksheets = spreadsheet.worksheets()
-        time.sleep(2)  # Delay after getting worksheet list
         print(f"✓ Found {len(worksheets)} worksheets")
+        monthly_titles = [ws.title for ws in worksheets if 'Monthly Production' in ws.title]
+        tables = read_worksheets_batch(gc, spreadsheet, monthly_titles)
         
         all_data = {}
         worksheet_count = 0
@@ -411,11 +537,7 @@ def load_data_from_google_sheets(country_code='EU'):
             source_name = sheet_name.replace(' Monthly Production', '')
             print(f"  [{worksheet_count}] Loading {source_name} data...")
             
-            # ===== OPTIMIZATION: Add delay BEFORE each read =====
-            # This ensures we don't exceed 60 reads/minute (10 sec = 6 reads/min max)
-            time.sleep(4)
-            
-            values = read_with_retry(worksheet)
+            values = tables[sheet_name]
             
             if len(values) < 2:
                 print(f"    ⚠ No data found in {sheet_name}")
@@ -444,7 +566,7 @@ def load_data_from_google_sheets(country_code='EU'):
             print(f"    ✓ Loaded {len(year_columns)} years of data for {source_name}")
         
         print(f"\n✓ Successfully loaded data for {len(all_data)} energy sources")
-        print(f"📊 API Reads: ~{worksheet_count + 1} (1 worksheet list + {worksheet_count} data reads)")
+        print(f"📊 API Reads: 2 (1 worksheet list + 1 batched read of {worksheet_count} worksheets)")
         
         return all_data, spreadsheet
         
@@ -2267,7 +2389,7 @@ def update_summary_table_historical_data(all_data, country_code='EU', spreadshee
             creds_dict = json.loads(google_creds_json)
             scope = ['https://www.googleapis.com/auth/spreadsheets', 'https://www.googleapis.com/auth/drive']
             credentials = Credentials.from_service_account_info(creds_dict, scopes=scope)
-            gc = gspread.authorize(credentials)
+            gc = gspread.authorize(credentials, http_client=PacedHTTPClient)
             
             from googleapiclient.discovery import build
             from google.oauth2.service_account import Credentials as ServiceAccountCredentials
@@ -2288,7 +2410,6 @@ def update_summary_table_historical_data(all_data, country_code='EU', spreadshee
         # Get the Summary Table Data worksheet
         try:
             worksheet = spreadsheet.worksheet('Summary Table Data')
-            time.sleep(1)
             print("✓ Found 'Summary Table Data' worksheet")
             
             # Check if worksheet has enough columns (need 22: A-V)
@@ -2312,9 +2433,7 @@ def update_summary_table_historical_data(all_data, country_code='EU', spreadshee
                     f'YTD{current_year}_Change_{two_years_ago}_%', f'{previous_year}_Change_{two_years_ago}_%'
                 ]
                 worksheet.update([headers], 'A1:V1')
-                time.sleep(2)
                 worksheet.format('A1:V1', {'textFormat': {'bold': True}})
-                time.sleep(2)
                 print("  ✓ Header row updated")
                 
         except gspread.WorksheetNotFound:
@@ -2632,7 +2751,6 @@ def update_summary_table_historical_data(all_data, country_code='EU', spreadshee
                 })
             
             worksheet.batch_update(batch_updates)
-            time.sleep(2)
             print(f"✓ Updated {len(updates)} sources with YTD {current_year} and {previous_year} data (columns F-I, M-N)")
             
             # Update timestamp in last column (batch update)
@@ -2644,7 +2762,6 @@ def update_summary_table_historical_data(all_data, country_code='EU', spreadshee
                     'values': [[timestamp]]
                 })
             worksheet.batch_update(timestamp_updates)
-            time.sleep(2)
             print(f"✓ Updated timestamps")
             
             # ===================================================================
@@ -2655,7 +2772,6 @@ def update_summary_table_historical_data(all_data, country_code='EU', spreadshee
             
             # Read back Yesterday and LastWeek columns (B-E)
             summary_data = worksheet.get(f'A2:E{last_row}')  # Source, Yesterday_GWh, Yesterday_%, LastWeek_GWh, LastWeek_%
-            time.sleep(2)
             
             # Prepare updates for change from previous year columns
             change_updates = []
@@ -2788,7 +2904,6 @@ def update_summary_table_historical_data(all_data, country_code='EU', spreadshee
             # Write all change from previous year values in a single batch
             if change_updates:
                 worksheet.batch_update(change_updates)
-                time.sleep(2)
                 print(f"✓ Updated {len(change_updates)} sources with changes from {previous_year} (columns O-R)")
             
             # ===================================================================
@@ -2948,7 +3063,6 @@ def update_summary_table_historical_data(all_data, country_code='EU', spreadshee
             # Write all change from 2 years ago values in a single batch
             if change_2ya_updates:
                 worksheet.batch_update(change_2ya_updates)
-                time.sleep(2)
                 print(f"✓ Updated {len(change_2ya_updates)} sources with changes from {two_years_ago} (columns S-V)")
             
             print(f"   Worksheet: {spreadsheet.url}")
@@ -3066,6 +3180,8 @@ def main():
         f.write(f'<p>Plots generated: {generation_time}</p>')
     print(f"✓ Timestamp written to {timestamp_file}: {generation_time}")
 
+    print_sheets_summary()
+    print_drive_summary()
     print("\n" + "=" * 60)
     print("ALL COUNTRIES COMPLETE!")
     print("=" * 60)
