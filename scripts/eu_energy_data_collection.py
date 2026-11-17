@@ -723,6 +723,99 @@ def process_all_countries_and_years(client, years_to_analyze, countries_to_query
     return all_results
 
 
+# ============================================================================
+# GOOGLE SHEETS ACCESS: few, paced and retried requests
+# ============================================================================
+# Per country this script used to read EVERY worksheet one by one, then clear and rewrite each source worksheet,
+# with a fixed 3 s sleep after every call: about 150 s of sleeping per country, about 90 minutes per night.
+# Now all source worksheets are read in ONE request and written in ONE request, and every request goes through
+# PacedHTTPClient, which
+#   - keeps at least SHEETS_MIN_GAP_SECONDS between two requests (this script alone stays far under Google's
+#     default limit of 60 reads and 60 writes a minute per user; all workflows share one service account),
+#   - retries rate-limit (429) and server errors with growing waits, instead of treating a failed read as
+#     an empty worksheet,
+#   - counts the requests, so the run log shows what was used (print_sheets_summary).
+SHEETS_MIN_GAP_SECONDS = 1.2
+SHEETS_RATE_LIMIT_WAITS = (20, 60, 120)     # HTTP 429: Google's quota is per minute, so wait longer
+SHEETS_SERVER_ERROR_WAITS = (10, 20, 40)    # HTTP 500, 502, 503, 504 and dropped connections
+SHEETS_STATS = {'reads': 0, 'writes': 0, 'retries': 0, 'waited_seconds': 0.0}
+_last_sheets_request = [0.0]
+
+try:
+    import gspread
+    from gspread.http_client import HTTPClient as _GspreadHTTPClient
+    import requests as _requests
+
+    class PacedHTTPClient(_GspreadHTTPClient):
+        def request(self, method, endpoint, *args, **kwargs):
+            attempt = 0
+            while True:
+                gap = SHEETS_MIN_GAP_SECONDS - (time.monotonic() - _last_sheets_request[0])
+                if gap > 0:
+                    time.sleep(gap)
+                    SHEETS_STATS['waited_seconds'] += gap
+                _last_sheets_request[0] = time.monotonic()
+                SHEETS_STATS['reads' if str(method).lower() == 'get' else 'writes'] += 1
+                try:
+                    return super().request(method, endpoint, *args, **kwargs)
+                except gspread.exceptions.APIError as e:
+                    error = e
+                    status = getattr(e.response, 'status_code', None)
+                    reason = f"HTTP {status}"
+                    waits = (SHEETS_RATE_LIMIT_WAITS if status == 429
+                             else SHEETS_SERVER_ERROR_WAITS if status in (500, 502, 503, 504) else None)
+                except (_requests.exceptions.ConnectionError, _requests.exceptions.Timeout) as e:
+                    error = e
+                    reason = type(e).__name__
+                    waits = SHEETS_SERVER_ERROR_WAITS
+                if waits is None or attempt >= len(waits):
+                    raise error
+                wait = waits[attempt]
+                attempt += 1
+                print(f"  ⚠ Google Sheets request failed ({reason}), retrying in {wait}s...")
+                SHEETS_STATS['retries'] += 1
+                SHEETS_STATS['waited_seconds'] += wait
+                time.sleep(wait)
+except ImportError:
+    PacedHTTPClient = None   # gspread is not installed: save_all_data_to_google_sheets_with_merge fails clearly
+
+
+def print_sheets_summary():
+    st = SHEETS_STATS
+    print(f"📊 Google Sheets requests this run: {st['reads']} reads, {st['writes']} writes "
+          f"({st['retries']} retries, {st['waited_seconds']:.0f}s spent pacing or waiting)")
+
+
+def quote_title(title):
+    """A worksheet title as it appears in a range such as 'Solar Monthly Production'!A1."""
+    return "'" + title.replace("'", "''") + "'"
+
+
+def read_worksheets_batch(gc, spreadsheet, titles):
+    """The values of many worksheets in ONE request: {title: rows}. Rows are padded to equal width, exactly
+    like get_all_values. A failed read RAISES: it must never be mistaken for an empty worksheet, because the
+    merge would then rewrite the worksheet from the new data alone and lose the other years."""
+    from gspread.utils import fill_gaps
+    if not titles:
+        return {}
+    result = gc.http_client.values_batch_get(spreadsheet.id, [quote_title(t) for t in titles])
+    value_ranges = result.get('valueRanges', [])
+    if len(value_ranges) != len(titles):
+        raise RuntimeError(f"Asked for {len(titles)} worksheets, got {len(value_ranges)} back")
+    return {title: fill_gaps(vr.get('values', [])) for title, vr in zip(titles, value_ranges)}
+
+
+def rows_covering_existing(final_rows, existing_values):
+    """The new rows, padded with empty cells so they also cover everything the worksheet held before.
+    Writing these rows is the same as clearing the worksheet and then writing the new rows, but it is ONE
+    atomic step, so a failure can never leave a worksheet empty (clear then update could)."""
+    rows = max(len(final_rows), len(existing_values))
+    cols = max(max((len(r) for r in final_rows), default=0), max((len(r) for r in existing_values), default=0))
+    padded = [list(r) + [''] * (cols - len(r)) for r in final_rows]
+    padded += [[''] * cols for _ in range(rows - len(final_rows))]
+    return padded
+
+
 def save_all_data_to_google_sheets_with_merge(all_data, month_names, country_code='EU'):
     """
     Save all energy source data to Google Sheets with merge capability
@@ -754,7 +847,7 @@ def save_all_data_to_google_sheets_with_merge(all_data, month_names, country_cod
         
         scope = ['https://www.googleapis.com/auth/spreadsheets', 'https://www.googleapis.com/auth/drive']
         credentials = Credentials.from_service_account_info(creds_dict, scopes=scope)
-        gc = gspread.authorize(credentials)
+        gc = gspread.authorize(credentials, http_client=PacedHTTPClient)
 
         # Initialize drive service for sheet organization
         from googleapiclient.discovery import build
@@ -773,57 +866,13 @@ def save_all_data_to_google_sheets_with_merge(all_data, month_names, country_cod
         print(f"SAVING DATA FOR: {country_code}")
         print(f"{'='*80}")
 
-        # ===== FIX 3: Increased delays to avoid read rate limit =====
-        print("\n📖 Pre-loading all existing worksheets...")
-        
-        max_retries = 2
-        worksheet_cache = {}
-        existing_data_cache = {}
-        
-        for attempt in range(max_retries):
-            try:
-                all_worksheets_list = spreadsheet.worksheets()
-                time.sleep(3)  # FIX 3: Increased from 2s to 3s
-            except Exception as e:
-                print(f"  ⚠ Error getting worksheet list: {e}")
-                if attempt < max_retries - 1:
-                    print(f"  ⏳ Waiting 120 seconds...")  # FIX 3: Increased from 90s to 120s
-                    time.sleep(120)
-                    continue
-                else:
-                    raise
-            
-            worksheet_cache = {}
-            existing_data_cache = {}
-            failed = False
-            
-            for idx, ws in enumerate(all_worksheets_list, 1):
-                worksheet_cache[ws.title] = ws
-                try:
-                    existing_data_cache[ws.title] = ws.get_all_values()
-                    time.sleep(3)  # FIX 3: Increased from 2s to 3s (20 reads/min max = safe)
-                    print(f"  ✓ [{idx}/{len(all_worksheets_list)}] Cached: {ws.title} ({len(existing_data_cache[ws.title])} rows)")
-                except Exception as e:
-                    if '429' in str(e):  # Rate limit hit
-                        print(f"  ⚠ Rate limit hit at worksheet {idx}/{len(all_worksheets_list)}")
-                        print(f"  ⏳ Waiting 120 seconds for rate limit to reset...")  # FIX 3: Increased from 90s
-                        time.sleep(120)
-                        failed = True
-                        break  # Exit the worksheet loop, retry from start
-                    else:
-                        # Other error - treat as empty sheet
-                        print(f"  ⚠ Error reading {ws.title}: {e}")
-                        existing_data_cache[ws.title] = []
-            
-            if not failed:
-                # Successfully loaded all worksheets
-                print(f"✓ Pre-loaded {len(worksheet_cache)} worksheets successfully\n")
-                break
-            elif attempt < max_retries - 1:
-                print(f"  🔄 Retrying pre-load (attempt {attempt + 2}/{max_retries})...")
-            else:
-                print(f"  ⚠ Failed to pre-load after {max_retries} attempts")
-                print(f"  ⚠ Continuing with {len(existing_data_cache)} successfully cached worksheets")
+        # ===== ONE request lists the worksheets, ONE request reads every source worksheet =====
+        print("\n📖 Reading existing worksheets (one batched request)...")
+        worksheet_cache = {ws.title: ws for ws in spreadsheet.worksheets()}
+        source_titles = [f'{source_name} Monthly Production' for source_name in all_data]
+        titles_to_read = [t for t in source_titles if t in worksheet_cache]
+        existing_data_cache = read_worksheets_batch(gc, spreadsheet, titles_to_read)
+        print(f"✓ Read {len(existing_data_cache)} worksheets\n")
         
         # ===== OPTIMIZATION: Prepare all updates, then batch write =====
         updates_to_apply = []  # List of (worksheet, data, title) tuples
@@ -842,38 +891,16 @@ def save_all_data_to_google_sheets_with_merge(all_data, month_names, country_cod
 
             worksheet_title = f'{source_name} Monthly Production'
 
-            # ===== FIX 5: Check if worksheet exists before creating =====
+            # ===== Existing worksheet from the cache, otherwise create it =====
             if worksheet_title in existing_data_cache:
                 existing_values = existing_data_cache[worksheet_title]
                 worksheet = worksheet_cache[worksheet_title]
                 print(f"  Processing: {worksheet_title} (using cached data)")
             else:
-                # Not in cache - try to get it first (might exist but failed during pre-load)
-                print(f"  Worksheet not in cache: {worksheet_title}")
-                
-                try:
-                    # Try to get existing worksheet first
-                    worksheet = spreadsheet.worksheet(worksheet_title)
-                    time.sleep(2)
-                    print(f"  ✓ Found existing worksheet: {worksheet_title}")
-                    
-                    # Read its data now
-                    try:
-                        existing_values = worksheet.get_all_values()
-                        time.sleep(3)  # FIX 3: Use 3s delay
-                        print(f"  ✓ Read {len(existing_values)} rows")
-                    except Exception as e:
-                        print(f"  ⚠ Could not read data: {e}")
-                        existing_values = []
-                        
-                except gspread.WorksheetNotFound:
-                    # Truly doesn't exist - create it
-                    print(f"  Creating new worksheet: {worksheet_title}")
-                    worksheet = spreadsheet.add_worksheet(title=worksheet_title, rows=100, cols=20)
-                    time.sleep(3)  # FIX 3: Use 3s delay after creation
-                    existing_values = []
-                
-                # Add to cache for this run
+                # Not in the spreadsheet (the worksheet list above is complete) - create it
+                print(f"  Creating new worksheet: {worksheet_title}")
+                worksheet = spreadsheet.add_worksheet(title=worksheet_title, rows=100, cols=20)
+                existing_values = []
                 worksheet_cache[worksheet_title] = worksheet
                 existing_data_cache[worksheet_title] = existing_values
 
@@ -969,45 +996,34 @@ def save_all_data_to_google_sheets_with_merge(all_data, month_names, country_cod
             # Store update for batch processing
             updates_to_apply.append((worksheet, final_rows, worksheet_title, new_years, updating_years))
 
-        # ===== OPTIMIZATION: Apply all updates with controlled delays =====
-        print(f"\n📝 Applying {len(updates_to_apply)} worksheet updates...")
+        # ===== ONE request writes every worksheet =====
+        print(f"\n📝 Applying {len(updates_to_apply)} worksheet updates in one request...")
         
+        batch_data = []
+        for worksheet, final_rows, worksheet_title, new_years, updating_years in updates_to_apply:
+            rows_to_write = rows_covering_existing(final_rows, existing_data_cache.get(worksheet_title, []))
+            
+            # Make room first if the new content is bigger than the worksheet's grid (rare)
+            need_rows, need_cols = len(rows_to_write), len(rows_to_write[0])
+            if need_rows > worksheet.row_count or need_cols > worksheet.col_count:
+                worksheet.resize(rows=max(need_rows, worksheet.row_count), cols=max(need_cols, worksheet.col_count))
+            
+            batch_data.append({'range': f"{quote_title(worksheet_title)}!A1", 'values': rows_to_write})
+        
+        if batch_data:
+            # RAW, starting at A1: what worksheet.update(final_rows) did, for all worksheets at once
+            gc.http_client.values_batch_update(spreadsheet.id, {'valueInputOption': 'RAW', 'data': batch_data})
+        
+        # ===== FIX 4 (kept): no formatting, to save write quota =====
         for idx, (worksheet, final_rows, worksheet_title, new_years, updating_years) in enumerate(updates_to_apply, 1):
-            print(f"\n  [{idx}/{len(updates_to_apply)}] Updating: {worksheet_title}")
-            
-            # Clear and update
-            worksheet.clear()
-            time.sleep(3)  # FIX 3: Increased from 2s to 3s
-            
-            worksheet.update(final_rows)
-            time.sleep(3)  # FIX 3: Increased from 2s to 3s
-            
-            # ===== FIX 4: Skip formatting to save write quota =====
-            # Formatting uses 2 additional write operations per worksheet
-            # Skipping saves ~24 writes per country (allows faster processing)
-            # Data is intact, just headers won't be bold
-            # 
-            # try:
-            #     worksheet.format('A1:Z1', {'textFormat': {'bold': True}})
-            #     time.sleep(1)
-            #     worksheet.format('A:A', {'textFormat': {'bold': True}})
-            #     time.sleep(1)
-            # except Exception as e:
-            #     print(f"    Warning: Formatting failed: {e}")
-
-            # Report
             new_years_str = ', '.join([str(year) for year in sorted(new_years, reverse=True)]) if new_years else 'None'
             updated_years_str = ', '.join([str(year) for year in sorted(updating_years, reverse=True)]) if updating_years else 'None'
-            print(f"    ✓ Added: [{new_years_str}], Updated: [{updated_years_str}]")
+            print(f"  [{idx}/{len(updates_to_apply)}] {worksheet_title}: Added: [{new_years_str}], Updated: [{updated_years_str}]")
 
         print(f"\n✓ All data saved to Google Sheets: '{country_code} Electricity Production Data'")
         print(f"URL: {spreadsheet.url}")
         
-        # ===== SUMMARY OF API CALLS =====
-        print(f"\n📊 API Call Summary:")
-        print(f"  Reads: ~{len(worksheet_cache) + 1} (1 worksheet list + {len(worksheet_cache)} data reads)")
-        print(f"  Writes: ~{len(updates_to_apply) * 2} (clear + update per worksheet)")
-        print(f"  Format calls: 0 (skipped to save write quota)")
+        print(f"📊 Google Sheets requests so far this run: {SHEETS_STATS['reads']} reads, {SHEETS_STATS['writes']} writes")
         
         return spreadsheet.url
 
@@ -1175,12 +1191,8 @@ def main():
         sheet_url = save_all_data_to_google_sheets_with_merge(all_data, month_names, country_code=country)
         if sheet_url:
             saved_urls[country] = sheet_url
-        
-        # Add delay between countries to prevent rate limiting
-        if country != countries_to_save[-1]:  # Don't delay after last country
-            print(f"  ⏱ Waiting 5 seconds before next country...")
-            time.sleep(5)
     
+    print_sheets_summary()
     print(f"\n" + "=" * 80)
     print("DATA COLLECTION COMPLETE!")
     print("=" * 80)
