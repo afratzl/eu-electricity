@@ -56,6 +56,7 @@ import numpy as np
 from datetime import datetime, timedelta
 import calendar
 import warnings
+import threading
 import os
 import sys
 import argparse
@@ -68,6 +69,7 @@ from matplotlib.patches import Rectangle
 try:
     from googleapiclient.discovery import build
     from googleapiclient.http import MediaFileUpload
+    from googleapiclient.errors import HttpError
     from google.oauth2.service_account import Credentials as ServiceAccountCredentials
     GDRIVE_AVAILABLE = True
 except ImportError:
@@ -2582,43 +2584,190 @@ def update_summary_table_worksheet(corrected_data, country_code='EU'):
             # the spreadsheet may have moved or changed since the last full check
             save_sheet_state(country_code, sheet_checked='')
 
+# ============================================================================
+# GOOGLE DRIVE UPLOADS: one client, folders and files looked up once per run
+# ============================================================================
+# Before: every image built a new Drive client (a fresh login), looked up its three folders and its own file
+# by name, uploaded, then checked and re-wrote the sharing permission: 7 requests plus a login for one upload.
+# Now the client is built once per thread, each folder is resolved once, each folder's files are listed once,
+# and sharing is set only on files that were just created. The usual image costs one request: the upload.
+DRIVE_RETRIES = 3     # googleapiclient retries rate-limit, server and connection errors with growing waits
+_DRIVE_LOCK = threading.RLock()
+_DRIVE_LOCAL = threading.local()
+_DRIVE_CACHE = {'folders': {}, 'files': {}}   # (name, parent id) -> folder id ; folder id -> {file name: file id}
+DRIVE_STATS = {'uploads': 0, 'creates': 0, 'lookups': 0, 'permissions': 0, 'clients': 0, 'fallbacks': 0}
+
+
+def get_drive_service():
+    """The Drive client of the current thread, built once (None if the credentials are not set)."""
+    service = getattr(_DRIVE_LOCAL, 'service', None)
+    if service is None:
+        google_creds_json = os.getenv('GOOGLE_CREDENTIALS_JSON')
+        if not google_creds_json:
+            return None
+        credentials = ServiceAccountCredentials.from_service_account_info(
+            json.loads(google_creds_json),
+            scopes=['https://www.googleapis.com/auth/drive.file']
+        )
+        service = build('drive', 'v3', credentials=credentials)
+        _DRIVE_LOCAL.service = service
+        DRIVE_STATS['clients'] += 1
+    return service
+
+
+def reset_drive_cache():
+    """Forget the remembered folders and files (used when something we remembered no longer exists)."""
+    with _DRIVE_LOCK:
+        _DRIVE_CACHE['folders'].clear()
+        _DRIVE_CACHE['files'].clear()
+
+
 def get_or_create_drive_folder(service, folder_name, parent_id=None):
     """
-    Get or create a folder in Google Drive
-    Optionally shares with specified email
+    Get or create a folder in Google Drive (looked up once per run, then remembered)
     Returns folder ID
     """
-    # Search for existing folder
-    query = f"name='{folder_name}' and mimeType='application/vnd.google-apps.folder' and trashed=false"
-    if parent_id:
-        query += f" and '{parent_id}' in parents"
-    
-    results = service.files().list(
-        q=query,
-        spaces='drive',
-        fields='files(id, name)'
-    ).execute()
-    
-    folders = results.get('files', [])
-    
-    if folders:
-        folder_id = folders[0]['id']
-        folder_already_existed = True
-    else:
-        # Create folder if it doesn't exist
-        file_metadata = {
-            'name': folder_name,
-            'mimeType': 'application/vnd.google-apps.folder'
-        }
-        if parent_id:
-            file_metadata['parents'] = [parent_id]
+    key = (folder_name, parent_id)
+    with _DRIVE_LOCK:
+        if key in _DRIVE_CACHE['folders']:
+            return _DRIVE_CACHE['folders'][key]
         
-        folder = service.files().create(body=file_metadata, fields='id').execute()
-        folder_id = folder.get('id')
-        print(f"  Created Drive folder: {folder_name}")
-        folder_already_existed = False
-    
-    return folder_id
+        # Search for existing folder
+        query = f"name='{folder_name}' and mimeType='application/vnd.google-apps.folder' and trashed=false"
+        if parent_id:
+            query += f" and '{parent_id}' in parents"
+        
+        results = service.files().list(
+            q=query,
+            spaces='drive',
+            fields='files(id, name)'
+        ).execute(num_retries=DRIVE_RETRIES)
+        DRIVE_STATS['lookups'] += 1
+        
+        folders = results.get('files', [])
+        
+        if folders:
+            folder_id = folders[0]['id']
+        else:
+            # Create folder if it doesn't exist
+            file_metadata = {
+                'name': folder_name,
+                'mimeType': 'application/vnd.google-apps.folder'
+            }
+            if parent_id:
+                file_metadata['parents'] = [parent_id]
+            
+            folder = service.files().create(body=file_metadata, fields='id').execute(num_retries=DRIVE_RETRIES)
+            folder_id = folder.get('id')
+            print(f"  Created Drive folder: {folder_name}")
+        
+        _DRIVE_CACHE['folders'][key] = folder_id
+        return folder_id
+
+
+def drive_folder_files(service, folder_id):
+    """{file name: file id} of a Drive folder. Listed once per run (before: one lookup per image)."""
+    with _DRIVE_LOCK:
+        files = _DRIVE_CACHE['files'].get(folder_id)
+        if files is None:
+            print(f"  📁 Folder: https://drive.google.com/drive/folders/{folder_id}")
+            files = {}
+            page_token = None
+            while True:
+                result = service.files().list(
+                    q=f"'{folder_id}' in parents and trashed=false",
+                    spaces='drive',
+                    fields='nextPageToken, files(id, name)',
+                    pageSize=1000,
+                    pageToken=page_token
+                ).execute(num_retries=DRIVE_RETRIES)
+                DRIVE_STATS['lookups'] += 1
+                for f in result.get('files', []):
+                    files.setdefault(f['name'], f['id'])
+                page_token = result.get('nextPageToken')
+                if not page_token:
+                    break
+            _DRIVE_CACHE['files'][folder_id] = files
+        return files
+
+
+def print_drive_summary():
+    st = DRIVE_STATS
+    print(f"📊 Google Drive requests this run: {st['uploads']} uploads ({st['creates']} new files), "
+          f"{st['lookups']} folder/file lookups, {st['permissions']} sharing changes, "
+          f"{st['clients']} client(s), {st['fallbacks']} fallbacks")
+
+
+def _upload_image_to_drive(file_path, country, subfolder, warn_missing_credentials=False):
+    """Upload a plot to EU-Electricity-Plots/[Country]/[subfolder]/ (update it if it exists).
+    Returns: Drive file ID or None if failed"""
+    if not GDRIVE_AVAILABLE:
+        return None
+    filename = os.path.basename(file_path)
+    for attempt in (1, 2):
+        try:
+            service = get_drive_service()
+            if service is None:
+                if warn_missing_credentials:
+                    print("  ⚠ GOOGLE_CREDENTIALS_JSON not set")
+                return None
+            
+            # Folder structure: EU-Electricity-Plots/[Country]/[subfolder]/
+            root_folder_id = get_or_create_drive_folder(service, 'EU-Electricity-Plots')
+            country_folder_id = get_or_create_drive_folder(service, country, root_folder_id)
+            folder_id = get_or_create_drive_folder(service, subfolder, country_folder_id)
+            
+            # Files already in the folder (listed once per run)
+            known_files = drive_folder_files(service, folder_id)
+            file_id = known_files.get(filename)
+            media = MediaFileUpload(file_path, mimetype='image/png')
+            
+            if file_id:
+                # Update existing file (it was shared when it was created)
+                service.files().update(fileId=file_id, media_body=media).execute(num_retries=DRIVE_RETRIES)
+                DRIVE_STATS['uploads'] += 1
+                return file_id
+            
+            # Create new file
+            file = service.files().create(
+                body={'name': filename, 'parents': [folder_id]},
+                media_body=media,
+                fields='id'
+            ).execute(num_retries=DRIVE_RETRIES)
+            file_id = file.get('id')
+            known_files[filename] = file_id
+            DRIVE_STATS['uploads'] += 1
+            DRIVE_STATS['creates'] += 1
+            
+            # Set permissions to "Anyone with the link can view" (only needed for a new file)
+            try:
+                service.permissions().create(
+                    fileId=file_id,
+                    body={'type': 'anyone', 'role': 'reader'}
+                ).execute(num_retries=DRIVE_RETRIES)
+                DRIVE_STATS['permissions'] += 1
+            except Exception as e:
+                print(f"  ⚠ Warning: Could not set permissions on {filename}: {e}")
+            
+            return file_id
+        
+        except HttpError as e:
+            if e.resp.status == 404 and attempt == 1:
+                # A folder or file we remembered no longer exists: forget everything we remembered, look again
+                DRIVE_STATS['fallbacks'] += 1
+                reset_drive_cache()
+                continue
+            print(f"  ⚠ Drive upload failed for {filename}: {e}")
+            return None
+        except Exception as e:
+            if attempt == 1:
+                # The connection may have dropped since this client was last used: fresh client, once more
+                DRIVE_STATS['fallbacks'] += 1
+                _DRIVE_LOCAL.service = None
+                continue
+            print(f"  ⚠ Drive upload failed for {filename}: {e}")
+            return None
+    return None
 
 
 def upload_plot_to_drive(file_path, country='EU'):
@@ -2628,108 +2777,8 @@ def upload_plot_to_drive(file_path, country='EU'):
     
     Returns: Drive file ID or None if failed
     """
-    if not GDRIVE_AVAILABLE:
-        return None
-    
-    try:
-        # Get credentials from environment
-        google_creds_json = os.getenv('GOOGLE_CREDENTIALS_JSON')
-        if not google_creds_json:
-            return None
-        
-        creds_dict = json.loads(google_creds_json)
-        credentials = ServiceAccountCredentials.from_service_account_info(
-            creds_dict,
-            scopes=['https://www.googleapis.com/auth/drive.file']
-        )
-        
-        service = build('drive', 'v3', credentials=credentials)
-        
-        # Create folder structure: EU-Electricity-Plots/[Country]/Intraday/
-        # Get or create root folder (share with owner if email provided)
-        root_folder_id = get_or_create_drive_folder(service, 'EU-Electricity-Plots')
+    return _upload_image_to_drive(file_path, country, 'Intraday')
 
-        
-        # Get or create country folder
-        country_folder_id = get_or_create_drive_folder(service, country, root_folder_id)
-        
-        # Get or create Intraday folder
-        intraday_folder_id = get_or_create_drive_folder(service, 'Intraday', country_folder_id)
-        
-        # Print folder URL for easy access
-        folder_url = f'https://drive.google.com/drive/folders/{intraday_folder_id}'
-        print(f"  📁 Folder: {folder_url}")
-        
-        # Get filename from path
-        filename = os.path.basename(file_path)
-        
-        # Check if file already exists
-        query = f"name='{filename}' and '{intraday_folder_id}' in parents and trashed=false"
-        results = service.files().list(q=query, spaces='drive', fields='files(id, name)').execute()
-        existing_files = results.get('files', [])
-        
-        if existing_files:
-            # Update existing file
-            file_id = existing_files[0]['id']
-            media = MediaFileUpload(file_path, mimetype='image/png')
-            service.files().update(
-                fileId=file_id,
-                media_body=media
-            ).execute()
-        else:
-            # Create new file
-            file_metadata = {
-                'name': filename,
-                'parents': [intraday_folder_id]
-            }
-            media = MediaFileUpload(file_path, mimetype='image/png')
-            file = service.files().create(
-                body=file_metadata,
-                media_body=media,
-                fields='id'
-            ).execute()
-            file_id = file.get('id')
-        
-        # Set permissions to "Anyone with the link can view"
-        # Check if permission already exists
-        try:
-            existing_perms = service.permissions().list(
-                fileId=file_id,
-                fields='permissions(id,type)'
-            ).execute()
-            
-            # Check if 'anyone' permission exists
-            anyone_perm = None
-            for perm in existing_perms.get('permissions', []):
-                if perm.get('type') == 'anyone':
-                    anyone_perm = perm
-                    break
-            
-            if anyone_perm:
-                # Update existing permission
-                service.permissions().update(
-                    fileId=file_id,
-                    permissionId=anyone_perm['id'],
-                    body={'role': 'reader'}
-                ).execute()
-            else:
-                # Create new permission
-                permission = {
-                    'type': 'anyone',
-                    'role': 'reader'
-                }
-                service.permissions().create(
-                    fileId=file_id,
-                    body=permission
-                ).execute()
-        except Exception as e:
-            print(f"  ⚠ Warning: Could not set permissions on {os.path.basename(file_path)}: {e}")
-        
-        return file_id
-        
-    except Exception as e:
-        print(f"  ⚠ Drive upload failed for {os.path.basename(file_path)}: {e}")
-        return None
 
 def create_time_axis():
     """
@@ -3181,88 +3230,9 @@ def upload_yesterday_plot_to_drive(file_path, country='EU'):
     
     Returns: Drive file ID or None if failed
     """
-    import os
-    import json
-    from google.oauth2.service_account import Credentials as ServiceAccountCredentials
-    from googleapiclient.discovery import build
-    from googleapiclient.http import MediaFileUpload
-    
-    try:
-        # Get credentials from environment
-        google_creds_json = os.getenv('GOOGLE_CREDENTIALS_JSON')
-        if not google_creds_json:
-            print("  ⚠ GOOGLE_CREDENTIALS_JSON not set")
-            return None
-        
-        creds_dict = json.loads(google_creds_json)
-        credentials = ServiceAccountCredentials.from_service_account_info(
-            creds_dict,
-            scopes=['https://www.googleapis.com/auth/drive.file']
-        )
-        
-        service = build('drive', 'v3', credentials=credentials)
-        
-        # Helper function to get or create folder
-        def get_or_create_folder(folder_name, parent_id=None):
-            query = f"name='{folder_name}' and mimeType='application/vnd.google-apps.folder' and trashed=false"
-            if parent_id:
-                query += f" and '{parent_id}' in parents"
-            
-            results = service.files().list(q=query, spaces='drive', fields='files(id)').execute()
-            folders = results.get('files', [])
-            
-            if folders:
-                return folders[0]['id']
-            else:
-                file_metadata = {
-                    'name': folder_name,
-                    'mimeType': 'application/vnd.google-apps.folder'
-                }
-                if parent_id:
-                    file_metadata['parents'] = [parent_id]
-                folder = service.files().create(body=file_metadata, fields='id').execute()
-                return folder.get('id')
-        
-        # Create folder structure: EU-Electricity-Plots/[Country]/Yesterday/
-        root_folder_id = get_or_create_folder('EU-Electricity-Plots')
-        country_folder_id = get_or_create_folder(country, root_folder_id)
-        yesterday_folder_id = get_or_create_folder('Yesterday', country_folder_id)
-        
-        # Get filename
-        filename = os.path.basename(file_path)
-        
-        # Check if file already exists
-        query = f"name='{filename}' and '{yesterday_folder_id}' in parents and trashed=false"
-        results = service.files().list(q=query, spaces='drive', fields='files(id)').execute()
-        existing_files = results.get('files', [])
-        
-        if existing_files:
-            # Update existing file
-            file_id = existing_files[0]['id']
-            media = MediaFileUpload(file_path, mimetype='image/png')
-            service.files().update(fileId=file_id, media_body=media).execute()
-        else:
-            # Create new file
-            file_metadata = {
-                'name': filename,
-                'parents': [yesterday_folder_id]
-            }
-            media = MediaFileUpload(file_path, mimetype='image/png')
-            file = service.files().create(body=file_metadata, media_body=media, fields='id').execute()
-            file_id = file.get('id')
-        
-        # Set permissions: Anyone with link can view
-        try:
-            permission = {'type': 'anyone', 'role': 'reader'}
-            service.permissions().create(fileId=file_id, body=permission).execute()
-        except:
-            pass
-        
-        return file_id
-        
-    except Exception as e:
-        print(f"  ⚠ Drive upload failed for {os.path.basename(file_path)}: {e}")
-        return None
+    return _upload_image_to_drive(file_path, country, 'Yesterday', warn_missing_credentials=True)
+
+
 def generate_yesterday_aggregates_plots(corrected_data, country_code='EU'):
     """
     Generate two yesterday plots (absolute and percentage) showing only aggregates:
@@ -3952,6 +3922,7 @@ def main():
             print(f"\n✓ {country_code} COMPLETE!")
         
         print_sheets_summary()
+        print_drive_summary()
         
         # Create timestamp file
         timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S UTC')
