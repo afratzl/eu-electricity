@@ -615,21 +615,25 @@ def generate_map(geodata, values_by_country, source, date_str, scale='fixed', cm
 # GOOGLE SHEETS DATA LOADING
 # ============================================================
 
-def get_spreadsheet(gc, country_code):
-    """Get spreadsheet for a country, using drive_links.json if available."""
-    from gspread.exceptions import APIError
-    sheet_name = f'{country_code} Electricity Production Data'
+def known_sheet_id(country_code):
+    """Sheet ID from drive_links.json (local file read only, no API calls), or None."""
     drive_links_file = 'plots/drive_links.json'
-    sheet_id = None
-    # Read sheet ID from drive_links.json (local file read only, no API calls)
     if os.path.exists(drive_links_file):
         try:
             with open(drive_links_file, 'r') as f:
                 links = json.load(f)
             if country_code in links and 'data_sheet_id' in links[country_code]:
-                sheet_id = links[country_code]['data_sheet_id']
+                return links[country_code]['data_sheet_id']
         except (json.JSONDecodeError, KeyError, IOError):
             pass
+    return None
+
+
+def get_spreadsheet(gc, country_code):
+    """Get spreadsheet for a country, using drive_links.json if available."""
+    from gspread.exceptions import APIError
+    sheet_name = f'{country_code} Electricity Production Data'
+    sheet_id = known_sheet_id(country_code)
     # API call -- let 429s propagate to api_call_with_retry
     if sheet_id:
         return gc.open_by_key(sheet_id)
@@ -659,16 +663,27 @@ def parse_worksheet(raw_values):
     return year_data
 
 
+# Pause between countries when the yesterday / last_week summary sheets are loaded. It is one request per
+# country, so this is at most about 30 requests a minute, well under Google's limit of 60. A rate-limit
+# error is still retried by api_call_with_retry. (Before: three requests per country and a 20 s pause.)
+SUMMARY_LOAD_PAUSE = 1.5
+
+
 def api_call_with_retry(fn, max_retries=5):
-    """Execute a Google API call with exponential backoff on 429 quota errors."""
+    """Execute a Google API call with exponential backoff on 429 quota errors (and on server errors)."""
     from gspread.exceptions import APIError
     for attempt in range(max_retries):
         try:
             return fn()
         except APIError as e:
+            status = getattr(getattr(e, 'response', None), 'status_code', None)
             if '429' in str(e):
                 wait = 60 * (attempt + 1)
                 print(f"    Rate limited, waiting {wait}s before retry {attempt+1}/{max_retries}...")
+                time.sleep(wait)
+            elif status in (500, 502, 503, 504):
+                wait = 10 * 2 ** attempt
+                print(f"    Google server error ({status}), waiting {wait}s before retry {attempt+1}/{max_retries}...")
                 time.sleep(wait)
             else:
                 raise
@@ -700,9 +715,17 @@ def load_summary_table_for_country(gc, country_code):
     Returns dict: {source: {yesterday_pct, last_week_pct}}
     Much faster than loading all monthly sheets.
     """
-    spreadsheet = api_call_with_retry(lambda: get_spreadsheet(gc, country_code))
-    ws  = api_call_with_retry(lambda: spreadsheet.worksheet('Summary Table Data'))
-    raw = api_call_with_retry(ws.get_all_values)
+    sheet_id = known_sheet_id(country_code)
+    if sheet_id:
+        # ONE request for the whole worksheet (before: open the spreadsheet, look up the worksheet, read it).
+        # Rows are padded to equal width, exactly like get_all_values does: the parsing below relies on it.
+        from gspread.utils import fill_gaps
+        result = api_call_with_retry(lambda: gc.http_client.values_get(sheet_id, "'Summary Table Data'"))
+        raw = fill_gaps(result.get('values', []))
+    else:
+        spreadsheet = api_call_with_retry(lambda: get_spreadsheet(gc, country_code))
+        ws  = api_call_with_retry(lambda: spreadsheet.worksheet('Summary Table Data'))
+        raw = api_call_with_retry(ws.get_all_values)
     if len(raw) < 2:
         return {}
 
@@ -1052,7 +1075,7 @@ def main():
                 print(f"  ⚠ Failed to load {country_code}: {e} -- will show as no data (gray)")
                 summary_table_data[country_code] = {}
             if i < len(countries_to_load) - 1:
-                time.sleep(20)
+                time.sleep(SUMMARY_LOAD_PAUSE if known_sheet_id(country_code) else 3 * SUMMARY_LOAD_PAUSE)
     else:  # monthly, annual, all-months
         for i, country_code in enumerate(ENTSOE_COUNTRIES + ['EU']):
             print(f"  Loading {country_code} ({i+1}/{len(ENTSOE_COUNTRIES)+1})...")
